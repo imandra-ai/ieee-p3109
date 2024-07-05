@@ -1,0 +1,31 @@
+[@@@import "p3109.iml"]
+[@@@import "model.iml"]
+
+open P3109
+open Model
+
+(** Check that the precision of B8P3 is as expected *)
+lemma fmt_prec_3 (f:Format.t) = (f = Format.B8P3) ==> (precision f) = 3
+
+(** Check that the format parameters for B8P3 are as expected *)
+lemma fmt_params_3 (f:Format.t) =
+  (f = Format.B8P3) ==>
+    let prec, bias, max = get_format_parameters f in
+    prec = 3 && bias = 16 && max = 49152.
+  [@@by auto]
+
+(** Sanity check of bitwise int conversion *)
+lemma bitwise_int_21 = of_int_bitwise 21 =
+  let open Float8 in
+  { b7=false; b6=false; b5=false; b4=true; b3=false; b2=true; b1=false; b0=true; }
+
+(** Some extended reals sanity checks *)
+lemma real_0 = to_extended_real Float8.zero Format.B8P3 = ExReal.R 0.0 [@@by auto]
+lemma real_ninf = to_extended_real Float8.ninf Format.B8P3 = ExReal.NINF
+lemma real_pinf = to_extended_real Float8.pinf Format.B8P3 = ExReal.PINF
+
+let p3_pos_one : Model.t = { b7=false; b6=true; b5=false; b4=false; b3=false; b2=false; b1=false; b0=false; }
+let p3_neg_one : Model.t = { b7=true;  b6=true; b5=false; b4=false; b3=false; b2=false; b1=false; b0=false; }
+
+lemma real_pos_one = to_extended_real (p3_pos_one) Format.B8P3 = ExReal.R 1.0 [@@by auto]
+lemma real_neg_one = to_extended_real (p3_neg_one) Format.B8P3 = ExReal.R (- 1.0) [@@by auto]

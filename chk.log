@@ -1,0 +1,61 @@
+[[36minfo[0m:x.cli:24-05-07T19:16:00.129]
+  (check { files = ["src/theorems.iml"; "src/checks.iml"]; j = (Some 4);
+           config_file = None; dump_parsetree = false; dump_typingtree = false;
+           dump_color = true; dump_po_results = true; dump_eval_results = true;
+           check = true;
+           db =
+           { db = (Some false);
+             settings =
+             { db_directory = None; db_file = None; db_as_cache = None } };
+           serve = { serve = false; serve_port = None };
+           logging =
+           { debug = false; log_level = (Some Info);
+             log_file = (Some "chk.log"); log_stderr = false; log_color = true
+             };
+           reify_errors = false; syntax = None; prelude = true;
+           in_prelude = false; use_cache = None; use_ro_cache = None;
+           po_skip = false; po_save_into = None; proof_check = None;
+           runtime = { gc_stats = false; gc_space_overhead = 60; bt = false };
+           timeout = None; validate_models = true }
+   :config { thread_pool_size = None;
+             storage =
+             { enabled = true; dir = None; file = None; use_new_file = None;
+               store_history = false; store_sessions = false;
+               store_task_events = false };
+             net =
+             { remote_scheduler_url = None; remote_scheduler_rpc_addr = None;
+               deployment = None; wire_format = binary }
+             })
+[[36minfo[0m:x.cli:24-05-07T19:16:00.135] Using in-memory storage
+[[36minfo[0m:x.cli:24-05-07T19:16:00.136] Redis is not available.
+[[36minfo[0m:x.cli:24-05-07T19:16:01.206] PO succeeded (stats: { time_s = 16.1ms })
+[[36minfo[0m:x.cli:24-05-07T19:16:01.206] PO succeeded (stats: { time_s = 12.3ms })
+[[36minfo[0m:x.cli:24-05-07T19:16:01.207] PO succeeded (stats: { time_s = 13.5ms })
+[[36minfo[0m:x.cli:24-05-07T19:16:01.207] PO succeeded (stats: { time_s = 49.2ms })
+[[36minfo[0m:x.cli:24-05-07T19:16:01.207] PO succeeded (stats: { time_s = 14.2ms })
+[[36minfo[0m:x.cli:24-05-07T19:16:01.207] PO succeeded (stats: { time_s = 23.6ms })
+[[36minfo[0m:x.cli:24-05-07T19:16:01.208] PO succeeded (stats: { time_s = 43.2ms })
+[[36minfo[0m:x.cli:24-05-07T19:16:01.212] PO succeeded (stats: { time_s = 37.1ms })
+[[36minfo[0m:x.cli:24-05-07T19:16:01.212] PO succeeded (stats: { time_s = 12.7ms })
+[[36minfo[0m:x.cli:24-05-07T19:16:01.212] PO succeeded (stats: { time_s = 12.0ms })
+[[36minfo[0m:x.cli:24-05-07T19:16:01.212] PO succeeded (stats: { time_s = 16.2ms })
+[[36minfo[0m:x.cli:24-05-07T19:16:01.217] PO succeeded (stats: { time_s = 31.3ms })
+[[36minfo[0m:x.cli:24-05-07T19:16:01.217] PO succeeded (stats: { time_s = 8.78ms })
+[[36minfo[0m:x.cli:24-05-07T19:16:01.217] PO succeeded (stats: { time_s = 11.7ms })
+[[36minfo[0m:x.cli:24-05-07T19:16:01.217] PO succeeded (stats: { time_s = 10.1ms })
+[[36minfo[0m:x.cli:24-05-07T19:16:01.217] PO succeeded (stats: { time_s = 25.6ms })
+[[36minfo[0m:x.cli:24-05-07T19:16:01.218] PO succeeded (stats: { time_s = 13.6ms })
+[[36minfo[0m:x.cli:24-05-07T19:16:01.218] PO succeeded (stats: { time_s = 14.5ms })
+[[36minfo[0m:x.cli:24-05-07T19:16:01.218] PO succeeded (stats: { time_s = 11.4ms })
+[[36minfo[0m:x.cli:24-05-07T19:16:01.218] PO succeeded (stats: { time_s = 8.95ms })
+[[36minfo[0m:x.cli:24-05-07T19:16:01.218] PO succeeded (stats: { time_s = 12.0ms })
+[[36minfo[0m:x.cli:24-05-07T19:16:01.219] PO succeeded (stats: { time_s = 9.47ms })
+[[36minfo[0m:x.cli:24-05-07T19:16:01.219] PO succeeded (stats: { time_s = 10.2ms })
+[[36minfo[0m:x.cli:24-05-07T19:16:01.219] PO succeeded (stats: { time_s = 16.3ms })
+[[36minfo[0m:x.cli:24-05-07T19:16:01.219] PO succeeded (stats: { time_s = 9.48ms })
+[[36minfo[0m:x.cli:24-05-07T19:16:01.219] PO succeeded (stats: { time_s = 10.8ms })
+[[36minfo[0m:x.cli:24-05-07T19:16:01.219] PO succeeded (stats: { time_s = 13.3ms })
+[[36minfo[0m:x.cli:24-05-07T19:16:01.219] PO succeeded (stats: { time_s = 14.7ms })
+[[36minfo[0m:x.cli:24-05-07T19:16:01.219] PO succeeded (stats: { time_s = 17.0ms })
+[[36minfo[0m:x.cli:24-05-07T19:16:01.219] PO succeeded (stats: { time_s = 19.2ms })
+[[36minfo[0m:x.cli:24-05-07T19:16:01.219] PO succeeded (stats: { time_s = 27.9ms })

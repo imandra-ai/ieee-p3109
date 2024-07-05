@@ -1,0 +1,8 @@
+(library
+ (name p3109)
+ (package p3109)
+ (flags :standard -open Imandrax_prelude -open Prelude_extracted)
+ (preprocess
+  (pps ppx_deriving.std ppx_subliner))
+ (modules P3109 math)
+ (libraries imandrax_prelude))

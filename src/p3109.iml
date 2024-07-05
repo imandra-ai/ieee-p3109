@@ -1,0 +1,160 @@
+(** For spec see https://github.com/P3109/Public *)
+
+(** Format definitions *)
+
+module Format = struct
+  type t =
+    | B8P1
+    | B8P2
+    | B8P3
+    | B8P4
+    | B8P5
+    | B8P6
+    | B8P7
+end
+
+(** Rounding mode definitions *)
+
+module RoundingMode = struct
+  type t =
+    | TowardZero
+    | TowardNegative
+    | TowardPositive
+    | NearestTiesToEven
+    | NearestTiesToAway
+end
+
+(** 8-bit Floating-point numbers *)
+
+module Float8 = struct
+  (* Type definition *)
+  type t = { b7: bool; b6: bool; b5: bool; b4: bool; b3: bool; b2: bool; b1: bool; b0: bool; } [@@ocamlformat "disable"]
+
+  (** Constants *)
+
+  let nan : t =
+    { b7 = true; b6 = false; b5 = false; b4 = false; b3 = false; b2 = false; b1 = false; b0 = false; } [@@ocamlformat "disable"]
+
+  let ninf : t =
+    { b7 = true; b6 = true; b5 = true; b4 = true; b3 = true; b2 = true; b1 = true; b0 = true; } [@@ocamlformat "disable"]
+
+  let pinf : t =
+    { b7 = false; b6 = true; b5 = true; b4 = true; b3 = true; b2 = true; b1 = true; b0 = true; } [@@ocamlformat "disable"]
+
+  let zero : t =
+    { b7 = false; b6 = false; b5 = false; b4 = false; b3 = false; b2 = false; b1 = false; b0 = false; } [@@ocamlformat "disable"]
+
+  (** Classification predicates *)
+
+  let is_zero (x : t) : bool = x = zero
+
+  let is_nan (x : t) : bool = x = nan
+
+  let is_ninf (x : t) : bool = x = ninf
+
+  let is_pinf (x : t) : bool = x = pinf
+
+  let is_inf (x : t) : bool = x = ninf || x = pinf
+
+  let is_finite (x : t) : bool = x <> nan && x <> ninf && x <> pinf
+
+  let is_normal (x : t) (fmt : Format.t) : bool =
+    let open Format in
+    is_finite x
+    &&
+    match fmt with
+    | B8P1 -> x.b6 || x.b5 || x.b4 || x.b3 || x.b2 || x.b1 || x.b0
+    | B8P2 -> x.b6 || x.b5 || x.b4 || x.b3 || x.b2 || x.b1
+    | B8P3 -> x.b6 || x.b5 || x.b4 || x.b3 || x.b2
+    | B8P4 -> x.b6 || x.b5 || x.b4 || x.b3
+    | B8P5 -> x.b6 || x.b5 || x.b4
+    | B8P6 -> x.b6 || x.b5
+    | B8P7 -> x.b6
+
+  let is_subnormal (x : t) (fmt : Format.t) : bool =
+    let open Format in
+    is_finite x
+    &&
+    match fmt with
+    | B8P1 ->
+      (not x.b6) && (not x.b5) && (not x.b4) && (not x.b3) && (not x.b2)
+      && (not x.b1) && not x.b0
+    | B8P2 ->
+      (not x.b6) && (not x.b5) && (not x.b4) && (not x.b3) && (not x.b2)
+      && not x.b1
+    | B8P3 -> (not x.b6) && (not x.b5) && (not x.b4) && (not x.b3) && not x.b2
+    | B8P4 -> (not x.b6) && (not x.b5) && (not x.b4) && not x.b3
+    | B8P5 -> (not x.b6) && (not x.b5) && not x.b4
+    | B8P6 -> (not x.b6) && not x.b5
+    | B8P7 -> not x.b6
+
+  let is_sign_minus (x : t) : bool = x.b7
+
+  let is_canonical (_x : t) : bool = true
+
+  let is_signaling (_x : t) : bool = false
+
+  (** Classifier *)
+
+  type class_ =
+    | NaN
+    | NegativeInfinity
+    | NegativeNormal
+    | NegativeSubnormal
+    | Zero
+    | PositiveSubnormal
+    | PositiveNormal
+    | PositiveInfinity
+    | NoClass (* never used *)
+
+  let class_ (x : t) (fmt : Format.t) : class_ =
+    if is_nan x then NaN
+    else if is_inf x && is_sign_minus x then NegativeInfinity
+    else if is_normal x fmt && is_sign_minus x then NegativeNormal
+    else if is_subnormal x fmt && is_sign_minus x then NegativeSubnormal
+    else if is_zero x then Zero
+    else if is_subnormal x fmt && not (is_sign_minus x) then PositiveSubnormal
+    else if is_normal x fmt && not (is_sign_minus x) then PositiveNormal
+    else if is_inf x && not (is_sign_minus x) then PositiveInfinity
+    else NoClass (* unreachable *)
+  [@@ocamlformat "if-then-else=compact"]
+
+  (** Numerals *)
+
+  (** Convert int [i] to a [t] (bitwise; lowest 8 bits only, rest ignored) *)
+  let of_int_bitwise (i : int) : t =
+    {
+      b0 = i mod 2 <> 0;
+      b1 = i / 2 mod 2 <> 0;
+      b2 = i / 4 mod 2 <> 0;
+      b3 = i / 8 mod 2 <> 0;
+      b4 = i / 16 mod 2 <> 0;
+      b5 = i / 32 mod 2 <> 0;
+      b6 = i / 64 mod 2 <> 0;
+      b7 = i / 128 mod 2 <> 0;
+    }
+
+  (** Operations *)
+
+  let negate (x : t) (_fmt : Format.t) : t =
+    if is_nan x then
+      x
+    else
+      {
+        b7 = not x.b7;
+        b6 = x.b6;
+        b5 = x.b5;
+        b4 = x.b4;
+        b3 = x.b3;
+        b2 = x.b2;
+        b1 = x.b1;
+        b0 = x.b0;
+      }
+
+  let to_string (x : t) : string =
+    let bool_to_bin x = if x then "1" else "0" in
+    Printf.sprintf "%s%s%s%s%s%s%s%s" (bool_to_bin x.b7) (bool_to_bin x.b6)
+      (bool_to_bin x.b5) (bool_to_bin x.b4) (bool_to_bin x.b3)
+      (bool_to_bin x.b2) (bool_to_bin x.b1) (bool_to_bin x.b0)
+  [@@ocamlformat "if-then-else=compact"] [@@program]
+end

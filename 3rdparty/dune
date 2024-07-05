@@ -1,0 +1,6 @@
+(library
+ (name imandrax_prelude)
+ (package imandrax-prelude)
+ (flags)
+ (modules Prelude_extracted)
+ (libraries containers zarith))
