@@ -5,8 +5,8 @@ synopsis: "Imandrax prelude"
 description: "Imandrax prelude"
 maintainer: ["Christoph M. Wintersteiger"]
 authors: ["Christoph M. Wintersteiger"]
-homepage: "https://github.com/wintersteiger/p3109"
-bug-reports: "https://github.com/wintersteiger/p3109/issues"
+homepage: "https://github.com/imandra-ai/ieee-p3109"
+bug-reports: "https://github.com/imandra-ai/ieee-p3109/issues"
 depends: [
   "dune" {>= "3.3"}
   "containers"
@@ -27,4 +27,4 @@ build: [
     "@doc" {with-doc}
   ]
 ]
-dev-repo: "git+https://github.com/wintersteiger/p3109.git"
+dev-repo: "git+https://github.com/imandra-ai/ieee-p3109.git"

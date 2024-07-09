@@ -1,0 +1,109 @@
+(** For spec see https://github.com/P3109/Public *)
+
+[@@@import Specification, "dune:specification"]
+
+(* We chose to use the type definitions from the specification for convenience (but we wouldn't have to). *)
+
+(** Format definitions *)
+
+module Format = struct
+  type t = Specification.Format.t
+end
+
+(** Rounding mode definitions *)
+
+module RoundingMode = struct
+  type t = Specification.RoundingMode.t
+end
+
+(** 8-bit Floating-point numbers *)
+
+module Float8 = struct
+  (* Type definition *)
+  type t = Specification.Float8.t
+
+  (** Constants *)
+
+  let nan : t = Specification.Float8.nan [@@macro]
+
+  let ninf : t = Specification.Float8.ninf [@@macro]
+
+  let pinf : t = Specification.Float8.pinf [@@macro]
+
+  let zero : t = Specification.Float8.zero [@@macro]
+
+  (** Classification predicates *)
+
+  let is_zero (x : t) : bool =
+    x.b7 = false && x.b6 = false && x.b5 = false && x.b4 = false && x.b3 = false
+    && x.b2 = false && x.b1 = false && x.b0 = false  [@@macro]
+
+  let is_nan (x : t) : bool =
+    x.b7 = true && x.b6 = false && x.b5 = false && x.b4 = false && x.b3 = false
+    && x.b2 = false && x.b1 = false && x.b0 = false [@@macro]
+
+  let is_ninf (x : t) : bool =
+    x.b7 = true && x.b6 = true && x.b5 = true && x.b4 = true && x.b3 = true
+    && x.b2 = true && x.b1 = true && x.b0 = true [@@macro]
+
+  let is_pinf (x : t) : bool =
+    x.b7 = false && x.b6 = true && x.b5 = true && x.b4 = true && x.b3 = true
+    && x.b2 = true && x.b1 = true && x.b0 = true [@@macro]
+
+  let is_inf (x : t) : bool = Specification.Float8.is_inf x [@@macro]
+
+  let is_finite (x : t) : bool = Specification.Float8.is_finite x [@@macro]
+
+  let is_normal (x : t) (fmt : Format.t) : bool =
+    Specification.Float8.is_normal x fmt [@@macro]
+
+  let is_subnormal (x : t) (fmt : Format.t) : bool =
+    Specification.Float8.is_subnormal x fmt [@@macro]
+
+  let is_sign_minus (x : t) : bool = Specification.Float8.is_sign_minus x [@@macro]
+
+  let is_canonical (x : t) : bool = Specification.Float8.is_canonical x [@@macro]
+
+  let is_signaling (x : t) : bool = Specification.Float8.is_signaling x [@@macro]
+
+  (** Classifier *)
+
+  type class_ = Specification.Float8.class_
+
+  let class_ (x : t) (fmt : Format.t) : class_ =
+    Specification.Float8.class_ x fmt
+
+  (** Numerals *)
+
+  (** Convert int [i] to a [t] (bitwise; lowest 8 bits only, rest ignored) *)
+  let of_int_bitwise (i : int) : t =
+    {
+      b0 = i mod 2 <> 0;
+      b1 = i / 2 mod 2 <> 0;
+      b2 = i / 4 mod 2 <> 0;
+      b3 = i / 8 mod 2 <> 0;
+      b4 = i / 16 mod 2 <> 0;
+      b5 = i / 32 mod 2 <> 0;
+      b6 = i / 64 mod 2 <> 0;
+      b7 = i / 128 mod 2 <> 0;
+    }
+
+  (** Operations *)
+
+  let negate (x : t) (_fmt : Format.t) : t =
+    if is_nan x || is_zero x then x
+    else
+      {
+        b7 = not x.b7;
+        b6 = x.b6;
+        b5 = x.b5;
+        b4 = x.b4;
+        b3 = x.b3;
+        b2 = x.b2;
+        b1 = x.b1;
+        b0 = x.b0;
+      }
+
+  let to_string (x : t) (fmt : Format.t) = Specification.Float8.to_string x fmt
+  [@@program]
+end

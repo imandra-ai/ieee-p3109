@@ -1,0 +1,90 @@
+(** Extended reals *)
+
+type t =
+  | NINF
+  | PINF
+  | R of real
+
+let zero = R 0.0
+
+(* let less_than (x : t) (y : t) : bool =
+    match x, y with
+    | NINF, NINF | PINF, PINF | PINF, NINF | PINF, R _ | R _, NINF -> false
+    | NINF, PINF | NINF, R _ | R _, PINF -> true
+    | R x, R y -> Real.(x < y) *)
+
+(* let ( < ) (x : t) (y : t) : bool = less_than x y *)
+
+let ( < ) (x : t) (y : real) : bool =
+  match x, y with
+  | NINF, _ -> true
+  | PINF, _ -> false
+  | R x, _ -> x <. y
+
+let ( > ) (x : t) (y : real) : bool =
+  match x, y with
+  | NINF, _ -> false
+  | PINF, _ -> true
+  | R x, _ -> x >. y
+
+(* let max (x : t) (y : t) : t =
+    match x, y with
+    | NINF, NINF | PINF, PINF | PINF, NINF | PINF, R _ | R _, NINF -> x
+    | NINF, PINF | NINF, R _ | R _, PINF -> y
+    | R x, R y -> R (Real.max x y) *)
+
+let abs (x : t) : t =
+  match x with
+  | NINF | PINF -> x
+  | R x -> R (Real.abs x)
+
+(* let floor (x : t) : t =
+    match x with
+    | NINF | PINF -> x
+    | R x -> R (Real.of_int (Math.floor x)) *)
+
+let is_finite (x : t) =
+  match x with
+  | NINF | PINF -> false
+  | _ -> true
+
+let sign (x : t) : t =
+  match x with
+  | NINF -> R (-1.0)
+  | PINF -> R 1.0
+  | R x -> if x <. 0.0 then R (-1.0) else R 1.0
+
+let mul (x : t) (y : t) : (t, string) Result.t =
+  match x, y with
+  | NINF, PINF | PINF, NINF -> Error "invalid"
+  | NINF, NINF -> Ok NINF
+  | PINF, PINF -> Ok PINF
+  | NINF, R 0.0 -> Error "invalid"
+  | PINF, R 0.0 -> Error "invalid"
+  | R 0.0, NINF -> Error "invalid"
+  | R 0.0, PINF -> Error "invalid"
+  | NINF, R y when y <. 0.0 -> Ok NINF
+  | PINF, R y when y >. 0.0 -> Ok PINF
+  | R x, NINF when x <. 0.0 -> Ok NINF
+  | R x, PINF when x >. 0.0 -> Ok PINF
+  | NINF, R _ | PINF, R _ -> Error "invalid"
+  | R _, NINF | R _, PINF -> Error "invalid"
+  | R x, R y -> Ok (R (x *. y))
+
+let ( * ) (x : t) (y : t) : (t, string) Result.t = mul x y
+
+let to_string : t -> string =
+ fun x ->
+  match x with
+  | NINF -> "-oo"
+  | PINF -> "+oo"
+  | R x -> Printf.sprintf "%s" (Q.to_string x)
+[@@program]
+
+let neg (x : t) : t =
+  match x with
+  | NINF -> PINF
+  | PINF -> NINF
+  | R x -> R (-. x)
+
+let ( ~- ) (x : t) : t = neg x

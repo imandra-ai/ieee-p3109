@@ -5,7 +5,7 @@ A very incomplete sketch of a verified implementation of P3109 floats.
 ## Verification
 
 ```
-imandrax-cli check src/theorems.iml src/checks.iml
+imandrax-cli check specification/theorems.iml specification/checks.iml implementation/theorems.iml
 ```
 
 ## Dev
@@ -19,8 +19,14 @@ dune build
 
 ### Tests
 
-There's a trivial test app in `test/test_app.ml` that uses the library. After `dune build`, you should be able to run
+There's a trivial test app in `implementation/test/test_app.ml` that uses the library. After `dune build`, you should be able to run
 
 ```
-_build/default/test/test_app.exe
+dune exec -- implementation/test/test_app.exe
+```
+
+Similarly, the specification is also executable:
+
+```
+dune exec -- specification/test/test_app_spec.exe
 ```

@@ -1,0 +1,15 @@
+[@@@import Specification, "specification.iml"]
+
+open Specification
+
+(** Precision is between 1 and 7 in all supported formats *)
+theorem precision_1_7 (f:Format.t) =
+  1 <= Format.precision f && Format.precision f <= 7
+
+(** All [Float8.t] are classified *)
+theorem no_no_class (x:Float8.t) (fmt:Format.t) =
+  (Float8.class_ x fmt) <> Float8.NoClass
+
+(** [internal_negate] never returns an error *)
+theorem internal_negate_ok x fmt (x : Float8.t) (fmt : Format.t) =
+  Result.is_ok (Float8.internal_negate x fmt)

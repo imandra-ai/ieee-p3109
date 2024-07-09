@@ -1,0 +1,398 @@
+[@@@import Math, "math.iml"]
+
+module ExReal = Math.ExReal
+
+(** Format definitions *)
+
+module Format = struct
+  type t =
+    | B8P1
+    | B8P2
+    | B8P3
+    | B8P4
+    | B8P5
+    | B8P6
+    | B8P7
+
+  let precision (fmt : t) =
+    match fmt with
+    | B8P1 -> 1
+    | B8P2 -> 2
+    | B8P3 -> 3
+    | B8P4 -> 4
+    | B8P5 -> 5
+    | B8P6 -> 6
+    | B8P7 -> 7
+
+  let get_format_parameters (fmt : t) : int * int * real =
+    let open Math in
+    let precision : int = precision fmt in
+    let emax : int = ipow2 (8 - precision - 1) - 1 in
+    let bias : int = emax + 1 in
+    let max : real = pow2 emax *. (2. -. pow2 (2 - precision)) in
+    precision, bias, max
+end
+
+(** Rounding mode definitions *)
+
+module RoundingMode = struct
+  type t =
+    | TowardZero
+    | TowardNegative
+    | TowardPositive
+    | NearestTiesToEven
+    | NearestTiesToAway
+end
+
+(** Floating-point numeral definitions *)
+
+module Float8 = struct
+  (* Type definition *)
+  type t = { b7: bool; b6: bool; b5: bool; b4: bool; b3: bool; b2: bool; b1: bool; b0: bool; } [@@ocamlformat "disable"]
+
+  (* Constants *)
+
+  let nan : t =
+    { b7 = true; b6 = false; b5 = false; b4 = false; b3 = false; b2 = false; b1 = false; b0 = false; } [@@macro] [@@ocamlformat "disable"]
+
+  let ninf : t =
+    { b7 = true; b6 = true; b5 = true; b4 = true; b3 = true; b2 = true; b1 = true; b0 = true; } [@@macro] [@@ocamlformat "disable"]
+
+  let pinf : t =
+    { b7 = false; b6 = true; b5 = true; b4 = true; b3 = true; b2 = true; b1 = true; b0 = true; } [@@macro] [@@ocamlformat "disable"]
+
+  let zero : t =
+    { b7 = false; b6 = false; b5 = false; b4 = false; b3 = false; b2 = false; b1 = false; b0 = false; } [@@macro] [@@ocamlformat "disable"]
+
+  (** Classification predicates *)
+
+  let is_zero (x : t) : bool = x = zero [@@macro]
+
+  let is_nan (x : t) : bool = x = nan [@@macro]
+
+  let is_ninf (x : t) : bool = x = ninf [@@macro]
+
+  let is_pinf (x : t) : bool = x = pinf [@@macro]
+
+  let is_inf (x : t) : bool = x = ninf || x = pinf [@@macro]
+
+  let is_finite (x : t) : bool = x <> nan && x <> ninf && x <> pinf  [@@macro]
+
+  let is_normal (x : t) (fmt : Format.t) : bool =
+    let open Format in
+    is_finite x
+    &&
+    match fmt with
+    | B8P1 -> x.b6 || x.b5 || x.b4 || x.b3 || x.b2 || x.b1 || x.b0
+    | B8P2 -> x.b6 || x.b5 || x.b4 || x.b3 || x.b2 || x.b1
+    | B8P3 -> x.b6 || x.b5 || x.b4 || x.b3 || x.b2
+    | B8P4 -> x.b6 || x.b5 || x.b4 || x.b3
+    | B8P5 -> x.b6 || x.b5 || x.b4
+    | B8P6 -> x.b6 || x.b5
+    | B8P7 -> x.b6
+    [@@macro]
+
+  let is_subnormal (x : t) (fmt : Format.t) : bool =
+    let open Format in
+    is_finite x
+    &&
+    match fmt with
+    | B8P1 ->
+      (not x.b6) && (not x.b5) && (not x.b4) && (not x.b3) && (not x.b2)
+      && (not x.b1) && not x.b0
+    | B8P2 ->
+      (not x.b6) && (not x.b5) && (not x.b4) && (not x.b3) && (not x.b2)
+      && not x.b1
+    | B8P3 -> (not x.b6) && (not x.b5) && (not x.b4) && (not x.b3) && not x.b2
+    | B8P4 -> (not x.b6) && (not x.b5) && (not x.b4) && not x.b3
+    | B8P5 -> (not x.b6) && (not x.b5) && not x.b4
+    | B8P6 -> (not x.b6) && not x.b5
+    | B8P7 -> not x.b6
+    [@@macro]
+
+  let is_sign_minus (x : t) : bool = x.b7 [@@macro]
+
+  let is_canonical (_x : t) : bool = true [@@macro]
+
+  let is_signaling (_x : t) : bool = false [@@macro]
+
+  (** Classifier *)
+
+  type class_ =
+    | NaN
+    | NegativeInfinity
+    | NegativeNormal
+    | NegativeSubnormal
+    | Zero
+    | PositiveSubnormal
+    | PositiveNormal
+    | PositiveInfinity
+    | NoClass (* never used *)
+
+  let class_ (x : t) (fmt : Format.t) : class_ =
+    if is_nan x then NaN
+    else if is_inf x && is_sign_minus x then NegativeInfinity
+    else if is_normal x fmt && is_sign_minus x then NegativeNormal
+    else if is_subnormal x fmt && is_sign_minus x then NegativeSubnormal
+    else if is_zero x then Zero
+    else if is_subnormal x fmt && not (is_sign_minus x) then PositiveSubnormal
+    else if is_normal x fmt && not (is_sign_minus x) then PositiveNormal
+    else if is_inf x && not (is_sign_minus x) then PositiveInfinity
+    else NoClass (* unreachable *)
+
+  (** Convert int [i] to a [t] (bitwise; lowest 8 bits only, rest ignored) *)
+  let of_int_bitwise (i : int) : t =
+    {
+      b0 = i mod 2 <> 0;
+      b1 = i / 2 mod 2 <> 0;
+      b2 = i / 4 mod 2 <> 0;
+      b3 = i / 8 mod 2 <> 0;
+      b4 = i / 16 mod 2 <> 0;
+      b5 = i / 32 mod 2 <> 0;
+      b6 = i / 64 mod 2 <> 0;
+      b7 = i / 128 mod 2 <> 0;
+    }
+
+  (** Bitwise and of two float8s *)
+  let bitwise_and (x : t) (y : t) : t =
+    {
+      b7 = x.b7 && y.b7;
+      b6 = x.b6 && y.b6;
+      b5 = x.b5 && y.b5;
+      b4 = x.b4 && y.b4;
+      b3 = x.b3 && y.b3;
+      b2 = x.b2 && y.b2;
+      b1 = x.b1 && y.b1;
+      b0 = x.b0 && y.b0;
+    }
+
+  (** Bitwise or of two float8s *)
+  let bitwise_or (x : t) (y : t) : t =
+    {
+      b7 = x.b7 || y.b7;
+      b6 = x.b6 || y.b6;
+      b5 = x.b5 || y.b5;
+      b4 = x.b4 || y.b4;
+      b3 = x.b3 || y.b3;
+      b2 = x.b2 || y.b2;
+      b1 = x.b1 || y.b1;
+      b0 = x.b0 || y.b0;
+    }
+
+  (** Bitwise or of three float8s *)
+  let bitwise_or3 (x : t) (y : t) (z : t) : t = bitwise_or (bitwise_or x y) z
+
+  (** Shift float8 to the right *)
+  let rec bit_shift_right (x : t) (i : int) : t =
+    if i <= 0 then x
+    else (
+      let shift1 (x : t) =
+        {
+          b7 = false;
+          b6 = x.b7;
+          b5 = x.b6;
+          b4 = x.b5;
+          b3 = x.b4;
+          b2 = x.b3;
+          b1 = x.b2;
+          b0 = x.b1;
+        }
+      in
+      shift1 (bit_shift_right x (i - 1)))
+
+  (** Shift float8 to the left *)
+  let rec bit_shift_left (x : t) (i : int) : t =
+    if i <= 0 then x
+    else (
+      let shift1 (x : t) =
+        {
+          b7 = x.b6;
+          b6 = x.b5;
+          b5 = x.b4;
+          b4 = x.b3;
+          b3 = x.b2;
+          b2 = x.b1;
+          b1 = x.b0;
+          b0 = false;
+        }
+      in
+      shift1 (bit_shift_left x (i - 1)))
+
+  (** Convert float8 to int (bitwise) *)
+
+  let to_int_bitwise (x : t) : int =
+    (if x.b0 then 1 else 0)
+  + (if x.b1 then 2 else 0)
+  + (if x.b2 then 4 else 0)
+  + (if x.b3 then 8 else 0)
+  + (if x.b4 then 16 else 0)
+  + (if x.b5 then 32 else 0)
+  + (if x.b6 then 64 else 0)
+  + (if x.b7 then 128 else 0)
+  [@@ocamlformat "disable"]
+
+  let sign (x : real) : real = Real.(if x < 0.0 then -1.0 else 1.0)
+  [@@ocamlformat "if-then-else=compact"]
+
+  (** Convert [x] (in [fmt]) to extended real *)
+  let to_extended_real (x : t) (fmt : Format.t) : ExReal.t =
+    let open Math in
+    (* Convert X (in Format) to extended real *)
+    (* Cannot return a NaN, so must not be referenced with a NaN code *)
+    if is_pinf x then PINF
+    else if is_ninf x then NINF
+    else (
+      let precision, bias, _ = Format.get_format_parameters fmt in
+      let sign =
+        if not (is_zero (bitwise_and x (of_int_bitwise 0x80))) then -1.0
+        else 1.0
+      in
+      let trailing_bits =
+        to_int_bitwise
+          (bitwise_and x (of_int_bitwise (ipow2 (precision - 1) - 1)))
+      in
+      let biased_exponent =
+        to_int_bitwise
+          (bit_shift_right
+             (bitwise_and x (of_int_bitwise 0x7F))
+             (precision - 1))
+      in
+
+      if biased_exponent = 0 then
+        R
+          (sign
+          *. (0.0 +. (Real.of_int trailing_bits *. pow2 (1 - precision)))
+          *. pow2 (1 - bias))
+      else
+        R
+          (sign
+          *. (1.0 +. (Real.of_int trailing_bits *. pow2 (1 - precision)))
+          *. pow2 (biased_exponent - bias)))
+
+  let to_string (x : t) (fmt : Format.t) : string =
+    let bool_to_bin x = if x then "1" else "0" in
+    let xreal = to_extended_real x fmt in
+    Printf.sprintf "%s%s%s%s%s%s%s%s = %s" (bool_to_bin x.b7) (bool_to_bin x.b6)
+      (bool_to_bin x.b5) (bool_to_bin x.b4) (bool_to_bin x.b3)
+      (bool_to_bin x.b2) (bool_to_bin x.b1) (bool_to_bin x.b0)
+      (if is_nan x then "NaN" else ExReal.to_string xreal)
+  [@@ocamlformat "if-then-else=compact"] [@@program]
+
+  module NaNOrExReal = struct
+    type t =
+      | NaN
+      | XR of ExReal.t
+  end
+
+  let encode (x : NaNOrExReal.t) (fmt : Format.t) : (t, string) Result.t =
+    let open Math in
+    let precision, bias, _ = Format.get_format_parameters fmt in
+    let r =
+      match x with
+      | NaNOrExReal.NaN -> of_int_bitwise 0x80
+      | NaNOrExReal.XR x ->
+        (match x with
+        | ExReal.PINF -> of_int_bitwise 0x7f
+        | ExReal.NINF -> of_int_bitwise 0xff
+        | ExReal.R 0.0 -> of_int_bitwise 0x00
+        | ExReal.R x ->
+          let sign_bit : t = of_int_bitwise (if x <. 0.0 then 0x80 else 0x00) in
+          let exponent : int =
+            max (floor_log2_abs x 16) (1 - bias)
+          in
+          let rsignificand : real =
+            Real.abs x *. pow2 (-exponent) *. pow2 (precision - 1)
+          in
+          (* [significand] is an integer, because [x] is a valid value in the format *)
+          let isignificand : int = Real.to_int rsignificand in
+          let fsignificand : t = of_int_bitwise isignificand in
+          let trailing_bits : t =
+            bitwise_and fsignificand
+              (of_int_bitwise (ipow2 (precision - 1) - 1))
+          in
+
+          if isignificand < ipow2 (precision - 1) then (
+            (* subnormal *)
+            bitwise_or sign_bit fsignificand)
+          else (
+            (* normal *)
+            let biased_exponent = of_int_bitwise (exponent + bias) in
+            bitwise_or3 sign_bit
+              (bit_shift_left biased_exponent (precision - 1))
+              trailing_bits))
+    in
+    Ok r
+
+  (** Round to ([precision], [bias]) in reals *)
+  let round_to_precision (z : ExReal.t) (precision : int) (bias : int)
+      (rnd : RoundingMode.t) : ExReal.t =
+    (* “round_to_precision” is never called with a NaN *)
+    let open Math in
+    let open RoundingMode in
+    match z with
+    | ExReal.NINF | ExReal.PINF -> z
+    | ExReal.R 0.0 -> z
+    | ExReal.R z ->
+      let e : int = max (ilog2 (Real.to_int z)) (1 - bias) - precision + 1 in
+      let m = Real.abs z *. pow2 (-e) in
+      (* Round [m] to integer [i] according to [rnd]. Note [m] is absolute value so floor is toward 0. *)
+      let i : int = floor m in
+      let delta : real = Real.(m - Real.of_int i) in
+
+      let i =
+        if
+          rnd = NearestTiesToEven
+          && Real.(
+               (delta > 0.5 || (delta = 0.5 && is_odd i))
+               || (rnd = NearestTiesToAway && delta >= 0.5)
+               || (rnd = TowardPositive && z > 0.0 && delta > 0.0)
+               || (rnd = TowardNegative && z < 0.0 && delta > 0.0))
+        then i + 1 (* Away from zero, as [m] is absolute value *)
+        else i
+      in
+      (* Reconstruct from rounded [i] *)
+      R Real.(sign z * Real.of_int i * pow2 e)
+
+  type overflow_behaviour =
+    | OvfSat
+    | Other
+
+  let to_binary_8 (z : ExReal.t) (result_format : Format.t)
+      (ovf : overflow_behaviour) (rnd : RoundingMode.t) : (t, string) Result.t =
+    let open ExReal in
+    let open RoundingMode in
+    let precision, bias, max = Format.get_format_parameters result_format in
+
+    let z = round_to_precision z precision bias rnd in
+
+    (* Saturate according to [ovf] *)
+    let z =
+      if abs z > max then
+        if
+          ovf = OvfSat
+          || ExReal.is_finite z
+             && (rnd = TowardZero
+                || (rnd = TowardPositive && z < 0.0)
+                || (rnd = TowardNegative && z > 0.0))
+        then ExReal.sign z * R max
+        else ExReal.sign z * PINF
+      else Ok z
+    in
+
+    match z with
+    | Error s -> Error s
+    | Ok z -> encode (NaNOrExReal.XR z) result_format
+
+  let internal_negate (x : t) (fmt : Format.t) : (t, string) Result.t =
+    let open ExReal in
+    if is_nan x then Ok x
+    else (
+      let rx = to_extended_real x fmt in
+      let rz = ~-rx in
+      encode (NaNOrExReal.XR rz) fmt)
+
+  let negate (x : t) (fmt : Format.t) : t =
+    match internal_negate x fmt with
+    | Ok x -> x
+    | Error e -> nan (* unreachable by theorem internal_negate_ok *)
+end

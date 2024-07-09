@@ -1,0 +1,54 @@
+[@@@import Specification, "dune:specification"]
+[@@@import Math, "dune:specification"]
+
+open Specification
+open Float8
+
+(** Check that the precision of B8P3 is as expected *)
+lemma fmt_prec_3 (f:Format.t) = (f = Format.B8P3) ==> (Format.precision f) = 3
+
+(** Check that the format parameters for B8P3 are as expected *)
+lemma fmt_params_3 (f:Format.t) =
+  (f = Format.B8P3) ==>
+    let prec, bias, max = Format.get_format_parameters f in
+    prec = 3 && bias = 16 && max = 49152.0
+  [@@by auto]
+
+(** Sanity check of bitwise int conversion *)
+lemma bitwise_int_21 = of_int_bitwise 21 =
+  let open Float8 in
+  { b7=false; b6=false; b5=false; b4=true; b3=false; b2=true; b1=false; b0=true; }
+
+(** Some extended reals sanity checks *)
+lemma real_0 = to_extended_real Float8.zero Format.B8P3 = ExReal.R 0.0 [@@by auto]
+lemma real_ninf = to_extended_real Float8.ninf Format.B8P3 = ExReal.NINF
+lemma real_pinf = to_extended_real Float8.pinf Format.B8P3 = ExReal.PINF
+
+let p3_pos_one : t = { b7=false; b6=true; b5=false; b4=false; b3=false; b2=false; b1=false; b0=false; }
+let p3_neg_one : t = { b7=true;  b6=true; b5=false; b4=false; b3=false; b2=false; b1=false; b0=false; }
+
+lemma real_pos_one = to_extended_real (p3_pos_one) Format.B8P3 = ExReal.R 1.0 [@@by auto]
+lemma real_neg_one = to_extended_real (p3_neg_one) Format.B8P3 = ExReal.R (- 1.0) [@@by auto]
+
+let tiny : t = { b7=false; b6=false; b5=false; b4=false; b3=false; b2=false; b1=false; b0=true; }
+let small : t = { b7=false; b6=false; b5=false; b4=false; b3=false; b2=true; b1=false; b0=false; }
+let one : t = { b7=false; b6=true; b5=false; b4=false; b3=false; b2=false; b1=false; b0=false; }
+let huge : t = { b7=false; b6=true; b5=true; b4=true; b3=true; b2=true; b1=true; b0=false; }
+let ntiny : t = { b7=true; b6=false; b5=false; b4=false; b3=false; b2=false; b1=false; b0=true; }
+let nsmall : t = { b7=true; b6=false; b5=false; b4=false; b3=false; b2=true; b1=false; b0=false; }
+let none : t = { b7=true; b6=true; b5=false; b4=false; b3=false; b2=false; b1=false; b0=false; }
+let nhuge : t = { b7=true; b6=true; b5=true; b4=true; b3=true; b2=true; b1=true; b0=false; }
+
+lemma tiny_value = to_extended_real tiny Format.B8P3 = ExReal.R (0.25 *. Math.pow2 (- 15)) [@@by auto]
+lemma small_value = to_extended_real small Format.B8P3 = ExReal.R (1.0 *. Math.pow2 (- 15)) [@@by auto]
+lemma one_value = to_extended_real one Format.B8P3 = ExReal.R 1.0 [@@by auto]
+lemma huge_value = to_extended_real huge Format.B8P3 = ExReal.R 49152.0 [@@by auto]
+lemma ntiny_value = to_extended_real ntiny Format.B8P3 = ExReal.R (-. (0.25 *. Math.pow2 (- 15))) [@@by auto]
+lemma nsmall_value = to_extended_real nsmall Format.B8P3 = ExReal.R (-. (1.0 *. Math.pow2 (- 15))) [@@by auto]
+lemma none_value = to_extended_real none Format.B8P3 = ExReal.R (- 1.0) [@@by auto]
+lemma nhuge_value = to_extended_real nhuge Format.B8P3 = ExReal.R (- 49152.0) [@@by auto]
+
+lemma neg_tiny_not_nan = negate tiny Format.B8P3 <> nan [@@by auto]
+
+lemma none_is_neg_one = none = negate one Format.B8P3 [@@by auto]
+lemma zero_is_zero = zero = negate zero Format.B8P3 [@@by auto]

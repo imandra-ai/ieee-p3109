@@ -9,7 +9,7 @@
 (maintainers "Christoph M. Wintersteiger")
 
 (source
- (github wintersteiger/p3109))
+ (github imandra-ai/ieee-p3109))
 
 (generate_opam_files true)
 
@@ -21,9 +21,9 @@
 
 (package
  (name p3109)
- (synopsis "P3109: Arithmetic Formats for Machine Learning.")
- (description "P3109: Arithmetic Formats for Machine Learning.")
- (depends imandrax-prelude dune ocamlformat ppx_deriving ppx_subliner))
+ (synopsis "P3109: Arithmetic Formats for Machine Learning")
+ (description "P3109: Arithmetic Formats for Machine Learning")
+ (depends imandrax-prelude dune ocamlformat))
 
 (dialect
  (name imandrax)

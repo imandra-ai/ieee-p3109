@@ -1,0 +1,35 @@
+[@@@import Implementation, "dune:implementation"]
+[@@@import Specification, "dune:specification"]
+
+open Implementation
+
+(** Proof that our implementation of [is_nan] is correct *)
+theorem correct_is_nan (x:Float8.t) =
+  Float8.is_nan x = Specification.Float8.is_nan x
+
+(** Proof that our implementation of [of_int_bitwise] is correct *)
+theorem correct_of_int_bitwise (x:int) =
+  Float8.of_int_bitwise x = Specification.Float8.of_int_bitwise x
+
+
+(** Proof that our implementation of [negate] is correct *)
+
+(* First for special values *)
+theorem correct_negate_special (x:Float8.t) (fmt:Format.t) =
+  Float8.is_nan x || Float8.is_ninf x || Float8.is_pinf x ==>
+  Float8.negate x fmt = Specification.Float8.negate x fmt
+
+ (* Zero*)
+theorem correct_negate_zero (x:Float8.t) (fmt:Format.t) =
+  x = Float8.zero
+  ==>
+  Float8.negate x fmt = Specification.Float8.negate x fmt
+  [@@by unroll 128 ~smt:"z3-full-nonlinear"]
+  [@@timeout 120]
+
+(* Then the general case *)
+theorem correct_negate (x:Float8.t) (fmt:Format.t) =
+  Float8.negate x fmt = Specification.Float8.negate x fmt
+  [@@by unroll 192 ~smt:"z3-full-nonlinear"]
+  [@@timeout 3600]
+  (* TODO *)

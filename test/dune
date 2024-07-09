@@ -1,4 +1,0 @@
-(executable
- (name test_app)
- (modules Test_app)
- (libraries p3109))
