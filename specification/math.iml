@@ -2,9 +2,9 @@
 
 module ExReal = Exreal
 
-let is_even (x : int) : bool = x mod 2 = 0
+let is_even (x : int) : bool = x mod 2 = 0 [@@macro]
 
-let is_odd (x : int) : bool = x mod 2 <> 0
+let is_odd (x : int) : bool = x mod 2 <> 0 [@@macro]
 
 let rec pow2 (x : int) : real =
   match x with
@@ -18,11 +18,10 @@ let rec pow2 (x : int) : real =
   | 7 -> 128.0
   | 8 -> 256.0
   | x ->
-    if x = 0 then 1.0
-    else if x > 0 then 2.0 *. pow2 (x - 1)
+    if x > 0 then 2.0 *. pow2 (x - 1)
     else (* x < 0 *)
       pow2 (x + 1) /. 2.0
-[@@measure Ordinal.of_int (abs x)]
+[@@measure Ordinal.of_int (abs x)] [@@unroll 8]
 
 let rec ipow2 (x : int) : int =
   match x with
@@ -35,9 +34,9 @@ let rec ipow2 (x : int) : int =
   | 6 -> 64
   | 7 -> 128
   | 8 -> 256
-  | x -> if x <= 0 then 1 else 2 * ipow2 (x - 1)
+  | x -> if x <= 0 then 1 else 2 * ipow2 (x - 1) [@@unroll 4]
 
-let floor (x : real) : int = Real.to_int x
+let floor (x : real) : int = Real.to_int x  [@@macro]
 
 let rec ilog2 (x : int) : int =
   (* Ugly hack, replace with dedicated number_of_digits function? *)

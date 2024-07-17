@@ -19,7 +19,7 @@ theorem correct_negate_special (x:Float8.t) (fmt:Format.t) =
   Float8.is_nan x || Float8.is_ninf x || Float8.is_pinf x ==>
   Float8.negate x fmt = Specification.Float8.negate x fmt
 
- (* Zero*)
+(* Zero *)
 theorem correct_negate_zero (x:Float8.t) (fmt:Format.t) =
   x = Float8.zero
   ==>

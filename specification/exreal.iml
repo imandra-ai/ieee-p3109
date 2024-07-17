@@ -5,7 +5,9 @@ type t =
   | PINF
   | R of real
 
-let zero = R 0.0
+let zero = R 0.0 [@@macro]
+
+let one = R 1.0 [@@macro]
 
 (* let less_than (x : t) (y : t) : bool =
     match x, y with
@@ -37,6 +39,7 @@ let abs (x : t) : t =
   match x with
   | NINF | PINF -> x
   | R x -> R (Real.abs x)
+  [@@macro]
 
 (* let floor (x : t) : t =
     match x with
@@ -47,12 +50,20 @@ let is_finite (x : t) =
   match x with
   | NINF | PINF -> false
   | _ -> true
+[@@macro]
+
+let is_inf (x : t) =
+  match x with
+  | NINF | PINF -> true
+  | _ -> false
+[@@macro]
 
 let sign (x : t) : t =
   match x with
   | NINF -> R (-1.0)
   | PINF -> R 1.0
   | R x -> if x <. 0.0 then R (-1.0) else R 1.0
+  [@@macro]
 
 let mul (x : t) (y : t) : (t, string) Result.t =
   match x, y with
@@ -85,6 +96,34 @@ let neg (x : t) : t =
   match x with
   | NINF -> PINF
   | PINF -> NINF
-  | R x -> R (-. x)
+  | R x -> R (-.x)
 
-let ( ~- ) (x : t) : t = neg x
+let ( ~- ) (x : t) : t = neg x [@@macro]
+
+let add (x : t) (y : t) : (t, string) Result.t =
+  match x, y with
+  | NINF, NINF -> Ok NINF
+  | PINF, PINF -> Ok PINF
+  | NINF, PINF | PINF, NINF -> Error "invalid"
+  | R x, NINF | NINF, R x -> if x <=. 0.0 then Ok NINF else Error "invalid"
+  | R x, PINF | PINF, R x -> if x >=. 0.0 then Ok PINF else Error "invalid"
+  | R x, R y -> Ok (R (x +. y))
+
+let sub (x : t) (y : t) : (t, string) Result.t =
+  match x, y with
+  | NINF, NINF | PINF, PINF | NINF, PINF | PINF, NINF -> Error "invalid"
+  | R _, PINF -> Ok NINF
+  | R _, NINF -> Ok PINF
+  | NINF, R x -> if x >=. 0.0 then Ok NINF else Error "invalid"
+  | PINF, R x -> if x <=. 0.0 then Ok PINF else Error "invalid"
+  | R x, R y -> Ok (R (x -. y))
+
+let rec pow2 (x : int) : (t, string) Result.t =
+  if Int.( < ) x 0 then Error "invalid"
+  else (
+    match x with
+    | 0 -> Ok one
+    | x ->
+      (match pow2 (x - 1) with
+      | Error s -> Error s
+      | Ok r -> mul (R 2.0) r))
