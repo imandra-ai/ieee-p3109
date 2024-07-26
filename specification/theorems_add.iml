@@ -1,0 +1,85 @@
+[@@@import Specification, "specification.iml"]
+
+open Specification
+
+let unroll_nonlin qt nqt steps = Tactic.unroll ~smt:"z3-full-nonlinear" ~query_timeout:qt ~no_asm_query_timeout:nqt steps
+
+(** [internal_add] never returns an error *)
+
+theorem internal_add_normal (x : Float8.t) (y : Float8.t) (x_fmt : Format.t) (y_fmt : Format.t)
+(result_fmt : Format.t) (ovf : SaturationMode.t) (rnd : RoundingMode.t) =
+  Float8.is_normal x x_fmt && Float8.is_normal y y_fmt
+  && rnd = RoundingMode.TowardZero
+  ==>
+  Result.is_ok (Float8.internal_add x y x_fmt y_fmt result_fmt ovf rnd)
+  [@@by unroll_nonlin 10 10 0]
+  [@@timeout 60]
+  [@@fc]
+
+theorem internal_add_norm_sub (x : Float8.t) (y : Float8.t) (x_fmt : Format.t) (y_fmt : Format.t)
+(result_fmt : Format.t) (ovf : SaturationMode.t) (rnd : RoundingMode.t) =
+  Float8.is_normal x x_fmt && Float8.is_subnormal y y_fmt
+  && rnd = RoundingMode.TowardZero
+  ==>
+  Result.is_ok (Float8.internal_add x y x_fmt y_fmt result_fmt ovf rnd)
+  [@@by unroll_nonlin 10 10 0]
+  [@@timeout 60]
+  [@@fc]
+
+theorem internal_add_sub_norm (x : Float8.t) (y : Float8.t) (x_fmt : Format.t) (y_fmt : Format.t)
+(result_fmt : Format.t) (ovf : SaturationMode.t) (rnd : RoundingMode.t) =
+  Float8.is_subnormal x x_fmt && Float8.is_normal y y_fmt
+  && rnd = RoundingMode.TowardZero
+  ==>
+  Result.is_ok (Float8.internal_add x y x_fmt y_fmt result_fmt ovf rnd)
+  [@@by unroll_nonlin 10 10 0]
+  [@@timeout 60]
+  [@@fc]
+
+theorem internal_add_sub_sub (x : Float8.t) (y : Float8.t) (x_fmt : Format.t) (y_fmt : Format.t)
+(result_fmt : Format.t) (ovf : SaturationMode.t) (rnd : RoundingMode.t) =
+  Float8.is_subnormal x x_fmt && Float8.is_subnormal y y_fmt
+  && rnd = RoundingMode.TowardZero
+  ==>
+  Result.is_ok (Float8.internal_add x y x_fmt y_fmt result_fmt ovf rnd)
+  [@@by unroll_nonlin 10 10 0]
+  [@@timeout 60]
+  [@@fc]
+
+theorem internal_add_infs (x : Float8.t) (y : Float8.t) (x_fmt : Format.t) (y_fmt : Format.t)
+  (result_fmt : Format.t) (ovf : SaturationMode.t) (rnd : RoundingMode.t) =
+  Float8.is_inf x || Float8.is_inf y
+  ==>
+  Result.is_ok (Float8.internal_add x y x_fmt y_fmt result_fmt ovf rnd)
+  [@@by unroll_nonlin 10 10 0]
+  [@@timeout 60]
+  [@@fc]
+
+theorem internal_add_ok (x : Float8.t) (y : Float8.t) (x_fmt : Format.t) (y_fmt : Format.t)
+  (result_fmt : Format.t) (ovf : SaturationMode.t) (rnd : RoundingMode.t) =
+  (Float8.is_nan x || Float8.is_nan y ||
+   (Float8.is_normal x x_fmt && Float8.is_normal y y_fmt) ||
+   (Float8.is_subnormal x x_fmt && Float8.is_normal y y_fmt) ||
+   (Float8.is_normal x x_fmt && Float8.is_subnormal y y_fmt) ||
+   (Float8.is_subnormal x x_fmt && Float8.is_subnormal y y_fmt))
+  && rnd = RoundingMode.TowardZero
+  ==>
+  Result.is_ok (Float8.internal_add x y x_fmt y_fmt result_fmt ovf rnd)
+  [@@by
+    [%use internal_add_infs x y x_fmt y_fmt result_fmt ovf rnd] @>
+    [%use internal_add_normal x y x_fmt y_fmt result_fmt ovf rnd] @>
+    [%use internal_add_sub_norm x y x_fmt y_fmt result_fmt ovf rnd] @>
+    [%use internal_add_norm_sub x y x_fmt y_fmt result_fmt ovf rnd] @>
+    [%use internal_add_sub_sub x y x_fmt y_fmt result_fmt ovf rnd] @>
+    unroll_nonlin 10 10 0
+    ]
+  [@@timeout 60]
+  [@@fc]
+
+theorem internal_add_ok (x : Float8.t) (y : Float8.t) (x_fmt : Format.t) (y_fmt : Format.t)
+  (result_fmt : Format.t) (ovf : SaturationMode.t) (rnd : RoundingMode.t) =
+  rnd = RoundingMode.TowardZero
+  ==>
+  Result.is_ok (Float8.internal_add x y x_fmt y_fmt result_fmt ovf rnd)
+  [@@timeout 60]
+  [@@fc]

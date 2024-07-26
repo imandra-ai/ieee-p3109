@@ -309,7 +309,7 @@ module Float8 = struct
         | ExReal.R 0.0 -> of_int_bitwise 0x00
         | ExReal.R x ->
           let sign_bit : t = of_int_bitwise (if x <. 0.0 then 0x80 else 0x00) in
-          let exponent : int = max (floor_log2_abs x 16) (1 - bias) in
+          let exponent : int = max (floor_log2_abs x 64) (1 - bias) in
           let rsignificand : real =
             Real.abs x *. pow2 (-exponent) *. pow2 (precision - 1)
           in

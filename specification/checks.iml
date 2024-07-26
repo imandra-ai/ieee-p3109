@@ -24,20 +24,20 @@ lemma real_0 = to_extended_real Float8.zero Format.B8P3 = ExReal.R 0.0 [@@by aut
 lemma real_ninf = to_extended_real Float8.ninf Format.B8P3 = ExReal.NINF
 lemma real_pinf = to_extended_real Float8.pinf Format.B8P3 = ExReal.PINF
 
-let p3_pos_one : t = { b7=false; b6=true; b5=false; b4=false; b3=false; b2=false; b1=false; b0=false; }
-let p3_neg_one : t = { b7=true;  b6=true; b5=false; b4=false; b3=false; b2=false; b1=false; b0=false; }
+let p3_pos_one : t = { b7=false; b6=true; b5=false; b4=false; b3=false; b2=false; b1=false; b0=false; } [@@macro]
+let p3_neg_one : t = { b7=true;  b6=true; b5=false; b4=false; b3=false; b2=false; b1=false; b0=false; } [@@macro]
 
 lemma real_pos_one = to_extended_real (p3_pos_one) Format.B8P3 = ExReal.R 1.0 [@@by auto]
 lemma real_neg_one = to_extended_real (p3_neg_one) Format.B8P3 = ExReal.R (- 1.0) [@@by auto]
 
-let tiny : t = { b7=false; b6=false; b5=false; b4=false; b3=false; b2=false; b1=false; b0=true; }
-let small : t = { b7=false; b6=false; b5=false; b4=false; b3=false; b2=true; b1=false; b0=false; }
-let one : t = { b7=false; b6=true; b5=false; b4=false; b3=false; b2=false; b1=false; b0=false; }
-let huge : t = { b7=false; b6=true; b5=true; b4=true; b3=true; b2=true; b1=true; b0=false; }
-let ntiny : t = { b7=true; b6=false; b5=false; b4=false; b3=false; b2=false; b1=false; b0=true; }
-let nsmall : t = { b7=true; b6=false; b5=false; b4=false; b3=false; b2=true; b1=false; b0=false; }
-let none : t = { b7=true; b6=true; b5=false; b4=false; b3=false; b2=false; b1=false; b0=false; }
-let nhuge : t = { b7=true; b6=true; b5=true; b4=true; b3=true; b2=true; b1=true; b0=false; }
+let tiny : t = { b7=false; b6=false; b5=false; b4=false; b3=false; b2=false; b1=false; b0=true; } [@@macro]
+let small : t = { b7=false; b6=false; b5=false; b4=false; b3=false; b2=true; b1=false; b0=false; } [@@macro]
+let one : t = { b7=false; b6=true; b5=false; b4=false; b3=false; b2=false; b1=false; b0=false; } [@@macro]
+let huge : t = { b7=false; b6=true; b5=true; b4=true; b3=true; b2=true; b1=true; b0=false; } [@@macro]
+let ntiny : t = { b7=true; b6=false; b5=false; b4=false; b3=false; b2=false; b1=false; b0=true; } [@@macro]
+let nsmall : t = { b7=true; b6=false; b5=false; b4=false; b3=false; b2=true; b1=false; b0=false; } [@@macro]
+let none : t = { b7=true; b6=true; b5=false; b4=false; b3=false; b2=false; b1=false; b0=false; } [@@macro]
+let nhuge : t = { b7=true; b6=true; b5=true; b4=true; b3=true; b2=true; b1=true; b0=false; } [@@macro]
 
 lemma tiny_value = to_extended_real tiny Format.B8P3 = ExReal.R (0.25 *. Math.pow2 (- 15)) [@@by auto]
 lemma small_value = to_extended_real small Format.B8P3 = ExReal.R (1.0 *. Math.pow2 (- 15)) [@@by auto]
@@ -52,3 +52,24 @@ lemma neg_tiny_not_nan = negate tiny Format.B8P3 <> nan [@@by auto]
 
 lemma none_is_neg_one = none = negate one Format.B8P3 [@@by auto]
 lemma zero_is_zero = zero = negate zero Format.B8P3 [@@by auto]
+
+(* lemma huge_neg_real = to_extended_real (negate huge Format.B8P3) Format.B8P3 = ExReal.R (- 49152.0) [@@by auto] *)
+
+lemma log1 = Math.floor_log2_abs 49152.0 16 = 15 [@@by auto]
+lemma log2 = Math.floor_log2_abs 24576.0 16 = 14 [@@by auto]
+
+lemma tst1 = to_extended_real (of_int_bitwise 0xFA) Format.B8P3 = ExReal.R (- 24576.0) [@@by auto]
+
+lemma tst2 = to_extended_real (of_int_bitwise 0xF8) Format.B8P3 = ExReal.R (- 16384.0) [@@by auto]
+
+(* instance (fun _ -> to_extended_real (negate (of_int_bitwise 0xF8) Format.B8P3) Format.B8P3 = ExReal.R 16384.0);; *)
+
+eval (of_int_bitwise 0x3B);;
+
+eval ((negate (of_int_bitwise 0x3B) Format.B8P3));;
+
+(* eval to_extended_real (negate (of_int_bitwise 0xF8) Format.B8P3) Format.B8P3;; *)
+
+(* lemma tst2_real = to_extended_real (negate (of_int_bitwise 0xF8) Format.B8P3) Format.B8P3 = ExReal.R 16384.0 [@@by auto] *)
+
+instance (fun x -> not (Float8.is_zero x))

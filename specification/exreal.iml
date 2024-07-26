@@ -67,19 +67,20 @@ let sign (x : t) : t =
 
 let mul (x : t) (y : t) : (t, string) Result.t =
   match x, y with
-  | NINF, PINF | PINF, NINF -> Error "invalid"
-  | NINF, NINF -> Ok NINF
-  | PINF, PINF -> Ok PINF
-  | NINF, R 0.0 -> Error "invalid"
-  | PINF, R 0.0 -> Error "invalid"
-  | R 0.0, NINF -> Error "invalid"
-  | R 0.0, PINF -> Error "invalid"
-  | NINF, R y when y <. 0.0 -> Ok NINF
-  | PINF, R y when y >. 0.0 -> Ok PINF
-  | R x, NINF when x <. 0.0 -> Ok NINF
-  | R x, PINF when x >. 0.0 -> Ok PINF
-  | NINF, R _ | PINF, R _ -> Error "invalid"
-  | R _, NINF | R _, PINF -> Error "invalid"
+  | NINF, NINF | PINF, PINF -> Ok PINF
+  | NINF, PINF | PINF, NINF  -> Ok NINF
+
+  | _, R x | R x, _ when x = 0.0 -> Ok (R 0.0)
+
+  | PINF, R x | R x, PINF when x >. 0.0 -> Ok PINF
+  | PINF, R x | R x, PINF when x <. 0.0 -> Ok NINF
+
+  | NINF, R x | R x, NINF when x >. 0.0 -> Ok NINF
+  | NINF, R x | R x, NINF when x <. 0.0 -> Ok PINF
+
+  | NINF, R _ | PINF, R _ -> Error "unreachable"
+  | R _, NINF | R _, PINF -> Error "unreachable"
+
   | R x, R y -> Ok (R (x *. y))
 
 let ( * ) (x : t) (y : t) : (t, string) Result.t = mul x y
@@ -96,26 +97,22 @@ let neg (x : t) : t =
   match x with
   | NINF -> PINF
   | PINF -> NINF
-  | R x -> R (-.x)
+  | R x -> R (-. x)
 
 let ( ~- ) (x : t) : t = neg x [@@macro]
 
 let add (x : t) (y : t) : (t, string) Result.t =
   match x, y with
-  | NINF, NINF -> Ok NINF
-  | PINF, PINF -> Ok PINF
   | NINF, PINF | PINF, NINF -> Error "invalid"
-  | R x, NINF | NINF, R x -> if x <=. 0.0 then Ok NINF else Error "invalid"
-  | R x, PINF | PINF, R x -> if x >=. 0.0 then Ok PINF else Error "invalid"
+  | NINF, NINF | R _, NINF | NINF, R _ -> Ok NINF
+  | PINF, PINF | R _, PINF | PINF, R _ -> Ok PINF
   | R x, R y -> Ok (R (x +. y))
 
 let sub (x : t) (y : t) : (t, string) Result.t =
   match x, y with
-  | NINF, NINF | PINF, PINF | NINF, PINF | PINF, NINF -> Error "invalid"
-  | R _, PINF -> Ok NINF
-  | R _, NINF -> Ok PINF
-  | NINF, R x -> if x >=. 0.0 then Ok NINF else Error "invalid"
-  | PINF, R x -> if x <=. 0.0 then Ok PINF else Error "invalid"
+  | NINF, NINF | PINF, PINF -> Error "invalid"
+  | NINF, PINF | NINF, R _ | R _, PINF -> Ok NINF
+  | PINF, NINF | R _, NINF | PINF, R _ -> Ok PINF
   | R x, R y -> Ok (R (x -. y))
 
 let rec pow2 (x : int) : (t, string) Result.t =

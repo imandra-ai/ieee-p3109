@@ -17,11 +17,10 @@ let rec pow2 (x : int) : real =
   | 6 -> 64.0
   | 7 -> 128.0
   | 8 -> 256.0
-  | x ->
-    if x > 0 then 2.0 *. pow2 (x - 1)
-    else (* x < 0 *)
-      pow2 (x + 1) /. 2.0
-[@@measure Ordinal.of_int (abs x)] [@@unroll 8]
+  | x -> if x > 0 then 2.0 *. pow2 (x - 1) else (* x < 0 *)
+                                             pow2 (x + 1) /. 2.0
+  [@@measure Ordinal.of_int (abs x)]
+  [@@unroll 5]
 
 let rec ipow2 (x : int) : int =
   match x with
@@ -34,9 +33,10 @@ let rec ipow2 (x : int) : int =
   | 6 -> 64
   | 7 -> 128
   | 8 -> 256
-  | x -> if x <= 0 then 1 else 2 * ipow2 (x - 1) [@@unroll 4]
+  | x -> if x <= 0 then 1 else 2 * ipow2 (x - 1)
+  [@@unroll 5]
 
-let floor (x : real) : int = Real.to_int x  [@@macro]
+let floor (x : real) : int = Real.to_int x [@@macro]
 
 let rec ilog2 (x : int) : int =
   (* Ugly hack, replace with dedicated number_of_digits function? *)
@@ -45,16 +45,21 @@ let rec ilog2 (x : int) : int =
   | 0 -> 0
   | 1 -> 0
   | _ -> 1 + ilog2 ((x + 1) / 2)
-[@@measure Ordinal.of_int (abs x)]
+  [@@measure Ordinal.of_int (abs x)]
+  [@@unroll 5]
 
-let rec floor_log2_abs (x : real) (max_depth: int) : int =
-  if max_depth <= 0 then 0 else (
+let rec floor_log2_abs (x : real) (max_depth : int) : int =
+  if max_depth <= 0 then 0
+  else (
     let x = Real.abs x in
     if x = 0.0 then 0
-    else if x >. 1.0 then
-      floor_log2_abs (x /. 2.0) (max_depth - 1) + 1
+    else if x >. 1.0 then (
+      let nx = x /. 2.0 in
+      if nx >=. 1.0 then floor_log2_abs nx (max_depth - 1) + 1 else 0)
     else if x = 1.0 then 0
-    else if x <. 1.0 then
-      floor_log2_abs (x *. 2.0) (max_depth - 1) - 1
+    else if x <. 1.0 then (
+      let nx = x *. 2.0 in
+      if nx <=. 1.0 then floor_log2_abs nx (max_depth - 1) - 1 else -1)
     else 0)
   [@@adm max_depth]
+  [@@unroll 5]
