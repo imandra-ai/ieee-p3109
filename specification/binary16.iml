@@ -1,0 +1,8 @@
+[@@@import Exreal, "dune:math"]
+(** Binary16 definitions for conversion functions *)
+
+type t = int
+
+let nan : t = 0
+
+let of_exreal (z : Exreal.t) : t = 0

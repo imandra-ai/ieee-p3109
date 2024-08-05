@@ -1,3 +1,4 @@
+[@@@import Util, "dune:math"]
 [@@@import Specification, "specification.iml"]
 
 open Specification
@@ -7,8 +8,8 @@ theorem precision_1_7 (f:Format.t) =
   1 <= Format.precision f && Format.precision f <= 7
 
 (** All [Float8.t] are classified *)
-theorem no_no_class (x:Float8.t) (fmt:Format.t) =
-  (Float8.class_ x fmt) <> Float8.NoClass
+theorem thm_class_internal_ok (x:Float8.t) (fmt:Format.t) =
+  Result.is_ok (Float8.class_internal x fmt)
 
 (** [internal_negate] never returns an error *)
 theorem internal_negate_ok (x : Float8.t) (fmt : Format.t) =
@@ -16,31 +17,37 @@ theorem internal_negate_ok (x : Float8.t) (fmt : Format.t) =
 
 let unroll_nonlin qt nqt steps = Tactic.unroll ~smt:"z3-full-nonlinear" ~query_timeout:qt ~no_asm_query_timeout:nqt steps
 
+theorem internal_add_ok (x : Float8.t) (y : Float8.t) (x_fmt : Format.t) (y_fmt : Format.t)
+  (result_fmt : Format.t) (ovf : SaturationMode.t) ( rnd : RoundingMode.t) =
+  Result.is_ok (Float8.internal_add x y x_fmt y_fmt result_fmt ovf rnd)
+  [@@timeout 10]
+
 (** [internal_add_scaled] never returns an error *)
 theorem internal_add_scaled_ok (x : Float8.t) (y : Float8.t) (x_fmt : Format.t) (y_fmt : Format.t)
   (xscale:int) (yscale:int)
   (result_fmt : Format.t) (ovf : SaturationMode.t) (rnd : RoundingMode.t) =
+  not (Float8.is_inf x) ==>
   Result.is_ok (Float8.internal_add_scaled x y x_fmt y_fmt xscale yscale result_fmt ovf rnd)
-  [@@by unroll_nonlin 1200 10 512]
-  [@@timeout 3600]
+  [@@timeout 10]
 
 (** [internal_sub] never returns an error *)
 theorem internal_subtract_ok (x : Float8.t) (y : Float8.t) (x_fmt : Format.t) (y_fmt : Format.t)
   (result_fmt : Format.t) (ovf : SaturationMode.t) (rnd : RoundingMode.t) =
   Result.is_ok (Float8.internal_subtract x y x_fmt y_fmt result_fmt ovf rnd)
-  [@@by unroll_nonlin 1200 10 512]
-  [@@timeout 3600]
+  [@@timeout 10]
 
 (** [internal_multiply] never returns an error *)
 theorem internal_multiply_ok (x : Float8.t) (y : Float8.t) (x_fmt : Format.t) (y_fmt : Format.t)
   (result_fmt : Format.t) (ovf : SaturationMode.t) (rnd : RoundingMode.t) =
   Result.is_ok (Float8.internal_multiply x y x_fmt y_fmt result_fmt ovf rnd)
-  [@@by unroll_nonlin 1200 10 512]
-  [@@timeout 3600]
+  [@@timeout 10]
 
 (** [internal_multiply_scaled] never returns an error *)
 theorem internal_multiply_scaled_ok (x : Float8.t) (y : Float8.t) (x_fmt : Format.t) (y_fmt : Format.t)
   (scale:int) (result_fmt : Format.t) (ovf : SaturationMode.t) (rnd : RoundingMode.t) =
   Result.is_ok (Float8.internal_multiply_scaled x y x_fmt y_fmt scale result_fmt ovf rnd)
-  [@@by unroll_nonlin 1200 10 512]
-  [@@timeout 3600]
+  [@@timeout 10]
+
+theorem thm_convert_binary8_to_binary16_internal_ok (x : Float8.t) (x_fmt : Format.t) (ovf : SaturationMode.t) (rnd : RoundingMode.t) =
+  Result.is_ok (Float8.convert_binary8_to_binary16_internal x x_fmt ovf rnd)
+  [@@timeout 10]

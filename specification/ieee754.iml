@@ -1,0 +1,17 @@
+[@@@import Exreal, "dune:math"]
+
+module ExReal = Exreal
+
+(** IEEE 754 definitions for conversion functions *)
+
+module RoundingMode = struct
+  type t = TowardZero | TowardPositive | TowardNegative | ToNearestTiesAway | ToNearestTiesToEven
+end
+
+type t = int
+
+let nan : t = 0
+let quiet_nan : t = 0
+let canonical_nan : t = 0
+
+let round (z : ExReal.t) (k : int) (rnd:RoundingMode.t) : t = 0

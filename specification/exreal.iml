@@ -1,5 +1,7 @@
 (** Extended reals *)
 
+[@@@import Util, "util.iml"]
+
 type t =
   | NINF
   | PINF
@@ -9,25 +11,24 @@ let zero = R 0.0 [@@macro]
 
 let one = R 1.0 [@@macro]
 
-(* let less_than (x : t) (y : t) : bool =
+module Infix = struct
+  let ( < ) (x : t) (y : t) : bool =
     match x, y with
-    | NINF, NINF | PINF, PINF | PINF, NINF | PINF, R _ | R _, NINF -> false
-    | NINF, PINF | NINF, R _ | R _, PINF -> true
-    | R x, R y -> Real.(x < y) *)
+    | NINF, NINF | PINF, PINF | PINF, NINF -> false
+    | NINF, PINF -> true
+    | NINF, R _ | R _, PINF -> true
+    | PINF, R _ | R _, NINF -> false
+    | R rx, R ry -> rx <. ry
+    [@@macro]
 
-(* let ( < ) (x : t) (y : t) : bool = less_than x y *)
+  let ( <= ) (x : t) (y : t) : bool =
+    x < y || x = y
+    [@@macro]
 
-let ( < ) (x : t) (y : real) : bool =
-  match x, y with
-  | NINF, _ -> true
-  | PINF, _ -> false
-  | R x, _ -> x <. y
-
-let ( > ) (x : t) (y : real) : bool =
-  match x, y with
-  | NINF, _ -> false
-  | PINF, _ -> true
-  | R x, _ -> x >. y
+  let ( > ) (x : t) (y : t) : bool =
+    not (x <= y)
+    [@@macro]
+end
 
 (* let max (x : t) (y : t) : t =
     match x, y with
@@ -41,22 +42,17 @@ let abs (x : t) : t =
   | R x -> R (Real.abs x)
   [@@macro]
 
-(* let floor (x : t) : t =
-    match x with
-    | NINF | PINF -> x
-    | R x -> R (Real.of_int (Math.floor x)) *)
-
 let is_finite (x : t) =
   match x with
   | NINF | PINF -> false
   | _ -> true
-[@@macro]
+  [@@macro]
 
 let is_inf (x : t) =
   match x with
   | NINF | PINF -> true
   | _ -> false
-[@@macro]
+  [@@macro]
 
 let sign (x : t) : t =
   match x with
@@ -70,7 +66,8 @@ let mul (x : t) (y : t) : (t, string) Result.t =
   | NINF, NINF | PINF, PINF -> Ok PINF
   | NINF, PINF | PINF, NINF  -> Ok NINF
 
-  | _, R x | R x, _ when x = 0.0 -> Ok (R 0.0)
+  | _, R x when x = 0.0 -> Ok (R 0.0)
+  | R x, _ when x = 0.0 -> Ok (R 0.0)
 
   | PINF, R x | R x, PINF when x >. 0.0 -> Ok PINF
   | PINF, R x | R x, PINF when x <. 0.0 -> Ok NINF
@@ -83,7 +80,7 @@ let mul (x : t) (y : t) : (t, string) Result.t =
 
   | R x, R y -> Ok (R (x *. y))
 
-let ( * ) (x : t) (y : t) : (t, string) Result.t = mul x y
+let ( * ) (x : t) (y : t) : (t, string) Result.t = mul x y [@@macro]
 
 let to_string : t -> string =
  fun x ->
@@ -91,13 +88,14 @@ let to_string : t -> string =
   | NINF -> "-oo"
   | PINF -> "+oo"
   | R x -> Printf.sprintf "%s" (Q.to_string x)
-[@@program]
+  [@@program]
 
 let neg (x : t) : t =
   match x with
   | NINF -> PINF
   | PINF -> NINF
   | R x -> R (-. x)
+  [@@macro]
 
 let ( ~- ) (x : t) : t = neg x [@@macro]
 
@@ -115,12 +113,4 @@ let sub (x : t) (y : t) : (t, string) Result.t =
   | PINF, NINF | R _, NINF | PINF, R _ -> Ok PINF
   | R x, R y -> Ok (R (x -. y))
 
-let rec pow2 (x : int) : (t, string) Result.t =
-  if Int.( < ) x 0 then Error "invalid"
-  else (
-    match x with
-    | 0 -> Ok one
-    | x ->
-      (match pow2 (x - 1) with
-      | Error s -> Error s
-      | Ok r -> mul (R 2.0) r))
+let pow2 (x : int) : (t, string) Result.t = Ok (R (Util.pow2 x)) [@@macro]

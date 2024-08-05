@@ -1,0 +1,97 @@
+[@@@import Util, "dune:math"]
+[@@@import Exreal, "dune:math"]
+[@@@import Specification, "specification.iml"]
+
+open Specification
+open Exreal
+open Exreal.Infix
+open Float8
+
+let unroll_nonlin qt nqt steps = Tactic.unroll ~smt:"z3-full-nonlinear" ~query_timeout:qt ~no_asm_query_timeout:nqt steps
+
+theorem thm_fmt_range_p7 (x : t) (fmt : Format.t) =
+  (fmt = Format.B8P7 &&
+  not (is_nan x || Float8.is_inf x)) ==>
+    (let _, _, max = Format.get_format_parameters fmt in
+    let r = to_extended_real x fmt in
+    R (-. max) <= r && r <= R max)
+  [@@by unroll_nonlin 60 6 512]
+  [@@timeout 10]
+  [@@fc]
+
+theorem thm_fmt_range_p6 (x : t) (fmt : Format.t) =
+  (fmt = Format.B8P6 &&
+  not (is_nan x || Float8.is_inf x)) ==>
+    (let _, _, max = Format.get_format_parameters fmt in
+    let r = to_extended_real x fmt in
+    R (-. max) <= r && r <= R max)
+  [@@by unroll_nonlin 60 6 512]
+  [@@timeout 15]
+  [@@fc]
+
+theorem thm_fmt_range_p5 (x : t) (fmt : Format.t) =
+  (fmt = Format.B8P5 &&
+  not (is_nan x || Float8.is_inf x)) ==>
+    (let _, _, max = Format.get_format_parameters fmt in
+    let r = to_extended_real x fmt in
+    R (-. max) <= r && r <= R max)
+  [@@by unroll_nonlin 60 6 512]
+  [@@timeout 20]
+  [@@fc]
+
+theorem thm_fmt_range_p4 (x : t) (fmt : Format.t) =
+  (fmt = Format.B8P4 &&
+  not (is_nan x || Float8.is_inf x)) ==>
+    (let _, _, max = Format.get_format_parameters fmt in
+    let r = to_extended_real x fmt in
+    R (-. max) <= r && r <= R max)
+  [@@by unroll_nonlin 60 6 512]
+  [@@timeout 25]
+  [@@fc]
+
+theorem thm_fmt_range_p3 (x : t) (fmt : Format.t) =
+  (fmt = Format.B8P3 &&
+  not (is_nan x || Float8.is_inf x)) ==>
+    (let _, _, max = Format.get_format_parameters fmt in
+    let r = to_extended_real x fmt in
+    R (-. max) <= r && r <= R max)
+  [@@by unroll_nonlin 1200 10 512]
+  [@@timeout 30]
+  [@@fc]
+
+theorem thm_fmt_range_p2 (x : t) (fmt : Format.t) =
+  (fmt = Format.B8P2 &&
+  not (is_nan x || Float8.is_inf x)) ==>
+    (let _, _, max = Format.get_format_parameters fmt in
+    let r = to_extended_real x fmt in
+    R (-. max) <= r && r <= R max)
+  [@@by unroll_nonlin 600 60 512]
+  [@@timeout 120]
+  [@@fc]
+
+theorem thm_fmt_range_p1 (x : t) (fmt : Format.t) =
+  (fmt = Format.B8P1 &&
+  not (is_nan x || Float8.is_inf x)) ==>
+    (let _, _, max = Format.get_format_parameters fmt in
+    let r = to_extended_real x fmt in
+    R (-. max) <= r && r <= R max)
+  [@@by unroll_nonlin 1200 12 512]
+  [@@timeout 3600]
+  [@@fc]
+
+theorem thm_within_format_range (x : t) (fmt : Format.t) =
+  not (is_nan x || Float8.is_inf x) ==>
+    let _, _, max = Format.get_format_parameters fmt in
+    let r = to_extended_real x fmt in
+    R (-. max) <= r && r <= R max
+  [@@by
+    [%use thm_fmt_range_p7 x fmt] @>
+    [%use thm_fmt_range_p6 x fmt] @>
+    [%use thm_fmt_range_p5 x fmt] @>
+    [%use thm_fmt_range_p4 x fmt] @>
+    [%use thm_fmt_range_p3 x fmt] @>
+    [%use thm_fmt_range_p2 x fmt] @>
+    [%use thm_fmt_range_p1 x fmt] @>
+    auto]
+  [@@timeout 10]
+  [@@fc]

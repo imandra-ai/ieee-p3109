@@ -30,7 +30,7 @@
  (implementation
   (extension iml)
   (preprocess
-   (run imandrax-cli extract %{input-file} --no-prelude))
+   (run imandrax-cli extract %{input-file} --no-prelude --no-line-numbers))
   (format
    (system "ocamlformat %{input-file}")))
  (interface

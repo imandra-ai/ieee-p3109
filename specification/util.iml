@@ -1,6 +1,4 @@
-[@@@import Exreal, "exreal.iml"]
-
-module ExReal = Exreal
+(** Some math utility functions *)
 
 let is_even (x : int) : bool = x mod 2 = 0 [@@macro]
 

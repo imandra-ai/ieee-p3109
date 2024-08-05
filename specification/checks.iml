@@ -1,17 +1,31 @@
+(** Some checks and tests of specification types and functions *)
+
 [@@@import Specification, "dune:specification"]
-[@@@import Math, "dune:specification"]
+[@@@import Util, "dune:math"]
 
 open Specification
 open Float8
 
 (** Check that the precision of B8P3 is as expected *)
-lemma fmt_prec_3 (f:Format.t) = (f = Format.B8P3) ==> (Format.precision f) = 3
+lemma fmt_prec_p3 (f:Format.t) = (f = Format.B8P3) ==> (Format.precision f) = 3
 
 (** Check that the format parameters for B8P3 are as expected *)
-lemma fmt_params_3 (f:Format.t) =
+lemma fmt_params_p3 (f:Format.t) =
   (f = Format.B8P3) ==>
     let prec, bias, max = Format.get_format_parameters f in
     prec = 3 && bias = 16 && max = 49152.0
+  [@@by auto]
+
+lemma fmt_params_p2 (f:Format.t) =
+  (f = Format.B8P2) ==>
+    let prec, bias, max = Format.get_format_parameters f in
+    prec = 2 && bias = 32 && max = 2147483648.0
+  [@@by auto]
+
+lemma fmt_params_p1 (f:Format.t) =
+  (f = Format.B8P1) ==>
+    let prec, bias, max = Format.get_format_parameters f in
+    prec = 1 && bias = 63 && max = Util.pow2 63
   [@@by auto]
 
 (** Sanity check of bitwise int conversion *)
@@ -39,12 +53,12 @@ let nsmall : t = { b7=true; b6=false; b5=false; b4=false; b3=false; b2=true; b1=
 let none : t = { b7=true; b6=true; b5=false; b4=false; b3=false; b2=false; b1=false; b0=false; } [@@macro]
 let nhuge : t = { b7=true; b6=true; b5=true; b4=true; b3=true; b2=true; b1=true; b0=false; } [@@macro]
 
-lemma tiny_value = to_extended_real tiny Format.B8P3 = ExReal.R (0.25 *. Math.pow2 (- 15)) [@@by auto]
-lemma small_value = to_extended_real small Format.B8P3 = ExReal.R (1.0 *. Math.pow2 (- 15)) [@@by auto]
+lemma tiny_value = to_extended_real tiny Format.B8P3 = ExReal.R (0.25 *. Util.pow2 (- 15)) [@@by auto]
+lemma small_value = to_extended_real small Format.B8P3 = ExReal.R (1.0 *. Util.pow2 (- 15)) [@@by auto]
 lemma one_value = to_extended_real one Format.B8P3 = ExReal.R 1.0 [@@by auto]
 lemma huge_value = to_extended_real huge Format.B8P3 = ExReal.R 49152.0 [@@by auto]
-lemma ntiny_value = to_extended_real ntiny Format.B8P3 = ExReal.R (-. (0.25 *. Math.pow2 (- 15))) [@@by auto]
-lemma nsmall_value = to_extended_real nsmall Format.B8P3 = ExReal.R (-. (1.0 *. Math.pow2 (- 15))) [@@by auto]
+lemma ntiny_value = to_extended_real ntiny Format.B8P3 = ExReal.R (-. (0.25 *. Util.pow2 (- 15))) [@@by auto]
+lemma nsmall_value = to_extended_real nsmall Format.B8P3 = ExReal.R (-. (1.0 *. Util.pow2 (- 15))) [@@by auto]
 lemma none_value = to_extended_real none Format.B8P3 = ExReal.R (- 1.0) [@@by auto]
 lemma nhuge_value = to_extended_real nhuge Format.B8P3 = ExReal.R (- 49152.0) [@@by auto]
 
@@ -55,21 +69,29 @@ lemma zero_is_zero = zero = negate zero Format.B8P3 [@@by auto]
 
 (* lemma huge_neg_real = to_extended_real (negate huge Format.B8P3) Format.B8P3 = ExReal.R (- 49152.0) [@@by auto] *)
 
-lemma log1 = Math.floor_log2_abs 49152.0 16 = 15 [@@by auto]
-lemma log2 = Math.floor_log2_abs 24576.0 16 = 14 [@@by auto]
+lemma log1 = Util.floor_log2_abs 49152.0 16 = 15 [@@by auto]
+lemma log2 = Util.floor_log2_abs 24576.0 16 = 14 [@@by auto]
 
 lemma tst1 = to_extended_real (of_int_bitwise 0xFA) Format.B8P3 = ExReal.R (- 24576.0) [@@by auto]
 
 lemma tst2 = to_extended_real (of_int_bitwise 0xF8) Format.B8P3 = ExReal.R (- 16384.0) [@@by auto]
 
-(* instance (fun _ -> to_extended_real (negate (of_int_bitwise 0xF8) Format.B8P3) Format.B8P3 = ExReal.R 16384.0);; *)
-
 eval (of_int_bitwise 0x3B);;
 
-eval ((negate (of_int_bitwise 0x3B) Format.B8P3));;
+(* eval ((negate (of_int_bitwise 0x3B) Format.B8P3));; *)
 
 (* eval to_extended_real (negate (of_int_bitwise 0xF8) Format.B8P3) Format.B8P3;; *)
 
-(* lemma tst2_real = to_extended_real (negate (of_int_bitwise 0xF8) Format.B8P3) Format.B8P3 = ExReal.R 16384.0 [@@by auto] *)
+lemma tst2_real = to_extended_real (negate (of_int_bitwise 0xF8) Format.B8P3) Format.B8P3 = ExReal.R 16384.0 [@@by auto]
 
 instance (fun x -> not (Float8.is_zero x))
+
+
+(* 0xbb = 1 0111011 = −0b1.0×2^94 = -0.0625 *)
+let unroll_nonlin qt nqt steps = Tactic.unroll ~smt:"z3-full-nonlinear" ~query_timeout:qt ~no_asm_query_timeout:nqt steps
+
+lemma rBB = (Float8.to_extended_real (of_int_bitwise 0x3B) Format.B8P1) = ExReal.R (0.0625) [@@by auto]
+
+lemma rBB = (Float8.to_extended_real (of_int_bitwise 0x3B) Format.B8P2) = ExReal.R 0.1875 [@@by auto]
+
+lemma rBB = (Float8.to_extended_real (of_int_bitwise 0x3B) Format.B8P3) = ExReal.R 0.4375 [@@by auto]
