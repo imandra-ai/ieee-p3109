@@ -54,6 +54,7 @@ let none : t = { b7=true; b6=true; b5=false; b4=false; b3=false; b2=false; b1=fa
 let nhuge : t = { b7=true; b6=true; b5=true; b4=true; b3=true; b2=true; b1=true; b0=false; } [@@macro]
 
 lemma tiny_value = to_extended_real tiny Format.B8P3 = ExReal.R (0.25 *. Util.pow2 (- 15)) [@@by auto]
+lemma tiny_value = to_extended_real tiny Format.B8P3 = ExReal.R (0.00000762939453125) [@@by auto]
 lemma small_value = to_extended_real small Format.B8P3 = ExReal.R (1.0 *. Util.pow2 (- 15)) [@@by auto]
 lemma one_value = to_extended_real one Format.B8P3 = ExReal.R 1.0 [@@by auto]
 lemma huge_value = to_extended_real huge Format.B8P3 = ExReal.R 49152.0 [@@by auto]
@@ -88,9 +89,8 @@ instance (fun x -> not (Float8.is_zero x))
 
 
 (* 0xbb = 1 0111011 = −0b1.0×2^94 = -0.0625 *)
-let unroll_nonlin qt nqt steps = Tactic.unroll ~smt:"z3-full-nonlinear" ~query_timeout:qt ~no_asm_query_timeout:nqt steps
 
-lemma rBB = (Float8.to_extended_real (of_int_bitwise 0x3B) Format.B8P1) = ExReal.R (0.0625) [@@by auto]
+lemma rBB = (Float8.to_extended_real (of_int_bitwise 0x3B) Format.B8P1) = ExReal.R 0.0625 [@@by auto]
 
 lemma rBB = (Float8.to_extended_real (of_int_bitwise 0x3B) Format.B8P2) = ExReal.R 0.1875 [@@by auto]
 

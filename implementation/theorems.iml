@@ -3,6 +3,8 @@
 
 open Implementation
 
+let unroll_nonlin qt nqt steps = Tactic.unroll ~smt:"z3-full-nonlinear" ~query_timeout:qt ~no_asm_query_timeout:nqt steps
+
 (** Proof that our implementation of [is_nan] is correct *)
 theorem correct_is_nan (x:Float8.t) =
   Float8.is_nan x = Specification.Float8.is_nan x
@@ -14,81 +16,93 @@ theorem correct_of_int_bitwise (x:int) =
 
 (** Proof that our implementation of [negate] is correct *)
 
+theorem correct_negate_p7_b0t (x:Float8.t) (fmt:Format.t) =
+  fmt = Specification.Format.B8P7
+  && x.b0 = true
+  ==>
+  Implementation.Float8.negate x fmt = Specification.Float8.negate x fmt
+  [@@by enumerate ["x"] @> simp @> auto]
+  [@@timeout 3600]
+  [@@fc]
+
+theorem correct_negate_p7_b0f (x:Float8.t) (fmt:Format.t) =
+  fmt = Specification.Format.B8P7
+  && x.b0 = false
+  ==>
+  Implementation.Float8.negate x fmt = Specification.Float8.negate x fmt
+  [@@by enumerate ["x"] @> simp @> auto]
+  [@@timeout 3600]
+  [@@fc]
+
 theorem correct_negate_p7 (x:Float8.t) (fmt:Format.t) =
   fmt = Specification.Format.B8P7
   ==>
-  Float8.negate x fmt = Specification.Float8.negate x fmt
-  [@@by unroll ~smt:"z3-full-nonlinear" ~query_timeout:600 ~no_asm_query_timeout:10 256]
-  [@@timeout 6000] (* 6m37.573s i=55, solved by top, max smt time 120 *)
+  Implementation.Float8.negate x fmt = Specification.Float8.negate x fmt
+  [@@by
+    [%use correct_negate_p7_b0t x fmt] @>
+    [%use correct_negate_p7_b0f x fmt] @>
+    auto
+  ]
   [@@fc]
 
 theorem correct_negate_p6 (x:Float8.t) (fmt:Format.t) =
   fmt = Specification.Format.B8P6
   ==>
-  Float8.negate x fmt = Specification.Float8.negate x fmt
-  [@@by unroll ~smt:"z3-full-nonlinear" ~query_timeout:600 ~no_asm_query_timeout:10 85]
-  [@@timeout 1800] (* 23m23.820s i=79, solved by top, max smt time 243 *)
+  Implementation.Float8.negate x fmt = Specification.Float8.negate x fmt
+  [@@by enumerate ["x"] @> simp @> auto]
+  [@@timeout 240]
   [@@fc]
 
 theorem correct_negate_p5 (x:Float8.t) (fmt:Format.t) =
   fmt = Specification.Format.B8P5
   ==>
-  Float8.negate x fmt = Specification.Float8.negate x fmt
-  [@@by unroll ~smt:"z3-full-nonlinear" ~query_timeout:600 ~no_asm_query_timeout:10 60]
-  [@@timeout 600] (* 6m46.288s i=57, solved by top, max smt time 87 *)
+  Implementation.Float8.negate x fmt = Specification.Float8.negate x fmt
+  [@@by enumerate ["x"] @> simp @> auto]
+  [@@timeout 60]
   [@@fc]
 
 theorem correct_negate_p4 (x:Float8.t) (fmt:Format.t) =
   fmt = Specification.Format.B8P4
   ==>
-  Float8.negate x fmt = Specification.Float8.negate x fmt
-  [@@by unroll ~smt:"z3-full-nonlinear" ~query_timeout:600 ~no_asm_query_timeout:10 85]
-  [@@timeout 600] (* 5m42.834s i=75, solved by top, max smt time 70 *)
+  Implementation.Float8.negate x fmt = Specification.Float8.negate x fmt
+  [@@by enumerate ["x"] @> simp @> auto]
+  [@@timeout 20]
   [@@fc]
 
 theorem correct_negate_p3 (x:Float8.t) (fmt:Format.t) =
   fmt = Specification.Format.B8P3
   ==>
-  Float8.negate x fmt = Specification.Float8.negate x fmt
-  [@@by unroll ~smt:"z3-full-nonlinear" ~query_timeout:600 ~no_asm_query_timeout:10 128]
-  [@@timeout 2500] (* 38m39.754s, i=115 solved by top, max smt time 188 *)
+  Implementation.Float8.negate x fmt = Specification.Float8.negate x fmt
+  [@@by enumerate ["x"] @> simp @> auto]
+  [@@timeout 20]
   [@@fc]
 
 theorem correct_negate_p2 (x:Float8.t) (fmt:Format.t) =
   fmt = Specification.Format.B8P2
   ==>
-  Float8.negate x fmt = Specification.Float8.negate x fmt
-  [@@by unroll ~smt:"z3-full-nonlinear" ~query_timeout:6000 ~no_asm_query_timeout:10 256]
-  [@@timeout 86400] (* 125m14.242s: z3 unknown (canceled) (at 300) *)
+  Implementation.Float8.negate x fmt = Specification.Float8.negate x fmt
+  [@@by enumerate ["x"] @> simp @> auto]
+  [@@timeout 15]
   [@@fc]
 
 theorem correct_negate_p1 (x:Float8.t) (fmt:Format.t) =
   fmt = Specification.Format.B8P1
   ==>
-  Float8.negate x fmt = Specification.Float8.negate x fmt
-  [@@by unroll ~smt:"z3-full-nonlinear" ~query_timeout:6000 ~no_asm_query_timeout:10 256]
-  [@@timeout 86400] (* Needs i > 256 *)
-  [@@fc]
-
-theorem correct_negate_fmts (x:Float8.t) (fmt:Format.t) =
-  fmt = Specification.Format.B8P7 || fmt = Specification.Format.B8P6 ||
-  fmt = Specification.Format.B8P5 || fmt = Specification.Format.B8P4 ||
-  fmt = Specification.Format.B8P3 || fmt = Specification.Format.B8P2 ||
-  fmt = Specification.Format.B8P1
-  ==>
-  Float8.negate x fmt = Specification.Float8.negate x fmt
-  [@@by
-    [%use correct_negate_p7 x fmt] @>
-    [%use correct_negate_p6 x fmt] @>
-    [%use correct_negate_p5 x fmt] @>
-    [%use correct_negate_p4 x fmt] @>
-    [%use correct_negate_p3 x fmt] @>
-    [%use correct_negate_p2 x fmt] @>
-    [%use correct_negate_p1 x fmt] @>
-    simplify ()]
+  Implementation.Float8.negate x fmt = Specification.Float8.negate x fmt
+  [@@by enumerate ["x"] @> simp @> auto]
+  [@@timeout 15]
   [@@fc]
 
 theorem correct_negate (x:Float8.t) (fmt:Format.t) =
-  Float8.negate x fmt = Specification.Float8.negate x fmt
-  [@@by [%use correct_negate_fmts x fmt] @> auto]
+  Implementation.Float8.negate x fmt = Specification.Float8.negate x fmt
+  [@@by
+     [%use correct_negate_p7 x fmt] @>
+     [%use correct_negate_p6 x fmt] @>
+     [%use correct_negate_p5 x fmt] @>
+     [%use correct_negate_p4 x fmt] @>
+     [%use correct_negate_p3 x fmt] @>
+     [%use correct_negate_p2 x fmt] @>
+     [%use correct_negate_p1 x fmt] @>
+     enumerate ["fmt"] @>
+    auto]
   [@@fc]

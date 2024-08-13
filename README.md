@@ -5,7 +5,7 @@ A very incomplete sketch of a verified implementation of P3109 floats.
 ## Verification
 
 ```
-imandrax-cli check specification/theorems.iml specification/checks.iml implementation/theorems.iml
+imandrax-cli check specification/*.iml implementation/*.iml
 ```
 
 ## Dev

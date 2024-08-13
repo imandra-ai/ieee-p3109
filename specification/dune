@@ -2,14 +2,14 @@
  (name math)
  (package p3109)
  (flags :standard -open Imandrax_prelude -open Prelude_extracted)
- (modules Math Exreal)
+ (modules ExReal Util)
  (modes byte native)
  (libraries imandrax_prelude))
 
 (library
  (name specification)
  (package p3109)
- (flags :standard -open Imandrax_prelude -open Prelude_extracted)
- (modules Specification)
+ (flags :standard -open Imandrax_prelude -open Prelude_extracted -open Math)
+ (modules Specification Binary16 IEEE754)
  (modes byte native)
  (libraries imandrax_prelude math))

@@ -1,3 +1,8 @@
+[@@@import Math, "dune:math"]
+
+[@@@import Specification, "dune:specification"]
+
+open Math
 open Specification
 
 (* Let's use the spec-extracted library.*)
@@ -51,3 +56,13 @@ let _ =
        (Float8.to_extended_real
           (Float8.of_int_bitwise (Z.of_int 0xBB))
           Format.B8P1))
+
+let chk_add_scaled x y xscale yscale fmt =
+  Printf.printf "(%s * 2^%s + %s * 2^%s) = %s\n" (Float8.to_string x fmt)
+    (Z.to_string xscale) (Float8.to_string y fmt) (Z.to_string yscale)
+    (Float8.to_string
+       (Float8.add_scaled x y fmt fmt xscale yscale fmt SaturationMode.Other
+          RoundingMode.TowardPositive)
+       fmt)
+
+let _ = chk_add_scaled Float8.pinf Float8.pinf Z.zero Z.zero Format.B8P1

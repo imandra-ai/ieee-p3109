@@ -103,6 +103,7 @@ module Float8 = struct
         b1 = x.b1;
         b0 = x.b0;
       }
+    [@@macro]
 
   let to_string (x : t) (fmt : Format.t) = Specification.Float8.to_string x fmt
   [@@program]

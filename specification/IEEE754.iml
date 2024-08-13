@@ -1,6 +1,4 @@
-[@@@import Exreal, "dune:math"]
-
-module ExReal = Exreal
+[@@@import ExReal, "dune:math"]
 
 (** IEEE 754 definitions for conversion functions *)
 
@@ -14,4 +12,4 @@ let nan : t = 0
 let quiet_nan : t = 0
 let canonical_nan : t = 0
 
-let round (z : ExReal.t) (k : int) (rnd:RoundingMode.t) : t = 0
+let round (_z : ExReal.t) (_k : int) (_rnd:RoundingMode.t) : t = 0

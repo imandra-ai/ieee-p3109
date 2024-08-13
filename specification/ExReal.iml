@@ -1,0 +1,180 @@
+(** Extended reals *)
+
+[@@@import Util, "util.iml"]
+
+type t =
+  | NINF
+  | PINF
+  | R of real
+
+let zero = R 0.0 [@@macro]
+
+let one = R 1.0 [@@macro]
+
+let abs (x : t) : t =
+  match x with
+  | NINF | PINF -> x
+  | R x -> R (Real.abs x)
+  [@@macro]
+
+let is_finite (x : t) =
+  match x with
+  | NINF | PINF -> false
+  | _ -> true
+  [@@macro]
+
+let is_inf (x : t) =
+  match x with
+  | NINF | PINF -> true
+  | _ -> false
+  [@@macro]
+
+let sign (x : t) : t =
+  match x with
+  | NINF -> R (-1.0)
+  | PINF -> R 1.0
+  | R x -> if x <. 0.0 then R (-1.0) else R 1.0
+  [@@macro]
+
+let mul (x : t) (y : t) : (t, string) Result.t =
+  match x, y with
+  | NINF, NINF | PINF, PINF -> Ok PINF
+  | NINF, PINF | PINF, NINF  -> Ok NINF
+
+  | _, R x when x = 0.0 -> Ok (R 0.0)
+  | R x, _ when x = 0.0 -> Ok (R 0.0)
+
+  | PINF, R x | R x, PINF when x >. 0.0 -> Ok PINF
+  | PINF, R x | R x, PINF when x <. 0.0 -> Ok NINF
+
+  | NINF, R x | R x, NINF when x >. 0.0 -> Ok NINF
+  | NINF, R x | R x, NINF when x <. 0.0 -> Ok PINF
+
+  | NINF, R _ | PINF, R _ -> Error "unreachable"
+  | R _, NINF | R _, PINF -> Error "unreachable"
+
+  | R x, R y -> Ok (R (x *. y))
+
+let to_string : t -> string =
+ fun x ->
+  match x with
+  | NINF -> "-oo"
+  | PINF -> "+oo"
+  | R x -> Printf.sprintf "%s" (Q.to_string x)
+  [@@program]
+
+let neg (x : t) : t =
+  match x with
+  | NINF -> PINF
+  | PINF -> NINF
+  | R x -> R (-. x)
+  [@@macro]
+
+let add (x : t) (y : t) : (t, string) Result.t =
+  match x, y with
+  | NINF, PINF | PINF, NINF -> Error "invalid"
+  | NINF, NINF | R _, NINF | NINF, R _ -> Ok NINF
+  | PINF, PINF | R _, PINF | PINF, R _ -> Ok PINF
+  | R x, R y -> Ok (R (x +. y))
+
+let sub (x : t) (y : t) : (t, string) Result.t =
+  match x, y with
+  | NINF, NINF | PINF, PINF -> Error "invalid"
+  | NINF, PINF | NINF, R _ | R _, PINF -> Ok NINF
+  | PINF, NINF | R _, NINF | PINF, R _ -> Ok PINF
+  | R x, R y -> Ok (R (x -. y))
+
+let pow2 (x : int) : (t, string) Result.t = Ok (R (Util.pow2 x)) [@@macro]
+
+module Infix = struct
+  let ( < ) (x : t) (y : t) : bool =
+    match x, y with
+    | NINF, NINF | PINF, PINF | PINF, NINF -> false
+    | NINF, PINF -> true
+    | NINF, R _ | R _, PINF -> true
+    | PINF, R _ | R _, NINF -> false
+    | R rx, R ry -> rx <. ry
+    [@@macro]
+
+  let ( <= ) (x : t) (y : t) : bool =
+    x < y || x = y
+    [@@macro]
+
+  let ( > ) (x : t) (y : t) : bool =
+    not (x <= y)
+    [@@macro]
+
+  let ( ~- ) (x : t) : t = neg x [@@macro]
+
+  let ( + ) (x : t) (y : t) : (t, string) Result.t =
+    add x y
+    [@@macro]
+
+  let ( - ) (x : t) (y : t) : (t, string) Result.t =
+    sub x y
+    [@@macro]
+
+  let ( * ) (x : t) (y : t) : (t, string) Result.t =
+    mul x y
+    [@@macro]
+
+  let ( ^ ) (x : int) (y : int) : (t, string) Result.t =
+    Ok (R (Util.pow x y))
+    [@@macro]
+end
+
+module ResultInfix = struct
+  type xres = (t, string) Result.t
+  type boolean_result = (bool, string) Result.t
+
+  let ( < ) (x : xres) (y : xres) : boolean_result =
+    let open Infix in
+    match x, y with
+    | Ok x, Ok y -> Ok (x < y)
+    | Error s, _ | _, Error s -> Error s
+    [@@macro]
+
+  let ( <= ) (x : xres) (y : xres) : boolean_result =
+    let open Infix in
+    match x, y with
+    | Ok x, Ok y -> Ok (x <= y)
+    | Error s, _ | _, Error s -> Error s
+    [@@macro]
+
+  let ( > ) (x : xres) (y : xres) : boolean_result =
+    let open Infix in
+    match x, y with
+    | Ok x, Ok y -> Ok (x > y)
+    | Error s, _ | _, Error s -> Error s
+    [@@macro]
+
+  let ( ~- ) (x : xres) : xres =
+    let open Infix in
+    match x with
+    | Ok x -> Ok ~-x
+    | Error s -> Error s
+    [@@macro]
+
+  let ( + ) (x : xres) (y : xres) : xres =
+    match x, y with
+    | Ok x, Ok y -> add x y
+    | Error s, _ | _, Error s -> Error s
+    [@@macro]
+
+  let ( - ) (x : xres) (y : xres) : xres =
+    match x, y with
+    | Ok x, Ok y -> sub x y
+    | Error s, _ | _, Error s -> Error s
+    [@@macro]
+
+  let ( * ) (x : xres) (y : xres) : xres =
+    match x, y with
+    | Ok x, Ok y -> mul x y
+    | Error s, _ | _, Error s -> Error s
+    [@@macro]
+
+  let ( ^ ) (x : int) (y : int) : (t, string) Result.t =
+    let open Infix in
+    x ^ y
+    [@@macro]
+end
