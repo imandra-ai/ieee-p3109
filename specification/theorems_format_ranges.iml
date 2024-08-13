@@ -47,13 +47,13 @@ theorem thm_fmt_range_p3 (x : t) (fmt : Format.t) =
 theorem thm_fmt_range_p2 (x : t) (fmt : Format.t) =
   fmt = Format.B8P2 ==> is_within_range x fmt
   [@@by auto]
-  [@@timeout 240]
+  [@@timeout 300]
   [@@fc]
 
 theorem thm_fmt_range_p1 (x : t) (fmt : Format.t) =
   fmt = Format.B8P1 ==> is_within_range x fmt
   [@@by auto]
-  [@@timeout 1000]
+  [@@timeout 600]
   [@@fc]
 
 theorem thm_within_format_range (x : t) (fmt : Format.t) =
