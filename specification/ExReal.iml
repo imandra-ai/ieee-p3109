@@ -44,6 +44,9 @@ let mul (x : t) (y : t) : (t, string) Result.t =
   | _, R x when x = 0.0 -> Ok (R 0.0)
   | R x, _ when x = 0.0 -> Ok (R 0.0)
 
+  (* | NINF, R x | PINF, R x when x = 0.0 -> Error "invalid"
+  | R x, NINF | R x, PINF when x = 0.0 -> Error "invalid" *)
+
   | PINF, R x | R x, PINF when x >. 0.0 -> Ok PINF
   | PINF, R x | R x, PINF when x <. 0.0 -> Ok NINF
 
@@ -54,6 +57,28 @@ let mul (x : t) (y : t) : (t, string) Result.t =
   | R _, NINF | R _, PINF -> Error "unreachable"
 
   | R x, R y -> Ok (R (x *. y))
+
+let div (x : t) (y : t) : (t, string) Result.t =
+    match x, y with
+    | NINF, NINF | PINF, PINF -> Error "invalid"
+    | NINF, PINF | PINF, NINF  -> Error "invalid"
+
+    | R _, PINF | R _, NINF -> Ok (R 0.0)
+
+    | PINF, R y when y = 0.0 -> Error "invalid"
+    | NINF, R y when y = 0.0 -> Error "invalid"
+
+    | R x, R y when x >=. 0.0 && y = 0.0 -> Ok PINF
+    | R x, R y when x <. 0.0 && y = 0.0 -> Ok NINF
+
+    | PINF, R y when y >. 0.0 -> Ok PINF
+    | PINF, R y when y <. 0.0 -> Ok NINF
+    | NINF, R y when y >. 0.0 -> Ok NINF
+    | NINF, R y when y <. 0.0 -> Ok PINF
+
+    | NINF, R _ | PINF, R _ -> Error "unreachable"
+
+    | R x, R y -> Ok (R (x /. y))
 
 let to_string : t -> string =
  fun x ->
@@ -104,6 +129,10 @@ module Infix = struct
     not (x <= y)
     [@@macro]
 
+  let ( >= ) (x : t) (y : t) : bool =
+    x > y || x = y
+    [@@macro]
+
   let ( ~- ) (x : t) : t = neg x [@@macro]
 
   let ( + ) (x : t) (y : t) : (t, string) Result.t =
@@ -116,6 +145,10 @@ module Infix = struct
 
   let ( * ) (x : t) (y : t) : (t, string) Result.t =
     mul x y
+    [@@macro]
+
+  let ( / ) (x : t) (y : t) : (t, string) Result.t =
+    div x y
     [@@macro]
 
   let ( ^ ) (x : int) (y : int) : (t, string) Result.t =
@@ -170,6 +203,12 @@ module ResultInfix = struct
   let ( * ) (x : xres) (y : xres) : xres =
     match x, y with
     | Ok x, Ok y -> mul x y
+    | Error s, _ | _, Error s -> Error s
+    [@@macro]
+
+  let ( / ) (x : xres) (y : xres) : xres =
+    match x, y with
+    | Ok x, Ok y -> div x y
     | Error s, _ | _, Error s -> Error s
     [@@macro]
 

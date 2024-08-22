@@ -11,6 +11,9 @@ theorem precision_1_7 (f:Format.t) =
 theorem thm_class_internal_ok (x:Float8.t) (fmt:Format.t) =
   Result.is_ok (Float8.class_internal x fmt)
 
+theorem internal_lt_ok (x : Float8.t) (y : Float8.t) (x_fmt : Format.t) (y_fmt : Format.t) =
+  Result.is_ok (Float8.internal_lt x y x_fmt y_fmt)
+
 (** [internal_negate] never returns an error *)
 theorem internal_negate_ok (x : Float8.t) (fmt : Format.t) =
   Result.is_ok (Float8.internal_negate x fmt)
@@ -49,6 +52,15 @@ theorem internal_multiply_scaled_ok (x : Float8.t) (y : Float8.t) (x_fmt : Forma
   Result.is_ok (Float8.internal_multiply_scaled x y x_fmt y_fmt scale result_fmt ovf rnd)
   [@@timeout 10]
 
+(** [internal_divide] never returns an error *)
+(* TODO:
+theorem internal_divide_ok (x : Float8.t) (y : Float8.t) (x_fmt : Format.t) (y_fmt : Format.t)
+  (result_fmt : Format.t) (ovf : SaturationMode.t) (rnd : RoundingMode.t) =
+  Result.is_ok (Float8.internal_divide x y x_fmt y_fmt result_fmt ovf rnd)
+  [@@timeout 10]
+*)
+
+(** [convert_binary8_to_binary16_internal] never returns an error *)
 theorem thm_convert_binary8_to_binary16_internal_ok (x : Float8.t) (x_fmt : Format.t) (ovf : SaturationMode.t) (rnd : RoundingMode.t) =
   Result.is_ok (Float8.convert_binary8_to_binary16_internal x x_fmt ovf rnd)
   [@@timeout 10]

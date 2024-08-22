@@ -14,13 +14,19 @@ let rec pow (x : int) (n : int) : real =
       if is_even n then
         pow x2 (n / 2)
       else
-        (Real.of_int x) *. (pow x2 ((n-1)/2))
-    | _ ->
-       1.0 /. ((Real.of_int x) *. (pow x (- (n + 1))))
+        (Real.of_int x) *. (pow x2 ((n-1) / 2))
+  | _ ->
+      1.0 /. ((Real.of_int x) *. (pow x (- (n + 1))))
   [@@measure Ordinal.of_int (abs n)]
-  [@@unroll 5]
 
-let pow2 (x : int) : real = pow 2 x [@@macro]
+let rec pow2 (n:int) : real =
+  if n > 0 then
+    2.0 *. pow2 (n - 1)
+  else if n < 0 then
+    1.0 /. (2.0 *. (pow2 (- (n + 1))))
+  else
+    1.0
+  [@@measure Ordinal.of_int (abs n)]
 
 let rec ipow2 (x : int) : int =
   match x with

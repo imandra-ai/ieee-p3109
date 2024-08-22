@@ -1,0 +1,70 @@
+(** Some theorems about powers of two. *)
+
+[@@@import Util, "dune:math"]
+
+let unroll_nonlin qt nqt steps = Tactic.unroll ~smt:"z3-full-nonlinear" ~query_timeout:qt ~no_asm_query_timeout:nqt steps
+
+theorem thm_pow2_grows_pos (n:int) =
+  n >= 0 ==> Util.pow2 n >. Util.pow2 (n - 1)
+  [@@timeout 3600]
+  [@@by auto]
+
+theorem thm_pow2_neg_val (n:int) =
+  n < 0 ==> Util.pow2 n = 1.0 /. Util.pow2 (-n)
+  [@@timeout 3600]
+  [@@by auto]
+
+theorem thm_pow2_gt_0_pos (n:int) =
+  n >= 0 ==> Util.pow2 n >. 0.0
+  [@@timeout 10]
+  [@@by auto]
+
+theorem thm_pow2_gt_0_neg (n:int) =
+  n < 0 ==> Util.pow2 n >. 0.0
+  [@@timeout 10]
+  [@@by [%use thm_pow2_gt_0_pos (- n)] @> unroll_nonlin 10 10 4]
+
+theorem thm_pow2_gt_0 (n:int) =
+  Util.pow2 n >. 0.0
+  [@@timeout 10]
+  [@@by
+    [%use thm_pow2_gt_0_pos n] @>
+    [%use thm_pow2_gt_0_neg n] @>
+    auto
+  ]
+
+theorem thm_1div_gt (x:real) (y:real) =
+  Real.(x > 0.0 && y > 0.0 && x > y  ==>  1.0 / x < 1.0 / y)
+
+theorem thm_pow2_grows_neg_precursors (n:int) =
+  n < 0 ==>
+  let x = Util.pow2 n in
+  let y = Util.pow2 (n - 1) in
+  x = 1.0 /. Util.pow2 (-n) &&
+  y = 1.0 /. Util.pow2 (-(n - 1)) &&
+  x >. 0.0 && y >. 0.0 &&
+  Util.pow2 (-n) <. Util.pow2 (-(n - 1))
+  [@@timeout 10]
+  [@@by
+    [%use thm_pow2_gt_0 n] @>
+    [%use thm_pow2_neg_val n] @>
+    [%use thm_pow2_grows_pos (-n)] @>
+    unroll_nonlin 10 10 10
+  ]
+
+theorem thm_pow2_grows_neg (n:int) =
+  n < 0 ==> Util.pow2 n >. Util.pow2 (n - 1)
+  [@@timeout 10]
+  [@@by
+    [%use thm_pow2_grows_neg_precursors n] @>
+    [%use thm_1div_gt (Util.pow2 (-n)) (Util.pow2 (-(n - 1)))] @>
+    unroll_nonlin 10 10 10
+  ]
+
+theorem thm_pow2_grows (n:int) =
+  Util.pow2 n >. Util.pow2 (n - 1)
+  [@@by
+    [%use thm_pow2_grows_pos n] @>
+    [%use thm_pow2_grows_neg n] @>
+    auto
+  ]

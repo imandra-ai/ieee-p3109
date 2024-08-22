@@ -64,16 +64,16 @@ module Float8 = struct
   (* Constants *)
 
   let nan : t =
-    { b7 = true; b6 = false; b5 = false; b4 = false; b3 = false; b2 = false; b1 = false; b0 = false; } [@@macro] [@@ocamlformat "disable"]
+    { b7 = true; b6 = false; b5 = false; b4 = false; b3 = false; b2 = false; b1 = false; b0 = false; } [@@ocamlformat "disable"]
 
   let ninf : t =
-    { b7 = true; b6 = true; b5 = true; b4 = true; b3 = true; b2 = true; b1 = true; b0 = true; } [@@macro] [@@ocamlformat "disable"]
+    { b7 = true; b6 = true; b5 = true; b4 = true; b3 = true; b2 = true; b1 = true; b0 = true; } [@@ocamlformat "disable"]
 
   let pinf : t =
-    { b7 = false; b6 = true; b5 = true; b4 = true; b3 = true; b2 = true; b1 = true; b0 = true; } [@@macro] [@@ocamlformat "disable"]
+    { b7 = false; b6 = true; b5 = true; b4 = true; b3 = true; b2 = true; b1 = true; b0 = true; } [@@ocamlformat "disable"]
 
   let zero : t =
-    { b7 = false; b6 = false; b5 = false; b4 = false; b3 = false; b2 = false; b1 = false; b0 = false; } [@@macro] [@@ocamlformat "disable"]
+    { b7 = false; b6 = false; b5 = false; b4 = false; b3 = false; b2 = false; b1 = false; b0 = false; } [@@ocamlformat "disable"]
 
   (** Classification predicates *)
 
@@ -101,7 +101,6 @@ module Float8 = struct
     | B8P5 -> x.b6 || x.b5 || x.b4
     | B8P6 -> x.b6 || x.b5
     | B8P7 -> x.b6
-  [@@macro]
 
   let is_subnormal (x : t) (fmt : Format.t) : bool =
     let open Format in
@@ -119,7 +118,6 @@ module Float8 = struct
     | B8P5 -> (not x.b6) && (not x.b5) && not x.b4
     | B8P6 -> (not x.b6) && not x.b5
     | B8P7 -> not x.b6
-  [@@macro]
 
   let is_sign_minus (x : t) : bool = x.b7 [@@macro]
 
@@ -167,7 +165,6 @@ module Float8 = struct
       b6 = i / 64 mod 2 <> 0;
       b7 = i / 128 mod 2 <> 0;
     }
-  [@@macro]
 
   (** Bitwise and of two float8s *)
   let bitwise_and (x : t) (y : t) : t =
@@ -249,11 +246,10 @@ module Float8 = struct
   + (if x.b5 then 32 else 0)
   + (if x.b6 then 64 else 0)
   + (if x.b7 then 128 else 0)
-  [@@macro]
   [@@ocamlformat "disable"]
 
   let sign (x : real) : real = Real.(if x < 0.0 then -1.0 else 1.0)
-  [@@macro] [@@ocamlformat "if-then-else=compact"]
+  [@@ocamlformat "if-then-else=compact"]
 
   (** Convert [x] (in [fmt]) to extended real *)
   let to_extended_real (x : t) (fmt : Format.t) : ExReal.t =
@@ -404,6 +400,16 @@ module Float8 = struct
       | Error s -> Error s
       | Ok z -> encode (NaNOrExReal.XR z) result_format)
 
+  let internal_lt (x : t) (y : t) (x_fmt : Format.t) (y_fmt : Format.t) : (bool, string) Result.t =
+    let x = to_extended_real x x_fmt in
+    let y = to_extended_real y y_fmt in
+    Ok ExReal.Infix.(x < y)
+
+  let lt (x : t) (y : t) (x_fmt : Format.t) (y_fmt : Format.t) : bool =
+    match internal_lt x y x_fmt y_fmt with
+    | Ok r -> r
+    | Error _ -> false (* unreachable by theorem internal_lt_ok *)
+
   let internal_negate (x : t) (fmt : Format.t) : (t, string) Result.t =
     let open ExReal.Infix in
     if is_nan x then Ok x
@@ -412,7 +418,6 @@ module Float8 = struct
       let rz = ~-rx in
       encode (NaNOrExReal.XR rz) fmt
     )
-    [@@macro]
 
   (** Return the negation of [x] in [fmt] *)
   let negate (x : t) (fmt : Format.t) : t =
@@ -435,7 +440,6 @@ module Float8 = struct
         match z with
         | Error s -> Error s
         | Ok z -> to_binary_8 (NaNOrExReal.XR z) result_fmt ovf rnd))
-    [@@macro]
 
   (** Add [x] (in [x_fmt]) to [y] (in [y_fmt]), and return in [result_fmt]
       under rounding mode [rnd] and saturation mode [ovf] *)
@@ -456,15 +460,12 @@ module Float8 = struct
       if ExReal.is_inf x && y = ExReal.neg x then
         encode NaNOrExReal.NaN result_fmt
       else (
-        (* let xscale = if xscale > 2 then 2 else if xscale < -2 then -2 else xscale in
-        let yscale = if yscale > 2 then 2 else if yscale < -2 then -2 else yscale in *)
         let open ExReal.ResultInfix in
         let x, y = Ok x, Ok y in
         let z = x * (2 ^ xscale) + y * (2 ^ yscale) in
         Result.flat_map
           (fun z -> to_binary_8 (NaNOrExReal.XR z) result_fmt ovf rnd)
           z))
-    [@@macro]
 
   (** For [x] (in [x_fmt]), [y] (in [y_fmt]), [xscale], [yscale],
       compute [x] * 2^[xscale] + [y] * 2^[yscale] and return in [result_fmt],
@@ -491,7 +492,6 @@ module Float8 = struct
         match z with
         | Error s -> Error s
         | Ok z -> to_binary_8 (NaNOrExReal.XR z) result_fmt ovf rnd))
-    [@@macro]
 
   (** For [x] (in [x_fmt]), [y] (in [y_fmt]) compute [x-y] and return in [result_fmt],
       with rounding mode [rnd] and saturation mode [ovf] *)
@@ -521,7 +521,6 @@ module Float8 = struct
         match z with
         | Error s -> Error s
         | Ok z -> to_binary_8 (NaNOrExReal.XR z) result_fmt ovf rnd))
-    [@@macro]
 
   (** For [x] (in [x_fmt]), [y] (in [y_fmt]) compute x * y and return in [result_fmt],
       with rounding mode [rnd] and saturation mode [ovf] *)
@@ -551,10 +550,9 @@ module Float8 = struct
         | Error s -> Error s
         | Ok z -> to_binary_8 (NaNOrExReal.XR z) result_fmt ovf rnd)
     )
-    [@@macro]
 
-  (** For [x] (in [x_fmt]), [y] (in [y_fmt]), [xscale], [yscale],
-      compute [x] * 2^[xscale] * [y] * 2^[yscale] and return in [result_fmt],
+  (** For [x] (in [x_fmt]), [y] (in [y_fmt]), [scale], compute
+      [x] * [y] * 2^[scale] and return in [result_fmt],
       with rounding mode [rnd] and saturation mode [ovf] *)
   let multiply_scaled (x : t) (y : t) (x_fmt : Format.t) (y_fmt : Format.t)
       (scale : int) (result_fmt : Format.t) (ovf : SaturationMode.t)
@@ -562,6 +560,35 @@ module Float8 = struct
     match internal_multiply_scaled x y x_fmt y_fmt scale result_fmt ovf rnd with
     | Ok x -> x
     | Error _ -> nan (* unreachable by theorem internal_multiply_scaled_ok *)
+
+  let internal_divide (x : t) (y : t) (x_fmt : Format.t) (y_fmt : Format.t)
+      (result_fmt : Format.t) (ovf : SaturationMode.t) (rnd : RoundingMode.t) :
+      (t, string) Result.t =
+    if is_nan x || is_nan y then encode NaNOrExReal.NaN result_fmt
+    else (
+      let x = to_extended_real x x_fmt in
+      let y = to_extended_real y y_fmt in
+      if ExReal.is_inf x && y = ExReal.neg x then
+        encode NaNOrExReal.NaN result_fmt
+      else if
+        (ExReal.is_inf x && y = ExReal.zero)
+        || (ExReal.is_inf y && x = ExReal.zero)
+      then encode NaNOrExReal.NaN result_fmt
+      else (
+        let open ExReal.Infix in
+        let z = x / y in
+        match z with
+        | Error s -> Error s
+        | Ok z -> to_binary_8 (NaNOrExReal.XR z) result_fmt ovf rnd))
+
+  (** For [x] (in [x_fmt]), [y] (in [y_fmt]) compute x / y and return in [result_fmt],
+      with rounding mode [rnd] and saturation mode [ovf] *)
+  let divide (x : t) (y : t) (x_fmt : Format.t) (y_fmt : Format.t)
+    (result_fmt : Format.t) (ovf : SaturationMode.t)
+    (rnd : RoundingMode.t) : t =
+  match internal_divide x y x_fmt y_fmt  result_fmt ovf rnd with
+  | Ok x -> x
+  | Error _ -> nan (* unreachable by theorem internal_divide_ok *)
 
   (** Convert [x] (in [x_fmt]) to [result_fmt] with rounding mode [rnd] and saturation mode [ovf] *)
   let convert_binary8_to_binary8 (x : t) (x_fmt : Format.t)
