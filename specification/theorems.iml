@@ -1,5 +1,6 @@
 [@@@import Util, "dune:math"]
 [@@@import Specification, "specification.iml"]
+[@@@import Theorems_pow2, "theorems_pow2.iml"]
 
 open Specification
 
@@ -30,9 +31,12 @@ theorem internal_add_ok (x : Float8.t) (y : Float8.t) (x_fmt : Format.t) (y_fmt 
 theorem internal_add_scaled_ok (x : Float8.t) (y : Float8.t) (x_fmt : Format.t) (y_fmt : Format.t)
   (xscale:int) (yscale:int)
   (result_fmt : Format.t) (ovf : SaturationMode.t) (rnd : RoundingMode.t) =
-  not (Float8.is_inf x) ==>
   Result.is_ok (Float8.internal_add_scaled x y x_fmt y_fmt xscale yscale result_fmt ovf rnd)
   [@@timeout 10]
+  [@@by
+    [%use Theorems_pow2.thm_exreal_pow2_pos xscale] @>
+    [%use Theorems_pow2.thm_exreal_pow2_pos yscale] @>
+    unroll 0]
 
 (** [internal_sub] never returns an error *)
 theorem internal_subtract_ok (x : Float8.t) (y : Float8.t) (x_fmt : Format.t) (y_fmt : Format.t)

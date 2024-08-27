@@ -1,6 +1,7 @@
 (** Some theorems about powers of two. *)
 
 [@@@import Util, "dune:math"]
+[@@@import ExReal, "dune:math"]
 
 let unroll_nonlin qt nqt steps = Tactic.unroll ~smt:"z3-full-nonlinear" ~query_timeout:qt ~no_asm_query_timeout:nqt steps
 
@@ -72,4 +73,16 @@ theorem thm_pow2_grows (n:int) =
 
 theorem thm_pow2_eq_pow_2 (n:int) =
   Util.pow2 n = Util.pow 2 n
+  [@@by auto]
   [@@rw]
+
+theorem thm_exreal_pow2_pos (xscale : int) =
+  let open ExReal in
+  let open ExReal.ResultInfix in
+  ((2 ^ xscale) > Ok (R 0.0)) = Ok true
+  [@@timeout 10]
+  [@@by
+    [%use thm_pow2_eq_pow_2 xscale] @>
+    [%use thm_pow2_gt_0 xscale] @>
+    auto
+  ]
