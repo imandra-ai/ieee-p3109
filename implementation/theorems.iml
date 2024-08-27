@@ -23,7 +23,6 @@ theorem correct_negate_p7_b0t (x:Float8.t) (fmt:Format.t) =
   Implementation.Float8.negate x fmt = Specification.Float8.negate x fmt
   [@@by enumerate ["x"] @> simp @> auto]
   [@@timeout 3600]
-  [@@fc]
 
 theorem correct_negate_p7_b0f (x:Float8.t) (fmt:Format.t) =
   fmt = Specification.Format.B8P7
@@ -32,7 +31,6 @@ theorem correct_negate_p7_b0f (x:Float8.t) (fmt:Format.t) =
   Implementation.Float8.negate x fmt = Specification.Float8.negate x fmt
   [@@by enumerate ["x"] @> simp @> auto]
   [@@timeout 3600]
-  [@@fc]
 
 theorem correct_negate_p7 (x:Float8.t) (fmt:Format.t) =
   fmt = Specification.Format.B8P7
@@ -41,57 +39,50 @@ theorem correct_negate_p7 (x:Float8.t) (fmt:Format.t) =
   [@@by
     [%use correct_negate_p7_b0t x fmt] @>
     [%use correct_negate_p7_b0f x fmt] @>
-    auto
+    unroll 0
   ]
-  [@@fc]
 
 theorem correct_negate_p6 (x:Float8.t) (fmt:Format.t) =
   fmt = Specification.Format.B8P6
   ==>
   Implementation.Float8.negate x fmt = Specification.Float8.negate x fmt
   [@@by enumerate ["x"] @> simp @> auto]
-  [@@timeout 240]
-  [@@fc]
+  [@@timeout 480]
 
 theorem correct_negate_p5 (x:Float8.t) (fmt:Format.t) =
   fmt = Specification.Format.B8P5
   ==>
   Implementation.Float8.negate x fmt = Specification.Float8.negate x fmt
   [@@by enumerate ["x"] @> simp @> auto]
-  [@@timeout 120]
-  [@@fc]
+  [@@timeout 480]
 
 theorem correct_negate_p4 (x:Float8.t) (fmt:Format.t) =
   fmt = Specification.Format.B8P4
   ==>
   Implementation.Float8.negate x fmt = Specification.Float8.negate x fmt
   [@@by enumerate ["x"] @> simp @> auto]
-  [@@timeout 60]
-  [@@fc]
+  [@@timeout 360]
 
 theorem correct_negate_p3 (x:Float8.t) (fmt:Format.t) =
   fmt = Specification.Format.B8P3
   ==>
   Implementation.Float8.negate x fmt = Specification.Float8.negate x fmt
   [@@by enumerate ["x"] @> simp @> auto]
-  [@@timeout 60]
-  [@@fc]
+  [@@timeout 360]
 
 theorem correct_negate_p2 (x:Float8.t) (fmt:Format.t) =
   fmt = Specification.Format.B8P2
   ==>
   Implementation.Float8.negate x fmt = Specification.Float8.negate x fmt
   [@@by enumerate ["x"] @> simp @> auto]
-  [@@timeout 30]
-  [@@fc]
+  [@@timeout 360]
 
 theorem correct_negate_p1 (x:Float8.t) (fmt:Format.t) =
   fmt = Specification.Format.B8P1
   ==>
   Implementation.Float8.negate x fmt = Specification.Float8.negate x fmt
   [@@by enumerate ["x"] @> simp @> auto]
-  [@@timeout 30]
-  [@@fc]
+  [@@timeout 360]
 
 theorem correct_negate (x:Float8.t) (fmt:Format.t) =
   Implementation.Float8.negate x fmt = Specification.Float8.negate x fmt
@@ -103,6 +94,4 @@ theorem correct_negate (x:Float8.t) (fmt:Format.t) =
      [%use correct_negate_p3 x fmt] @>
      [%use correct_negate_p2 x fmt] @>
      [%use correct_negate_p1 x fmt] @>
-     enumerate ["fmt"] @>
-    auto]
-  [@@fc]
+     unroll 0]

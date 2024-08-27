@@ -35,6 +35,7 @@ theorem thm_pow2_gt_0 (n:int) =
 
 theorem thm_1div_gt (x:real) (y:real) =
   Real.(x > 0.0 && y > 0.0 && x > y  ==>  1.0 / x < 1.0 / y)
+  [@@by unroll_nonlin 10 10 1]
 
 theorem thm_pow2_grows_neg_precursors (n:int) =
   n < 0 ==>
@@ -68,3 +69,7 @@ theorem thm_pow2_grows (n:int) =
     [%use thm_pow2_grows_neg n] @>
     auto
   ]
+
+theorem thm_pow2_eq_pow_2 (n:int) =
+  Util.pow2 n = Util.pow 2 n
+  [@@rw]

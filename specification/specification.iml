@@ -35,7 +35,6 @@ module Format = struct
       let bias : int = emax + 1 in
       let max : real = pow2 emax *. (2. -. pow2 (2 - precision)) in
       precision, bias, max)
-  [@@macro]
 end
 
 (** Rounding mode definitions *)
@@ -178,7 +177,6 @@ module Float8 = struct
       b1 = x.b1 && y.b1;
       b0 = x.b0 && y.b0;
     }
-  [@@macro]
 
   (** Bitwise or of two float8s *)
   let bitwise_or (x : t) (y : t) : t =
@@ -192,7 +190,6 @@ module Float8 = struct
       b1 = x.b1 || y.b1;
       b0 = x.b0 || y.b0;
     }
-  [@@macro]
 
   (** Bitwise or of three float8s *)
   let bitwise_or3 (x : t) (y : t) (z : t) : t = bitwise_or (bitwise_or x y) z
