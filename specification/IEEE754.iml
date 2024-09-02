@@ -1,15 +1,178 @@
 [@@@import ExReal, "dune:math"]
+[@@@import Util, "dune:math"]
 
 (** IEEE 754 definitions for conversion functions *)
 
 module RoundingMode = struct
-  type t = TowardZero | TowardPositive | TowardNegative | ToNearestTiesAway | ToNearestTiesToEven
+  type t = TowardZero | TowardPositive | TowardNegative | TiesToAway | TiesToEven
 end
 
-type t = int
+module Format = struct
+  type t = Binary16 | Binary32 | Binary64 | Binary128
 
-let nan : t = 0
-let quiet_nan : t = 0
-let canonical_nan : t = 0
+  let get_format_parameters (fmt : t) : int * int * int * int * int * int * int =
+    (* Table 3.5 IEEE 754-2008 *)
+    (* k, p, emax, bias, sign bit, w, t *)
+    match fmt with
+    | Binary16 -> 16, 11, 15, 15, 1, 5, 10
+    | Binary32 -> 32, 24, 127, 127, 1, 8, 23
+    | Binary64 -> 64, 53, 1023, 1023, 1, 11, 52
+    | Binary128 -> 128, 113, 16383, 16383, 1, 15, 112
+end
 
-let round (_z : ExReal.t) (_k : int) (_rnd:RoundingMode.t) : t = 0
+type t = bool list
+
+let rec nlist n e =
+  match n with
+  | x when x <= 0 -> []
+  | _ -> [e] @ nlist (n-1) e
+
+let nan (fmt : Format.t) : t =
+  let _, _, _, _, _, w, t = Format.get_format_parameters fmt in
+  [false] @ nlist w true @ nlist (t - 1) false @ [true]
+
+let quiet_nan (fmt : Format.t) : t = nan fmt
+
+let canonical_nan (fmt : Format.t) : t = nan fmt
+
+let inf (fmt : Format.t) (neg : bool) =
+  let _, _, _, _, _, w, t = Format.get_format_parameters fmt in
+  if neg then [true] else [false] @
+  nlist w true @ nlist t false
+
+let pinf (fmt : Format.t) = inf fmt false
+
+let ninf (fmt : Format.t) = inf fmt true
+
+let zero (fmt : Format.t) =
+  let k, _, _, _, _, _, _ = Format.get_format_parameters fmt in
+  nlist k false
+
+let is_nan (x : t) (fmt : Format.t) : bool = x = (nan fmt)
+
+let is_pinf (x : t) (fmt : Format.t) : bool = x = (pinf fmt)
+
+let is_ninf (x : t) (fmt : Format.t) : bool = x = (ninf fmt)
+
+let is_inf (x : t) (fmt : Format.t) : bool = x = (pinf fmt) || x = (ninf fmt)
+
+let is_zero (x : t) (fmt : Format.t) : bool =
+  match x with
+  | [] -> false
+  | sgn :: xs -> not (List.mem true xs)
+
+let is_pzero (x : t) (fmt : Format.t) : bool =
+  match x with
+  | [] -> false
+  | sgn :: xs -> is_zero x fmt && sgn = false
+
+let is_nzero (x : t) (fmt : Format.t) : bool =
+  match x with
+  | [] -> false
+  | sgn :: xs -> is_zero x fmt && sgn = true
+
+let rec to_binary_bits x =
+  let x = Int.abs x in
+  if x = 0 then [] else
+    to_binary_bits (x/2) @ [x mod 2 = 1]
+  [@@measure (Ordinal.of_int (Int.abs x))]
+
+let to_binary (x : int) (digits : int) =
+  let r = to_binary_bits x in
+  let lr = List.length r in
+  if lr < digits then
+    nlist (digits - lr) false @ r
+  else
+    r
+
+let round_internal (x : ExReal.t) (fmt : Format.t) (rnd : RoundingMode.t) : (t,  string) Result.t =
+  let open RoundingMode in
+  let open ExReal in
+  let open ExReal.ResultInfix in
+  let _, _, emax, bias, _, w, t = Format.get_format_parameters fmt in
+  match x with
+  | PINF -> Ok (pinf fmt)
+  | NINF -> Ok (ninf fmt)
+  | R r ->
+    let is_neg = r <. 0.0 || r = 0.0 && rnd = RoundingMode.TowardNegative in
+    let sign = if is_neg then [true] else [false] in
+    let r = Real.abs r in
+    let is_subnormal = r <. Util.pow2 Int.(1 - emax) in
+    let exp =
+      if is_subnormal then
+        Int.(1 - emax)
+      else
+        Util.floor_log2_abs r Int.(emax + 1) in (* emax ok? *)
+    let biased_exp =
+      if is_subnormal then
+        0
+      else
+        Int.(exp + bias) in
+    let sigd = Ok (R (r /. Util.pow2 exp)) in
+    let sigd = sigd * pow2 t in
+    (match sigd with
+    | Ok (R sigd) ->
+      if Int.(exp > emax) then
+        Ok (inf fmt is_neg)
+      else
+        let sigd_trunc = Real.to_int sigd in
+        let delta = sigd -. Real.of_int sigd_trunc in
+        let one = pow2 t in
+        let rsig = (match rnd with
+          | TowardZero -> sigd_trunc
+          | TowardPositive when delta <> 0.0 && not is_neg -> Int.(sigd_trunc + 1)
+          | TowardNegative when delta <> 0.0 && is_neg -> Int.(sigd_trunc + 1)
+          | TiesToAway when delta = 0.5 -> sigd_trunc
+          | TiesToEven when delta = 0.5 -> sigd_trunc
+          | _ -> sigd_trunc) in
+        let fsig = to_binary rsig t in
+        Ok (sign @ to_binary biased_exp w @ List.tl fsig)
+    | _ -> Error "invalid")
+
+theorem round_internal_ok (x : ExReal.t) (fmt : Format.t) (rnd : RoundingMode.t) =
+  Result.is_ok (round_internal x fmt rnd)
+
+let round (x : ExReal.t) (fmt : Format.t) (rnd : RoundingMode.t) : t =
+  match round_internal x fmt rnd with
+  | Ok r -> r
+  | Error _ -> nan fmt (* unreachable by round_internal_ok *)
+
+let rec from_binary (x : bool list) : int =
+  match x with
+  | [] -> 0
+  | x :: xs ->
+    (if x then Util.ipow2 (List.length xs) else 0) + (from_binary xs)
+
+let to_exreal (x : t) (fmt : Format.t) : (ExReal.t, string) Result.t =
+  let open ExReal in
+  let _, _, _, bias, _, w, t = Format.get_format_parameters fmt in
+  let sign = if List.hd x = false then 1.0 else -1.0 in
+  let tail = List.tl x in
+  let biased_exp = List.take w tail in
+  let biased_exp_is_zero = List.mem true biased_exp = false in
+  let biased_exp_is_all_ones = List.mem false biased_exp = false in
+  let sig_bits = List.drop w tail in
+  let sig_all_zero = not (List.mem true sig_bits) in
+
+  let sigd, exp =
+    if biased_exp_is_zero then
+      from_binary (false :: sig_bits),
+      - bias + 1
+    else
+      from_binary (true :: sig_bits),
+      from_binary biased_exp - bias
+  in
+
+  let open ExReal.ResultInfix in
+  if biased_exp_is_all_ones then
+    if not sig_all_zero then
+      Error "cannot convert NaN to extended reals"
+    else
+      (if sign = 1.0 then Ok ExReal.PINF else Ok ExReal.NINF)
+  else
+    Ok (R sign) * pow2 exp * (Ok (of_int sigd) / (pow2 t))
+
+let bd acc b = acc ^ if b then "1" else "0"
+
+let pp (x : t)  =
+  List.fold_left bd "" x

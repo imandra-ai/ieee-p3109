@@ -29,6 +29,12 @@ let is_inf (x : t) =
   | _ -> false
   [@@macro]
 
+let of_real (x : real) : t =
+  R x
+
+let of_int (x : int) : t =
+  of_real (Real.of_int x)
+
 let sign (x : t) : t =
   match x with
   | NINF -> R (-1.0)
