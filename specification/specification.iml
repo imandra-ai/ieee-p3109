@@ -625,14 +625,13 @@ module Float8 = struct
       (ovf : SaturationMode.t) (rnd : RoundingMode.t) : Binary16.t =
     match convert_binary8_to_binary16_internal x x_fmt ovf rnd with
     | Ok r -> r
-    | Error _ -> Binary16.nan
-  (* unreachable by thm_convert_binary8_to_binary16_internal_ok *)
+    | Error _ -> Binary16.nan (* unreachable by thm_convert_binary8_to_binary16_internal_ok *)
 
   (* Convert [x] (in [x_fmt]) to IEEE−754 binary interchange format Binary{[k]} under IEEE−754 rounding mode [rnd754] *)
   let convert_binary8_to_754 (x : t) (x_fmt : Format.t) (r_fmt : IEEE754.Format.t)
       (rnd754 : IEEE754.RoundingMode.t) : IEEE754.t =
     if is_nan x then (* canonical if defined else quiet *)
-      IEEE754.canonical_nan
+      IEEE754.canonical_nan r_fmt
     else (
       let r = to_extended_real x x_fmt in
       IEEE754.round r r_fmt rnd754)
