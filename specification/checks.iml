@@ -6,6 +6,8 @@
 open Specification
 open Float8
 
+let unroll_nonlin qt nqt steps = Tactic.unroll ~smt:"z3-full-nonlinear" ~query_timeout:qt ~no_asm_query_timeout:nqt steps
+
 (** Check that the precision of B8P3 is as expected *)
 lemma fmt_prec_p3 (f:Format.t) = (f = Format.B8P3) ==> (Format.precision f) = 3
 
@@ -79,11 +81,9 @@ lemma tst2 = to_extended_real (of_int_bitwise 0xF8) Format.B8P3 = ExReal.R (- 16
 
 eval (of_int_bitwise 0x3B);;
 
-(* eval ((negate (of_int_bitwise 0x3B) Format.B8P3));; *)
-
-(* eval to_extended_real (negate (of_int_bitwise 0xF8) Format.B8P3) Format.B8P3;; *)
-
-lemma tst2_real = to_extended_real (negate (of_int_bitwise 0xF8) Format.B8P3) Format.B8P3 = ExReal.R 16384.0 [@@by auto]
+lemma tst2_real = to_extended_real (negate (of_int_bitwise 0xF8) Format.B8P3) Format.B8P3 = ExReal.R 16384.0
+  [@@by unroll_nonlin 10 10 1024]
+  [@@timeout 360]
 
 instance (fun x -> not (Float8.is_zero x))
 

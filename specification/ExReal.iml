@@ -117,14 +117,16 @@ let sub (x : t) (y : t) : (t, string) Result.t =
 
 let pow2 (x : int) : (t, string) Result.t = Ok (R (Util.pow2 x)) [@@macro]
 
+let lt (x : t) (y : t) = match x, y with
+| NINF, NINF | PINF, PINF | PINF, NINF -> false
+| NINF, PINF -> true
+| NINF, R _ | R _, PINF -> true
+| PINF, R _ | R _, NINF -> false
+| R rx, R ry -> rx <. ry
+
 module Infix = struct
   let ( < ) (x : t) (y : t) : bool =
-    match x, y with
-    | NINF, NINF | PINF, PINF | PINF, NINF -> false
-    | NINF, PINF -> true
-    | NINF, R _ | R _, PINF -> true
-    | PINF, R _ | R _, NINF -> false
-    | R rx, R ry -> rx <. ry
+    lt x y
     [@@macro]
 
   let ( <= ) (x : t) (y : t) : bool =
