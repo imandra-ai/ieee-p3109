@@ -411,6 +411,19 @@ module Float8 = struct
     | Ok r -> r
     | Error _ -> false (* unreachable by theorem internal_lt_ok *)
 
+  let internal_abs (x : t) (fmt : Format.t) : (t, string) Result.t =
+    let open ExReal.Infix in
+    if is_nan x then Ok x
+    else
+      let rx = to_extended_real x fmt in
+      encode (NaNOrExReal.XR (ExReal.abs rx)) fmt
+
+  (** Return the absolute value of [x] in [fmt] *)
+  let abs (x : t) (fmt : Format.t) : t =
+    match internal_abs x fmt with
+    | Ok x -> x
+    | Error _ -> nan (* unreachable by theorem internal_abs_ok *)
+
   let internal_negate (x : t) (fmt : Format.t) : (t, string) Result.t =
     let open ExReal.Infix in
     if is_nan x then Ok x
