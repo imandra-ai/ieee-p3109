@@ -7,12 +7,17 @@ let unroll_nonlin qt nqt steps = Tactic.unroll ~smt:"z3-full-nonlinear" ~query_t
 
 (** Proof that our implementation of [is_nan] is correct *)
 theorem correct_is_nan (x:Float8.t) =
-  Float8.is_nan x = Specification.Float8.is_nan x
+  Implementation.Float8.is_nan x = Specification.Float8.is_nan x
 
 (** Proof that our implementation of [of_int_bitwise] is correct *)
 theorem correct_of_int_bitwise (x:int) =
-  Float8.of_int_bitwise x = Specification.Float8.of_int_bitwise x
+  Implementation.Float8.of_int_bitwise x = Specification.Float8.of_int_bitwise x
 
+(** Proof that our implementation of [abs] is correct *)
+theorem correct_abs (x:Float8.t) (fmt:Format.t) =
+  Implementation.Float8.abs x fmt = Specification.Float8.abs x fmt
+  [@@by enumerate ["x"] @> simp @> auto]
+  [@@timeout 3600]
 
 (** Proof that our implementation of [negate] is correct *)
 

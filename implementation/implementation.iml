@@ -90,6 +90,20 @@ module Float8 = struct
 
   (** Operations *)
 
+  let abs (x : t) (_fmt : Format.t) : t =
+    if is_nan x then x
+    else
+      {
+        b7 = false;
+        b6 = x.b6;
+        b5 = x.b5;
+        b4 = x.b4;
+        b3 = x.b3;
+        b2 = x.b2;
+        b1 = x.b1;
+        b0 = x.b0;
+      }
+
   let negate (x : t) (_fmt : Format.t) : t =
     if is_nan x || is_zero x then x
     else

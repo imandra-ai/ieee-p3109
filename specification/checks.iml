@@ -88,10 +88,10 @@ lemma tst2_real = to_extended_real (negate (of_int_bitwise 0xF8) Format.B8P3) Fo
 instance (fun x -> not (Float8.is_zero x))
 
 
-(* 0xbb = 1 0111011 = −0b1.0×2^94 = -0.0625 *)
+(* 0xbb = 1 0111011 = -0b1.0*2^94 = -0.0625 *)
 
-lemma rBB = (Float8.to_extended_real (of_int_bitwise 0x3B) Format.B8P1) = ExReal.R 0.0625 [@@by auto]
+lemma rBB1 = (Float8.to_extended_real (of_int_bitwise 0x3B) Format.B8P1) = ExReal.R 0.0625 [@@by auto]
 
-lemma rBB = (Float8.to_extended_real (of_int_bitwise 0x3B) Format.B8P2) = ExReal.R 0.1875 [@@by auto]
+lemma rBB2 = (Float8.to_extended_real (of_int_bitwise 0x3B) Format.B8P2) = ExReal.R 0.1875 [@@by auto]
 
-lemma rBB = (Float8.to_extended_real (of_int_bitwise 0x3B) Format.B8P3) = ExReal.R 0.4375 [@@by auto]
+lemma rBB3 = (Float8.to_extended_real (of_int_bitwise 0x3B) Format.B8P3) = ExReal.R 0.4375 [@@by auto]

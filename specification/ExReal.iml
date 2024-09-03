@@ -13,7 +13,7 @@ let one = R 1.0 [@@macro]
 
 let abs (x : t) : t =
   match x with
-  | NINF | PINF -> x
+  | NINF | PINF -> PINF
   | R x -> R (Real.abs x)
   [@@macro]
 
