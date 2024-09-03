@@ -235,14 +235,14 @@ module Float8 = struct
   (** Convert float8 to int (bitwise) *)
 
   let to_int_bitwise (x : t) : int =
-    (if x.b0 then 1 else 0)
-  + (if x.b1 then 2 else 0)
-  + (if x.b2 then 4 else 0)
-  + (if x.b3 then 8 else 0)
-  + (if x.b4 then 16 else 0)
-  + (if x.b5 then 32 else 0)
-  + (if x.b6 then 64 else 0)
-  + (if x.b7 then 128 else 0)
+      (if x.b0 then 1 else 0)
+    + (if x.b1 then 2 else 0)
+    + (if x.b2 then 4 else 0)
+    + (if x.b3 then 8 else 0)
+    + (if x.b4 then 16 else 0)
+    + (if x.b5 then 32 else 0)
+    + (if x.b6 then 64 else 0)
+    + (if x.b7 then 128 else 0)
   [@@ocamlformat "disable"]
 
   let sign (x : real) : real = Real.(if x < 0.0 then -1.0 else 1.0)
@@ -283,15 +283,6 @@ module Float8 = struct
           *. (1.0 +. (Real.of_int trailing_bits *. pow2 (1 - precision)))
           *. pow2 (biased_exponent - bias))
     )
-
-  let to_string (x : t) (fmt : Format.t) : string =
-    let bool_to_bin x = if x then "1" else "0" in
-    let xreal = to_extended_real x fmt in
-    Printf.sprintf "%s%s%s%s%s%s%s%s = %s" (bool_to_bin x.b7) (bool_to_bin x.b6)
-      (bool_to_bin x.b5) (bool_to_bin x.b4) (bool_to_bin x.b3)
-      (bool_to_bin x.b2) (bool_to_bin x.b1) (bool_to_bin x.b0)
-      (if is_nan x then "NaN" else ExReal.to_string xreal)
-  [@@ocamlformat "if-then-else=compact"] [@@program]
 
   module NaNOrExReal = struct
     type t =
@@ -578,12 +569,10 @@ module Float8 = struct
     else (
       let x = to_extended_real x x_fmt in
       let y = to_extended_real y y_fmt in
-      if ExReal.is_inf x && y = ExReal.neg x then
+      if ExReal.is_inf x &&
+        (ExReal.is_inf y || y = ExReal.zero)
+      then
         encode NaNOrExReal.NaN result_fmt
-      else if
-        (ExReal.is_inf x && y = ExReal.zero)
-        || (ExReal.is_inf y && x = ExReal.zero)
-      then encode NaNOrExReal.NaN result_fmt
       else (
         let open ExReal.Infix in
         let z = x / y in
@@ -635,4 +624,14 @@ module Float8 = struct
     else (
       let r = to_extended_real x x_fmt in
       IEEE754.round r r_fmt rnd754)
+
+  (** Convert [x] to a string of zeroes and ones *)
+  let to_string (x : t) (fmt : Format.t) : string =
+    let bool_to_bin x = if x then "1" else "0" in
+    let xreal = to_extended_real x fmt in
+    Printf.sprintf "%s%s%s%s%s%s%s%s = %s" (bool_to_bin x.b7) (bool_to_bin x.b6)
+      (bool_to_bin x.b5) (bool_to_bin x.b4) (bool_to_bin x.b3)
+      (bool_to_bin x.b2) (bool_to_bin x.b1) (bool_to_bin x.b0)
+      (if is_nan x then "NaN" else ExReal.to_string xreal)
+      [@@ocamlformat "if-then-else=compact"] [@@program]
 end

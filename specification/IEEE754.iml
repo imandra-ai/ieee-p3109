@@ -56,20 +56,20 @@ let is_ninf (x : t) (fmt : Format.t) : bool = x = (ninf fmt)
 
 let is_inf (x : t) (fmt : Format.t) : bool = x = (pinf fmt) || x = (ninf fmt)
 
-let is_zero (x : t) (fmt : Format.t) : bool =
+let is_zero (x : t) : bool =
   match x with
   | [] -> false
-  | sgn :: xs -> not (List.mem true xs)
+  | _ :: xs -> not (List.mem true xs)
 
-let is_pzero (x : t) (fmt : Format.t) : bool =
+let is_pzero (x : t): bool =
   match x with
   | [] -> false
-  | sgn :: xs -> is_zero x fmt && sgn = false
+  | sgn :: _ -> is_zero x && sgn = false
 
-let is_nzero (x : t) (fmt : Format.t) : bool =
+let is_nzero (x : t) : bool =
   match x with
   | [] -> false
-  | sgn :: xs -> is_zero x fmt && sgn = true
+  | sgn :: _ -> is_zero x && sgn = true
 
 let rec to_binary_bits x =
   let x = Int.abs x in
@@ -117,7 +117,6 @@ let round_internal (x : ExReal.t) (fmt : Format.t) (rnd : RoundingMode.t) : (t, 
       else
         let sigd_trunc = Real.to_int sigd in
         let delta = sigd -. Real.of_int sigd_trunc in
-        let one = pow2 t in
         let rsig = (match rnd with
           | TowardZero -> sigd_trunc
           | TowardPositive when delta <> 0.0 && not is_neg -> Int.(sigd_trunc + 1)

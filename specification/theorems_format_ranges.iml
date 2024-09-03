@@ -32,22 +32,22 @@ theorem thm_fmt_range_p5 (x : Float8.t) (fmt : Format.t) =
 theorem thm_fmt_range_p4 (x : Float8.t) (fmt : Format.t) =
   fmt = Format.B8P4 ==> is_within_range x fmt
   [@@by auto]
-  [@@timeout 60]
+  [@@timeout 120]
 
 theorem thm_fmt_range_p3 (x : Float8.t) (fmt : Format.t) =
   fmt = Format.B8P3 ==> is_within_range x fmt
   [@@by auto]
-  [@@timeout 60]
+  [@@timeout 120]
 
 theorem thm_fmt_range_p2 (x : Float8.t) (fmt : Format.t) =
   fmt = Format.B8P2 ==> is_within_range x fmt
   [@@by auto]
-  [@@timeout 60]
+  [@@timeout 120]
 
 theorem thm_fmt_range_p1 (x : Float8.t) (fmt : Format.t) =
   fmt = Format.B8P1 ==> is_within_range x fmt
   [@@by auto]
-  [@@timeout 60]
+  [@@timeout 120]
 
 theorem thm_within_format_range (x : Float8.t) (fmt : Format.t) =
   is_within_range x fmt

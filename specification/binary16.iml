@@ -1,9 +1,14 @@
 [@@@import ExReal, "dune:math"]
+[@@@import IEEE754, "IEEE754.iml"]
 
 (** Binary16 definitions for conversion functions *)
 
-type t = int
+type t = IEEE754.t
 
-let nan : t = 0
+let nan : t =
+  let open IEEE754 in
+  nan Format.Binary16
 
-let of_exreal (_z : ExReal.t) : t = 0
+let of_exreal (x : ExReal.t) =
+  let open IEEE754 in
+  round x Format.Binary16 RoundingMode.TowardZero

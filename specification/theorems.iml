@@ -64,12 +64,11 @@ theorem internal_multiply_scaled_ok (x : Float8.t) (y : Float8.t) (x_fmt : Forma
   [@@by unroll_nonlin 600 10 1024] (* ~22m *)
 
 (** [internal_divide] never returns an error *)
-(* TODO:
 theorem internal_divide_ok (x : Float8.t) (y : Float8.t) (x_fmt : Format.t) (y_fmt : Format.t)
   (result_fmt : Format.t) (ovf : SaturationMode.t) (rnd : RoundingMode.t) =
   Result.is_ok (Float8.internal_divide x y x_fmt y_fmt result_fmt ovf rnd)
-  [@@timeout 10]
-*)
+  [@@timeout 1800]
+  [@@by unroll_nonlin 600 10 1024] (* 23m *)
 
 (** [convert_binary8_to_binary16_internal] never returns an error *)
 theorem thm_convert_binary8_to_binary16_internal_ok (x : Float8.t) (x_fmt : Format.t) (ovf : SaturationMode.t) (rnd : RoundingMode.t) =
