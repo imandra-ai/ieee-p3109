@@ -39,7 +39,7 @@ theorem internal_add_ok (x : Float8.t) (y : Float8.t) (x_fmt : Format.t) (y_fmt 
 
 (** [internal_add_scaled] never returns an error *)
 theorem internal_add_scaled_ok (x : Float8.t) (y : Float8.t) (x_fmt : Format.t) (y_fmt : Format.t)
-  (xscale:int) (yscale:int)
+  (xscale : int) (yscale : int)
   (result_fmt : Format.t) (ovf : SaturationMode.t) (rnd : RoundingMode.t) =
   Result.is_ok (Float8.internal_add_scaled x y x_fmt y_fmt xscale yscale result_fmt ovf rnd)
   [@@timeout 1800]
