@@ -82,8 +82,8 @@ lemma tst2 = to_extended_real (of_int_bitwise 0xF8) Format.B8P3 = ExReal.R (- 16
 eval (of_int_bitwise 0x3B);;
 
 lemma tst2_real = to_extended_real (negate (of_int_bitwise 0xF8) Format.B8P3) Format.B8P3 = ExReal.R 16384.0
-  [@@by unroll_nonlin 10 10 1024]
-  [@@timeout 360]
+  [@@by unroll_nonlin 10 2 1024]
+  [@@timeout 600]
 
 instance (fun x -> not (Float8.is_zero x))
 
