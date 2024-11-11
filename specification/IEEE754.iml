@@ -94,7 +94,7 @@ let round_internal (x : ExReal.t) (fmt : Format.t) (rnd : RoundingMode.t) : (t, 
   | PINF -> Ok (pinf fmt)
   | NINF -> Ok (ninf fmt)
   | R r ->
-    let is_neg = Real.(r < 0.0 || r = 0.0) && rnd = RoundingMode.TowardNegative in
+    let is_neg = Real.(r < 0.0) || Real.(r = 0.0 && rnd = RoundingMode.TowardNegative) in
     let sign = if is_neg then [true] else [false] in
     let r = Real.abs r in
     let is_subnormal = Real.(r < Util.pow2 Int.(1 - emax)) in
