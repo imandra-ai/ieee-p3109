@@ -79,7 +79,7 @@ theorem thm_pow2_eq_pow_2 (n:int) =
 theorem thm_exreal_pow2_pos (xscale : int) =
   let open ExReal in
   let open ExReal.ResultInfix in
-  ((2 ^ xscale) > Ok (R 0.0)) = Ok true
+  ((2 ^. xscale) >. rx 0.0) = Ok true
   [@@timeout 10]
   [@@by
     [%use thm_pow2_eq_pow_2 xscale] @>

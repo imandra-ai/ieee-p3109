@@ -94,10 +94,10 @@ let round_internal (x : ExReal.t) (fmt : Format.t) (rnd : RoundingMode.t) : (t, 
   | PINF -> Ok (pinf fmt)
   | NINF -> Ok (ninf fmt)
   | R r ->
-    let is_neg = r <. 0.0 || r = 0.0 && rnd = RoundingMode.TowardNegative in
+    let is_neg = Real.(r < 0.0 || r = 0.0) && rnd = RoundingMode.TowardNegative in
     let sign = if is_neg then [true] else [false] in
     let r = Real.abs r in
-    let is_subnormal = r <. Util.pow2 Int.(1 - emax) in
+    let is_subnormal = Real.(r < Util.pow2 Int.(1 - emax)) in
     let exp =
       if is_subnormal then
         Int.(1 - emax)
@@ -108,15 +108,15 @@ let round_internal (x : ExReal.t) (fmt : Format.t) (rnd : RoundingMode.t) : (t, 
         0
       else
         Int.(exp + bias) in
-    let sigd = Ok (R (r /. Util.pow2 exp)) in
-    let sigd = sigd * pow2 t in
+    let sigd = Ok (R Real.(r / Util.pow2 exp)) in
+    let sigd = sigd *. pow2 t in
     (match sigd with
     | Ok (R sigd) ->
       if Int.(exp > emax) then
         Ok (inf fmt is_neg)
       else
         let sigd_trunc = Real.to_int sigd in
-        let delta = sigd -. Real.of_int sigd_trunc in
+        let delta = Real.(sigd - Real.of_int sigd_trunc) in
         let rsig = (match rnd with
           | TowardZero -> sigd_trunc
           | TowardPositive when delta <> 0.0 && not is_neg -> Int.(sigd_trunc + 1)
@@ -134,7 +134,7 @@ theorem round_internal_ok (x : ExReal.t) (fmt : Format.t) (rnd : RoundingMode.t)
 let round (x : ExReal.t) (fmt : Format.t) (rnd : RoundingMode.t) : t =
   match round_internal x fmt rnd with
   | Ok r -> r
-  | Error _ -> nan fmt (* unreachable by round_internal_ok *)
+  | Error _ -> nan fmt (* unreachable by theorem round_internal_ok *)
 
 let rec from_binary (x : bool list) : int =
   match x with
@@ -143,9 +143,8 @@ let rec from_binary (x : bool list) : int =
     (if x then Util.ipow2 (List.length xs) else 0) + (from_binary xs)
 
 let to_exreal (x : t) (fmt : Format.t) : (ExReal.t, string) Result.t =
-  let open ExReal in
   let _, _, _, bias, _, w, t = Format.get_format_parameters fmt in
-  let sign = if List.hd x = false then 1.0 else -1.0 in
+  let sgn = if List.hd x = false then 1.0 else -1.0 in
   let tail = List.tl x in
   let biased_exp = List.take w tail in
   let biased_exp_is_zero = List.mem true biased_exp = false in
@@ -167,9 +166,9 @@ let to_exreal (x : t) (fmt : Format.t) : (ExReal.t, string) Result.t =
     if not sig_all_zero then
       Error "cannot convert NaN to extended reals"
     else
-      (if sign = 1.0 then Ok ExReal.PINF else Ok ExReal.NINF)
+      (if sgn = 1.0 then Ok ExReal.PINF else Ok ExReal.NINF)
   else
-    Ok (R sign) * pow2 exp * (Ok (of_int sigd) / (pow2 t))
+    (rx sgn) *. (pow2 exp) *. ((ix sigd) /. (pow2 t))
 
 let bd acc b = acc ^ if b then "1" else "0"
 

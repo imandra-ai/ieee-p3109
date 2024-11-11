@@ -9,74 +9,151 @@ open Specification
 let unroll_nonlin qt nqt steps = Tactic.unroll ~smt:"z3-full-nonlinear" ~query_timeout:qt ~no_asm_query_timeout:nqt steps
 
 (** Precision is between 1 and 7 in all supported formats *)
-theorem precision_1_7 (f:Format.t) =
+theorem precision_1_7 (f : Format.t) =
   1 <= Format.precision f && Format.precision f <= 7
 
 (** All [Float8.t] are classified *)
-theorem thm_class_internal_ok (x:Float8.t) (fmt:Format.t) =
-  Result.is_ok (Float8.class_internal x fmt)
+theorem thm_class_internal_ok (f : Format.t) (x : Float8.t) =
+  Result.is_ok (Float8.class_internal f x)
 
-theorem internal_lt_ok (x : Float8.t) (y : Float8.t) (x_fmt : Format.t) (y_fmt : Format.t) =
-  Result.is_ok (Float8.internal_lt x y x_fmt y_fmt)
+theorem internal_saturate_ok (m : real) (sat : bool) (rnd : RoundingMode.t) (x : ExReal.t) =
+  Result.is_ok (Float8.internal_saturate m sat rnd x)
+
+theorem internal_round_to_precision_ok (p : int) (b : int) (rnd : RoundingMode.t) (x : ExReal.t) =
+  Result.is_ok (Float8.internal_round_to_precision p b rnd x)
+
+(* Check that the (machine) integer representation decoding is bijective *)
+theorem of_to_int_repr (x:Float8.t) = Specification.Float8.of_int_repr (Specification.Float8.to_int_repr x) = x
+
+theorem decode_ok (f : Format.t) (x : Float8.t) =
+  Result.is_ok (Float8.decode f x)
+  [@@timeout 120]
+  [@@by enumerate ["x"] @> auto]
+
+theorem decoded_within_range (f : Format.t) (x : Float8.t) =
+  let open Float8.NaNOrExReal in
+  let open ExReal in
+  match Float8.decode f x with
+  | Ok NaN
+  | Ok (XR NINF)
+  | Ok (XR PINF) -> true
+  | Ok (XR (R r)) ->
+      let _, _, _, fmax = Format.get_format_parameters f in
+      (-. fmax) <. r || r >. fmax
+  | Error _ -> false
+  [@@by
+    [%use decode_ok f x]
+    @> [%use Theorems_format_ranges.thm_within_format_range f x]
+    @> unroll_nonlin 600 10 1024]
+  [@@timeout 3600]
+
+theorem encode_ok_within_range (f : Format.t) (x : Float8.NaNOrExReal.t) =
+  let open Float8.NaNOrExReal in
+  let open ExReal in
+  let _, _, _, fmax = Format.get_format_parameters f in
+  let encoded = Float8.encode f x in
+  match x with
+  | XR (R x) when x <. (-. fmax) || x >. fmax ->
+    (* When x is outside the format range, encode returns an error *)
+    Result.is_error encoded
+  | _ ->
+    (* When x is within the format range, encode returns ok *)
+    Result.is_ok encoded
+  [@@timeout 3600]
+  [@@by unroll_nonlin 600 10 1024]
+  [@@fc]
+
+theorem decode_encode_ok (f : Format.t)  (x : Float8.t) =
+  match Float8.decode f x with
+  | Ok y -> Result.is_ok (Float8.encode f y)
+  | Error _ -> false
+  [@@timeout 3600]
+  [@@by
+    [%use decode_ok f x]
+    @> [%use Theorems_format_ranges.thm_within_format_range f x]
+    @> [%use encode_ok_within_range f (Result.get_or ~default:Float8.NaNOrExReal.NaN (Float8.decode f x))]
+    @> unroll_nonlin 600 10 1024
+    ]
+
+theorem internal_lt_ok (f_x : Format.t) (f_y : Format.t) (x : Float8.t) (y : Float8.t)  =
+  Result.is_ok (Float8.internal_lt f_x f_y x y)
+  [@@timeout 30]
+  [@@by
+    [%use decode_ok f_x x]
+    @> [%use decode_ok f_y y]
+    @> unroll_nonlin 600 10 1024]
 
 (** [internal_abs] never returns an error *)
-theorem internal_abs_ok (x : Float8.t) (fmt : Format.t) =
-  Result.is_ok (Float8.internal_abs x fmt)
-  [@@timeout 1800]
-  [@@by [%use Theorems_format_ranges.thm_within_format_range x fmt] @> unroll 0]
-
-(** [internal_negate] never returns an error *)
-theorem internal_negate_ok (x : Float8.t) (fmt : Format.t) =
-  Result.is_ok (Float8.internal_negate x fmt)
-  [@@by [%use Theorems_format_ranges.thm_within_format_range x fmt] @> unroll 0]
-
-(** [internal_add] never returns an error *)
-theorem internal_add_ok (x : Float8.t) (y : Float8.t) (x_fmt : Format.t) (y_fmt : Format.t)
-  (result_fmt : Format.t) (ovf : SaturationMode.t) (rnd : RoundingMode.t) =
-  Result.is_ok (Float8.internal_add x y x_fmt y_fmt result_fmt ovf rnd)
-  [@@timeout 1800]
-  [@@by unroll_nonlin 600 10 1024] (* ~12m *)
-
-(** [internal_add_scaled] never returns an error *)
-theorem internal_add_scaled_ok (x : Float8.t) (y : Float8.t) (x_fmt : Format.t) (y_fmt : Format.t)
-  (xscale : int) (yscale : int)
-  (result_fmt : Format.t) (ovf : SaturationMode.t) (rnd : RoundingMode.t) =
-  Result.is_ok (Float8.internal_add_scaled x y x_fmt y_fmt xscale yscale result_fmt ovf rnd)
+theorem internal_abs_ok (f : Format.t) (x : Float8.t) =
+  Result.is_ok (Float8.internal_abs f x)
   [@@timeout 1800]
   [@@by
-    [%use Theorems_pow2.thm_exreal_pow2_pos xscale] @>
-    [%use Theorems_pow2.thm_exreal_pow2_pos yscale] @>
+    [%use decode_ok f x]
+    @> unroll_nonlin 600 10 1024]
+
+(** [internal_negate] never returns an error *)
+theorem internal_negate_ok (f : Format.t) (x : Float8.t) =
+  Result.is_ok (Float8.internal_negate f x)
+  [@@by
+    (* [%use Theorems_format_ranges.thm_within_format_range f x]  *)
+    enumerate ["f"; "x"]
+    @> auto]
+  [@@timeout 3600]
+
+(** [internal_add] never returns an error *)
+theorem internal_add_ok (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (pi : Projection.t)
+  (x : Float8.t) (y : Float8.t) =
+  Result.is_ok (Float8.internal_add f_x f_y f_z pi x y)
+  [@@timeout 3600]
+  [@@disable Specification.Float8.saturate]
+   (* ~12m *)
+  (* [@@by unroll_nonlin 600 10 1024] *)
+  [@@by auto]
+
+(** [internal_add_scaled] never returns an error *)
+theorem internal_add_scaled_ok (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (pi : Projection.t)
+    (x : Float8.t) (s_x : int) (y : Float8.t) (s_y : int) =
+  Result.is_ok (Float8.internal_add_scaled f_x f_y f_z pi x s_x y s_y)
+  [@@timeout 1800]
+  [@@by
+    [%use Theorems_pow2.thm_exreal_pow2_pos s_x] @>
+    [%use Theorems_pow2.thm_exreal_pow2_pos s_y] @>
     unroll_nonlin 600 10 1024] (* ~13m *)
 
 (** [internal_sub] never returns an error *)
-theorem internal_subtract_ok (x : Float8.t) (y : Float8.t) (x_fmt : Format.t) (y_fmt : Format.t)
-  (result_fmt : Format.t) (ovf : SaturationMode.t) (rnd : RoundingMode.t) =
-  Result.is_ok (Float8.internal_subtract x y x_fmt y_fmt result_fmt ovf rnd)
+theorem internal_subtract_ok (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (pi : Projection.t)
+  (x : Float8.t) (y : Float8.t) =
+  Result.is_ok (Float8.internal_subtract f_x f_y f_z pi x y)
   [@@timeout 1800]
   [@@by unroll_nonlin 600 10 1024]
 
 (** [internal_multiply] never returns an error *)
-theorem internal_multiply_ok (x : Float8.t) (y : Float8.t) (x_fmt : Format.t) (y_fmt : Format.t)
-  (result_fmt : Format.t) (ovf : SaturationMode.t) (rnd : RoundingMode.t) =
-  Result.is_ok (Float8.internal_multiply x y x_fmt y_fmt result_fmt ovf rnd)
+theorem internal_multiply_ok (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (pi : Projection.t) (x : Float8.t) (y : Float8.t)  =
+  Result.is_ok (Float8.internal_multiply f_x f_y f_z pi x y)
   [@@timeout 1800]
   [@@by unroll_nonlin 600 10 1024] (* ~15m *)
 
 (** [internal_multiply_scaled] never returns an error *)
-theorem internal_multiply_scaled_ok (x : Float8.t) (y : Float8.t) (x_fmt : Format.t) (y_fmt : Format.t)
-  (scale:int) (result_fmt : Format.t) (ovf : SaturationMode.t) (rnd : RoundingMode.t) =
-  Result.is_ok (Float8.internal_multiply_scaled x y x_fmt y_fmt scale result_fmt ovf rnd)
+theorem internal_multiply_scaled_ok (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (pi : Projection.t)
+  (x : Float8.t) (y : Float8.t) (s : int) =
+  Result.is_ok (Float8.internal_multiply_scaled f_x f_y f_z pi x y s)
   [@@timeout 1800]
   [@@by unroll_nonlin 600 10 1024] (* ~22m *)
 
 (** [internal_divide] never returns an error *)
-theorem internal_divide_ok (x : Float8.t) (y : Float8.t) (x_fmt : Format.t) (y_fmt : Format.t)
-  (result_fmt : Format.t) (ovf : SaturationMode.t) (rnd : RoundingMode.t) =
-  Result.is_ok (Float8.internal_divide x y x_fmt y_fmt result_fmt ovf rnd)
+theorem internal_divide_ok (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (pi : Projection.t) (x : Float8.t) (y : Float8.t)  =
+  Result.is_ok (Float8.internal_divide f_x f_y f_z pi x y)
   [@@timeout 1800]
   [@@by unroll_nonlin 600 10 1024] (* 23m *)
 
-(** [convert_binary8_to_binary16_internal] never returns an error *)
-theorem thm_convert_binary8_to_binary16_internal_ok (x : Float8.t) (x_fmt : Format.t) (ovf : SaturationMode.t) (rnd : RoundingMode.t) =
-  Result.is_ok (Float8.convert_binary8_to_binary16_internal x x_fmt ovf rnd)
-  [@@timeout 10]
+(** [internal_exp2] never returns an error *)
+theorem internal_exp2_ok (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : Float8.t) =
+  Result.is_ok (Float8.internal_exp2 f_x f_z pi x)
+  [@@timeout 1800]
+  [@@by unroll_nonlin 600 10 1024]
+
+(** [internal_convert_binary8_to_binary16] never returns an error *)
+theorem internal_convert_p3109_to_binary16_ok (f : Format.t) (pi : Projection.t) (x : Float8.t) =
+  Result.is_ok (Float8.internal_convert_p3109_to_binary16 f pi x)
+  [@@timeout 1800]
+  [@@by auto]

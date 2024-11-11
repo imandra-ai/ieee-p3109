@@ -6,58 +6,69 @@ open Specification
 open ExReal
 open ExReal.Infix
 
-let is_within_range (x : Float8.t) (fmt : Format.t) : bool =
+let is_within_range (f : Format.t) (x : Float8.t) : bool =
+  let open Float8.NaNOrExReal in
   (not (Float8.is_nan x || Float8.is_inf x))
     ==>
-  let _, _, max = Format.get_format_parameters fmt in
-  let r = Float8.to_extended_real x fmt in
-  R (-. max) <= r && r <= R max
+  let _, _, _, max = Format.get_format_parameters f in
+  match Float8.decode f x with
+  | Ok NaN -> false
+  | Ok (XR r) -> R Real.(- max) <=. r && r <=. R max
+  | _ -> false
 
-theorem thm_fmt_range_p7 (x : Float8.t) (fmt : Format.t) =
-  fmt = Format.B8P7 ==> is_within_range x fmt
-  [@@by auto]
-  [@@timeout 20]
-
-theorem thm_fmt_range_p6 (x : Float8.t) (fmt : Format.t) =
-  fmt = Format.B8P6 ==> is_within_range x fmt
-  [@@by auto]
-  [@@timeout 60]
-  [@@fc]
-
-theorem thm_fmt_range_p5 (x : Float8.t) (fmt : Format.t) =
-  fmt = Format.B8P5 ==> is_within_range x fmt
-  [@@by auto]
+theorem thm_format_range_p7 (f : Format.t) (x : Float8.t) =
+  f = Format.B8P7 ==> is_within_range f x
+  [@@by enumerate["x"] @> auto]
   [@@timeout 60]
 
-theorem thm_fmt_range_p4 (x : Float8.t) (fmt : Format.t) =
-  fmt = Format.B8P4 ==> is_within_range x fmt
-  [@@by auto]
-  [@@timeout 120]
+theorem thm_format_range_p6 (f : Format.t) (x : Float8.t) =
+  f = Format.B8P6 ==> is_within_range f x
+  [@@by enumerate["x"]  @> auto]
+  [@@timeout 60]
 
-theorem thm_fmt_range_p3 (x : Float8.t) (fmt : Format.t) =
-  fmt = Format.B8P3 ==> is_within_range x fmt
-  [@@by auto]
-  [@@timeout 120]
+theorem thm_format_range_p5 (f : Format.t) (x : Float8.t) =
+  f = Format.B8P5 ==> is_within_range f x
+  [@@by enumerate["x"]  @> auto]
+  [@@timeout 60]
 
-theorem thm_fmt_range_p2 (x : Float8.t) (fmt : Format.t) =
-  fmt = Format.B8P2 ==> is_within_range x fmt
-  [@@by auto]
-  [@@timeout 120]
+theorem thm_format_range_p4 (f : Format.t) (x : Float8.t) =
+  f = Format.B8P4 ==> is_within_range f x
+  [@@by enumerate["x"]  @> auto]
+  [@@timeout 60]
 
-theorem thm_fmt_range_p1 (x : Float8.t) (fmt : Format.t) =
-  fmt = Format.B8P1 ==> is_within_range x fmt
-  [@@by auto]
-  [@@timeout 120]
+theorem thm_format_range_p3 (f : Format.t) (x : Float8.t) =
+  f = Format.B8P3 ==> is_within_range f x
+  [@@by enumerate["x"]  @> auto]
+  [@@timeout 60]
 
-theorem thm_within_format_range (x : Float8.t) (fmt : Format.t) =
-  is_within_range x fmt
+theorem thm_format_range_p2 (f : Format.t) (x : Float8.t) =
+  f = Format.B8P2 ==> is_within_range f x
+  [@@by enumerate["x"]  @> auto]
+  [@@timeout 60]
+
+theorem thm_format_range_p1 (f : Format.t) (x : Float8.t) =
+  f = Format.B8P1 ==> is_within_range f x
+  [@@by enumerate["x"]  @> auto]
+  [@@timeout 60]
+
+theorem thm_within_format_range (f : Format.t) (x : Float8.t) =
+  is_within_range f x
   [@@by
-    [%use thm_fmt_range_p7 x fmt] @>
-    [%use thm_fmt_range_p6 x fmt] @>
-    [%use thm_fmt_range_p5 x fmt] @>
-    [%use thm_fmt_range_p4 x fmt] @>
-    [%use thm_fmt_range_p3 x fmt] @>
-    [%use thm_fmt_range_p2 x fmt] @>
-    [%use thm_fmt_range_p1 x fmt] @>
+    [%use thm_format_range_p7 f x] @>
+    [%use thm_format_range_p6 f x] @>
+    [%use thm_format_range_p5 f x] @>
+    [%use thm_format_range_p4 f x] @>
+    [%use thm_format_range_p3 f x] @>
+    [%use thm_format_range_p2 f x] @>
+    [%use thm_format_range_p1 f x] @>
     unroll 0]
   [@@timeout 10]
+
+(*
+  Note: For some reason this is way slower than the above.
+
+  theorem thm_format_range (f : Format.t) (x : Float8.t) =
+    is_within_range f x
+    [@@by enumerate["f"; "x"] @> auto]
+    [@@timeout 3600]
+*)

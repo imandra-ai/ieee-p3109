@@ -54,11 +54,11 @@ module Float8 = struct
 
   let is_finite (x : t) : bool = Specification.Float8.is_finite x [@@macro]
 
-  let is_normal (x : t) (fmt : Format.t) : bool =
-    Specification.Float8.is_normal x fmt [@@macro]
+  let is_normal (f : Format.t) (x : t) : bool =
+    Specification.Float8.is_normal f x [@@macro]
 
-  let is_subnormal (x : t) (fmt : Format.t) : bool =
-    Specification.Float8.is_subnormal x fmt [@@macro]
+  let is_subnormal (f : Format.t)  (x : t) : bool =
+    Specification.Float8.is_subnormal f x [@@macro]
 
   let is_sign_minus (x : t) : bool = Specification.Float8.is_sign_minus x [@@macro]
 
@@ -70,8 +70,8 @@ module Float8 = struct
 
   type class_ = Specification.Float8.class_
 
-  let class_ (x : t) (fmt : Format.t) : class_ =
-    Specification.Float8.class_ x fmt
+  let class_ (f : Format.t) (x : t) : class_ =
+    Specification.Float8.class_ f x
 
   (** Numerals *)
 
@@ -90,7 +90,7 @@ module Float8 = struct
 
   (** Operations *)
 
-  let abs (x : t) (_fmt : Format.t) : t =
+  let abs (_f : Format.t) (x : t) : t =
     if is_nan x then x
     else
       {
@@ -104,7 +104,7 @@ module Float8 = struct
         b0 = x.b0;
       }
 
-  let negate (x : t) (_fmt : Format.t) : t =
+  let negate (_f : Format.t) (x : t) : t =
     if is_nan x || is_zero x then x
     else
       {
@@ -119,6 +119,6 @@ module Float8 = struct
       }
     [@@macro]
 
-  let to_string (x : t) (fmt : Format.t) = Specification.Float8.to_string x fmt
+  let to_string (f : Format.t) (x : t)  = Specification.Float8.to_string f x
   [@@program]
 end

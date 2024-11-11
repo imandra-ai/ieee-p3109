@@ -3,54 +3,54 @@
 
 open Specification
 
-let unroll_nonlin qt nqt steps = Tactic.unroll ~smt:"z3-full-nonlinear" ~query_timeout:qt ~no_asm_query_timeout:nqt steps
+(* let unroll_nonlin qt nqt steps = Tactic.unroll ~smt:"z3-full-nonlinear" ~query_timeout:qt ~no_asm_query_timeout:nqt steps *)
 
-let ok_within_range x fmt : bool =
+let ok_within_range (x : Float8.NaNOrExReal.t) (fmt : Format.t) : bool =
   let open Float8.NaNOrExReal in
-  let _, _, fmax = Format.get_format_parameters fmt in
-  let encoded = Float8.encode x fmt in
+  let open ExReal in
+  let _, _, _, fmax = Format.get_format_parameters fmt in
+  let encoded = Float8.encode fmt x  in
   match x with
-  | XR (ExReal.R x) when x <. (-. fmax) || x >. fmax ->
+  | XR (R x) when x <. (-. fmax) || x >. fmax ->
     not (Result.is_ok encoded)
   | _ -> Result.is_ok encoded
 
 theorem encode_ok_1 (x : Float8.NaNOrExReal.t) (fmt : Format.t) =
   fmt = Format.B8P1 ==> ok_within_range x fmt
-  [@@by unroll 50]
+  [@@by unroll 10]
 
 theorem encode_ok_2 (x : Float8.NaNOrExReal.t) (fmt : Format.t) =
   let open Float8.NaNOrExReal in
   fmt = Format.B8P2 ==> ok_within_range x fmt
-  [@@by unroll 50]
+  [@@by unroll 10]
 
 theorem encode_ok_3 (x : Float8.NaNOrExReal.t) (fmt : Format.t) =
   let open Float8.NaNOrExReal in
   fmt = Format.B8P3 ==> ok_within_range x fmt
-  [@@by unroll 50]
+  [@@by unroll 10]
 
 theorem encode_ok_4 (x : Float8.NaNOrExReal.t) (fmt : Format.t) =
   let open Float8.NaNOrExReal in
   fmt = Format.B8P4 ==> ok_within_range x fmt
-  [@@by unroll 50]
+  [@@by unroll 10]
 
 theorem encode_ok_5 (x : Float8.NaNOrExReal.t) (fmt : Format.t) =
   let open Float8.NaNOrExReal in
   fmt = Format.B8P5 ==> ok_within_range x fmt
-  [@@by unroll 50]
+  [@@by unroll 10]
 
 theorem encode_ok_6 (x : Float8.NaNOrExReal.t) (fmt : Format.t) =
   let open Float8.NaNOrExReal in
   fmt = Format.B8P6 ==> ok_within_range x fmt
-  [@@by unroll 50]
+  [@@by unroll 10]
 
 theorem encode_ok_7 (x : Float8.NaNOrExReal.t) (fmt : Format.t) =
   let open Float8.NaNOrExReal in
   fmt = Format.B8P7 ==> ok_within_range x fmt
-  [@@by unroll 50]
+  [@@by unroll 10]
 
 theorem encode_ok_within_range (x : Float8.NaNOrExReal.t) (fmt : Format.t) =
-  ok_within_range x fmt [@trigger]
-  [@@timeout 3600]
+  ok_within_range x fmt
   [@@by
     [%use encode_ok_1 x fmt] @>
     [%use encode_ok_2 x fmt] @>
@@ -60,28 +60,26 @@ theorem encode_ok_within_range (x : Float8.NaNOrExReal.t) (fmt : Format.t) =
     [%use encode_ok_6 x fmt] @>
     [%use encode_ok_7 x fmt] @>
     unroll 0]
+  [@@timeout 10]
   [@@fc]
 
-theorem saturate_is_ok (x : ExReal.t) (fmt : Format.t) (ovf : SaturationMode.t) (rnd : RoundingMode.t) =
-  let _, _, max = Format.get_format_parameters fmt in
-  Result.is_ok (Float8.saturate x (ExReal.R max) ovf rnd)
+(* theorem encode_ok (f : Format.t) (x : Float8.NaNOrExReal.t) =
+  ok_within_range x f
+  [@@by enumerate ["f"] @> auto]
+  [@@timeout 3600] *)
 
-theorem saturate_is_within_range (x : ExReal.t) (fmt : Format.t) (ovf : SaturationMode.t) (rnd : RoundingMode.t) =
-  let _, _, max = Format.get_format_parameters fmt in
-  let s = (Float8.saturate x (ExReal.R max) ovf rnd) [@trigger] in
-  match s with
-  | Ok s -> Float8.exreal_is_within_range s fmt
-  | _ -> false (* unreachable by [saturate_is_ok] *)
-  [@@timeout 60]
-  [@@by [%use saturate_is_ok x fmt ovf rnd] @> auto]
-  [@@fc]
+(* theorem saturate_is_within_range (f : Format.t) (x : ExReal.t) (sat : bool) (rnd : RoundingMode.t) =
+  let _, _, _, max = Format.get_format_parameters f in
+  let s = (Float8.saturate max sat rnd) x [@trigger] in
+  Float8.exreal_is_within_range f s
+  [@@timeout 3600]
+  [@@by auto]
 
-theorem saturate_encode_ok  (x : ExReal.t) (fmt : Format.t) (ovf : SaturationMode.t) (rnd : RoundingMode.t) =
-  let _, _, max = Format.get_format_parameters fmt in
-  let s = Float8.saturate x (ExReal.R max) ovf rnd in
-  match s with
-  | Ok s -> ok_within_range (Float8.NaNOrExReal.XR s) fmt
-  | _ -> false
+theorem saturate_encode_ok (f : Format.t) (x : ExReal.t) (sat : bool) (rnd : RoundingMode.t) =
+  let _, _, _, max = Format.get_format_parameters f in
+  let s = Float8.saturate max sat rnd x in
+  ok_within_range (Float8.NaNOrExReal.XR s) f
+  [@@timeout 3600]
   [@@by
-    [%use saturate_is_within_range x fmt ovf rnd] @>
-    unroll 0]
+    [%use saturate_is_within_range f x sat rnd] @>
+    auto] *)

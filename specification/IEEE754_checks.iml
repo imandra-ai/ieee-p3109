@@ -26,6 +26,7 @@ eval pp (round (R 0.0) Format.Binary32 RoundingMode.TowardNegative)
 eval pp (round (R (largest_normal_b32 *. 2.0)) Format.Binary32 RoundingMode.TowardZero)
 
 eval to_exreal (round (R 0.0) Format.Binary32 RoundingMode.TowardZero) Format.Binary32
+eval to_exreal (round (R (- 1.0)) Format.Binary32 RoundingMode.TowardNegative) Format.Binary32
 eval to_exreal (round (R 21.0) Format.Binary32 RoundingMode.TowardZero) Format.Binary32
 eval to_exreal (round (R 0.125) Format.Binary32 RoundingMode.TowardZero) Format.Binary32
 eval to_exreal (round (R smallest_nz_b32) Format.Binary32 RoundingMode.TowardZero) Format.Binary32

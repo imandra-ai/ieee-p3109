@@ -1,8 +1,9 @@
 (** Some math utility functions *)
 
-let is_even (x : int) : bool = x mod 2 = 0 [@@macro]
-
-let is_odd (x : int) : bool = x mod 2 <> 0 [@@macro]
+let machine_idiv (x : int) (y : int) : int =
+  let neg = (x < 0) <> (y < 0) in
+  let r = (abs x) / (abs y) in
+  if neg then -r else r
 
 let rec pow2 (n:int) : real =
   if n > 0 then
@@ -21,7 +22,7 @@ let rec pow (x : int) (n : int) : real =
   | 1 -> Real.of_int x
   | _ when n > 1 ->
       let x2 = x * x in
-      if is_even n then
+      if n mod 2 = 0 then
         pow x2 (n / 2)
       else
         (Real.of_int x) *. (pow x2 ((n-1) / 2))
@@ -36,7 +37,9 @@ let rec ipow2 (x : int) : int =
   | x -> if x <= 0 then 1 else 2 * ipow2 (x - 1)
   [@@unroll 5]
 
-let floor (x : real) : int = Real.to_int x [@@macro]
+let ifloor (x : real) : int = Real.to_int x [@@macro]
+
+let floor (x : real) : real = Real.of_int (ifloor x) [@@macro]
 
 let rec ilog2 (x : int) : int =
   (* Ugly hack, replace with dedicated number_of_digits function? *)

@@ -14,37 +14,48 @@ lemma fmt_prec_p3 (f:Format.t) = (f = Format.B8P3) ==> (Format.precision f) = 3
 (** Check that the format parameters for B8P3 are as expected *)
 lemma fmt_params_p3 (f:Format.t) =
   (f = Format.B8P3) ==>
-    let prec, bias, max = Format.get_format_parameters f in
-    prec = 3 && bias = 16 && max = 49152.0
+    let k, p, b, max = Format.get_format_parameters f in
+    k = 8 && p = 3 && b = 16 && max = 49152.0
   [@@by auto]
 
+  (** Check that the format parameters for B8P2 are as expected *)
 lemma fmt_params_p2 (f:Format.t) =
   (f = Format.B8P2) ==>
-    let prec, bias, max = Format.get_format_parameters f in
-    prec = 2 && bias = 32 && max = 2147483648.0
+    let k, p, b, max = Format.get_format_parameters f in
+    k = 8 && p = 2 && b = 32 && max = 2147483648.0
   [@@by auto]
 
+(** Check that the format parameters for B8P1 are as expected *)
 lemma fmt_params_p1 (f:Format.t) =
   (f = Format.B8P1) ==>
-    let prec, bias, max = Format.get_format_parameters f in
-    prec = 1 && bias = 63 && max = Util.pow2 63
+    let k, p, b, max = Format.get_format_parameters f in
+    k = 8 && p = 1 && b = 63 && max = Util.pow2 63
   [@@by auto]
 
 (** Sanity check of bitwise int conversion *)
-lemma bitwise_int_21 = of_int_bitwise 21 =
+lemma bitwise_int_21 = of_int_repr 21 =
   let open Float8 in
   { b7=false; b6=false; b5=false; b4=true; b3=false; b2=true; b1=false; b0=true; }
 
+let is_r (x : (NaNOrExReal.t, string) Result.t) (r : ExReal.t) =
+  match x with
+  | Ok (NaNOrExReal.XR xr) -> xr = r
+  | _ -> false
+  [@@macro]
+
+eval Specification.Float8.decode Specification.Format.B8P3 Specification.Float8.ninf
+eval is_r (decode Format.B8P3 Float8.ninf) ExReal.NINF
+
 (** Some extended reals sanity checks *)
-lemma real_0 = to_extended_real Float8.zero Format.B8P3 = ExReal.R 0.0 [@@by auto]
-lemma real_ninf = to_extended_real Float8.ninf Format.B8P3 = ExReal.NINF
-lemma real_pinf = to_extended_real Float8.pinf Format.B8P3 = ExReal.PINF
+lemma real_0 = is_r (decode Format.B8P3 Float8.zero) (ExReal.R 0.0) [@@by auto]
+lemma real_ninf = is_r (decode Format.B8P3 Float8.ninf) ExReal.NINF [@@by auto]
+lemma real_pinf = is_r (decode Format.B8P3 Float8.pinf) ExReal.PINF [@@by auto]
 
 let p3_pos_one : t = { b7=false; b6=true; b5=false; b4=false; b3=false; b2=false; b1=false; b0=false; } [@@macro]
 let p3_neg_one : t = { b7=true;  b6=true; b5=false; b4=false; b3=false; b2=false; b1=false; b0=false; } [@@macro]
 
-lemma real_pos_one = to_extended_real (p3_pos_one) Format.B8P3 = ExReal.R 1.0 [@@by auto]
-lemma real_neg_one = to_extended_real (p3_neg_one) Format.B8P3 = ExReal.R (- 1.0) [@@by auto]
+lemma real_pos_one = is_r (decode Format.B8P3 (p3_pos_one)) (ExReal.R 1.0) [@@by auto]
+lemma real_neg_one = is_r (decode Format.B8P3 (p3_neg_one)) (ExReal.R (- 1.0)) [@@by auto]
 
 let tiny : t = { b7=false; b6=false; b5=false; b4=false; b3=false; b2=false; b1=false; b0=true; } [@@macro]
 let small : t = { b7=false; b6=false; b5=false; b4=false; b3=false; b2=true; b1=false; b0=false; } [@@macro]
@@ -55,43 +66,56 @@ let nsmall : t = { b7=true; b6=false; b5=false; b4=false; b3=false; b2=true; b1=
 let none : t = { b7=true; b6=true; b5=false; b4=false; b3=false; b2=false; b1=false; b0=false; } [@@macro]
 let nhuge : t = { b7=true; b6=true; b5=true; b4=true; b3=true; b2=true; b1=true; b0=false; } [@@macro]
 
-lemma tiny_value = to_extended_real tiny Format.B8P3 = ExReal.R (0.25 *. Util.pow2 (- 15)) [@@by auto]
-lemma tiny_value = to_extended_real tiny Format.B8P3 = ExReal.R (0.00000762939453125) [@@by auto]
-lemma small_value = to_extended_real small Format.B8P3 = ExReal.R (1.0 *. Util.pow2 (- 15)) [@@by auto]
-lemma one_value = to_extended_real one Format.B8P3 = ExReal.R 1.0 [@@by auto]
-lemma huge_value = to_extended_real huge Format.B8P3 = ExReal.R 49152.0 [@@by auto]
-lemma ntiny_value = to_extended_real ntiny Format.B8P3 = ExReal.R (-. (0.25 *. Util.pow2 (- 15))) [@@by auto]
-lemma nsmall_value = to_extended_real nsmall Format.B8P3 = ExReal.R (-. (1.0 *. Util.pow2 (- 15))) [@@by auto]
-lemma none_value = to_extended_real none Format.B8P3 = ExReal.R (- 1.0) [@@by auto]
-lemma nhuge_value = to_extended_real nhuge Format.B8P3 = ExReal.R (- 49152.0) [@@by auto]
+lemma tiny_value = is_r (decode Format.B8P3 tiny) (ExReal.R (0.25 *. Util.pow2 (- 15))) [@@by auto]
+lemma tiny_value = is_r (decode Format.B8P3 tiny) (ExReal.R (0.00000762939453125)) [@@by auto]
+lemma small_value = is_r (decode Format.B8P3 small) (ExReal.R (1.0 *. Util.pow2 (- 15))) [@@by auto]
+lemma one_value = is_r (decode Format.B8P3 one) (ExReal.R 1.0) [@@by auto]
+lemma huge_value = is_r (decode Format.B8P3 huge) (ExReal.R 49152.0) [@@by auto]
+lemma ntiny_value = is_r (decode Format.B8P3 ntiny) (ExReal.R (-. (0.25 *. Util.pow2 (- 15)))) [@@by auto]
+lemma nsmall_value = is_r (decode Format.B8P3 nsmall) (ExReal.R (-. (1.0 *. Util.pow2 (- 15)))) [@@by auto]
+lemma none_value = is_r (decode Format.B8P3 none) (ExReal.R (- 1.0)) [@@by auto]
+lemma nhuge_value = is_r (decode Format.B8P3 nhuge) (ExReal.R (- 49152.0)) [@@by auto]
 
-lemma neg_tiny_not_nan = negate tiny Format.B8P3 <> nan [@@by auto]
+eval (negate Format.B8P3 tiny)
+eval (of_int_repr (to_int_repr tiny))
 
-lemma none_is_neg_one = none = negate one Format.B8P3 [@@by auto]
-lemma zero_is_zero = zero = negate zero Format.B8P3 [@@by auto]
+theorem thmx = (to_int_repr tiny) =  1 [@@by
+  expand_at ~f:"Specification.Float8.to_int_repr" ~pos:"C0" ~num:255 0
+  @> expr_simplify]
 
-(* lemma huge_neg_real = to_extended_real (negate huge Format.B8P3) Format.B8P3 = ExReal.R (- 49152.0) [@@by auto] *)
+lemma neg_tiny_not_nan = negate Format.B8P3 tiny <> nan
+  [@@by auto]
+
+theorem tiny_encode = Float8.encode Format.B8P3 (NaNOrExReal.XR (ExReal.R (1.0 /. 131072.0))) = Ok (tiny)
+  [@@by auto]
+
+theorem neg_tiny_encode = Float8.encode Format.B8P3 (NaNOrExReal.XR (ExReal.R (-1.0 /. 131072.0))) = Ok ({ tiny with b7 = true})
+  [@@by auto]
+
+theorem x = Float8.encode Format.B8P3 (NaNOrExReal.XR (ExReal.R (1.0 /. 131072.0))) = Ok ( tiny )
+  [@@by auto]
+
+lemma none_is_neg_one = none = negate Format.B8P3 one [@@by auto]
+lemma zero_is_zero = zero = negate Format.B8P3 zero [@@by auto]
+
+lemma huge_neg_real = is_r (decode Format.B8P3 (negate Format.B8P3 huge)) (ExReal.R (- 49152.0)) [@@by auto]
 
 lemma log1 = Util.floor_log2_abs 49152.0 16 = 15 [@@by auto]
 lemma log2 = Util.floor_log2_abs 24576.0 16 = 14 [@@by auto]
 
-lemma tst1 = to_extended_real (of_int_bitwise 0xFA) Format.B8P3 = ExReal.R (- 24576.0) [@@by auto]
+lemma tst1 = is_r (decode Format.B8P3 (of_int_repr 0xFA)) (ExReal.R (- 24576.0)) [@@by auto]
 
-lemma tst2 = to_extended_real (of_int_bitwise 0xF8) Format.B8P3 = ExReal.R (- 16384.0) [@@by auto]
+lemma tst2 = is_r (decode Format.B8P3 (of_int_repr 0xF8)) (ExReal.R (- 16384.0)) [@@by auto]
 
-eval (of_int_bitwise 0x3B);;
+eval (of_int_repr 0x3B);;
 
-lemma tst2_real = to_extended_real (negate (of_int_bitwise 0xF8) Format.B8P3) Format.B8P3 = ExReal.R 16384.0
-  [@@by unroll_nonlin 10 2 1024]
-  [@@timeout 600]
+lemma tst2_real = is_r (decode Format.B8P3 (negate Format.B8P3 (of_int_repr 0xF8))) (ExReal.R 16384.0)
+  [@@by auto]
 
 instance (fun x -> not (Float8.is_zero x))
 
+lemma rBB1 = is_r (Float8.decode Format.B8P1 (of_int_repr 0x3B)) (ExReal.R 0.0625) [@@by auto]
 
-(* 0xbb = 1 0111011 = -0b1.0*2^94 = -0.0625 *)
+lemma rBB2 = is_r (Float8.decode Format.B8P2 (of_int_repr 0x3B)) (ExReal.R 0.1875) [@@by auto]
 
-lemma rBB1 = (Float8.to_extended_real (of_int_bitwise 0x3B) Format.B8P1) = ExReal.R 0.0625 [@@by auto]
-
-lemma rBB2 = (Float8.to_extended_real (of_int_bitwise 0x3B) Format.B8P2) = ExReal.R 0.1875 [@@by auto]
-
-lemma rBB3 = (Float8.to_extended_real (of_int_bitwise 0x3B) Format.B8P3) = ExReal.R 0.4375 [@@by auto]
+lemma rBB3 = is_r (Float8.decode Format.B8P3 (of_int_repr 0x3B)) (ExReal.R 0.4375) [@@by auto]
