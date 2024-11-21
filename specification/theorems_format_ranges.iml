@@ -8,11 +8,11 @@ open ExReal.Infix
 
 let is_within_range (f : Format.t) (x : Float8.t) : bool =
   let open Float8.NaNOrExReal in
-  (not (Float8.is_nan x || Float8.is_inf x))
-    ==>
   let _, _, _, max = Format.get_format_parameters f in
   match Float8.decode f x with
-  | Ok NaN -> false
+  | Ok NaN
+  | Ok (XR NINF)
+  | Ok (XR PINF) -> true
   | Ok (XR r) -> R Real.(- max) <=. r && r <=. R max
   | _ -> false
 

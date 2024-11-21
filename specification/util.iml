@@ -30,6 +30,22 @@ let rec pow (x : int) (n : int) : real =
       1.0 /. ((Real.of_int x) *. (pow x (- (n + 1))))
   [@@measure Ordinal.of_int (abs n)]
 
+let rec ripow (x : real) (n : int) : real =
+    if (x = 0.0) then 0.0 else
+    if (x = 2.0) then pow2 n else
+    match n with
+    | 0 -> 1.0
+    | 1 -> x
+    | _ when n > 1 ->
+        let x2 = x *. x in
+        if n mod 2 = 0 then
+          ripow x2 (n / 2)
+        else
+          x *. (ripow x2 ((n-1) / 2))
+    | _ ->
+        1.0 /. (x *. (ripow x (- (n + 1))))
+    [@@measure Ordinal.of_int (abs n)]
+
 let rec ipow2 (x : int) : int =
   match x with
   | 0 -> 1

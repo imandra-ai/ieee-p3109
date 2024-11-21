@@ -86,7 +86,23 @@ let div (x : t) (y : t) : (t, string) Result.t =
 
   | R x, R y -> Ok (R (x /. y))
 
-let pow (_x : t) (_y : t) : (t, string) Result.t =
+let sqrt (_x : t) : (t, string) Result.t =
+  (* TODO *)
+  Ok NINF
+
+let log (_x : t) : (t, string) Result.t =
+  (* TODO *)
+  Ok NINF
+
+let log2 (_x : t) : (t, string) Result.t =
+  (* TODO *)
+  Ok NINF
+
+let exp (_x : t) : (t, string) Result.t =
+  (* TODO *)
+  Ok NINF
+
+let exp2 (_x : t) : (t, string) Result.t =
   (* TODO *)
   Ok NINF
 
@@ -119,12 +135,13 @@ let sub (x : t) (y : t) : (t, string) Result.t =
   | PINF, NINF | R _, NINF | PINF, R _ -> Ok PINF
   | R x, R y -> Ok (R (x -. y))
 
-let lt (x : t) (y : t) = match x, y with
-| NINF, NINF | PINF, PINF | PINF, NINF -> false
-| NINF, PINF -> true
-| NINF, R _ | R _, PINF -> true
-| PINF, R _ | R _, NINF -> false
-| R rx, R ry -> rx <. ry
+let lt (x : t) (y : t) =
+  match x, y with
+  | NINF, NINF | PINF, PINF | PINF, NINF -> false
+  | NINF, PINF -> true
+  | NINF, R _ | R _, PINF -> true
+  | PINF, R _ | R _, NINF -> false
+  | R rx, R ry -> rx <. ry
 
 module Infix = struct
   let ix (x : int) = of_int x [@@macro]

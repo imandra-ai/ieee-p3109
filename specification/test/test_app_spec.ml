@@ -114,3 +114,11 @@ let _ =
     Printf.printf "T = %d\n" t
   | Error e -> Printf.printf "error: %s" e
   | _ -> Printf.printf "Non-R"
+
+let _ =
+  let x =
+    Float8.round_to_precision (Z.of_int 3) (Z.of_int 16)
+      RoundingMode.TowardPositive
+      (ExReal.R (Q.of_ints 21 10))
+  in
+  Printf.printf "Rounded: %s\n%!" (ExReal.to_string x)
