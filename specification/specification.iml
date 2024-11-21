@@ -368,10 +368,11 @@ module Float8 = struct
 
 
   (** 4.7.1 Specification of IEEE Std 754 formats *)
-  (* See also IEEE754.ml*)
+  (* See also IEEE754.ml *)
 
   let encode754 (phi : IEEE754.Format.t) (x : ExReal.t) : IEEE754.t =
     IEEE754.round x phi IEEE754.RoundingMode.TowardZero
+
 
   (** 4.7.2 Conversion from IEEE Std 754 formats to P3109 *)
 
@@ -491,8 +492,7 @@ module Float8 = struct
       | _, Error e -> Error e
       | Error e, _ -> Error e)
 
-  (** Add [x] (in [f_x]) to [y] (in [f_y]), and return in [f_z]
-      under projection specification [pi] *)
+  (** Add [x] (in [f_x]) to [y] (in [f_y]), and return in [f_z] under projection specification [pi] *)
   let add (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (pi : Projection.t)
           (x : t) (y : t)  : t =
     match internal_add f_x f_y f_z pi x y with
@@ -531,7 +531,8 @@ module Float8 = struct
     | Ok x -> x
     | Error _ -> nan (* unreachable by theorem internal_subtract_ok *)
 
-  let internal_multiply (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) (y : t) : (t, string) Result.t =
+  let internal_multiply (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (pi : Projection.t)
+    (x : t) (y : t) : (t, string) Result.t =
     let open NaNOrExReal in
     match x, y with
     | _, y when y = nan -> Ok nan
@@ -562,7 +563,8 @@ module Float8 = struct
     | Error _ -> nan (* unreachable by theorem internal_multiply_ok *)
 
 
-  let internal_divide (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) (y : t) : (t, string) Result.t =
+  let internal_divide (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (pi : Projection.t)
+    (x : t) (y : t) : (t, string) Result.t =
       let open NaNOrExReal in
       match x, y with
       | _, y when y = nan -> Ok nan
@@ -585,7 +587,7 @@ module Float8 = struct
 
   (** For [x] (in [f_x]), [y] (in [f_y]) compute x / y and return in [f_z],
       with rounding mode [rnd] and saturation mode [ovf] *)
-  let divide (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) (y : t)  : t =
+  let divide (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) (y : t) : t =
   match internal_divide f_x f_y  f_z pi x y with
   | Ok x -> x
   | Error _ -> nan (* unreachable by theorem internal_divide_ok *)
@@ -896,61 +898,54 @@ module Float8 = struct
 
   (** 4.10.3 Predicates and classification *)
 
-  let is_zero (_f : Format.t) (x : t) : bool = x = zero [@@macro]
-    (* match x with
-    | x when x = nan -> false
+  let is_zero (f : Format.t) (x : t) : bool =
+    match x with
+    | _ when x = nan -> false
     | _ ->
       (match decode f x with
       | Ok NaNOrExReal.NaN -> false
       | Ok (NaNOrExReal.XR xr) -> xr = ExReal.zero
-      | _ -> false) *)
+      | _ -> false (* unreachable by theorem decode_ok *))
 
-  let is_nan (x : t) : bool = x = nan [@@macro]
+  let is_one (f : Format.t) (x : t) : bool =
+    match x with
+    | x when x = nan -> false
+    | _ ->
+      (match decode f x with
+      | Ok NaNOrExReal.NaN -> false
+      | Ok (NaNOrExReal.XR xr) -> xr = ExReal.one
+      | _ -> false)
 
-  let is_ninf (x : t) : bool = x = ninf [@@macro]
+  let is_nan (_f : Format.t) (x : t) : bool = x = nan [@@macro]
 
-  let is_pinf (x : t) : bool = x = pinf [@@macro]
-
-  let is_inf (x : t) : bool = x = ninf || x = pinf [@@macro]
-
-  let is_finite (x : t) : bool = x <> nan && x <> ninf && x <> pinf [@@macro]
+  let is_sign_minus (f : Format.t) (x : t) : bool =
+    match x with
+    | _ when x = nan -> true
+    | _ ->
+      (match decode f x with
+      | Ok NaNOrExReal.NaN -> false
+      | Ok (NaNOrExReal.XR r) -> ExReal.Infix.(r <. ExReal.zero)
+      | _ -> false)
 
   let is_normal (f : Format.t) (x : t) : bool =
-    let open Format in
-    is_finite x
-    &&
-    match f with
-    | B8P1 -> x.b6 || x.b5 || x.b4 || x.b3 || x.b2 || x.b1 || x.b0
-    | B8P2 -> x.b6 || x.b5 || x.b4 || x.b3 || x.b2 || x.b1
-    | B8P3 -> x.b6 || x.b5 || x.b4 || x.b3 || x.b2
-    | B8P4 -> x.b6 || x.b5 || x.b4 || x.b3
-    | B8P5 ->
-      x.b6 || x.b5 || x.b4
-    | B8P6 -> x.b6 || x.b5
-    | B8P7 -> x.b6
+    let k, p, _, _ = Format.get_format_parameters f in
+    match x with
+    | _ when x = zero || x = ninf || x = pinf || x = nan -> false
+    | _ -> Util.machine_idiv ((to_int_repr x) mod (Util.ipow2 (k - 1))) (Util.ipow2 (p - 1)) > 0
 
   let is_subnormal (f : Format.t) (x : t) : bool =
-    let open Format in
-    is_finite x
-    &&
-    match f with
-    | B8P1 ->
-      (not x.b6) && (not x.b5) && (not x.b4) && (not x.b3) && (not x.b2)
-      && (not x.b1) && not x.b0
-    | B8P2 ->
-      (not x.b6) && (not x.b5) && (not x.b4) && (not x.b3) && (not x.b2)
-      && not x.b1
-    | B8P3 -> (not x.b6) && (not x.b5) && (not x.b4) && (not x.b3) && not x.b2
-    | B8P4 -> (not x.b6) && (not x.b5) && (not x.b4) && not x.b3
-    | B8P5 -> (not x.b6) && (not x.b5) && not x.b4
-    | B8P6 -> (not x.b6) && not x.b5
-    | B8P7 -> not x.b6
+    let k, p, _, _ = Format.get_format_parameters f in
+    match x with
+    | _ when x = zero || x = ninf || x = pinf || x = nan -> false
+    | _ -> Util.machine_idiv ((to_int_repr x) mod (Util.ipow2 (k - 1))) (Util.ipow2 (p - 1)) = 0
 
-  let is_sign_minus (x : t) : bool = x.b7 [@@macro]
+  let is_finite (f : Format.t) (x : t) : bool = x <> ninf && x <> pinf && x <> nan
 
-  let is_canonical (_x : t) : bool = true [@@macro]
+  let is_infinite (f : Format.t) (x : t) : bool = x = ninf || x = pinf
 
-  let is_signaling (_x : t) : bool = false [@@macro]
+  let is_signaling (f : Format.t) (_x : t) : bool = false
+
+  let is_canonical (f : Format.t) (_x : t) : bool = true
 
   (** Classifier *)
 
@@ -965,14 +960,14 @@ module Float8 = struct
     | PositiveInfinity
 
   let class_internal (f : Format.t) (x : t) : (class_, string) Result.t =
-    if is_nan x then Ok NaN
-    else if is_inf x && is_sign_minus x then Ok NegativeInfinity
-    else if is_normal f x && is_sign_minus x then Ok NegativeNormal
-    else if is_subnormal f x && is_sign_minus x then Ok NegativeSubnormal
+    if is_nan f x then Ok NaN
+    else if is_infinite f x && is_sign_minus f x then Ok NegativeInfinity
+    else if is_normal f x && is_sign_minus f x then Ok NegativeNormal
+    else if is_subnormal f x && is_sign_minus f x then Ok NegativeSubnormal
     else if is_zero f x then Ok Zero
-    else if is_subnormal f x && not (is_sign_minus x) then Ok PositiveSubnormal
-    else if is_normal f x && not (is_sign_minus x) then Ok PositiveNormal
-    else if is_inf x && not (is_sign_minus x) then Ok PositiveInfinity
+    else if is_subnormal f x && not (is_sign_minus f x) then Ok PositiveSubnormal
+    else if is_normal f x && not (is_sign_minus f x) then Ok PositiveNormal
+    else if is_infinite f x && not (is_sign_minus f x) then Ok PositiveInfinity
     else Error "unclassified"
 
   let class_ (f : Format.t) (x : t) : class_ =

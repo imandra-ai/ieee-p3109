@@ -5,98 +5,53 @@ open Implementation
 
 let unroll_nonlin qt nqt steps = Tactic.unroll ~smt:"z3-full-nonlinear" ~query_timeout:qt ~no_asm_query_timeout:nqt steps
 
-(** Proof that our implementation of [is_nan] is correct *)
-theorem correct_is_nan (x:Float8.t) =
-  Implementation.Float8.is_nan x = Specification.Float8.is_nan x
-
-(** Proof that our implementation of [of_int_bitwise] is correct *)
-theorem correct_of_int_bitwise (x:int) =
-  Implementation.Float8.of_int_bitwise x = Specification.Float8.of_int_repr x
+(** Proof that our implementation of [of_int_repr] is correct *)
+theorem correct_of_int_repr (x : int) =
+  Implementation.Float8.of_int_repr x = Specification.Float8.of_int_repr x
 
 (** Proof that our implementation of [abs] is correct *)
-theorem correct_abs (f:Format.t) (x:Float8.t) =
+theorem correct_abs (f : Format.t) (x : Float8.t) =
   Implementation.Float8.abs f x = Specification.Float8.abs f x
-  [@@by enumerate ["x"] @> simp @> auto]
-  [@@timeout 3600]
+  [@@by enumerate ["f"; "x"] @> auto]
+  [@@timeout 720]
 
 (** Proof that our implementation of [negate] is correct *)
-
-theorem correct_negate_p7_b0t (f:Format.t) (x:Float8.t) =
-  f = Specification.Format.B8P7
-  && x.b0 = true
-  ==>
-  Implementation.Float8.negate f x = Specification.Float8.negate f x
-  [@@by enumerate ["x"] @> simp @> auto]
-  [@@timeout 3600]
-
-theorem correct_negate_p7_b0f (f:Format.t) (x:Float8.t) =
-  f = Specification.Format.B8P7
-  && x.b0 = false
-  ==>
-  Implementation.Float8.negate f x = Specification.Float8.negate f x
-  [@@by enumerate ["x"] @> simp @> auto]
-  [@@timeout 3600]
-
-theorem correct_negate_p7 (f:Format.t) (x:Float8.t) =
-  f = Specification.Format.B8P7
-  ==>
-  Implementation.Float8.negate f x = Specification.Float8.negate f x
-  [@@by
-    [%use correct_negate_p7_b0t f x] @>
-    [%use correct_negate_p7_b0f f x] @>
-    unroll 0
-  ]
-
-theorem correct_negate_p6 (f:Format.t) (x:Float8.t) =
-  f = Specification.Format.B8P6
-  ==>
-  Implementation.Float8.negate f x = Specification.Float8.negate f x
-  [@@by enumerate ["x"] @> simp @> auto]
-  [@@timeout 480]
-
-theorem correct_negate_p5 (f:Format.t) (x:Float8.t) =
-  f = Specification.Format.B8P5
-  ==>
-  Implementation.Float8.negate f x = Specification.Float8.negate f x
-  [@@by enumerate ["x"] @> simp @> auto]
-  [@@timeout 480]
-
-theorem correct_negate_p4 (f:Format.t) (x:Float8.t) =
-  f = Specification.Format.B8P4
-  ==>
-  Implementation.Float8.negate f x = Specification.Float8.negate f x
-  [@@by enumerate ["x"] @> simp @> auto]
-  [@@timeout 480]
-
-theorem correct_negate_p3 (f:Format.t) (x:Float8.t) =
-  f = Specification.Format.B8P3
-  ==>
-  Implementation.Float8.negate f x = Specification.Float8.negate f x
-  [@@by enumerate ["x"] @> simp @> auto]
-  [@@timeout 480]
-
-theorem correct_negate_p2 (f:Format.t) (x:Float8.t) =
-  f = Specification.Format.B8P2
-  ==>
-  Implementation.Float8.negate f x = Specification.Float8.negate f x
-  [@@by enumerate ["x"] @> simp @> auto]
-  [@@timeout 360]
-
-theorem correct_negate_p1 (f:Format.t) (x:Float8.t) =
-  f = Specification.Format.B8P1
-  ==>
-  Implementation.Float8.negate f x = Specification.Float8.negate f x
-  [@@by enumerate ["x"] @> simp @> auto]
-  [@@timeout 360]
-
 theorem correct_negate (f:Format.t) (x:Float8.t) =
   Implementation.Float8.negate f x = Specification.Float8.negate f x
-  [@@by
-     [%use correct_negate_p7 f x] @>
-     [%use correct_negate_p6 f x] @>
-     [%use correct_negate_p5 f x] @>
-     [%use correct_negate_p4 f x] @>
-     [%use correct_negate_p3 f x] @>
-     [%use correct_negate_p2 f x] @>
-     [%use correct_negate_p1 f x] @>
-     unroll 0]
+  [@@by enumerate ["f"; "x"] @> auto]
+  [@@timeout 1200]
+
+(** Proof that our implementation of [is_zero] is correct *)
+theorem correct_is_zero (f : Format.t) (x : Float8.t) =
+  Implementation.Float8.is_zero f x = Specification.Float8.is_zero f x
+  [@@by enumerate ["f"; "x"] @> auto]
+  [@@timeout 360]
+
+(** Proof that our implementation of [is_one] is correct *)
+theorem correct_is_one (f : Format.t) (x : Float8.t) =
+  Implementation.Float8.is_one f x = Specification.Float8.is_one f x
+  [@@by enumerate ["f"; "x"] @> auto]
+  [@@timeout 360]
+
+(** Proof that our implementation of [is_nan] is correct *)
+theorem correct_is_nan (f : Format.t) (x : Float8.t) =
+  Implementation.Float8.is_nan f x = Specification.Float8.is_nan f x
+  [@@by auto]
+  [@@timeout 360]
+
+theorem correct_is_sign_minus (f : Format.t) (x : Float8.t) =
+  Implementation.Float8.is_sign_minus f x = Specification.Float8.is_sign_minus f x
+  [@@by enumerate ["f"; "x"] @> auto]
+  [@@timeout 360]
+
+(** Proof that our implementation of [is_normal] is correct *)
+theorem correct_is_normal (f : Format.t) (x : Float8.t) =
+  Implementation.Float8.is_normal f x = Specification.Float8.is_normal f x
+  [@@by enumerate ["f"; "x"] @> auto]
+  [@@timeout 360]
+
+(** Proof that our implementation of [is_subnormal] is correct *)
+theorem correct_is_subnormal (f : Format.t) (x : Float8.t) =
+  Implementation.Float8.is_subnormal f x = Specification.Float8.is_subnormal f x
+  [@@by enumerate ["f"; "x"] @> auto]
+  [@@timeout 360]

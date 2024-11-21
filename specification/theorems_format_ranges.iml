@@ -23,32 +23,32 @@ theorem thm_format_range_p7 (f : Format.t) (x : Float8.t) =
 
 theorem thm_format_range_p6 (f : Format.t) (x : Float8.t) =
   f = Format.B8P6 ==> is_within_range f x
-  [@@by enumerate["x"]  @> auto]
+  [@@by enumerate["x"] @> auto]
   [@@timeout 60]
 
 theorem thm_format_range_p5 (f : Format.t) (x : Float8.t) =
   f = Format.B8P5 ==> is_within_range f x
-  [@@by enumerate["x"]  @> auto]
+  [@@by enumerate["x"] @> auto]
   [@@timeout 60]
 
 theorem thm_format_range_p4 (f : Format.t) (x : Float8.t) =
   f = Format.B8P4 ==> is_within_range f x
-  [@@by enumerate["x"]  @> auto]
+  [@@by enumerate["x"] @> auto]
   [@@timeout 60]
 
 theorem thm_format_range_p3 (f : Format.t) (x : Float8.t) =
   f = Format.B8P3 ==> is_within_range f x
-  [@@by enumerate["x"]  @> auto]
+  [@@by enumerate["x"] @> auto]
   [@@timeout 60]
 
 theorem thm_format_range_p2 (f : Format.t) (x : Float8.t) =
   f = Format.B8P2 ==> is_within_range f x
-  [@@by enumerate["x"]  @> auto]
+  [@@by enumerate["x"] @> auto]
   [@@timeout 60]
 
 theorem thm_format_range_p1 (f : Format.t) (x : Float8.t) =
   f = Format.B8P1 ==> is_within_range f x
-  [@@by enumerate["x"]  @> auto]
+  [@@by enumerate["x"] @> auto]
   [@@timeout 60]
 
 theorem thm_within_format_range (f : Format.t) (x : Float8.t) =
