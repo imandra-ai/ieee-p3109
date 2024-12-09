@@ -56,12 +56,29 @@ theorem decode_ok (f : Format.t) (x : Float8.t) =
   [@@by unroll_nonlin 10 1 50]
   [@@fc]
 
+theorem decode_within_range (f : Format.t) (x : Float8.t) =
+  let open Float8.NaNOrExReal in
+  let open ExReal in
+  let _, _, _, fmax = Format.get_format_parameters f in
+  let d = Float8.decode f x [@@trigger] in
+  match d with
+  | Ok (Float8.NaNOrExReal.XR (ExReal.R r)) ->
+    (-. fmax) <=. r && r <=. fmax
+  | Ok _ -> true
+  | _ -> true
+  [@@timeout 3600]
+  [@@disable Specification.Float8.decode]
+  [@@by
+    [%use Theorems_format_ranges.within_format_range f x]
+    @> auto]
+  [@@fc]
+
 (* [encode] is ok if the input is within the format range *)
 theorem encode_ok_within_range (f : Format.t) (x : Float8.NaNOrExReal.t) =
   let open Float8.NaNOrExReal in
   let open ExReal in
   let _, _, _, fmax = Format.get_format_parameters f in
-  let encoded = (Float8.encode f x) in
+  let encoded = Float8.encode f x [@@trigger] in
   match x with
   | XR (R x) when x <. (-. fmax) || x >. fmax ->
     (* When x is outside the format range, encode returns an error *)
@@ -77,10 +94,9 @@ theorem decode_encode_ok (f : Format.t)  (x : Float8.t) =
   match Float8.decode f x with
   | Ok y -> Result.is_ok (Float8.encode f y [@trigger])
   | Error _ -> false
-  [@@by
-    [%use Theorems_format_ranges.thm_within_format_range f x]
-    @> [%use encode_ok_within_range f (Result.get_or ~default:Float8.NaNOrExReal.NaN (Float8.decode f x))]
-    @> unroll_nonlin 10 1 10]
+  [@@timeout 3600]
+  [@@disable Specification.Float8.encode, Specification.Float8.decode, Util.pow2, Util.ipow2, Util.ilog2]
+  [@@by auto]
   [@@fc]
 
 (* [saturate] produces a number within the format range *)

@@ -358,12 +358,13 @@ module Float8 = struct
 
   (* Convert [x] (in [f_x]) to IEEE−754 binary interchange format Binary{[k]} under IEEE−754 rounding mode [rnd754] *)
   let convert_to_ieee_754 (f : Format.t) (pi : Projection.t) (phi : IEEE754.Format.t) (x : t) : IEEE754.t =
+    let open NaNOrExReal in
     if x = nan then (* canonical if defined else quiet *)
       IEEE754.canonical_nan phi
     else (
       match decode f x with
-      | Ok (NaNOrExReal.NaN) -> IEEE754.quiet_nan phi
-      | Ok (NaNOrExReal.XR y) ->
+      | Ok (NaN) -> IEEE754.quiet_nan phi
+      | Ok (XR y) ->
         let _, _, _, _, _, p, b, m = IEEE754.Format.get_format_parameters phi in
         let r = round_to_precision p b (snd pi) y in
         let x = saturate m (fst pi) (snd pi) r in
@@ -375,11 +376,12 @@ module Float8 = struct
 
   (** Convert [x] (in [f_x]) to [f_z] with projection specification [pi] *)
   let convert_p3109_to_p3109 (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) : (t, string) Result.t =
+    let open NaNOrExReal in
     match x with
-    | x when x = nan -> encode f_z NaNOrExReal.NaN
+    | x when x = nan -> encode f_z NaN
     | x ->
       match decode f_x x with
-      | Ok (NaNOrExReal.XR x) -> project f_z pi x
+      | Ok (XR x) -> project f_z pi x
       | _ -> Error "unreachable"
 
   (** 4.8.1 Unary sign operations *)
@@ -387,7 +389,7 @@ module Float8 = struct
   let internal_abs (f : Format.t) (x : t) : (t, string) Result.t =
     let open NaNOrExReal in
     match decode f x with
-    | Ok (NaNOrExReal.NaN) -> Ok nan
+    | Ok (NaN) -> Ok nan
     | Ok (XR x) -> encode f (XR (ExReal.abs x))
     | Error e -> Error e
 
@@ -417,13 +419,14 @@ module Float8 = struct
 
   let internal_copy_sign (f : Format.t) (x : t) (y : t) : (t, string) Result.t =
     let open ExReal.Infix in
+    let open NaNOrExReal in
     match x, y with
     | x, y when x = nan || y = nan -> Ok nan
     | _ ->
       match decode f y with
-      | Ok (NaNOrExReal.NaN) -> Ok nan
-      | Ok (NaNOrExReal.XR yr) when yr >=. ExReal.zero -> (internal_abs f x)
-      | Ok (NaNOrExReal.XR _) -> (internal_negate f (abs f x))
+      | Ok (NaN) -> Ok nan
+      | Ok (XR yr) when yr >=. ExReal.zero -> (internal_abs f x)
+      | Ok (XR _) -> (internal_negate f (abs f x))
       | Error e -> Error e
 
   let copy_sign (f : Format.t) (x : t) (y : t) : t =
@@ -446,11 +449,9 @@ module Float8 = struct
       let x = decode f_x x in
       let y = decode f_y y in
       (match x, y with
-      | Ok NaNOrExReal.NaN, _
-      |  _, Ok NaNOrExReal.NaN
-      | Ok NaNOrExReal.XR PINF, Ok NaNOrExReal.XR NINF
-      | Ok NaNOrExReal.XR NINF, Ok NaNOrExReal.XR PINF ->
-        Error "unreachable"
+      | Ok NaN, _ |  _, Ok NaN
+      | Ok XR PINF, Ok XR NINF
+      | Ok XR NINF, Ok XR PINF -> Error "unreachable"
       | Ok (XR x), Ok (XR y)  ->
         let open ExReal.Infix in
         (match (x +. y) with
@@ -472,15 +473,15 @@ module Float8 = struct
     match (x, y) with
     | _, y when y = nan -> Ok nan
     | x, _ when x = nan -> Ok nan
-    | x, y when x = ninf && y = pinf -> Ok nan
-    | x, y when x = pinf && y = ninf -> Ok nan
+    | x, y when x = pinf && y = pinf -> Ok nan
+    | x, y when x = ninf && y = ninf -> Ok nan
     | x, y ->
       let x = decode f_x x in
       let y = decode f_y y in
       (match x, y with
-      | Ok NaNOrExReal.NaN, _
-      |  _, Ok NaNOrExReal.NaN ->
-        Error "unreachable"
+      | Ok NaN, _ |  _, Ok NaN
+      | Ok XR PINF, Ok XR PINF
+      | Ok XR NINF, Ok XR NINF -> Error "unreachable"
       | Ok (XR x) , Ok (XR y)  ->
         let open ExReal.Infix in
         (match (x -. y) with
@@ -510,9 +511,7 @@ module Float8 = struct
       let x = decode f_x x in
       let y = decode f_y y in
       (match x, y with
-      | Ok NaNOrExReal.NaN, _
-      |  _, Ok NaNOrExReal.NaN ->
-        Error "unreachable"
+      | Ok NaN, _ |  _, Ok NaN -> Error "unreachable"
       | Ok (XR x) , Ok (XR y)  ->
         let open ExReal.Infix in
         (match (x *. y) with
@@ -536,15 +535,13 @@ module Float8 = struct
       match x, y with
       | _, y when y = nan -> Ok nan
       | x, _ when x = nan -> Ok nan
-      | x, y when (x = pinf || x = ninf) && y = zero -> Ok nan
-      | x, y when x = zero && (y = pinf || y = ninf) -> Ok nan
+      | x, y when y = zero -> Ok nan
+      | x, y when (x <> ninf && x <> pinf && x <> nan) && (y = pinf || y = ninf) -> Ok zero
       | x, y ->
         let x = decode f_x x in
         let y = decode f_y y in
         (match x, y with
-        | Ok NaNOrExReal.NaN, _
-        |  _, Ok NaNOrExReal.NaN ->
-          Error "unreachable"
+        | Ok NaN, _ |  _, Ok NaN -> Error "unreachable"
         | Ok (XR x) , Ok (XR y)  ->
           let open ExReal.Infix in
           (match (x /. y) with
@@ -569,7 +566,7 @@ module Float8 = struct
     | _ ->
       let x = decode f_x x in
       (match x with
-      | Ok NaNOrExReal.NaN -> Error "unreachable"
+      | Ok NaN -> Error "unreachable"
       | Ok (XR NINF)
       | Ok (XR PINF) -> Ok nan
       | Ok (XR (R x)) when x <. 0.0 -> Ok nan
@@ -591,7 +588,7 @@ module Float8 = struct
     | _ ->
       let x = decode f_x x in
       (match x with
-      | Ok NaNOrExReal.NaN -> Error "unreachable"
+      | Ok NaN -> Error "unreachable"
       | Ok (XR NINF)
       | Ok (XR PINF) -> Ok nan
       | Ok (XR x) ->
@@ -613,7 +610,7 @@ module Float8 = struct
     | _ ->
       let x = decode f_x x in
       (match x with
-      | Ok NaNOrExReal.NaN -> Error "unreachable"
+      | Ok NaN -> Error "unreachable"
       | Ok (XR NINF)
       | Ok (XR PINF) -> Ok nan
       | Ok (XR (R r)) when r <=. 0.0 -> Ok nan
@@ -636,7 +633,7 @@ module Float8 = struct
     | _ ->
       let x = decode f_x x in
       (match x with
-      | Ok NaNOrExReal.NaN -> Error "unreachable"
+      | Ok NaN -> Error "unreachable"
       | Ok (XR NINF)
       | Ok (XR PINF) -> Ok nan
       | Ok (XR (R x)) when x <=. 0.0 -> Ok nan
@@ -658,7 +655,7 @@ module Float8 = struct
     | _ ->
       let x = decode f_x x in
       (match x with
-      | Ok NaNOrExReal.NaN -> Error "unreachable"
+      | Ok NaN -> Error "unreachable"
       | Ok (XR NINF)
       | Ok (XR PINF) -> Ok nan
       | Ok (XR (R x)) when x <=. 0.0 -> Ok nan
@@ -688,9 +685,7 @@ module Float8 = struct
         let x = decode f_x x in
         let y = decode f_y y in
         (match x, y with
-        | Ok NaNOrExReal.NaN, _
-        |  _, Ok NaNOrExReal.NaN ->
-          Error "unreachable"
+        | Ok NaN, _ |  _, Ok NaN -> Error "unreachable"
         | Ok (XR x) , Ok (XR y)  ->
           let open ExReal.ResultInfix in
           (match (xx x *. (2 ^. s_x)) +. (xx y *. (2 ^. s_y)) with
@@ -725,9 +720,7 @@ module Float8 = struct
       let x = decode f_x x in
       let y = decode f_y y in
       (match x, y with
-      | Ok NaNOrExReal.NaN, _
-      |  _, Ok NaNOrExReal.NaN ->
-        Error "unreachable"
+      | Ok NaN, _ |  _, Ok NaN -> Error "unreachable"
       | Ok (XR x) , Ok (XR y)  ->
         let open ExReal.ResultInfix in
         (match (xx x *. xx y *. (2 ^. s)) with
@@ -749,6 +742,7 @@ module Float8 = struct
 
   let internal_scaled_fma (phi : IEEE754.Format.t) (f_x : Format.t) (f_y : Format.t) (pi : Projection.t)
     (a : IEEE754.t) (s_a : int) (x : t) (y : t) (s : int) : (IEEE754.t, string) Result.t =
+    let open NaNOrExReal in
   let _, p, _, b, _, _, _, m = IEEE754.Format.get_format_parameters phi in
   match a, s_a, x, y, s with
   | _, _, _, _, _ when IEEE754.is_nan a phi -> Ok (IEEE754.quiet_nan phi)
@@ -758,7 +752,7 @@ module Float8 = struct
     (match IEEE754.to_exreal a phi with
      | Ok a_ ->
         (match decode f_x x, decode f_y y with
-        | Ok (NaNOrExReal.XR x_), Ok (NaNOrExReal.XR y_) -> (
+        | Ok (XR x_), Ok (XR y_) -> (
           let open ExReal.ResultInfix in
           let z_ = (Ok a_) *. (2 ^. s_a) +. (Ok x_) *. (Ok y_) *. (2 ^. s) in
           (match z_ with
@@ -785,8 +779,8 @@ module Float8 = struct
   let internal_minimum (f : Format.t) (x : t) (y : t) : (t, string) Result.t =
     let open NaNOrExReal in
     match decode f x, decode f y with
-    | Ok NaNOrExReal.NaN, Ok _
-    | Ok _, Ok NaNOrExReal.NaN -> Ok nan
+    | Ok NaN, Ok _
+    | Ok _, Ok NaN -> Ok nan
     | Ok (XR xr), Ok (XR yr) ->
       if ExReal.lt xr yr then Ok x else Ok y
     | Error e, _ | _, Error e -> Error e
@@ -799,8 +793,8 @@ module Float8 = struct
   let internal_maximum (f : Format.t) (x : t) (y : t) : (t, string) Result.t =
     let open NaNOrExReal in
     match decode f x, decode f y with
-    | Ok NaNOrExReal.NaN, Ok _
-    | Ok _, Ok NaNOrExReal.NaN -> Ok nan
+    | Ok NaN, Ok _
+    | Ok _, Ok NaN -> Ok nan
     | Ok (XR xr), Ok (XR yr) ->
       if ExReal.lt xr yr then Ok y else Ok x
     | Error e, _ | _, Error e -> Error e
@@ -817,8 +811,8 @@ module Float8 = struct
     let open NaNOrExReal in
     match decode f_x x, decode f_y y with
     | Ok (XR xr), Ok (XR yr) -> Ok ExReal.Infix.(xr <. yr)
-    | Ok _, Ok NaNOrExReal.NaN
-    | Ok NaNOrExReal.NaN, Ok _ -> Ok false
+    | Ok _, Ok NaN
+    | Ok NaN, Ok _ -> Ok false
     | Error e, _ | _, Error e -> Error e
 
   let compare_less (f_x : Format.t) (f_y : Format.t) (x : t) (y : t)  : bool =
@@ -830,8 +824,8 @@ module Float8 = struct
     let open NaNOrExReal in
     match decode f_x x, decode f_y y with
     | Ok (XR xr), Ok (XR yr) -> Ok ExReal.Infix.(xr <=. yr)
-    | Ok _, Ok NaNOrExReal.NaN
-    | Ok NaNOrExReal.NaN, Ok _ -> Ok false
+    | Ok _, Ok NaN
+    | Ok NaN, Ok _ -> Ok false
     | Error e, _ | _, Error e -> Error e
 
   let compare_less_equal (f_x : Format.t) (f_y : Format.t) (x : t) (y : t)  : bool =
@@ -843,8 +837,8 @@ module Float8 = struct
     let open NaNOrExReal in
     match decode f_x x, decode f_y y with
     | Ok (XR xr), Ok (XR yr) -> Ok (xr = yr)
-    | Ok _, Ok NaNOrExReal.NaN
-    | Ok NaNOrExReal.NaN, Ok _ -> Ok false
+    | Ok _, Ok NaN
+    | Ok NaN, Ok _ -> Ok false
     | Error e, _ | _, Error e -> Error e
 
   let compare_equal (f_x : Format.t) (f_y : Format.t) (x : t) (y : t)  : bool =
@@ -856,8 +850,8 @@ module Float8 = struct
     let open NaNOrExReal in
     match decode f_x x, decode f_y y with
     | Ok (XR xr), Ok (XR yr) -> Ok ExReal.Infix.(xr >. yr)
-    | Ok _, Ok NaNOrExReal.NaN
-    | Ok NaNOrExReal.NaN, Ok _ -> Ok false
+    | Ok _, Ok NaN
+    | Ok NaN, Ok _ -> Ok false
     | Error e, _ | _, Error e -> Error e
 
   let compare_greater (f_x : Format.t) (f_y : Format.t) (x : t) (y : t)  : bool =
@@ -869,8 +863,8 @@ module Float8 = struct
     let open NaNOrExReal in
     match decode f_x x, decode f_y y with
     | Ok (XR xr), Ok (XR yr) -> Ok ExReal.Infix.(xr >=. yr)
-    | Ok _, Ok NaNOrExReal.NaN
-    | Ok NaNOrExReal.NaN, Ok _ -> Ok false
+    | Ok _, Ok NaN
+    | Ok NaN, Ok _ -> Ok false
     | Error e, _ | _, Error e -> Error e
 
   let compare_greater_equal (f_x : Format.t) (f_y : Format.t) (x : t) (y : t)  : bool =
@@ -882,32 +876,35 @@ module Float8 = struct
   (** 4.10.3 Predicates and classification *)
 
   let is_zero (f : Format.t) (x : t) : bool =
+    let open NaNOrExReal in
     match x with
     | _ when x = nan -> false
     | _ ->
       (match decode f x with
-      | Ok NaNOrExReal.NaN -> false
-      | Ok (NaNOrExReal.XR xr) -> xr = ExReal.zero
+      | Ok NaN -> false
+      | Ok (XR xr) -> xr = ExReal.zero
       | _ -> false (* unreachable by theorem decode_ok *))
 
   let is_one (f : Format.t) (x : t) : bool =
+    let open NaNOrExReal in
     match x with
     | x when x = nan -> false
     | _ ->
       (match decode f x with
-      | Ok NaNOrExReal.NaN -> false
-      | Ok (NaNOrExReal.XR xr) -> xr = ExReal.one
+      | Ok NaN -> false
+      | Ok (XR xr) -> xr = ExReal.one
       | _ -> false)
 
   let is_nan (_f : Format.t) (x : t) : bool = x = nan [@@macro]
 
   let is_sign_minus (f : Format.t) (x : t) : bool =
+    let open NaNOrExReal in
     match x with
     | _ when x = nan -> true
     | _ ->
       (match decode f x with
-      | Ok NaNOrExReal.NaN -> false
-      | Ok (NaNOrExReal.XR r) -> ExReal.Infix.(r <. ExReal.zero)
+      | Ok NaN -> false
+      | Ok (XR r) -> ExReal.Infix.(r <. ExReal.zero)
       | _ -> false)
 
   let is_normal (f : Format.t) (x : t) : bool =
@@ -997,11 +994,12 @@ module Float8 = struct
 
   (** Convert [x] to a string of zeroes and ones (for debug purposes) *)
   let to_string (f : Format.t) (x : t) : string =
+    let open NaNOrExReal in
     let bool_to_bin x = if x then "1" else "0" in
     match decode f x with
     | Error e -> Printf.sprintf "error: %s" e
-    | Ok (NaNOrExReal.NaN) -> "NaN"
-    | Ok (NaNOrExReal.XR xreal) ->
+    | Ok (NaN) -> "NaN"
+    | Ok (XR xreal) ->
       Printf.sprintf "%s%s%s%s%s%s%s%s = %s" (bool_to_bin x.b7) (bool_to_bin x.b6)
         (bool_to_bin x.b5) (bool_to_bin x.b4) (bool_to_bin x.b3)
         (bool_to_bin x.b2) (bool_to_bin x.b1) (bool_to_bin x.b0)

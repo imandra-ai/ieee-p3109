@@ -16,15 +16,9 @@ let is_within_range (f : Format.t) (x : Float8.t) : bool =
   | Ok (XR r) -> R Real.(- max) <=. r && r <=. R max
   | _ -> false
 
-let is_within_range (f : Format.t) (x : Float8.t) : bool = true
-
 theorem within_format_range_p7 (f : Format.t) (x : Float8.t) =
   f = Format.B8P7 ==> is_within_range f x
-  [@@by
-    enumerate["f"; "x"]
-    @> par (repeat split_and) [%t auto]
-    (* @> auto *)
-  ]
+  [@@by enumerate["x"] @> auto]
   [@@timeout 600]
 
 theorem within_format_range_p6 (f : Format.t) (x : Float8.t) =

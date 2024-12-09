@@ -73,12 +73,7 @@ let div (x : t) (y : t) : (t, string) Result.t =
   | NINF, PINF | PINF, NINF  -> Error "invalid"
 
   | R _, PINF | R _, NINF -> Ok (R 0.0)
-
-  | PINF, R y when y = 0.0 -> Error "invalid"
-  | NINF, R y when y = 0.0 -> Error "invalid"
-
-  | R x, R y when x >=. 0.0 && y = 0.0 -> Ok PINF
-  | R x, R y when x <. 0.0 && y = 0.0 -> Ok NINF
+  | _, R y when y = 0.0 -> Error "invalid"
 
   | PINF, R y when y >. 0.0 -> Ok PINF
   | PINF, R y when y <. 0.0 -> Ok NINF
