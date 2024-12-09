@@ -1,7 +1,6 @@
 [@@@import Util, "dune:math"]
 [@@@import ExReal, "dune:math"]
 [@@@import IEEE754, "IEEE754.iml"]
-[@@@import Binary16, "binary16.iml"]
 
 (** Format definitions *)
 
@@ -109,42 +108,6 @@ module Float8 = struct
       b7 = (machine_idiv i 128) mod 2 <> 0;
     }
 
-  let ifb1 (b:bool) : int = if b then 1 else 0
-
-  let is_even (x : int) : bool = x mod 2 = 0 [@@macro]
-
-  let is_odd (x : int) : bool = x mod 2 <> 0 [@@macro]
-
-  (** Bitwise and of two float8s *)
-  let bitwise_and (x : t) (y : t) : t =
-    {
-      b7 = x.b7 && y.b7;
-      b6 = x.b6 && y.b6;
-      b5 = x.b5 && y.b5;
-      b4 = x.b4 && y.b4;
-      b3 = x.b3 && y.b3;
-      b2 = x.b2 && y.b2;
-      b1 = x.b1 && y.b1;
-      b0 = x.b0 && y.b0;
-    }
-
-  (** Bitwise or of two float8s *)
-  let bitwise_or (x : t) (y : t) : t =
-    {
-      b7 = x.b7 || y.b7;
-      b6 = x.b6 || y.b6;
-      b5 = x.b5 || y.b5;
-      b4 = x.b4 || y.b4;
-      b3 = x.b3 || y.b3;
-      b2 = x.b2 || y.b2;
-      b1 = x.b1 || y.b1;
-      b0 = x.b0 || y.b0;
-    }
-
-  (** Bitwise or of three float8s *)
-  let bitwise_or3 (x : t) (y : t) (z : t) : t = bitwise_or (bitwise_or x y) z
-  [@@macro]
-
   (** Shift float8 to the right *)
   let rec bit_shift_right (x : t) (i : int) : t =
     if i <= 0 then x
@@ -250,7 +213,9 @@ module Float8 = struct
     : (ExReal.t, string) Result.t =
     let open Util in
     let open RoundingMode in
-    let rsign (x:real) = if x <. 0.0 then -1.0 else 1.0 in
+    let rsign (x:real) = if x <. 0.0 then -1.0 else 1.0 [@@macro] in
+    let ifb1 (b:bool) : int = if b then 1 else 0 [@@macro] in
+    let is_even (x : int) : bool = x mod 2 = 0 [@@macro] in
     match x with
     | ExReal.NINF
     | ExReal.PINF -> Ok x
@@ -482,14 +447,16 @@ module Float8 = struct
       let y = decode f_y y in
       (match x, y with
       | Ok NaNOrExReal.NaN, _
-      |  _, Ok NaNOrExReal.NaN ->
+      |  _, Ok NaNOrExReal.NaN
+      | Ok NaNOrExReal.XR PINF, Ok NaNOrExReal.XR NINF
+      | Ok NaNOrExReal.XR NINF, Ok NaNOrExReal.XR PINF ->
         Error "unreachable"
-      | Ok (XR x) , Ok (XR y)  ->
+      | Ok (XR x), Ok (XR y)  ->
         let open ExReal.Infix in
         (match (x +. y) with
         | Ok z -> project f_z pi z
         | Error e -> Error e)
-      | _, Error e -> Error e
+      | _, Error e
       | Error e, _ -> Error e)
 
   (** Add [x] (in [f_x]) to [y] (in [f_y]), and return in [f_z] under projection specification [pi] *)
@@ -603,8 +570,11 @@ module Float8 = struct
       let x = decode f_x x in
       (match x with
       | Ok NaNOrExReal.NaN -> Error "unreachable"
+      | Ok (XR NINF)
+      | Ok (XR PINF) -> Ok nan
+      | Ok (XR (R x)) when x <. 0.0 -> Ok nan
       | Ok (XR x) ->
-        (match ExReal.sqrt x with
+        (match ExReal.sqrt x 8 with (* TODO: Proof that 8 is enough *)
         | Ok z -> project f_z pi z
         | Error e -> Error e)
       | Error e -> Error e)
@@ -622,8 +592,10 @@ module Float8 = struct
       let x = decode f_x x in
       (match x with
       | Ok NaNOrExReal.NaN -> Error "unreachable"
+      | Ok (XR NINF)
+      | Ok (XR PINF) -> Ok nan
       | Ok (XR x) ->
-        (match ExReal.exp x with
+        (match ExReal.exp x 9 with (* TODO: Proof that 9 is enough *)
         | Ok z -> project f_z pi z
         | Error e -> Error e)
       | Error e -> Error e)
@@ -637,12 +609,16 @@ module Float8 = struct
     let open NaNOrExReal in
     match x with
     | x when x = nan -> Ok nan
+    | x when x = ninf || x = pinf -> Ok nan
     | _ ->
       let x = decode f_x x in
       (match x with
       | Ok NaNOrExReal.NaN -> Error "unreachable"
+      | Ok (XR NINF)
+      | Ok (XR PINF) -> Ok nan
+      | Ok (XR (R r)) when r <=. 0.0 -> Ok nan
       | Ok (XR x) ->
-        (match ExReal.exp2 x with
+        (match ExReal.exp2 x 9 with (* TODO: Proof that 9 is enough *)
         | Ok z -> project f_z pi z
         | Error e -> Error e)
       | Error e -> Error e)
@@ -656,14 +632,18 @@ module Float8 = struct
     let open NaNOrExReal in
     match x with
     | x when x = nan -> Ok nan
+    | x when x = ninf || x = pinf -> Ok nan
     | _ ->
       let x = decode f_x x in
       (match x with
       | Ok NaNOrExReal.NaN -> Error "unreachable"
+      | Ok (XR NINF)
+      | Ok (XR PINF) -> Ok nan
+      | Ok (XR (R x)) when x <=. 0.0 -> Ok nan
       | Ok (XR x) ->
-        (match ExReal.log x with
+        (match ExReal.ln x 9 with (* TODO: Proof that 9 is enough *)
         | Ok z -> project f_z pi z
-        | Error e -> Error e)
+        | Error e -> Ok nan)
       | Error e -> Error e)
 
   let log (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) : t =
@@ -679,8 +659,11 @@ module Float8 = struct
       let x = decode f_x x in
       (match x with
       | Ok NaNOrExReal.NaN -> Error "unreachable"
+      | Ok (XR NINF)
+      | Ok (XR PINF) -> Ok nan
+      | Ok (XR (R x)) when x <=. 0.0 -> Ok nan
       | Ok (XR x) ->
-        (match ExReal.log2 x with
+        (match ExReal.log2 x 9 with (* TODO: Proof that 9 is enough *)
         | Ok z -> project f_z pi z
         | Error e -> Error e)
       | Error e -> Error e)
@@ -939,13 +922,13 @@ module Float8 = struct
     | _ when x = zero || x = ninf || x = pinf || x = nan -> false
     | _ -> Util.machine_idiv ((to_int_repr x) mod (Util.ipow2 (k - 1))) (Util.ipow2 (p - 1)) = 0
 
-  let is_finite (f : Format.t) (x : t) : bool = x <> ninf && x <> pinf && x <> nan
+  let is_finite (_f : Format.t) (x : t) : bool = x <> ninf && x <> pinf && x <> nan
 
-  let is_infinite (f : Format.t) (x : t) : bool = x = ninf || x = pinf
+  let is_infinite (_f : Format.t) (x : t) : bool = x = ninf || x = pinf
 
-  let is_signaling (f : Format.t) (_x : t) : bool = false
+  let is_signaling (_f : Format.t) (_x : t) : bool = false
 
-  let is_canonical (f : Format.t) (_x : t) : bool = true
+  let is_canonical (_f : Format.t) (_x : t) : bool = true
 
   (** Classifier *)
 
@@ -1022,6 +1005,6 @@ module Float8 = struct
       Printf.sprintf "%s%s%s%s%s%s%s%s = %s" (bool_to_bin x.b7) (bool_to_bin x.b6)
         (bool_to_bin x.b5) (bool_to_bin x.b4) (bool_to_bin x.b3)
         (bool_to_bin x.b2) (bool_to_bin x.b1) (bool_to_bin x.b0)
-        (if is_nan x then "NaN" else ExReal.to_string xreal)
+        (if is_nan f x then "NaN" else ExReal.to_string xreal)
         [@@ocamlformat "if-then-else=compact"] [@@program]
 end

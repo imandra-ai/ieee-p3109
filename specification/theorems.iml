@@ -61,7 +61,7 @@ theorem encode_ok_within_range (f : Format.t) (x : Float8.NaNOrExReal.t) =
   let open Float8.NaNOrExReal in
   let open ExReal in
   let _, _, _, fmax = Format.get_format_parameters f in
-  let encoded = Float8.encode f x in
+  let encoded = (Float8.encode f x) in
   match x with
   | XR (R x) when x <. (-. fmax) || x >. fmax ->
     (* When x is outside the format range, encode returns an error *)
@@ -113,6 +113,21 @@ theorem project_ok (f : Format.t) (pi : Projection.t) (x : ExReal.t) =
   [@@by
     [%use saturate_encode_ok f (rounded f (snd pi) x) (fst pi) (snd pi)]
     @> unroll_nonlin 10 10 1]
+  [@@fc]
+
+theorem nan_decodes_to_nan (f : Format.t) (x : Float8.t) =
+  Float8.decode f x [@trigger] = Ok Float8.NaNOrExReal.NaN <==> x = Float8.nan
+  [@@by unroll_nonlin 10 10 100]
+  [@@fc]
+
+theorem ninf_decodes_to_ninf (f : Format.t) (x : Float8.t) =
+  Float8.decode f x [@trigger] = Ok (Float8.NaNOrExReal.XR ExReal.NINF) <==> x = Float8.ninf
+  [@@by unroll_nonlin 10 10 100]
+  [@@fc]
+
+theorem pinf_decodes_to_pinf (f : Format.t) (x : Float8.t) =
+  Float8.decode f x  [@trigger] = Ok (Float8.NaNOrExReal.XR ExReal.PINF) <==> x = Float8.pinf
+  [@@by unroll_nonlin 10 10 100]
   [@@fc]
 
 
@@ -173,31 +188,31 @@ theorem internal_copy_sign_ok (f : Format.t) (x : Float8.t) (y : Float8.t) =
 theorem internal_add_ok (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (pi : Projection.t)
   (x : Float8.t) (y : Float8.t) =
   Result.is_ok (Float8.internal_add f_x f_y f_z pi x y)
-  [@@timeout 600]
-  [@@by
-    [%use project_ok f_z pi (mkrx (ExReal.add (mkdx f_x x) (mkdx f_y y)))]
-    @> unroll_nonlin 600 600 1024
-    (* @> auto *)
-  ]
+  [@@timeout 60]
+  [@@disable Specification.Float8.project, Specification.Float8.decode, Util.pow2, Util.ipow2, Util.ilog2]
+  [@@by auto]
 
 (** [internal_sub] never returns an error *)
 theorem internal_subtract_ok (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (pi : Projection.t)
   (x : Float8.t) (y : Float8.t) =
   Result.is_ok (Float8.internal_subtract f_x f_y f_z pi x y)
-  [@@timeout 600]
-  [@@by unroll_nonlin 600 10 1024]
+  [@@timeout 60]
+  [@@disable Specification.Float8.project, Specification.Float8.decode, Util.pow2, Util.ipow2, Util.ilog2]
+  [@@by auto]
 
 (** [internal_multiply] never returns an error *)
 theorem internal_multiply_ok (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (pi : Projection.t) (x : Float8.t) (y : Float8.t)  =
   Result.is_ok (Float8.internal_multiply f_x f_y f_z pi x y)
-  [@@timeout 600]
-  [@@by unroll_nonlin 600 10 1024]
+  [@@timeout 60]
+  [@@disable Specification.Float8.project, Specification.Float8.decode, Util.pow2, Util.ipow2, Util.ilog2]
+  [@@by auto]
 
 (** [internal_divide] never returns an error *)
 theorem internal_divide_ok (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (pi : Projection.t) (x : Float8.t) (y : Float8.t)  =
   Result.is_ok (Float8.internal_divide f_x f_y f_z pi x y)
-  [@@timeout 600]
-  [@@by unroll_nonlin 600 10 1024] (* 23m *)
+  [@@timeout 60]
+  [@@disable Specification.Float8.project, Specification.Float8.decode, Util.pow2, Util.ipow2, Util.ilog2]
+  [@@by auto]
 
 
 (** 4.8.4 Unary mathematical operations *)
@@ -206,22 +221,22 @@ theorem internal_divide_ok (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (p
 theorem internal_sqrt_ok (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : Float8.t) =
   Result.is_ok (Float8.internal_sqrt f_x f_z pi x)
   [@@timeout 60]
-  [@@by
-    [%use project_ok f_z pi (mkrx (ExReal.sqrt (mkdx f_x x)))]
-    @> unroll_nonlin 10 1 100]
+  [@@disable Specification.Float8.project, Specification.Float8.decode, Util.pow2, Util.ipow2, Util.ilog2]
+  [@@by auto]
 
 (** [internal_exp] never returns an error *)
 theorem internal_exp_ok (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : Float8.t) =
   Result.is_ok (Float8.internal_exp f_x f_z pi x)
   [@@timeout 60]
-  [@@by
-    [%use project_ok f_z pi (mkrx (ExReal.exp (mkdx f_x x)))]
-    @> unroll_nonlin 10 1 100]
+  [@@disable Specification.Float8.project, Specification.Float8.decode, Util.pow2, Util.ipow2, Util.ilog2]
+  [@@by auto]
 
 (** [internal_exp2] never returns an error *)
 theorem internal_exp2_ok (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : Float8.t) =
   Result.is_ok (Float8.internal_exp2 f_x f_z pi x)
-  [@@timeout 60]
+  [@@timeout 600]
+  [@@disable Specification.Float8.project, Specification.Float8.decode, Util.pow2, Util.ipow2, Util.ilog2]
+  [@@by auto]
   [@@by
     [%use project_ok f_z pi (mkrx (ExReal.exp2 (mkdx f_x x)))]
     @> unroll_nonlin 10 1 100]
@@ -230,17 +245,15 @@ theorem internal_exp2_ok (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (
 theorem internal_log_ok (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : Float8.t) =
   Result.is_ok (Float8.internal_log f_x f_z pi x)
   [@@timeout 60]
-  [@@by
-    [%use project_ok f_z pi (mkrx (ExReal.log (mkdx f_x x)))]
-    @> unroll_nonlin 10 1 100]
+  [@@disable Specification.Float8.project, Specification.Float8.decode, Util.pow2, Util.ipow2]
+  [@@by auto]
 
 (** [internal_log2] never returns an error *)
 theorem internal_log2_ok (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : Float8.t) =
   Result.is_ok (Float8.internal_log2 f_x f_z pi x)
   [@@timeout 60]
-  [@@by
-    [%use project_ok f_z pi (mkrx (ExReal.log2 (mkdx f_x x)))]
-    @> unroll_nonlin 10 1 100]
+  [@@disable Specification.Float8.project, Specification.Float8.decode, Util.pow2, Util.ipow2, Util.ilog2]
+  [@@by auto]
 
 
 (** 4.8.5 Scaled addition *)
@@ -249,7 +262,7 @@ theorem internal_log2_ok (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (
 theorem internal_add_scaled_ok (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (pi : Projection.t)
   (x : Float8.t) (s_x : int) (y : Float8.t) (s_y : int) =
   Result.is_ok (Float8.internal_add_scaled f_x f_y f_z pi x s_x y s_y)
-  [@@by unroll_nonlin 10 10 1000]
+  [@@by auto]
 
 
 (** 4.8.6 Scaled multiplication *)

@@ -1,5 +1,7 @@
 [@@@import Util, "dune:math"]
 
+(* let unroll_nonlin qt nqt steps = Tactic.unroll ~smt:"z3-full-nonlinear" ~query_timeout:qt ~no_asm_query_timeout:nqt steps *)
+
 let ipow2 : int -> int = Util.ipow2 [@@macro]
 let pow2 : int -> real = Util.pow2 [@@macro]
 
@@ -44,13 +46,13 @@ let int_frac_parts (x : real) : (int * real, string) Result.t =
     Ok (n, x /. pow2 n)
 
 (* We compute the binary logarithm of the fractional part by iterative refinement to a given precision [p]. *)
-let rec log2_refine (i : int) (p : int) (acc : real) (sqd : real) : (bool * real) =
-  if sqd = 0.0 || sqd = 1.0 then
+let rec log2_refine (i : int) (p : int) (acc : real) (x : real) : (bool * real) =
+  if x <=. 0.0 || x = 1.0 then
     true, acc (* Precise *)
   else if i > p then
     false, acc (* Imprecise, we abort because we reached [p]. *)
   else
-    let sqd = sqd *. sqd in
+    let sqd = x *. x in
     if sqd >=. 2.0 then
       log2_refine (i + 1) p (acc +. pow2 (- i)) (sqd /. 2.0)
     else
@@ -76,12 +78,25 @@ let log (base : real) (x : real) (p : int): (real, string) Result.t =
   | _, Error e -> Error e
 
 
+(* Approximate e to precision [p] *)
+
+let rec e_refine (i : int) (p : int) (f : int) (f_acc : int) (r_acc : real) : real =
+  if i > p then
+    r_acc
+  else
+    let f_acc = f_acc * (f + 1) in
+    let r_acc = r_acc +. (1.0 /. Real.of_int f_acc) in
+    e_refine (i + 1) p (f + 1) f_acc r_acc
+    [@@measure Ordinal.of_int (p - i)]
+
+let e (p : int) : real =
+  e_refine 1 p 0 1 1.0
+
+
 (* Natural logarithm *)
 
-let e (n : int) : real = Util.ripow (1.0 +. (1.0 /. (Real.of_int n))) n
-
 let ln (x : real) (p : int) : (real, string) Result.t =
-  log (e (ipow2 p)) x p
+  log (e p) x p [@@macro]
 
 (***)
 let test (p : int) =

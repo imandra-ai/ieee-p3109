@@ -1,0 +1,182 @@
+[@@@import Util, "dune:math"]
+[@@@import Log, "dune:math"]
+[@@@import ExReal, "ExReal.iml"]
+[@@@import Specification, "specification.iml"]
+
+open ExReal
+open Log
+open Specification
+
+let unroll_nonlin qt nqt steps = Tactic.unroll ~smt:"z3-full-nonlinear" ~query_timeout:qt ~no_asm_query_timeout:nqt steps
+
+
+(* A couple theorems to check that [find_pow2] does in fact find the greatest power of two. *)
+theorem find_pow2_up_bounds (x : real) =
+  x >=. 1.0 ==>
+  let n = find_pow2_up x in
+  pow2 n <=. x && x <. pow2 (n + 1)
+  [@@timeout 3600]
+  [@@by auto]
+
+theorem find_pow2_dn_bounds (x : real) =
+  x >. 0.0 && x <=. 1.0 ==>
+  let n = find_pow2_dn x in
+  pow2 n <=. x && x <. pow2 (n + 1)
+  [@@by auto]
+
+theorem find_pow2_bounds (x : real) =
+  x >. 0.0 ==>
+  let n = find_pow2 x in
+  pow2 n <=. x && x <. pow2 (n + 1)
+  [@@by
+    [%use find_pow2_up_bounds x]
+    @> [%use find_pow2_dn_bounds x]
+    @> unroll 10]
+
+(* Check that [int_frac_parts] never fails for [x] > 0.0. *)
+theorem int_frac_parts_ok (x : real) =
+  x >. 0.0 ==> Result.is_ok (int_frac_parts x)
+  [@@by auto]
+
+(* Check that the integer part is within the expected bounds. *)
+theorem int_part_bounds (x : real) =
+  x >. 0.0 ==>
+  match int_frac_parts x with
+  | Ok (n, _) -> pow2 n <=. x && x <. pow2 (n + 1)
+  | _ -> true
+  [@@by
+    [%use int_frac_parts_ok x]
+    @> [%use find_pow2_bounds x]
+    @> unroll 10]
+  [@@fc]
+
+(* Check that the fractional part is within the expected bounds. *)
+theorem frac_part_within_bounds (x : real) =
+  x >. 0.0 ==>
+  match int_frac_parts x with
+  | Ok (n, f) -> 1.0 <=. f && f <. 2.0
+  | _ -> true
+  [@@by
+    [%use find_pow2_bounds x]
+    @> unroll 10]
+  [@@fc]
+
+(* Check that the integer part and the fractional part produce [x]. *)
+theorem int_frac_parts_add_up (x : real) =
+  x >. 0.0 ==>
+  match int_frac_parts x with
+  | Ok (n, f) -> x = pow2 n *. f
+  | _ -> true
+  [@@by [%use int_part_bounds x] @> unroll 10]
+  [@@fc]
+
+(* A few checks to test whether we get the expected answers from [int_frac_parts]. *)
+verify (int_frac_parts 0.25 = Ok (-2, 1.0)) [@@by auto]
+verify (int_frac_parts 0.3 = Ok (-2, 1.2)) [@@by auto]
+verify (int_frac_parts 0.5 = Ok (-1, 1.0)) [@@by auto]
+verify (int_frac_parts 0.9 = Ok (-1, 1.8)) [@@by auto]
+verify (int_frac_parts 1.0 = Ok (0, 1.0)) [@@by auto]
+verify (int_frac_parts 1.5 = Ok (0, 1.5)) [@@by auto]
+verify (int_frac_parts 2.0 = Ok (1, 1.0)) [@@by auto]
+verify (int_frac_parts 2.5 = Ok (1, 1.25)) [@@by auto]
+verify (int_frac_parts 3.0 = Ok (1, 1.5)) [@@by auto]
+verify (int_frac_parts 3.1415 = Ok (1, 1.57075)) [@@by auto]
+verify (int_frac_parts 64.0 = Ok (6, 1.0)) [@@by auto]
+verify (int_frac_parts 128.0 = Ok (7, 1.0)) [@@by auto]
+verify (int_frac_parts 256.0 = Ok (8, 1.0)) [@@by auto]
+
+(* A few checks to test whether we get the expected results from [log2]. *)
+verify (log2 0.25 10 = Ok (- 2.0)) [@@by auto]
+verify (log2 0.3 10 = Ok (- 1.7373046875)) [@@by auto]
+verify (log2 0.5 10 = Ok (- 1.0)) [@@by auto]
+verify (log2 1.0 10 = Ok 0.0) [@@by auto]
+verify (log2 1.5 10 = Ok 0.5849609375) [@@by auto]
+verify (log2 2.0 10 = Ok 1.0) [@@by auto]
+verify (log2 3.0 10 = Ok 1.5849609375) [@@by auto]
+verify (log2 4.0 10 = Ok 2.0) [@@by auto]
+verify (log2 8.0 10 = Ok 3.0) [@@by auto]
+verify (log2 16.0 10 = Ok 4.0) [@@by auto]
+verify (log2 3.1415 10 = Ok 1.6513671875) [@@by auto]
+
+
+let tiny : Float8.t = { b7=false; b6=false; b5=false; b4=false; b3=false; b2=false; b1=false; b0=true; } [@@macro]
+let small : Float8.t = { b7=false; b6=false; b5=false; b4=false; b3=false; b2=true; b1=false; b0=false; } [@@macro]
+let one : Float8.t = { b7=false; b6=true; b5=false; b4=false; b3=false; b2=false; b1=false; b0=false; } [@@macro]
+let huge : Float8.t = { b7=false; b6=true; b5=true; b4=true; b3=true; b2=true; b1=true; b0=false; } [@@macro]
+let ntiny : Float8.t = { b7=true; b6=false; b5=false; b4=false; b3=false; b2=false; b1=false; b0=true; } [@@macro]
+let nsmall : Float8.t = { b7=true; b6=false; b5=false; b4=false; b3=false; b2=true; b1=false; b0=false; } [@@macro]
+let none : Float8.t = { b7=true; b6=true; b5=false; b4=false; b3=false; b2=false; b1=false; b0=false; } [@@macro]
+let nhuge : Float8.t = { b7=true; b6=true; b5=true; b4=true; b3=true; b2=true; b1=true; b0=false; } [@@macro]
+
+theorem log2_refine_frac (i : int) (p : int) (x : real) =
+  let _, v1 = log2_refine 1 p 0.0 x in
+  v1 <. 1.0
+  [@@timeout 3600]
+  [@@by unroll_nonlin 600 10 1024]
+
+theorem log2_refine_converges (i : int) (p : int) (acc : real) (x : real) =
+  let _, v1 = log2_refine i p acc x in
+  let _, v2 = log2_refine (i + 1) p acc x in
+  v2 <=. v1
+  [@@timeout 3600]
+  [@@by unroll_nonlin 600 10 1024]
+
+(* Show that for any real-numbered Float.t, the iterative refinement is precise enough after some refinement steps. *)
+theorem log2_refine_precise (f : Format.t) (x : Float8.t) =
+  x = one ==>
+  let k, _, _, _ = Format.get_format_parameters f in
+  match Float8.decode f x with
+  | Ok (Float8.NaNOrExReal.XR (ExReal.R 0.0)) -> true
+  | Ok (Float8.NaNOrExReal.XR (ExReal.R r)) ->
+    (match int_frac_parts r with
+     | Ok (_, f) ->
+      fst (log2_refine 1 k 0.0 f)
+     | _ -> false)
+  | _ -> true
+  [@@timeout 3600]
+  [@@by
+    (* enumerate ["f"; "x"]
+    @> split_and *)
+    (* @>>| unroll_nonlin 120 12 1024 *)
+    ctx_simplify
+    @> unroll_nonlin 120 12 1024
+    (* @>>| auto *)
+    ]
+
+eval (log2_refine 1 8 1.2 1.0)
+
+eval (int_frac_parts 0.00030517578)
+
+
+(* A few checks for logs with non-binary base. *)
+verify (log 2.0 16.0 10 = log2 16.0 10) [@@by auto]
+verify (log 10.0 1000.0 10 = Ok 3.0) [@@by auto]
+verify (log 10.0 10000.0 12 = Ok 4.0) [@@by auto]
+verify (log 10.0 100000.0 18 = Ok 5.0) [@@by auto]
+
+(* Some checks for natural logarithms. *)
+eval (e 10)
+eval (e 20)
+eval (e 100)
+eval (e 2048)
+
+eval (ln 2.0 10)
+
+verify (ln 1.0 10 = Ok 0.0) [@@by auto]
+
+eval(ln (e 1024 *. e 1024) 10)
+
+eval e_refine 1 3 0 1 1.0
+eval e_refine 2 3 0 1 1.0
+
+theorem e_refine_pos (p : int) =
+  e_refine 1 p 0 1 1.0 >. 0.0
+  ==>
+  e_refine 1 (p + 1) 0 1 1.0 >. 0.0
+  [@@by unroll_nonlin 10 10 1000]
+
+theorem e_refine_grows (p : int) =
+  p > 0 ==>
+  e p <. e (p + 1)
+  [@@timeout 3600]
+  [@@by unroll_nonlin 10 10 1000]

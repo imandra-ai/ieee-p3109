@@ -1,0 +1,25 @@
+[@@@import Util, "dune:math"]
+
+(* let unroll_nonlin qt nqt steps = Tactic.unroll ~smt:"z3-full-nonlinear" ~query_timeout:qt ~no_asm_query_timeout:nqt steps *)
+
+let rec aux i p y g =
+  if i > p then
+    g
+  else if g *. g = y then
+    g
+  else (
+    let t = (g +. y /. g) /. 2.0 in
+    aux (i + 1) p y t
+  )
+
+let sqrt (x : real) (p : int): (real, string) Result.t =
+  if x <. 0.0 then
+    Error "invalid"
+  else if x = 0.0 then
+    Ok 0.0
+  else
+    Ok (aux 0 p x 1.0)
+
+eval (sqrt 1.0 3)
+eval (sqrt 4.0 3)
+eval (sqrt 9.0 3)
