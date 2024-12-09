@@ -1,0 +1,105 @@
+[@@@import Util, "dune:math"]
+
+(* let unroll_nonlin qt nqt steps = Tactic.unroll ~smt:"z3-full-nonlinear" ~query_timeout:qt ~no_asm_query_timeout:nqt steps *)
+
+let ipow2 : int -> int = Util.ipow2 [@@macro]
+let pow2 : int -> real = Util.pow2 [@@macro]
+
+(*
+  ld x = ld(2^n * x')  [1 <= x' < 2]
+       = ld(2^n) + ld(x')
+       = n + ld(x')
+*)
+
+
+(* First, we find the greatest power of two that's smaller than [x]. *)
+let rec find_pow2_up (x : real) : int =
+  if x <. 1.0 then
+    -1
+  else
+    find_pow2_up (x /. 2.0) + 1
+  [@@measure Ordinal.of_int (Real.to_int x)]
+  [@@by auto]
+
+let rec find_pow2_dn (x : real) : int =
+  if x <=. 0.0 || x >=. 1.0 then
+    0
+  else
+    find_pow2_dn (x *. 2.0) - 1
+  [@@measure Ordinal.of_int (Real.to_int (1.0 /. x))]
+  [@@by auto]
+
+let find_pow2 (x : real) : int =
+  if x <. 1.0 then
+    find_pow2_dn x
+  else if x >. 1.0 then
+    find_pow2_up x
+  else
+    0
+
+(* Now, we compute the integer part of the binary log and we determine the remaining fractional part (of [x]). *)
+let int_frac_parts (x : real) : (int * real, string) Result.t =
+  if x <=. 0.0 then
+    Error "undefined"
+  else
+    let n : int = find_pow2 x in
+    Ok (n, x /. pow2 n)
+
+(* We compute the binary logarithm of the fractional part by iterative refinement to a given precision [p]. *)
+let rec log2_refine (i : int) (p : int) (acc : real) (x : real) : (bool * real) =
+  if x <=. 0.0 || x = 1.0 then
+    true, acc (* Precise *)
+  else if i > p then
+    false, acc (* Imprecise, we abort because we reached [p]. *)
+  else
+    let sqd = x *. x in
+    if sqd >=. 2.0 then
+      log2_refine (i + 1) p (acc +. pow2 (- i)) (sqd /. 2.0)
+    else
+      log2_refine (i + 1) p acc sqd
+  [@@measure Ordinal.of_int (p - i)]
+
+(* Then, we tie the integer and fractional parts together. *)
+let log2 (x : real) (p : int) : (real, string) Result.t =
+  if x <=. 0.0 then
+    Error "undefined"
+  else (
+    match int_frac_parts x with
+    | Ok (n, f) ->
+      Ok (Real.of_int n +. (snd (log2_refine 1 p 0.0 f)))
+    | Error e -> Error e
+  )
+
+(* Compute log_[base]([x]) to precision [p] by reduction to [log2]. *)
+let log (base : real) (x : real) (p : int): (real, string) Result.t =
+  match log2 x (p + 1), log2 base (p + 1) with
+  | Ok d, Ok n -> Ok (d /. n)
+  | Error e, _ -> Error e
+  | _, Error e -> Error e
+
+
+(* Approximate e to precision [p] *)
+
+let rec e_refine (i : int) (p : int) (f : int) (f_acc : int) (r_acc : real) : real =
+  if i > p then
+    r_acc
+  else
+    let f_acc = f_acc * (f + 1) in
+    let r_acc = r_acc +. (1.0 /. Real.of_int f_acc) in
+    e_refine (i + 1) p (f + 1) f_acc r_acc
+    [@@measure Ordinal.of_int (p - i)]
+
+let e (p : int) : real =
+  e_refine 1 p 0 1 1.0
+
+
+(* Natural logarithm *)
+
+let ln (x : real) (p : int) : (real, string) Result.t =
+  log (e p) x p [@@macro]
+
+(***)
+let test (p : int) =
+  match int_frac_parts 2.0 with
+  | Ok (_, f) -> log2_refine 1 p 0.0 f
+  | _ -> false, -1.0

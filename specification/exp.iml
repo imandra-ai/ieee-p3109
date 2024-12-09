@@ -1,0 +1,21 @@
+[@@@import Util, "dune:math"]
+[@@@import Log, "log.iml"]
+
+(* let unroll_nonlin qt nqt steps = Tactic.unroll ~smt:"z3-full-nonlinear" ~query_timeout:qt ~no_asm_query_timeout:nqt steps *)
+
+let rec exp_refine (i : int) (p : int) (x : real) (f : int) (f_acc : int) (r_acc : real) : real =
+  if i > p then
+    r_acc
+  else
+    let f_acc = f_acc * (f + 1) in
+    let r_acc = r_acc +. ((Util.ripow x i) /. Real.of_int f_acc) in
+    exp_refine (i + 1) p x (f + 1) f_acc r_acc
+    [@@measure Ordinal.of_int (p - i)]
+
+let exp (x : real) (p : int) : real =
+  exp_refine 1 p x 0 1 1.0
+
+let exp2 (x : real) (p : int) : (real, string) Result.t =
+  match Log.ln 2.0 p with
+  | Ok l -> Ok (exp (x *. l) p)
+  | Error e -> Error e

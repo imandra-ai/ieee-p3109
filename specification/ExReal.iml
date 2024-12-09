@@ -1,6 +1,9 @@
 (** Extended reals *)
 
 [@@@import Util, "util.iml"]
+[@@@import Sqrt, "sqrt.iml"]
+[@@@import Log, "log.iml"]
+[@@@import Exp, "exp.iml"]
 
 type t =
   | NINF
@@ -86,9 +89,49 @@ let div (x : t) (y : t) : (t, string) Result.t =
 
   | R x, R y -> Ok (R (x /. y))
 
-let pow (_x : t) (_y : t) : (t, string) Result.t =
-  (* TODO *)
-  Ok NINF
+let sqrt (x : t) (p : int) : (t, string) Result.t =
+  match x with
+  | NINF | PINF -> Error "invalid"
+  | R r when r <. 0.0 -> Error "invalid"
+  | R r -> (
+    match Sqrt.sqrt r p with
+    | Ok r -> Ok (R r)
+    | Error e -> Error e)
+
+let ln (x : t) (p : int) : (t, string) Result.t =
+  match x with
+  | NINF
+  | PINF -> Error "invalid"
+  | R r when r <=. 0.0 -> Error "invalid"
+  | R r ->
+    (match Log.ln r p with
+     | Ok l -> Ok (R l)
+     | Error e -> Error e)
+
+let log2 (x : t) (p : int) : (t, string) Result.t =
+  match x with
+  | NINF
+  | PINF -> Error "invalid"
+  | R r when r <=. 0.0 -> Error "invalid"
+  | R r ->
+    (match Log.log2 r p with
+     | Ok l -> Ok (R l)
+     | Error e -> Error e)
+
+let exp (x : t) (p : int): (t, string) Result.t =
+  match x with
+  | NINF
+  | PINF -> Error "invalid"
+  | R r -> Ok (R (Exp.exp r p))
+
+let exp2 (x : t) (p : int) : (t, string) Result.t =
+  match x with
+  | NINF
+  | PINF -> Error "invalid"
+  | R r ->
+    (match Exp.exp2 r p with
+    | Ok l -> Ok (R l)
+    | Error e -> Error e)
 
 let to_string : t -> string =
  fun x ->
@@ -119,12 +162,13 @@ let sub (x : t) (y : t) : (t, string) Result.t =
   | PINF, NINF | R _, NINF | PINF, R _ -> Ok PINF
   | R x, R y -> Ok (R (x -. y))
 
-let lt (x : t) (y : t) = match x, y with
-| NINF, NINF | PINF, PINF | PINF, NINF -> false
-| NINF, PINF -> true
-| NINF, R _ | R _, PINF -> true
-| PINF, R _ | R _, NINF -> false
-| R rx, R ry -> rx <. ry
+let lt (x : t) (y : t) =
+  match x, y with
+  | NINF, NINF | PINF, PINF | PINF, NINF -> false
+  | NINF, PINF -> true
+  | NINF, R _ | R _, PINF -> true
+  | PINF, R _ | R _, NINF -> false
+  | R rx, R ry -> rx <. ry
 
 module Infix = struct
   let ix (x : int) = of_int x [@@macro]

@@ -80,7 +80,7 @@ eval (negate Format.B8P3 tiny)
 eval (of_int_repr (to_int_repr tiny))
 
 theorem thmx = (to_int_repr tiny) =  1 [@@by
-  expand_at ~f:"Specification.Float8.to_int_repr" ~pos:"C0" ~num:255 0
+  [%expand "Specification.Float8.to_int_repr"]
   @> expr_simplify]
 
 lemma neg_tiny_not_nan = negate Format.B8P3 tiny <> nan
@@ -112,7 +112,7 @@ eval (of_int_repr 0x3B);;
 lemma tst2_real = is_r (decode Format.B8P3 (negate Format.B8P3 (of_int_repr 0xF8))) (ExReal.R 16384.0)
   [@@by auto]
 
-instance (fun x -> not (Float8.is_zero x))
+instance (fun x -> not (Float8.is_zero Format.B8P3 x))
 
 lemma rBB1 = is_r (Float8.decode Format.B8P1 (of_int_repr 0x3B)) (ExReal.R 0.0625) [@@by auto]
 

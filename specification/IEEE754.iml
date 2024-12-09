@@ -10,14 +10,15 @@ end
 module Format = struct
   type t = Binary16 | Binary32 | Binary64 | Binary128
 
-  let get_format_parameters (fmt : t) : int * int * int * int * int * int * int =
+  let get_format_parameters (phi : t) : int * int * int * int * int * int * int * real =
     (* Table 3.5 IEEE 754-2008 *)
-    (* k, p, emax, bias, sign bit, w, t *)
-    match fmt with
-    | Binary16 -> 16, 11, 15, 15, 1, 5, 10
-    | Binary32 -> 32, 24, 127, 127, 1, 8, 23
-    | Binary64 -> 64, 53, 1023, 1023, 1, 11, 52
-    | Binary128 -> 128, 113, 16383, 16383, 1, 15, 112
+    (* k, p, emax, bias, sign bit, w, t, max_finite *)
+    let max_finite w emax = (2.0 -. Util.pow2 (- w)) *. Util.pow2 emax in
+    match phi with
+    | Binary16 -> 16, 11, 15, 15, 1, 5, 10, max_finite 10 15
+    | Binary32 -> 32, 24, 127, 127, 1, 8, 23, max_finite 23 127
+    | Binary64 -> 64, 53, 1023, 1023, 1, 11, 52, max_finite 52 1023
+    | Binary128 -> 128, 113, 16383, 16383, 1, 15, 112, max_finite 112 16383
 end
 
 type t = bool list
@@ -28,7 +29,7 @@ let rec nlist n e =
   | _ -> [e] @ nlist (n-1) e
 
 let nan (fmt : Format.t) : t =
-  let _, _, _, _, _, w, t = Format.get_format_parameters fmt in
+  let _, _, _, _, _, w, t, _ = Format.get_format_parameters fmt in
   [false] @ nlist w true @ nlist (t - 1) false @ [true]
 
 let quiet_nan (fmt : Format.t) : t = nan fmt
@@ -36,7 +37,7 @@ let quiet_nan (fmt : Format.t) : t = nan fmt
 let canonical_nan (fmt : Format.t) : t = nan fmt
 
 let inf (fmt : Format.t) (neg : bool) =
-  let _, _, _, _, _, w, t = Format.get_format_parameters fmt in
+  let _, _, _, _, _, w, t, _ = Format.get_format_parameters fmt in
   if neg then [true] else [false] @
   nlist w true @ nlist t false
 
@@ -45,7 +46,7 @@ let pinf (fmt : Format.t) = inf fmt false
 let ninf (fmt : Format.t) = inf fmt true
 
 let zero (fmt : Format.t) =
-  let k, _, _, _, _, _, _ = Format.get_format_parameters fmt in
+  let k, _, _, _, _, _, _, _ = Format.get_format_parameters fmt in
   nlist k false
 
 let is_nan (x : t) (fmt : Format.t) : bool = x = (nan fmt)
@@ -89,12 +90,12 @@ let round_internal (x : ExReal.t) (fmt : Format.t) (rnd : RoundingMode.t) : (t, 
   let open RoundingMode in
   let open ExReal in
   let open ExReal.ResultInfix in
-  let _, _, emax, bias, _, w, t = Format.get_format_parameters fmt in
+  let _, _, emax, bias, _, w, t, _ = Format.get_format_parameters fmt in
   match x with
   | PINF -> Ok (pinf fmt)
   | NINF -> Ok (ninf fmt)
   | R r ->
-    let is_neg = Real.(r < 0.0) || Real.(r = 0.0 && rnd = RoundingMode.TowardNegative) in
+    let is_neg = Real.(r < 0.0) || (r = 0.0 && rnd = RoundingMode.TowardNegative) in
     let sign = if is_neg then [true] else [false] in
     let r = Real.abs r in
     let is_subnormal = Real.(r < Util.pow2 Int.(1 - emax)) in
@@ -143,7 +144,7 @@ let rec from_binary (x : bool list) : int =
     (if x then Util.ipow2 (List.length xs) else 0) + (from_binary xs)
 
 let to_exreal (x : t) (fmt : Format.t) : (ExReal.t, string) Result.t =
-  let _, _, _, bias, _, w, t = Format.get_format_parameters fmt in
+  let _, _, _, bias, _, w, t, _ = Format.get_format_parameters fmt in
   let sgn = if List.hd x = false then 1.0 else -1.0 in
   let tail = List.tl x in
   let biased_exp = List.take w tail in

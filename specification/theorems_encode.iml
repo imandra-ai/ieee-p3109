@@ -3,13 +3,13 @@
 
 open Specification
 
-(* let unroll_nonlin qt nqt steps = Tactic.unroll ~smt:"z3-full-nonlinear" ~query_timeout:qt ~no_asm_query_timeout:nqt steps *)
+let unroll_nonlin qt nqt steps = Tactic.unroll ~smt:"z3-full-nonlinear" ~query_timeout:qt ~no_asm_query_timeout:nqt steps
 
 let ok_within_range (x : Float8.NaNOrExReal.t) (fmt : Format.t) : bool =
   let open Float8.NaNOrExReal in
   let open ExReal in
   let _, _, _, fmax = Format.get_format_parameters fmt in
-  let encoded = Float8.encode fmt x  in
+  let encoded = Float8.encode fmt x in
   match x with
   | XR (R x) when x <. (-. fmax) || x >. fmax ->
     not (Result.is_ok encoded)
@@ -68,18 +68,4 @@ theorem encode_ok_within_range (x : Float8.NaNOrExReal.t) (fmt : Format.t) =
   [@@by enumerate ["f"] @> auto]
   [@@timeout 3600] *)
 
-(* theorem saturate_is_within_range (f : Format.t) (x : ExReal.t) (sat : bool) (rnd : RoundingMode.t) =
-  let _, _, _, max = Format.get_format_parameters f in
-  let s = (Float8.saturate max sat rnd) x [@trigger] in
-  Float8.exreal_is_within_range f s
-  [@@timeout 3600]
-  [@@by auto]
 
-theorem saturate_encode_ok (f : Format.t) (x : ExReal.t) (sat : bool) (rnd : RoundingMode.t) =
-  let _, _, _, max = Format.get_format_parameters f in
-  let s = Float8.saturate max sat rnd x in
-  ok_within_range (Float8.NaNOrExReal.XR s) f
-  [@@timeout 3600]
-  [@@by
-    [%use saturate_is_within_range f x sat rnd] @>
-    auto] *)
