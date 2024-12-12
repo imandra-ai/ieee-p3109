@@ -479,9 +479,9 @@ module Float8 = struct
       let x = decode f_x x in
       let y = decode f_y y in
       (match x, y with
-      | Ok NaN, _ |  _, Ok NaN
-      | Ok XR PINF, Ok XR PINF
-      | Ok XR NINF, Ok XR NINF -> Error "unreachable"
+      | Ok NaN, _ |  _, Ok NaN -> Error "unreachable"
+      | Ok XR PINF, Ok XR PINF -> Ok nan (* unreachable *)
+      | Ok XR NINF, Ok XR NINF -> Ok nan (* unreachable *)
       | Ok (XR x) , Ok (XR y)  ->
         let open ExReal.Infix in
         (match (x -. y) with
@@ -511,7 +511,7 @@ module Float8 = struct
       let x = decode f_x x in
       let y = decode f_y y in
       (match x, y with
-      | Ok NaN, _ |  _, Ok NaN -> Error "unreachable"
+      | Ok NaN, _ |  _, Ok NaN -> Ok nan (* unreachable *)
       | Ok (XR x) , Ok (XR y)  ->
         let open ExReal.Infix in
         (match (x *. y) with
@@ -528,26 +528,35 @@ module Float8 = struct
     | Ok x -> x
     | Error _ -> nan (* unreachable by theorem internal_multiply_ok *)
 
-
   let internal_divide (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (pi : Projection.t)
     (x : t) (y : t) : (t, string) Result.t =
       let open NaNOrExReal in
+      let is_finite (x : t) : bool = (x <> ninf && x <> pinf && x <> nan) in
+      let is_inf (x : t) : bool = x = pinf || x = ninf in
       match x, y with
       | _, y when y = nan -> Ok nan
       | x, _ when x = nan -> Ok nan
       | x, y when y = zero -> Ok nan
-      | x, y when (x <> ninf && x <> pinf && x <> nan) && (y = pinf || y = ninf) -> Ok zero
+      | x, y when is_inf x && is_inf y -> Ok nan
+      | x, y when y = zero -> Ok nan
+      | x, y when x = ninf || x = pinf -> Ok nan
+      | x, y when is_finite x && (y = pinf || y = ninf) -> Ok zero
       | x, y ->
         let x = decode f_x x in
         let y = decode f_y y in
         (match x, y with
-        | Ok NaN, _ |  _, Ok NaN -> Error "unreachable"
+        | Ok NaN, _ |  _, Ok NaN -> Ok nan (* unreachable *)
+        | Ok (XR NINF), Ok (XR NINF)
+        | Ok (XR NINF), Ok (XR PINF)
+        | Ok (XR PINF), Ok (XR NINF)
+        | Ok (XR PINF), Ok (XR PINF) -> Ok nan (* unreachable *)
+        | Ok _, Ok (XR (ExReal.R 0.0)) -> Ok nan (* unreachable *)
         | Ok (XR x) , Ok (XR y)  ->
           let open ExReal.Infix in
           (match (x /. y) with
           | Ok z -> project f_z pi z
           | Error e -> Error e)
-        | _ -> Error "unreachable")
+        | _ -> Ok nan)
 
   (** For [x] (in [f_x]), [y] (in [f_y]) compute x / y and return in [f_z],
       with rounding mode [rnd] and saturation mode [ovf] *)
