@@ -556,7 +556,9 @@ module Float8 = struct
           (match (x /. y) with
           | Ok z -> project f_z pi z
           | Error e -> Error e)
+        | _ -> Error "unreachable")
         | _ -> Ok nan)
+        | _ -> Error "unreachable")
 
   (** For [x] (in [f_x]), [y] (in [f_y]) compute x / y and return in [f_z],
       with rounding mode [rnd] and saturation mode [ovf] *)
@@ -619,10 +621,8 @@ module Float8 = struct
     | _ ->
       let x = decode f_x x in
       (match x with
-      | Ok NaN -> Error "unreachable"
-      | Ok (XR NINF)
-      | Ok (XR PINF) -> Ok nan
-      | Ok (XR (R r)) when r <=. 0.0 -> Ok nan
+      | Ok NaN -> Ok nan (* unreachable *)
+      | Ok (XR NINF) | Ok (XR PINF) -> Ok nan (* unreachable *)
       | Ok (XR x) ->
         (match ExReal.exp2 x 9 with (* TODO: Proof that 9 is enough *)
         | Ok z -> project f_z pi z

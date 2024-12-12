@@ -1,4 +1,8 @@
 [@@@import Util, "dune:math"]
+[@@@import Log, "dune:math"]
+[@@@import Exp, "dune:math"]
+[@@@import Log, "dune:math"]
+[@@@import Exp, "dune:math"]
 [@@@import Specification, "specification.iml"]
 [@@@import Theorems_pow2, "theorems_pow2.iml"]
 [@@@import Theorems_encode, "theorems_encode.iml"]
@@ -244,31 +248,28 @@ theorem internal_sqrt_ok (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (
 theorem internal_exp_ok (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : Float8.t) =
   Result.is_ok (Float8.internal_exp f_x f_z pi x)
   [@@timeout 60]
-  [@@disable Specification.Float8.project, Specification.Float8.decode, Util.pow2, Util.ipow2, Util.ilog2]
+  [@@disable Specification.Float8.project, Specification.Float8.decode]
   [@@by auto]
 
 (** [internal_exp2] never returns an error *)
 theorem internal_exp2_ok (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : Float8.t) =
   Result.is_ok (Float8.internal_exp2 f_x f_z pi x)
-  [@@timeout 600]
-  [@@disable Specification.Float8.project, Specification.Float8.decode, Util.pow2, Util.ipow2, Util.ilog2]
+  [@@timeout 60]
+  [@@disable Specification.Float8.project, Specification.Float8.decode, ExReal.exp2, Exp.exp2]
   [@@by auto]
-  [@@by
-    [%use project_ok f_z pi (mkrx (ExReal.exp2 (mkdx f_x x)))]
-    @> unroll_nonlin 10 1 100]
 
 (** [internal_log] never returns an error *)
 theorem internal_log_ok (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : Float8.t) =
   Result.is_ok (Float8.internal_log f_x f_z pi x)
   [@@timeout 60]
-  [@@disable Specification.Float8.project, Specification.Float8.decode, Util.pow2, Util.ipow2]
+  [@@disable Specification.Float8.project, Specification.Float8.decode, Log.log, Log.ln]
   [@@by auto]
 
 (** [internal_log2] never returns an error *)
 theorem internal_log2_ok (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : Float8.t) =
   Result.is_ok (Float8.internal_log2 f_x f_z pi x)
   [@@timeout 60]
-  [@@disable Specification.Float8.project, Specification.Float8.decode, Util.pow2, Util.ipow2, Util.ilog2]
+  [@@disable Specification.Float8.project, Specification.Float8.decode, Log.log2, Log.log, Log.ln]
   [@@by auto]
 
 
