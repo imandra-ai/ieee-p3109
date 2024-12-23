@@ -49,7 +49,14 @@ let zero (fmt : Format.t) =
   let k, _, _, _, _, _, _, _ = Format.get_format_parameters fmt in
   nlist k false
 
-let is_nan (x : t) (fmt : Format.t) : bool = x = (nan fmt)
+let is_nan (x : t) (fmt : Format.t) : bool =
+  let _, _, _, _, _, w, t, _ = Format.get_format_parameters fmt in
+  let tail = List.tl x in
+  let biased_exp = List.take w tail in
+  let biased_exp_is_all_ones = not (List.mem false biased_exp) in
+  let sig_bits = List.drop w tail in
+  let sig_all_zero = not (List.mem true sig_bits) in
+  biased_exp_is_all_ones && not sig_all_zero
 
 let is_pinf (x : t) (fmt : Format.t) : bool = x = (pinf fmt)
 
@@ -143,35 +150,44 @@ let rec from_binary (x : bool list) : int =
   | x :: xs ->
     (if x then Util.ipow2 (List.length xs) else 0) + (from_binary xs)
 
-let to_exreal (x : t) (fmt : Format.t) : (ExReal.t, string) Result.t =
-  let _, _, _, bias, _, w, t, _ = Format.get_format_parameters fmt in
-  let sgn = if List.hd x = false then 1.0 else -1.0 in
-  let tail = List.tl x in
-  let biased_exp = List.take w tail in
-  let biased_exp_is_zero = List.mem true biased_exp = false in
-  let biased_exp_is_all_ones = List.mem false biased_exp = false in
-  let sig_bits = List.drop w tail in
-  let sig_all_zero = not (List.mem true sig_bits) in
-
-  let sigd, exp =
-    if biased_exp_is_zero then
-      from_binary (false :: sig_bits),
-      - bias + 1
-    else
-      from_binary (true :: sig_bits),
-      from_binary biased_exp - bias
-  in
-
-  let open ExReal.ResultInfix in
-  if biased_exp_is_all_ones then
-    if not sig_all_zero then
-      Error "cannot convert NaN to extended reals"
-    else
-      (if sgn = 1.0 then Ok ExReal.PINF else Ok ExReal.NINF)
+let as_extended_real (phi : Format.t) (x : t) : (ExReal.t, string) Result.t =
+  if is_nan x phi then
+    Error "invalid"
+  else if is_pinf x phi then
+    Ok PINF
+  else if is_ninf x phi then
+    Ok NINF
   else
-    (rx sgn) *. (pow2 exp) *. ((ix sigd) /. (pow2 t))
+    let _, _, _, bias, _, w, t, _ = Format.get_format_parameters phi in
+    let sgn = if List.hd x = false then 1.0 else -1.0 in
+    let tail = List.tl x in
+    let biased_exp = List.take w tail in
+    let biased_exp_is_all_zeroes = not (List.mem true biased_exp) in
+    let biased_exp_is_all_ones = not (List.mem false biased_exp) in
+    let sig_bits = List.drop w tail in
+    let sig_all_zero = not (List.mem true sig_bits) in
+
+    let sigd, exp =
+      if biased_exp_is_all_zeroes then
+        from_binary (false :: sig_bits),
+        - bias + 1
+      else
+        from_binary (true :: sig_bits),
+        from_binary biased_exp - bias
+    in
+
+    let open ExReal.ResultInfix in
+    if biased_exp_is_all_ones then
+      if not sig_all_zero then
+        Error "cannot convert NaN to extended reals"
+      else
+        (if sgn = 1.0 then Ok PINF else Ok NINF)
+    else
+      (rx sgn) *. (pow2 exp) *. ((ix sigd) /. (pow2 t))
 
 let bd acc b = acc ^ if b then "1" else "0"
 
 let pp (x : t)  =
   List.fold_left bd "" x
+
+let unroll_nonlin qt nqt steps = Tactic.unroll ~smt:"z3-full-nonlinear" ~query_timeout:qt ~no_asm_query_timeout:nqt steps

@@ -1,0 +1,29 @@
+[@@@import Util, "dune:math"]
+[@@@import Exp, "dune:math"]
+[@@@import ExReal, "ExReal.iml"]
+[@@@import Specification, "specification.iml"]
+[@@@import Theorems_log, "theorems_log.iml"]
+
+open ExReal
+open Specification
+open Exp
+
+let unroll_nonlin qt nqt steps = Tactic.unroll ~smt:"z3-full-nonlinear" ~query_timeout:qt ~no_asm_query_timeout:nqt steps
+
+theorem e_gt_0 (p : int) = Log.e p >. 0.0 [@@by auto]
+
+theorem ln2_gt0_ok (p : int) =
+  Result.is_ok (Log.ln 2.0 p)
+  [@@disable Log.e]
+  [@@by
+    [%use Theorems_log.log2_gt0_ok (Log.e (p + 1)) (p + 1)]
+    @> [%use e_gt_0 (p + 1)]
+    @> [%use Theorems_log.log2_gt0_ok 2.0 (p + 1)]
+    @> auto
+    ]
+
+theorem exp2_ok (x : real) (p : int) =
+  let r = exp2 x p [@@trigger] in
+  Result.is_ok r
+  [@@by auto]
+  [@@fc]

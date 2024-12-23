@@ -80,3 +80,8 @@ theorem thm_exreal_pow2_pos (xscale : int) =
     [%use thm_pow2_gt_0 xscale] @>
     auto
   ]
+
+theorem pow2_gt_0 (n : int) =
+  n > 0 ==> (Util.pow2 n [@trigger]) >. 0.0
+  [@@by auto]
+  [@@fc]

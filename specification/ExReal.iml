@@ -97,7 +97,8 @@ let ln (x : t) (p : int) : (t, string) Result.t =
   match x with
   | NINF
   | PINF -> Error "invalid"
-  | R r when r <=. 0.0 -> Error "invalid"
+  | R r when r <. 0.0 -> Error "invalid"
+  | R r when r = 0.0 -> Ok NINF
   | R r ->
     (match Log.ln r p with
      | Ok l -> Ok (R l)
@@ -107,7 +108,8 @@ let log2 (x : t) (p : int) : (t, string) Result.t =
   match x with
   | NINF
   | PINF -> Error "invalid"
-  | R r when r <=. 0.0 -> Error "invalid"
+  | R r when r <. 0.0 -> Error "invalid"
+  | R r when r = 0.0 -> Ok NINF
   | R r ->
     (match Log.log2 r p with
      | Ok l -> Ok (R l)

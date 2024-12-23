@@ -11,6 +11,7 @@ let rec aux i p y g =
     let t = (g +. y /. g) /. 2.0 in
     aux (i + 1) p y t
   )
+  [@@measure Ordinal.of_int (p - i)]
 
 let sqrt (x : real) (p : int): (real, string) Result.t =
   if x <. 0.0 then

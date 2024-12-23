@@ -84,7 +84,7 @@ module Float8 = struct
     { b7 = false; b6 = false; b5 = false; b4 = false; b3 = false; b2 = false; b1 = false; b0 = false; } [@@ocamlformat "disable"]
 
   (* Encoding into integers *)
-    let to_int_repr (x : t) : int =
+  let to_int_repr (x : t) : int =
       (if x.b0 then 1 else 0)
     + (if x.b1 then 2 else 0)
     + (if x.b2 then 4 else 0)
@@ -344,7 +344,7 @@ module Float8 = struct
   let internal_convert_to_p3109 (phi: IEEE754.Format.t) (f : Format.t) (pi : Projection.t) (x : IEEE754.t) : (t, string) Result.t =
     if IEEE754.is_nan x phi then Ok nan
     else
-      match IEEE754.to_exreal x phi with
+      match IEEE754.as_extended_real phi x with
       | Ok xr -> project f pi xr
       | Error e -> Error e
 
@@ -557,8 +557,6 @@ module Float8 = struct
           | Ok z -> project f_z pi z
           | Error e -> Error e)
         | _ -> Error "unreachable")
-        | _ -> Ok nan)
-        | _ -> Error "unreachable")
 
   (** For [x] (in [f_x]), [y] (in [f_y]) compute x / y and return in [f_z],
       with rounding mode [rnd] and saturation mode [ovf] *)
@@ -694,10 +692,12 @@ module Float8 = struct
         let x = decode f_x x in
         let y = decode f_y y in
         (match x, y with
-        | Ok NaN, _ |  _, Ok NaN -> Error "unreachable"
-        | Ok (XR x) , Ok (XR y)  ->
+        | Ok NaN, _ |  _, Ok NaN -> Ok nan
+        | Ok (XR PINF), Ok (XR PINF) -> Ok pinf (* necessary? *)
+        | Ok (XR NINF), Ok (XR NINF) -> Ok ninf (* necessary? *)
+        | Ok (XR x), Ok (XR y) ->
           let open ExReal.ResultInfix in
-          (match (xx x *. (2 ^. s_x)) +. (xx y *. (2 ^. s_y)) with
+          (match ((Ok x) *. (2 ^. s_x)) +. ((Ok y) *. (2 ^. s_y)) with
           | Ok z -> project f_z pi z
           | Error e -> Error e)
         | _, Error e -> Error e
@@ -752,29 +752,39 @@ module Float8 = struct
   let internal_scaled_fma (phi : IEEE754.Format.t) (f_x : Format.t) (f_y : Format.t) (pi : Projection.t)
     (a : IEEE754.t) (s_a : int) (x : t) (y : t) (s : int) : (IEEE754.t, string) Result.t =
     let open NaNOrExReal in
-  let _, p, _, b, _, _, _, m = IEEE754.Format.get_format_parameters phi in
-  match a, s_a, x, y, s with
-  | _, _, _, _, _ when IEEE754.is_nan a phi -> Ok (IEEE754.quiet_nan phi)
-  | _, _, _, _, _ when x = nan -> Ok (IEEE754.quiet_nan phi)
-  | _, _, _, _, _ when y = nan -> Ok (IEEE754.quiet_nan phi)
-  | _ ->
-    (match IEEE754.to_exreal a phi with
-     | Ok a_ ->
-        (match decode f_x x, decode f_y y with
-        | Ok (XR x_), Ok (XR y_) -> (
-          let open ExReal.ResultInfix in
-          let z_ = (Ok a_) *. (2 ^. s_a) +. (Ok x_) *. (Ok y_) *. (2 ^. s) in
-          (match z_ with
-          | Ok z_ ->
-            let z_' = round_to_precision p b (snd pi) z_ in
-            let z_'' = saturate m (fst pi) (snd pi) z_' in
-            let z = encode754 phi z_'' in
-            Ok z
-          | Error e -> Error e))
-        | Error e, _ -> Error e
-        | _, Error e -> Error e
-        | _ -> Error "unreachable")
-     | Error e -> Error e)
+    let nan754 = IEEE754.quiet_nan phi in
+    let _, p, _, b, _, _, _, m = IEEE754.Format.get_format_parameters phi in
+    match a, s_a, x, y, s with
+    | _ when IEEE754.is_nan a phi -> Ok nan754
+    | _, _, _, _, _ when x = nan -> Ok nan754
+    | _, _, _, _, _ when y = nan -> Ok nan754
+    | _ ->
+      (match IEEE754.as_extended_real phi a with
+      | Ok a_ ->
+          (match decode f_x x, decode f_y y with
+          | Ok NaN, _ | _, Ok NaN -> Ok nan754
+          | Ok (XR NINF), Ok (XR NINF) -> Ok (IEEE754.ninf phi) (* necessary? *)
+          | Ok (XR PINF), Ok (XR PINF) -> Ok (IEEE754.pinf phi) (* necessary? *)
+          | Ok (XR NINF), Ok (XR PINF) -> Ok nan754
+          | Ok (XR PINF), Ok (XR NINF) -> Ok nan754
+          | Ok (XR (R _)), Ok (XR NINF) -> Ok (IEEE754.ninf phi) (* necessary? *)
+          | Ok (XR NINF), Ok (XR (R _)) -> Ok (IEEE754.ninf phi) (* necessary? *)
+          | Ok (XR (R _)), Ok (XR PINF) -> Ok (IEEE754.pinf phi) (* necessary? *)
+          | Ok (XR PINF), Ok (XR (R _)) -> Ok (IEEE754.pinf phi) (* necessary? *)
+          | Ok (XR x_), Ok (XR y_) -> (
+            let open ExReal.ResultInfix in
+            let z_ = (Ok a_) *. (2 ^. s_a) +. (Ok x_) *. (Ok y_) *. (2 ^. s) in
+            (match z_ with
+            | Ok z_ ->
+              let z_' = round_to_precision p b (snd pi) z_ in
+              let z_'' = saturate m (fst pi) (snd pi) z_' in
+              let z = encode754 phi z_'' in
+              Ok z
+            | Error e -> Error e))
+          | Error e, _ -> Error e
+          | _, Error e -> Error e
+          | _ -> Error "invalid")
+      | Error e -> Error e)
 
   let scaled_fma (phi : IEEE754.Format.t) (f_x : Format.t) (f_y : Format.t) (pi : Projection.t)
     (a : IEEE754.t) (s_a : int) (x : t) (y : t) (s : int) : IEEE754.t =
@@ -928,7 +938,7 @@ module Float8 = struct
     | _ when x = zero || x = ninf || x = pinf || x = nan -> false
     | _ -> Util.machine_idiv ((to_int_repr x) mod (Util.ipow2 (k - 1))) (Util.ipow2 (p - 1)) = 0
 
-  let is_finite (_f : Format.t) (x : t) : bool = x <> ninf && x <> pinf && x <> nan
+  let is_finite (_f : Format.t) (x : t) : bool = x <> ninf && x <> pinf && x <> nan [@@macro]
 
   let is_infinite (_f : Format.t) (x : t) : bool = x = ninf || x = pinf
 

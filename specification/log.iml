@@ -87,10 +87,11 @@ let rec e_refine (i : int) (p : int) (f : int) (f_acc : int) (r_acc : real) : re
     let f_acc = f_acc * (f + 1) in
     let r_acc = r_acc +. (1.0 /. Real.of_int f_acc) in
     e_refine (i + 1) p (f + 1) f_acc r_acc
-    [@@measure Ordinal.of_int (p - i)]
+  [@@measure Ordinal.of_int (p - i)]
 
 let e (p : int) : real =
-  e_refine 1 p 0 1 1.0
+  let r = e_refine 1 p 0 1 1.0 in
+  if r <=. 0.0 then 2.71828 else r
 
 
 (* Natural logarithm *)
