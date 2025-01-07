@@ -26,13 +26,14 @@ theorem thm_pow2_gt_0_neg (n:int) =
   [@@by [%use thm_pow2_gt_0_pos (- n)] @> unroll_nonlin 10 10 4]
 
 theorem thm_pow2_gt_0 (n:int) =
-  Util.pow2 n >. 0.0
+  (Util.pow2 n [@trigger]) >. 0.0
   [@@timeout 10]
   [@@by
     [%use thm_pow2_gt_0_pos n] @>
     [%use thm_pow2_gt_0_neg n] @>
     auto
   ]
+  [@@fc]
 
 theorem thm_1div_gt (x:real) (y:real) =
   Real.(x > 0.0 && y > 0.0 && x > y  ==>  1.0 / x < 1.0 / y)

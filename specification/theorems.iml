@@ -273,6 +273,12 @@ theorem internal_multiply_scaled_ok (f_x : Format.t) (f_y : Format.t) (f_z : For
 
 (** 4.9 Mixed IEEE Std 754 and P3109 operations *)
 
+theorem internal_scaled_fma_xreal_is_ok (a : ExReal.t) (s_a : int) (x : ExReal.t) (y : ExReal.t) (s : int) =
+  Result.is_ok (Float8.internal_scaled_fma_xreal a s_a x y s)
+  [@@timeout 60]
+  [@@disable Util.pow2, Util.ipow2, Util.ilog2]
+  [@@by auto]
+
 (** [internal_scaled_fma] never returns an error *)
 theorem internal_scaled_fma_ok (phi : IEEE754.Format.t) (f_x : Format.t) (f_y : Format.t) (pi : Projection.t)
     (a : IEEE754.t) (s_a : int) (x : Float8.t) (y : Float8.t) (s : int) =
