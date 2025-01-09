@@ -751,8 +751,10 @@ module Float8 = struct
   let internal_scaled_fma_xreal (a : ExReal.t) (s_a : int) (x : ExReal.t) (y : ExReal.t) (s : int) : (NaNOrExReal.t, string) Result.t =
     let open ExReal in
     match a, x, y with
-    | _, NINF, PINF -> Ok NaN
-    | _, PINF, NINF -> Ok NaN
+    | PINF, NINF, PINF -> Ok NaN
+    | PINF, PINF, NINF -> Ok NaN
+    | NINF, NINF, NINF -> Ok NaN
+    | NINF, PINF, PINF -> Ok NaN
 
     | _, PINF, (R 0.0) -> Ok NaN
     | _, NINF, (R 0.0) -> Ok NaN
