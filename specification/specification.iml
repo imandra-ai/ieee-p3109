@@ -750,28 +750,24 @@ module Float8 = struct
   (** 4.9 Mixed IEEE Std 754 and P3109 operations *)
   let internal_scaled_fma_xreal (a : ExReal.t) (s_a : int) (x : ExReal.t) (y : ExReal.t) (s : int) : (NaNOrExReal.t, string) Result.t =
     let open ExReal in
+    let open ExReal.Infix in
     match a, x, y with
-    | PINF, NINF, PINF -> Ok NaN
-    | PINF, PINF, NINF -> Ok NaN
-    | NINF, NINF, NINF -> Ok NaN
-    | NINF, PINF, PINF -> Ok NaN
-
     | _, PINF, (R 0.0) -> Ok NaN
     | _, NINF, (R 0.0) -> Ok NaN
     | _, (R 0.0), PINF -> Ok NaN
     | _, (R 0.0), NINF -> Ok NaN
 
-    | NINF, PINF, (R y) when y >. 0.0 -> Ok NaN
-    | NINF, (R x), PINF when x >. 0.0 -> Ok NaN
+    | NINF, PINF, y when y >. (R 0.0) -> Ok NaN
+    | NINF, x, PINF when x >. (R 0.0) -> Ok NaN
 
-    | NINF, NINF, (R y) when y <. 0.0 -> Ok NaN
-    | NINF, (R x), NINF when x <. 0.0 -> Ok NaN
+    | NINF, NINF, y when y <. (R 0.0) -> Ok NaN
+    | NINF, x, NINF when x <. (R 0.0) -> Ok NaN
 
-    | PINF, PINF, (R y) when y <. 0.0 -> Ok NaN
-    | PINF, (R x), PINF when x <. 0.0 -> Ok NaN
+    | PINF, PINF, y when y <. (R 0.0) -> Ok NaN
+    | PINF, x, PINF when x <. (R 0.0) -> Ok NaN
 
-    | PINF, NINF, (R y) when y >. 0.0 -> Ok NaN
-    | PINF, (R x), NINF when x >. 0.0 -> Ok NaN
+    | PINF, NINF, y when y >. (R 0.0) -> Ok NaN
+    | PINF, x, NINF when x >. (R 0.0) -> Ok NaN
 
     | _ -> (
       let open ExReal.ResultInfix in
