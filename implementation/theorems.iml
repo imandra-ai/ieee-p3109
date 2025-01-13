@@ -12,7 +12,7 @@ theorem correct_abs (f : Format.t) (x : Float8.t) =
   [@@timeout 10]
 
 (** Proof that our implementation of [negate] is correct *)
-theorem correct_negate (f:Format.t) (x:Float8.t) =
+theorem correct_negate (f : Format.t) (x : Float8.t) =
   Implementation.Float8.negate f x = Specification.Float8.negate f x
   [@@by enumerate ["f"; "x"] @> ground_eval]
   [@@timeout 10]

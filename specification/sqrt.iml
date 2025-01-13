@@ -20,7 +20,3 @@ let sqrt (x : real) (p : int): (real, string) Result.t =
     Ok 0.0
   else
     Ok (aux 0 p x 1.0)
-
-eval (sqrt 1.0 3)
-eval (sqrt 4.0 3)
-eval (sqrt 9.0 3)

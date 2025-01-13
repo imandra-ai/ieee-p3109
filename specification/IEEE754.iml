@@ -50,7 +50,7 @@ let zero (fmt : Format.t) =
   nlist k false
 
 let is_nan (x : t) (fmt : Format.t) : bool =
-  let _, _, _, _, _, w, t, _ = Format.get_format_parameters fmt in
+  let _, _, _, _, _, w, _, _ = Format.get_format_parameters fmt in
   let tail = List.tl x in
   let biased_exp = List.take w tail in
   let biased_exp_is_all_ones = not (List.mem false biased_exp) in
@@ -189,5 +189,3 @@ let bd acc b = acc ^ if b then "1" else "0"
 
 let pp (x : t)  =
   List.fold_left bd "" x
-
-let unroll_nonlin qt nqt steps = Tactic.unroll ~smt:"z3-full-nonlinear" ~query_timeout:qt ~no_asm_query_timeout:nqt steps

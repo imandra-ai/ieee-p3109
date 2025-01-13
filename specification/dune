@@ -10,6 +10,6 @@
  (name specification)
  (package p3109)
  (flags :standard -open Imandrax_prelude -open Prelude_extracted -open Math)
- (modules Specification Binary16 IEEE754)
+ (modules Specification IEEE754)
  (modes byte native)
  (libraries imandrax_prelude math))

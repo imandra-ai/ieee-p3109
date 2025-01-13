@@ -20,6 +20,7 @@ theorem precision_1_7 (f : Format.t) =
 (** All [Float8.t] are classified *)
 theorem thm_class_internal_ok (f : Format.t) (x : Float8.t) =
   Result.is_ok (Float8.class_internal f x)
+  [@@by unroll 20]
 
 theorem internal_saturate_ok (m : real) (sat : bool) (rnd : RoundingMode.t) (x : ExReal.t) =
   Result.is_ok (Float8.internal_saturate m sat rnd x)

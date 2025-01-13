@@ -23,7 +23,7 @@ eval (enc 16.0)
 eval (enc 32.0)
 
 eval (sqrt 25.0 8)
-eval (ExReal.sqrt (ExReal.R 25.0))
+eval (ExReal.sqrt (ExReal.R 25.0) 8)
 eval (dec (Float8.sqrt fmt fmt (false, RoundingMode.TowardZero) (enc 256.0)))
 
 verify (Float8.sqrt fmt fmt (false, RoundingMode.TowardZero) (enc 1.0) = (enc 1.0)) [@@by ground_eval]
