@@ -1,10 +1,13 @@
 [@@@import Util, "dune:math"]
 [@@@import ExReal, "dune:math"]
 [@@@import Specification, "specification.iml"]
+(* [@@@import Theorems_pow2, "theorems_pow2.iml"] *)
 
 open Specification
 open ExReal
 open ExReal.Infix
+
+let unroll_nonlin qt nqt steps = Tactic.unroll ~smt:"z3-full-nonlinear" ~query_timeout:qt ~no_asm_query_timeout:nqt steps
 
 let is_within_range (f : Format.t) (x : Float8.t) : bool =
   let open Float8.NaNOrExReal in
@@ -16,51 +19,213 @@ let is_within_range (f : Format.t) (x : Float8.t) : bool =
   | Ok (XR r) -> R Real.(- max) <=. r && r <=. R max
   | _ -> false
 
-theorem within_format_range_p7 (f : Format.t) (x : Float8.t) =
+theorem within_format_range_15p14 (f : Format.t) (x : Float8.t) =
+  f = Format.B15P14 ==> is_within_range f x
+  [@@by unroll_nonlin 2 2 50]
+  [@@timeout 60]
+
+theorem within_format_range_15p13 (f : Format.t) (x : Float8.t) =
+  f = Format.B15P13 ==> is_within_range f x
+  [@@by unroll_nonlin 2 2 50]
+  [@@timeout 60]
+
+theorem within_format_range_15p12 (f : Format.t) (x : Float8.t) =
+  f = Format.B15P12 ==> is_within_range f x
+  [@@by unroll_nonlin 2 2 50]
+  [@@timeout 60]
+
+theorem within_format_range_15p11 (f : Format.t) (x : Float8.t) =
+  f = Format.B15P11 ==> is_within_range f x
+  [@@by unroll_nonlin 2 2 50]
+  [@@timeout 60]
+
+theorem within_format_range_15p10 (f : Format.t) (x : Float8.t) =
+  f = Format.B15P10 ==> is_within_range f x
+  [@@by unroll_nonlin 2 2 100]
+  [@@timeout 60]
+
+theorem within_format_range_15p9 (f : Format.t) (x : Float8.t) =
+  f = Format.B15P9 ==> is_within_range f x
+  [@@by unroll_nonlin 600 60 100]
+  [@@timeout 120]
+
+theorem within_format_range_15p8 (f : Format.t) (x : Float8.t) =
+  f = Format.B15P8 ==> is_within_range f x
+  [@@by unroll_nonlin 600 60 200]
+  [@@timeout 120]
+
+theorem within_format_range_15p7 (f : Format.t) (x : Float8.t) =
+  f = Format.B15P7 ==> is_within_range f x
+  [@@by unroll_nonlin 600 60 200]
+  [@@timeout 120]
+
+theorem within_format_range_15p6 (f : Format.t) (x : Float8.t) =
+  f = Format.B15P6 ==> is_within_range f x
+  [@@by unroll_nonlin 30 5 300]
+  [@@timeout 3600]
+
+theorem within_format_range_15p5 (f : Format.t) (x : Float8.t) =
+  f = Format.B15P5 ==> is_within_range f x
+  [@@by unroll_nonlin 10 5 300]
+  [@@timeout 120]
+
+theorem within_format_range_15p4 (f : Format.t) (x : Float8.t) =
+  f = Format.B15P4 ==> is_within_range f x
+  [@@by unroll_nonlin 20 5 300]
+  [@@timeout 120]
+
+theorem within_format_range_15p3 (f : Format.t) (x : Float8.t) =
+  f = Format.B15P3 ==> is_within_range f x
+  [@@by unroll_nonlin 20 5 300]
+  [@@timeout 120]
+
+theorem within_format_range_15p2 (f : Format.t) (x : Float8.t) =
+  is_within_range Format.B15P2 x
+  [@@by unroll_nonlin 20 5 300]
+  [@@timeout 120]
+
+theorem within_format_range_15p1 (f : Format.t) (x : Float8.t) =
+  f = Format.B15P1 ==> is_within_range f x
+  [@@by unroll_nonlin 120 120 1000]
+  [@@timeout 120]
+
+theorem within_format_range_8p7 (f : Format.t) (x : Float8.t) =
   f = Format.B8P7 ==> is_within_range f x
-  [@@by enumerate["x"] @> auto]
-  [@@timeout 600]
+  [@@by unroll 25]
+  [@@timeout 120]
 
-theorem within_format_range_p6 (f : Format.t) (x : Float8.t) =
+theorem within_format_range_8p6 (f : Format.t) (x : Float8.t) =
   f = Format.B8P6 ==> is_within_range f x
-  [@@by enumerate["x"] @> auto]
+  [@@by unroll_nonlin 2 2 50]
   [@@timeout 60]
 
-theorem within_format_range_p5 (f : Format.t) (x : Float8.t) =
+theorem within_format_range_8p5 (f : Format.t) (x : Float8.t) =
   f = Format.B8P5 ==> is_within_range f x
-  [@@by enumerate["x"] @> auto]
+  [@@by unroll_nonlin 2 2 50]
   [@@timeout 60]
 
-theorem within_format_range_p4 (f : Format.t) (x : Float8.t) =
+theorem within_format_range_8p4 (f : Format.t) (x : Float8.t) =
   f = Format.B8P4 ==> is_within_range f x
-  [@@by enumerate["x"] @> auto]
+  [@@by unroll_nonlin 2 2 50]
   [@@timeout 60]
 
-theorem within_format_range_p3 (f : Format.t) (x : Float8.t) =
+theorem within_format_range_8p3 (f : Format.t) (x : Float8.t) =
   f = Format.B8P3 ==> is_within_range f x
-  [@@by enumerate["x"] @> auto]
+  [@@by unroll_nonlin 2 2 60]
   [@@timeout 60]
 
-theorem within_format_range_p2 (f : Format.t) (x : Float8.t) =
+theorem within_format_range_8p2 (f : Format.t) (x : Float8.t) =
   f = Format.B8P2 ==> is_within_range f x
-  [@@by enumerate["x"] @> auto]
+  [@@by unroll_nonlin 2 2 60]
   [@@timeout 60]
 
-theorem within_format_range_p1 (f : Format.t) (x : Float8.t) =
+theorem within_format_range_8p1 (f : Format.t) (x : Float8.t) =
   f = Format.B8P1 ==> is_within_range f x
-  [@@by enumerate["x"] @> auto]
+  [@@by unroll_nonlin 2 2 1000]
+  [@@timeout 3600]
+
+theorem within_format_range_7p6 (f : Format.t) (x : Float8.t) =
+  f = Format.B7P6 ==> is_within_range f x
+  [@@by unroll_nonlin 2 2 30]
+  [@@timeout 60]
+
+theorem within_format_range_7p5 (f : Format.t) (x : Float8.t) =
+  f = Format.B7P5 ==> is_within_range f x
+  [@@by unroll_nonlin 2 2 30]
+  [@@timeout 60]
+
+theorem within_format_range_7p4 (f : Format.t) (x : Float8.t) =
+  f = Format.B7P4 ==> is_within_range f x
+  [@@by unroll_nonlin 2 2 30]
+  [@@timeout 60]
+
+theorem within_format_range_7p3 (f : Format.t) (x : Float8.t) =
+  f = Format.B7P3 ==> is_within_range f x
+  [@@by unroll_nonlin 2 2 30]
+  [@@timeout 60]
+
+theorem within_format_range_7p2 (f : Format.t) (x : Float8.t) =
+  f = Format.B7P2 ==> is_within_range f x
+  [@@by unroll_nonlin 2 2 60]
+  [@@timeout 60]
+
+theorem within_format_range_7p1 (f : Format.t) (x : Float8.t) =
+  f = Format.B7P1 ==> is_within_range f x
+  [@@by unroll_nonlin 2 2 100]
+  [@@timeout 60]
+
+theorem within_format_range_6p5 (f : Format.t) (x : Float8.t) =
+  f = Format.B6P5 ==> is_within_range f x
+  [@@by unroll_nonlin 2 2 30]
+  [@@timeout 60]
+
+theorem within_format_range_6p4 (f : Format.t) (x : Float8.t) =
+  f = Format.B6P4 ==> is_within_range f x
+  [@@by unroll_nonlin 2 2 30]
+  [@@timeout 60]
+
+theorem within_format_range_6p3 (f : Format.t) (x : Float8.t) =
+  f = Format.B6P3 ==> is_within_range f x
+  [@@by unroll_nonlin 2 2 30]
+  [@@timeout 60]
+
+theorem within_format_range_6p2 (f : Format.t) (x : Float8.t) =
+  f = Format.B6P2 ==> is_within_range f x
+  [@@by unroll_nonlin 2 2 60]
+  [@@timeout 60]
+
+theorem within_format_range_6p1 (f : Format.t) (x : Float8.t) =
+  f = Format.B6P1 ==> is_within_range f x
+  [@@by unroll_nonlin 2 2 100]
+  [@@timeout 60]
+
+theorem within_format_range_3p2 (f : Format.t) (x : Float8.t) =
+  f = Format.B3P2 ==> is_within_range f x
+  [@@by unroll_nonlin 2 2 25]
+  [@@timeout 60]
+
+theorem within_format_range_3p1 (f : Format.t) (x : Float8.t) =
+  f = Format.B3P1 ==> is_within_range f x
+  [@@by unroll_nonlin 2 2 25]
   [@@timeout 60]
 
 theorem within_format_range (f : Format.t) (x : Float8.t) =
   is_within_range f x
   [@@by
-    [%use within_format_range_p7 f x] @>
-    [%use within_format_range_p6 f x] @>
-    [%use within_format_range_p5 f x] @>
-    [%use within_format_range_p4 f x] @>
-    [%use within_format_range_p3 f x] @>
-    [%use within_format_range_p2 f x] @>
-    [%use within_format_range_p1 f x] @>
+    [%use within_format_range_15p14 f x] @>
+    [%use within_format_range_15p13 f x] @>
+    [%use within_format_range_15p12 f x] @>
+    [%use within_format_range_15p11 f x] @>
+    [%use within_format_range_15p10 f x] @>
+    [%use within_format_range_15p9 f x] @>
+    [%use within_format_range_15p8 f x] @>
+    [%use within_format_range_15p7 f x] @>
+    [%use within_format_range_15p6 f x] @>
+    [%use within_format_range_15p5 f x] @>
+    [%use within_format_range_15p4 f x] @>
+    [%use within_format_range_15p3 f x] @>
+    [%use within_format_range_15p2 f x] @>
+    [%use within_format_range_15p1 f x] @>
+    [%use within_format_range_8p7 f x] @>
+    [%use within_format_range_8p6 f x] @>
+    [%use within_format_range_8p5 f x] @>
+    [%use within_format_range_8p4 f x] @>
+    [%use within_format_range_8p3 f x] @>
+    [%use within_format_range_8p2 f x] @>
+    [%use within_format_range_8p1 f x] @>
+    [%use within_format_range_7p6 f x] @>
+    [%use within_format_range_7p5 f x] @>
+    [%use within_format_range_7p4 f x] @>
+    [%use within_format_range_7p3 f x] @>
+    [%use within_format_range_7p2 f x] @>
+    [%use within_format_range_7p1 f x] @>
+    [%use within_format_range_6p5 f x] @>
+    [%use within_format_range_6p4 f x] @>
+    [%use within_format_range_6p3 f x] @>
+    [%use within_format_range_6p2 f x] @>
+    [%use within_format_range_6p1 f x] @>
+    [%use within_format_range_3p2 f x] @>
+    [%use within_format_range_3p1 f x] @>
     unroll 0]
   [@@timeout 10]
 
@@ -72,3 +237,10 @@ theorem within_format_range (f : Format.t) (x : Float8.t) =
     [@@by enumerate["f"; "x"] @> auto]
     [@@timeout 3600]
 *)
+
+(* theorem within_format_range_all (f : Format.t) (x : Float8.t) =
+  is_within_range f x
+  [@@timeout 3600]
+  (* [@@by unroll_nonlin 5 5 1000] *)
+  (* [@@by enumerate["f"] @> repeat split_and @>>| unroll_nonlin 3 3 250] *)
+  [@@by unroll_nonlin 600 10 1000] *)

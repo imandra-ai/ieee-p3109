@@ -15,7 +15,7 @@ let rec aux i p y g =
 
 let sqrt (x : real) (p : int): (real, string) Result.t =
   if x <. 0.0 then
-    Error "invalid"
+    Error "undefined"
   else if x = 0.0 then
     Ok 0.0
   else

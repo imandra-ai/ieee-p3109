@@ -57,16 +57,6 @@ let ifloor (x : real) : int = Real.to_int x [@@macro]
 
 let floor (x : real) : real = Real.of_int (ifloor x) [@@macro]
 
-let rec ilog2 (x : int) : int =
-  (* Ugly hack, replace with dedicated number_of_digits function? *)
-  let x = abs x in
-  match x with
-  | 0 -> 0
-  | 1 -> 0
-  | _ -> 1 + ilog2 ((x + 1) / 2)
-  [@@measure Ordinal.of_int (abs x)]
-  [@@unroll 5]
-
 let rec floor_log2_abs (x : real) (max_depth : int) : int =
   if max_depth <= 0 then 0
   else (

@@ -1,0 +1,31 @@
+[@@@import Specification, "specification.iml"]
+[@@@import Util, "dune:math"]
+
+open Specification
+open Float8
+
+let unroll_nonlin qt nqt steps = Tactic.unroll ~smt:"z3-full-nonlinear" ~query_timeout:qt ~no_asm_query_timeout:nqt steps
+
+let one_up (f : Format.t) (x : Float8.t) : Float8.t =
+  if Float8.is_nan f x || Float8.is_infinite f x then x
+  else (Float8.of_int_repr f ((Float8.to_int_repr f x) + 1))
+
+let one_down (f : Format.t) (x : Float8.t) : Float8.t =
+  if Float8.is_nan f x || Float8.is_infinite f x then x
+  else (Float8.of_int_repr f ((Float8.to_int_repr f x) - 1))
+
+let only_exponent (f : Format.t) (x : Float8.t) : Float8.t =
+  let _, p, _, _ = Format.get_format_parameters f in
+  let x = Float8.abs f x in
+  let pwr = Util.ipow2 (p - 1) in
+  (Util.machine_idiv x pwr) * pwr
+
+let ulp (f : Format.t) (x : Float8.t) : (real, string) Result.t =
+  let open NaNOrExReal in
+  let oe = only_exponent f x in
+  match (decode f (Float8.of_int_repr f (Float8.to_int_repr f oe + 1))), decode f oe with
+  | Ok(XR (R u)), Ok(XR (R l)) -> Ok(u -. l)
+  | _ -> Error("undefined")
+
+eval (only_exponent Format.B8P3 0xFF)
+

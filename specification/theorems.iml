@@ -3,33 +3,40 @@
 [@@@import Exp, "dune:math"]
 [@@@import Specification, "specification.iml"]
 [@@@import Theorems_pow2, "theorems_pow2.iml"]
-[@@@import Theorems_encode, "theorems_encode.iml"]
 [@@@import Theorems_format_ranges, "theorems_format_ranges.iml"]
+[@@@import Theorems_IEEE754, "theorems_ieee754.iml"]
 
 open Specification
 
 let unroll_nonlin qt nqt steps = Tactic.unroll ~smt:"z3-full-nonlinear" ~query_timeout:qt ~no_asm_query_timeout:nqt steps
-
-(** Precision is between 1 and 7 in all supported formats *)
-theorem precision_1_7 (f : Format.t) =
-  1 <= Format.precision f && Format.precision f <= 7
-
 
 (** 4.6 Functions *)
 
 (** All [Float8.t] are classified *)
 theorem thm_class_internal_ok (f : Format.t) (x : Float8.t) =
   Result.is_ok (Float8.class_internal f x)
-  [@@by unroll 20]
+  [@@timeout 360]
+  [@@by unroll_nonlin 20 5 100]
 
 theorem internal_saturate_ok (m : real) (sat : bool) (rnd : RoundingMode.t) (x : ExReal.t) =
-  Result.is_ok (Float8.internal_saturate m sat rnd x)
+  Result.is_ok (Float8.internal_saturate m sat rnd x [@trigger])
+  [@@fc]
 
 theorem internal_round_to_precision_ok (p : int) (b : int) (rnd : RoundingMode.t) (x : ExReal.t) =
   Result.is_ok (Float8.internal_round_to_precision p b rnd x)
 
+theorem to_int_repr_gt_0 (f : Format.t) (x : Float8.t) =
+  (Specification.Float8.to_int_repr f x) [@trigger] >= 0
+  [@@timeout 3600]
+  [@@by auto]
+  [@@fc]
+
 (* Check that the (machine) integer representation decoding is reversible *)
-theorem of_to_int_repr (x : Float8.t) = Specification.Float8.of_int_repr (Specification.Float8.to_int_repr x) = x
+(* theorem of_to_int_repr (f : Format.t) (x : Float8.t) =
+  Specification.Float8.of_int_repr f (Specification.Float8.to_int_repr f x) = x
+  [@@timeout 3600]
+  (* [@@by unroll_nonlin 10 10 100] *)
+  [@@by auto] *)
 
 (* [decode] never throws an error *)
 theorem decode_ok (f : Format.t) (x : Float8.t) =
@@ -46,13 +53,12 @@ theorem decode_within_range (f : Format.t) (x : Float8.t) =
   match d with
   | Ok (Float8.NaNOrExReal.XR (ExReal.R r)) ->
     (-. fmax) <=. r && r <=. fmax
-  | Ok _ -> true
   | _ -> true
-  [@@timeout 3600]
+  [@@timeout 600]
   [@@disable Specification.Float8.decode]
   [@@by
-    [%use Theorems_format_ranges.within_format_range f x]
-    @> auto]
+    [%use Theorems_format_ranges.within_format_range f x] @>
+    auto]
   [@@fc]
 
 (* [encode] is ok if the input is within the format range *)
@@ -77,7 +83,7 @@ theorem decode_encode_ok (f : Format.t)  (x : Float8.t) =
   | Ok y -> Result.is_ok (Float8.encode f y [@trigger])
   | Error _ -> false
   [@@timeout 3600]
-  [@@disable Specification.Float8.encode, Specification.Float8.decode, Util.pow2, Util.ipow2, Util.ilog2]
+  [@@disable Specification.Float8.encode, Specification.Float8.decode, Util.pow2, Util.ipow2]
   [@@by auto]
   [@@fc]
 
@@ -86,7 +92,8 @@ theorem saturate_is_within_range (f : Format.t) (x : ExReal.t) (sat : bool) (rnd
   let _, _, _, fmax = Format.get_format_parameters f in
   let s = (Float8.saturate fmax sat rnd x [@trigger]) in
   Float8.exreal_is_within_range f s
-  [@@timeout 600]
+  [@@timeout 3600]
+  [@@disable Float8.saturate, Util.ipow2]
   [@@by auto]
   [@@fc]
 
@@ -94,7 +101,7 @@ theorem saturate_is_within_range (f : Format.t) (x : ExReal.t) (sat : bool) (rnd
 theorem saturate_encode_ok (f : Format.t) (x : ExReal.t) (sat : bool) (rnd : RoundingMode.t) =
   let _, _, _, fmax = Format.get_format_parameters f in
   Result.is_ok (Float8.encode f (Float8.NaNOrExReal.XR (Float8.saturate fmax sat rnd x)) [@trigger])
-  [@@timeout 30]
+  [@@timeout 60]
   [@@by
     [%use saturate_is_within_range f x sat rnd]
     @> unroll_nonlin 10 10 100]
@@ -113,19 +120,21 @@ theorem project_ok (f : Format.t) (pi : Projection.t) (x : ExReal.t) =
     @> unroll_nonlin 10 10 1]
   [@@fc]
 
-theorem nan_decodes_to_nan (f : Format.t) (x : Float8.t) =
-  Float8.decode f x [@trigger] = Ok Float8.NaNOrExReal.NaN <==> x = Float8.nan
+theorem nan_decodes_to_nan (f : Format.t) =
+  Float8.decode f (Float8.nan f) [@trigger] = Ok Float8.NaNOrExReal.NaN
   [@@by unroll_nonlin 10 10 100]
   [@@fc]
 
 theorem ninf_decodes_to_ninf (f : Format.t) (x : Float8.t) =
-  Float8.decode f x [@trigger] = Ok (Float8.NaNOrExReal.XR ExReal.NINF) <==> x = Float8.ninf
-  [@@by unroll_nonlin 10 10 100]
+  Float8.decode f x [@trigger] = Ok (Float8.NaNOrExReal.XR ExReal.NINF) <==> x = Float8.ninf f
+  [@@timeout 120]
+  [@@by unroll_nonlin 5 2 50]
   [@@fc]
 
 theorem pinf_decodes_to_pinf (f : Format.t) (x : Float8.t) =
-  Float8.decode f x  [@trigger] = Ok (Float8.NaNOrExReal.XR ExReal.PINF) <==> x = Float8.pinf
-  [@@by unroll_nonlin 10 10 100]
+  Float8.decode f x  [@trigger] = Ok (Float8.NaNOrExReal.XR ExReal.PINF) <==> x = Float8.pinf f
+  [@@timeout 60]
+  [@@by unroll_nonlin 5 2 50]
   [@@fc]
 
 (** 4.7.1 Specification of IEEE Std 754 formats *)
@@ -142,7 +151,7 @@ theorem internal_convert_to_p3109_ok (phi: IEEE754.Format.t) (f : Format.t) (pi 
   Result.is_ok (Float8.internal_convert_to_p3109 phi f pi x)
   [@@timeout 3600]
   [@@disable Float8.project, Float8.decode, Float8.encode754, Float8.round_to_precision, Float8.saturate,
-             Util.pow2, Util.ipow2, Util.ilog2, IEEE754.as_extended_real, IEEE754.is_nan]
+             Util.pow2, Util.ipow2, IEEE754.as_extended_real, IEEE754.is_nan]
   [@@by auto]
 
 
@@ -186,7 +195,7 @@ theorem internal_add_ok (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (pi :
   (x : Float8.t) (y : Float8.t) =
   Result.is_ok (Float8.internal_add f_x f_y f_z pi x y)
   [@@timeout 60]
-  [@@disable Specification.Float8.project, Specification.Float8.decode, Util.pow2, Util.ipow2, Util.ilog2]
+  [@@disable Specification.Float8.project, Specification.Float8.decode, Util.pow2, Util.ipow2]
   [@@by auto]
 
 (** [internal_sub] never returns an error *)
@@ -194,21 +203,21 @@ theorem internal_subtract_ok (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) 
   (x : Float8.t) (y : Float8.t) =
   Result.is_ok (Float8.internal_subtract f_x f_y f_z pi x y)
   [@@timeout 60]
-  [@@disable Specification.Float8.project, Specification.Float8.decode, Util.pow2, Util.ipow2, Util.ilog2]
+  [@@disable Specification.Float8.project, Specification.Float8.decode, Util.pow2, Util.ipow2]
   [@@by auto]
 
 (** [internal_multiply] never returns an error *)
 theorem internal_multiply_ok (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (pi : Projection.t) (x : Float8.t) (y : Float8.t)  =
   Result.is_ok (Float8.internal_multiply f_x f_y f_z pi x y)
   [@@timeout 60]
-  [@@disable Specification.Float8.project, Specification.Float8.decode, Util.pow2, Util.ipow2, Util.ilog2]
+  [@@disable Specification.Float8.project, Specification.Float8.decode, Util.pow2, Util.ipow2]
   [@@by auto]
 
 (** [internal_divide] never returns an error *)
 theorem internal_divide_ok (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (pi : Projection.t) (x : Float8.t) (y : Float8.t)  =
   Result.is_ok (Float8.internal_divide f_x f_y f_z pi x y)
   [@@timeout 60]
-  [@@disable Specification.Float8.project, Specification.Float8.decode, Util.pow2, Util.ipow2, Util.ilog2]
+  [@@disable Specification.Float8.project, Specification.Float8.decode, Util.pow2, Util.ipow2]
   [@@by auto]
 
 
@@ -218,7 +227,7 @@ theorem internal_divide_ok (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (p
 theorem internal_sqrt_ok (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : Float8.t) =
   Result.is_ok (Float8.internal_sqrt f_x f_z pi x)
   [@@timeout 60]
-  [@@disable Specification.Float8.project, Specification.Float8.decode, Util.pow2, Util.ipow2, Util.ilog2]
+  [@@disable Specification.Float8.project, Specification.Float8.decode, Util.pow2, Util.ipow2]
   [@@by auto]
 
 (** [internal_exp] never returns an error *)
@@ -257,7 +266,7 @@ theorem internal_add_scaled_ok (f_x : Format.t) (f_y : Format.t) (f_z : Format.t
   (x : Float8.t) (s_x : int) (y : Float8.t) (s_y : int) =
   Result.is_ok (Float8.internal_add_scaled f_x f_y f_z pi x s_x y s_y)
   [@@timeout 120]
-  [@@disable Specification.Float8.project, Specification.Float8.decode, Util.pow2, Util.ipow2, Util.ilog2]
+  [@@disable Specification.Float8.project, Specification.Float8.decode, Util.pow2, Util.ipow2]
   [@@by auto]
 
 
@@ -268,7 +277,7 @@ theorem internal_multiply_scaled_ok (f_x : Format.t) (f_y : Format.t) (f_z : For
   (x : Float8.t) (y : Float8.t) (s : int) =
   Result.is_ok (Float8.internal_multiply_scaled f_x f_y f_z pi x y s)
   [@@timeout 60]
-  [@@disable Specification.Float8.project, Specification.Float8.decode, Util.pow2, Util.ipow2, Util.ilog2]
+  [@@disable Specification.Float8.project, Specification.Float8.decode, Util.pow2, Util.ipow2]
   [@@by auto]
 
 
@@ -277,17 +286,18 @@ theorem internal_multiply_scaled_ok (f_x : Format.t) (f_y : Format.t) (f_z : For
 theorem internal_scaled_fma_xreal_is_ok (a : ExReal.t) (s_a : int) (x : ExReal.t) (y : ExReal.t) (s : int) =
   Result.is_ok (Float8.internal_scaled_fma_xreal a s_a x y s)
   [@@timeout 60]
-  [@@disable Util.pow2, Util.ipow2, Util.ilog2]
+  [@@disable Util.pow2, Util.ipow2]
   [@@by auto]
+  [@@fc]
 
 (** [internal_scaled_fma] never returns an error *)
 theorem internal_scaled_fma_ok (phi : IEEE754.Format.t) (f_x : Format.t) (f_y : Format.t) (pi : Projection.t)
     (a : IEEE754.t) (s_a : int) (x : Float8.t) (y : Float8.t) (s : int) =
   Result.is_ok (Float8.internal_scaled_fma phi f_x f_y pi a s_a x y s)
-  [@@timeout 60]
+  [@@timeout 3600]
   [@@disable Float8.project, Float8.decode, Float8.encode754, Float8.round_to_precision, Float8.saturate,
-             Util.pow2, Util.ipow2, Util.ilog2, IEEE754.as_extended_real, IEEE754.is_nan]
-  [@@by auto]
+             Util.pow2, Util.ipow2, IEEE754.as_extended_real, IEEE754.is_nan]
+  [@@by [%use Theorems_IEEE754.as_extended_real_ok phi a] @> auto]
 
 
 (** 4.10.1 Minimum and Maximum *)

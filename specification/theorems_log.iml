@@ -98,15 +98,14 @@ verify (log2 8.0 10 = Ok 3.0) [@@by auto]
 verify (log2 16.0 10 = Ok 4.0) [@@by auto]
 verify (log2 3.1415 10 = Ok 1.6513671875) [@@by auto]
 
-
-let tiny : Float8.t = { b7=false; b6=false; b5=false; b4=false; b3=false; b2=false; b1=false; b0=true; } [@@macro]
-let small : Float8.t = { b7=false; b6=false; b5=false; b4=false; b3=false; b2=true; b1=false; b0=false; } [@@macro]
-let one : Float8.t = { b7=false; b6=true; b5=false; b4=false; b3=false; b2=false; b1=false; b0=false; } [@@macro]
-let huge : Float8.t = { b7=false; b6=true; b5=true; b4=true; b3=true; b2=true; b1=true; b0=false; } [@@macro]
-let ntiny : Float8.t = { b7=true; b6=false; b5=false; b4=false; b3=false; b2=false; b1=false; b0=true; } [@@macro]
-let nsmall : Float8.t = { b7=true; b6=false; b5=false; b4=false; b3=false; b2=true; b1=false; b0=false; } [@@macro]
-let none : Float8.t = { b7=true; b6=true; b5=false; b4=false; b3=false; b2=false; b1=false; b0=false; } [@@macro]
-let nhuge : Float8.t = { b7=true; b6=true; b5=true; b4=true; b3=true; b2=true; b1=true; b0=false; } [@@macro]
+let tiny : Float8.t = 0x01 [@@macro]
+let small : Float8.t = 0x04 [@@macro]
+let one : Float8.t = 0x40 [@@macro]
+let huge : Float8.t = 0x7E [@@macro]
+let ntiny : Float8.t = 0x81 [@@macro]
+let nsmall : Float8.t = 0x84 [@@macro]
+let none : Float8.t = 0xC0 [@@macro]
+let nhuge : Float8.t = 0xFE [@@macro]
 
 (* theorem log2_refine_frac (i : int) (p : int) (x : real) =
   let _, v1 = log2_refine 1 p 0.0 x in
@@ -143,9 +142,9 @@ theorem log2_refine_converges (i : int) (p : int) (acc : real) (x : real) =
     (* @>>| auto *)
     ] *)
 
-eval (log2_refine 1 8 1.2 1.0)
+(* eval (log2_refine 1 8 1.2 1.0) *)
 
-eval (int_frac_parts 0.00030517578)
+(* eval (int_frac_parts 0.00030517578) *)
 
 
 (* A few checks for logs with non-binary base. *)
@@ -155,19 +154,19 @@ verify (log 10.0 10000.0 12 = Ok 4.0) [@@by auto]
 verify (log 10.0 100000.0 18 = Ok 5.0) [@@by auto]
 
 (* Some checks for natural logarithms. *)
-eval (e 10)
-eval (e 20)
-eval (e 100)
-eval (e 2048)
+(* eval (e 10) *)
+(* eval (e 20) *)
+(* eval (e 100) *)
+(* eval (e 2048) *)
 
-eval (ln 2.0 10)
+(* eval (ln 2.0 10) *)
 
 verify (ln 1.0 10 = Ok 0.0) [@@by auto]
 
-eval(ln (e 64 *. e 64) 10)
+(* eval(ln (e 64 *. e 64) 10) *)
 
-eval e_refine 1 3 0 1 1.0
-eval e_refine 2 3 0 1 1.0
+(* eval e_refine 1 3 0 1 1.0 *)
+(* eval e_refine 2 3 0 1 1.0 *)
 
 (* theorem e_refine_pos (p : int) =
   e_refine 1 p 0 1 1.0 >. 0.0

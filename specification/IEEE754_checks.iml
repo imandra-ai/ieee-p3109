@@ -8,13 +8,13 @@ let largest_subnormal_b32 = Util.pow2 (-148)
 let smallest_normal_b32 = Util.pow2 (-126)
 let largest_normal_b32 = Util.pow2 127 *. (2.0 -. Util.pow2 (-23))
 
+(*
 eval pp (round (R 0.0) Format.Binary32 RoundingMode.TowardZero)
 eval pp (round (R 32.0) Format.Binary32 RoundingMode.TowardZero)
 eval pp (round (R 19.123) Format.Binary32 RoundingMode.TowardZero)
 eval pp (round (R 0.00390625) Format.Binary32 RoundingMode.TowardZero)
 eval pp (round (R 21.0) Format.Binary32 RoundingMode.TowardZero)
 eval pp (round (R 2.0) Format.Binary32 RoundingMode.TowardZero)
-eval List.length (round (R 2.0) Format.Binary32 RoundingMode.TowardZero)
 eval pp (round (R (- 1.0)) Format.Binary32 RoundingMode.TowardZero)
 eval pp (round (R 0.125) Format.Binary32 RoundingMode.TowardZero)
 eval pp (round (R smallest_nz_b32) Format.Binary32 RoundingMode.TowardZero)
@@ -24,17 +24,24 @@ eval pp (round (R largest_normal_b32) Format.Binary32 RoundingMode.TowardZero)
 eval pp (round PINF Format.Binary32 RoundingMode.TowardZero)
 eval pp (round (R 0.0) Format.Binary32 RoundingMode.TowardNegative)
 eval pp (round (R (largest_normal_b32 *. 2.0)) Format.Binary32 RoundingMode.TowardZero)
+*)
 
-eval as_extended_real Format.Binary32 (round (R 0.0) Format.Binary32 RoundingMode.TowardZero)
-eval as_extended_real Format.Binary32 (round (R (- 1.0)) Format.Binary32 RoundingMode.TowardNegative)
-eval as_extended_real Format.Binary32 (round (R 21.0) Format.Binary32 RoundingMode.TowardZero)
-eval as_extended_real Format.Binary32 (round (R 0.125) Format.Binary32 RoundingMode.TowardZero)
-eval as_extended_real Format.Binary32 (round (R smallest_nz_b32) Format.Binary32 RoundingMode.TowardZero)
-eval as_extended_real Format.Binary32 (round (R largest_subnormal_b32) Format.Binary32 RoundingMode.TowardZero)
-eval as_extended_real Format.Binary32 (round (R smallest_normal_b32) Format.Binary32 RoundingMode.TowardZero)
-eval as_extended_real Format.Binary32 (round (R largest_normal_b32) Format.Binary32 RoundingMode.TowardZero)
-eval as_extended_real Format.Binary32 (pinf Format.Binary32)
-eval as_extended_real Format.Binary32 (round (R (largest_normal_b32 +. 1.0)) Format.Binary32 RoundingMode.TowardZero)
+verify (List.length (round (R 2.0) Format.Binary32 RoundingMode.TowardZero) = 32) [@@by auto]
+verify (as_extended_real Format.Binary32 (round (R 0.0) Format.Binary32 RoundingMode.TowardZero) = Ok (ExReal.R 0.0)) [@@by auto]
+verify (as_extended_real Format.Binary32 (round (R (- 1.0)) Format.Binary32 RoundingMode.TowardNegative) = Ok (ExReal.R (- 1.0))) [@@by auto]
+verify (as_extended_real Format.Binary32 (round (R 21.0) Format.Binary32 RoundingMode.TowardZero) = Ok (ExReal.R 21.0)) [@@by auto]
+verify (as_extended_real Format.Binary32 (round (R 0.125) Format.Binary32 RoundingMode.TowardZero) = Ok (ExReal.R (1.0 /. 8.0))) [@@by auto]
+verify (as_extended_real Format.Binary32 (round (R smallest_nz_b32) Format.Binary32 RoundingMode.TowardZero) =
+        Ok (ExReal.R (1.0 /. 713623846352979940529142984724747568191373312.0))) [@@by auto]
+verify (as_extended_real Format.Binary32 (round (R largest_subnormal_b32) Format.Binary32 RoundingMode.TowardZero) =
+        Ok (ExReal.R (1.0 /. 356811923176489970264571492362373784095686656.0))) [@@by auto]
+verify (as_extended_real Format.Binary32 (round (R smallest_normal_b32) Format.Binary32 RoundingMode.TowardZero) =
+        Ok (ExReal.R (1.0 /. 85070591730234615865843651857942052864.0))) [@@by auto]
+verify (as_extended_real Format.Binary32 (round (R largest_normal_b32) Format.Binary32 RoundingMode.TowardZero) =
+        Ok (ExReal.R 340282346638528859811704183484516925440.0)) [@@by auto]
+verify (as_extended_real Format.Binary32 (pinf Format.Binary32) = Ok PINF) [@@by auto]
+verify (as_extended_real Format.Binary32 (round (R (largest_normal_b32 +. 1.0)) Format.Binary32 RoundingMode.TowardZero) =
+        Ok (ExReal.R 340282346638528859811704183484516925440.0)) [@@by auto]
 
 let roundtrip32 (x : t) : (t, string) Result.t =
   (* convert extended real to IEEE754 single and back again *)

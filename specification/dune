@@ -12,4 +12,6 @@
  (flags :standard -open Imandrax_prelude -open Prelude_extracted -open Math)
  (modules Specification IEEE754)
  (modes byte native)
- (libraries imandrax_prelude math))
+ (libraries imandrax_prelude math)
+ (preprocess
+  (pps ppx_deriving.std ppx_subliner)))

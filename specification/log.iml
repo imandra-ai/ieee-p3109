@@ -70,6 +70,17 @@ let log2 (x : real) (p : int) : (real, string) Result.t =
     | Error e -> Error e
   )
 
+let log2_plus (x : real) (p : int) : (bool * real, string) Result.t =
+  if x <=. 0.0 then
+    Error "undefined"
+  else (
+    match int_frac_parts x with
+    | Ok (n, f) ->
+      let (precise, r) = (log2_refine 1 p 0.0 f) in
+      Ok (precise, (Real.of_int n +. r))
+    | Error e -> Error e
+  )
+
 (* Compute log_[base]([x]) to precision [p] by reduction to [log2]. *)
 let log (base : real) (x : real) (p : int): (real, string) Result.t =
   match log2 x (p + 1), log2 base (p + 1) with

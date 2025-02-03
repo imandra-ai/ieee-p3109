@@ -23,7 +23,7 @@
  (name p3109)
  (synopsis "P3109: Arithmetic Formats for Machine Learning")
  (description "P3109: Arithmetic Formats for Machine Learning")
- (depends imandrax-prelude dune ocamlformat))
+ (depends imandrax-prelude dune ocamlformat cmdliner ppx_subliner bignum))
 
 (dialect
  (name imandrax)

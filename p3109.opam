@@ -11,6 +11,9 @@ depends: [
   "imandrax-prelude"
   "dune" {>= "3.3"}
   "ocamlformat"
+  "cmdliner"
+  "ppx_subliner"
+  "bignum"
   "odoc" {with-doc}
 ]
 build: [

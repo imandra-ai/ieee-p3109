@@ -2,8 +2,6 @@
 
 [@@@import Specification, "dune:specification"]
 
-(* We chose to use the type definitions from the specification for convenience (but we wouldn't have to). *)
-
 (** Format definitions *)
 
 module Format = struct
@@ -19,18 +17,15 @@ end
 (** 8-bit Floating-point numbers *)
 
 module Float8 = struct
-  (* Type definition *)
-  type t = Specification.Float8.t
+  (* Type definition. Our implementation supports only 8-bit formats. *)
+  type t = { b7 : bool; b6 : bool; b5 : bool; b4 : bool; b3 : bool; b2 : bool; b1 : bool; b0 : bool }
 
   (** Constants *)
 
-  let nan : t = Specification.Float8.nan [@@macro]
-
-  let ninf : t = Specification.Float8.ninf [@@macro]
-
-  let pinf : t = Specification.Float8.pinf [@@macro]
-
-  let zero : t = Specification.Float8.zero [@@macro]
+  let nan (_ : Format.t) : t = { b7 = true; b6 = false; b5 = false; b4 = false; b3 = false; b2 = false; b1 = false; b0 = false; } [@@ocamlformat "disable"]
+  let ninf (_ : Format.t) : t = { b7 = true; b6 = true; b5 = true; b4 = true; b3 = true; b2 = true; b1 = true; b0 = true; } [@@ocamlformat "disable"]
+  let pinf (_ : Format.t) : t = { b7 = false; b6 = true; b5 = true; b4 = true; b3 = true; b2 = true; b1 = true; b0 = true; } [@@ocamlformat "disable"]
+  let zero (_ : Format.t) : t = { b7 = false; b6 = false; b5 = false; b4 = false; b3 = false; b2 = false; b1 = false; b0 = false; } [@@ocamlformat "disable"]
 
   (** Classification predicates *)
 
@@ -47,9 +42,9 @@ module Float8 = struct
   let is_nan (_f : Format.t) (x : t) : bool =
     x.b7 && not x.b6 && not x.b5 && not x.b4 && not x.b3 && not x.b2 && not x.b1 && not x.b0 [@@macro]
 
-  let is_infinite (f : Format.t) (x : t) : bool = Specification.Float8.is_infinite f x [@@macro]
+  let is_infinite (f : Format.t) (x : t) : bool = x = ninf f || x = pinf f [@@macro]
 
-  let is_finite (f : Format.t) (x : t) : bool = Specification.Float8.is_finite f x [@@macro]
+  let is_finite (f : Format.t) (x : t) : bool = not (is_infinite f x) && not (is_nan f x) [@@macro]
 
   let is_normal (f : Format.t) (x : t) : bool =
     let open Specification.Format in
@@ -63,6 +58,7 @@ module Float8 = struct
     | B8P5 -> x.b6 || x.b5 || x.b4
     | B8P6 -> x.b6 || x.b5
     | B8P7 -> x.b6
+    | _ -> false
 
   let is_subnormal (f : Format.t)  (x : t) : bool =
     let open Specification.Format in
@@ -76,19 +72,28 @@ module Float8 = struct
     | B8P5 -> not x.b6 && not x.b5 && not x.b4
     | B8P6 -> not x.b6 && not x.b5
     | B8P7 -> not x.b6
+    | _ -> false
 
   let is_sign_minus (_f : Format.t) (x : t) : bool = x.b7
 
-  let is_signaling (f : Format.t) (x : t) : bool = Specification.Float8.is_signaling f x [@@macro]
+  let is_signaling (_f : Format.t) (_x : t) : bool = false [@@macro]
 
-  let is_canonical (f : Format.t) (x : t) : bool = Specification.Float8.is_canonical f x [@@macro]
+  let is_canonical (_f : Format.t) (_x : t) : bool = true [@@macro]
 
   (** Classifier *)
 
   type class_ = Specification.Float8.class_
 
   let class_ (f : Format.t) (x : t) : class_ =
-    Specification.Float8.class_ f x
+      if is_nan f x then NaN
+      else if is_infinite f x && is_sign_minus f x then NegativeInfinity
+      else if is_normal f x && is_sign_minus f x then NegativeNormal
+      else if is_subnormal f x && is_sign_minus f x then NegativeSubnormal
+      else if is_zero f x then Zero
+      else if is_subnormal f x && not (is_sign_minus f x) then PositiveSubnormal
+      else if is_normal f x && not (is_sign_minus f x) then PositiveNormal
+      else if is_infinite f x && not (is_sign_minus f x) then PositiveInfinity
+      else NaN (* unreachable *)
 
   (** Operations *)
 
@@ -121,6 +126,29 @@ module Float8 = struct
       }
     [@@macro]
 
-  let to_string (f : Format.t) (x : t)  = Specification.Float8.to_string f x
+  let i2s (x : t) =
+      (if x.b0 then 1 else 0)
+    + (if x.b1 then 2 else 0)
+    + (if x.b2 then 4 else 0)
+    + (if x.b3 then 8 else 0)
+    + (if x.b4 then 16 else 0)
+    + (if x.b5 then 32 else 0)
+    + (if x.b6 then 64 else 0)
+    + (if x.b7 then 128 else 0)
+
+  let to_string (f : Format.t) (x : t) =
+    let open Specification.Float8.NaNOrExReal in
+    let bool_to_bin x = if x then "1" else "0" in
+    Printf.sprintf "%s%s%s%s%s%s%s%s = %s" (bool_to_bin x.b7) (bool_to_bin x.b6)
+      (bool_to_bin x.b5) (bool_to_bin x.b4) (bool_to_bin x.b3)
+      (bool_to_bin x.b2) (bool_to_bin x.b1) (bool_to_bin x.b0)
+      (
+        (match Specification.Float8.decode f (i2s x) with
+        | Ok(NaN) -> "NaN"
+        | Ok(XR xreal) -> Math.ExReal.to_string xreal
+        | _ -> ""))
+      [@@ocamlformat "if-then-else=compact"] [@@program]
+
   [@@program]
+
 end

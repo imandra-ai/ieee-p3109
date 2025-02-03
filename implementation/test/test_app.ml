@@ -6,14 +6,14 @@ let some_check = Float8.nan = Float8.ninf;;
 
 Printf.printf "NaN = -oo: %b\n" some_check
 
-let x = Float8.negate B8P3 Float8.pinf;;
+let x = Float8.negate B8P3 (Float8.pinf B8P3);;
 
 Printf.printf "+oo = %s\n"
-  (Float8.to_string Specification.Format.B8P3 Float8.pinf)
+  (Float8.to_string Specification.Format.B8P3 (Float8.pinf B8P3))
 ;;
 
 Printf.printf "-oo = %s\n"
-  (Float8.to_string Specification.Format.B8P3 Float8.ninf)
+  (Float8.to_string Specification.Format.B8P3 (Float8.ninf B8P3))
 ;;
 
 Printf.printf "(- +oo) = %s\n" (Float8.to_string Specification.Format.B8P3 x);;

@@ -1,0 +1,15 @@
+[@@@import ExReal, "dune:math"]
+[@@@import Util, "dune:math"]
+[@@@import IEEE754, "IEEE754.iml"]
+
+open IEEE754
+
+[@@@import Theorems_pow2, "theorems_pow2.iml"]
+
+let unroll_nonlin qt nqt steps = Tactic.unroll ~smt:"z3-full-nonlinear" ~query_timeout:qt ~no_asm_query_timeout:nqt steps
+
+theorem as_extended_real_ok (phi : Format.t) (x : t) =
+  (not (is_nan x phi) [@trigger]) ==> Result.is_ok (as_extended_real phi x)
+  [@@timeout 3600]
+  [@@disable Util.pow2, Util.ipow2]
+  [@@by auto]
