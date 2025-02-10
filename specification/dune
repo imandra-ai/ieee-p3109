@@ -15,3 +15,13 @@
  (libraries imandrax_prelude math)
  (preprocess
   (pps ppx_deriving.std ppx_subliner)))
+
+(library
+ (name theorems)
+ (package p3109)
+ (flags :standard -open Imandrax_prelude -open Prelude_extracted -open Math)
+ (modules Theorems_format_ranges)
+ (modes byte native)
+ (libraries imandrax_prelude math specification)
+ (preprocess
+  (pps ppx_deriving.std ppx_subliner)))

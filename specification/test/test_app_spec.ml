@@ -7,9 +7,9 @@ open Specification
 
 (* Let's use the spec-extracted library.*)
 
-let some_check = Float8.nan = Float8.ninf;;
+let some_check f = Float8.nan f = Float8.ninf f;;
 
-Printf.printf "NaN = -oo: %b\n" some_check;;
+Printf.printf "NaN = -oo: %b\n" (some_check Format.B8P3);;
 
 Printf.printf "+oo = %s\n"
   (Float8.to_string Format.B8P3 (Float8.pinf Format.B8P3))
@@ -22,7 +22,7 @@ let neg_pinf = Float8.negate Format.B8P3 (Float8.pinf Format.B8P3);;
 
 Printf.printf "(- +oo) = %s\n" (Float8.to_string Format.B8P3 neg_pinf);;
 
-Printf.printf "NaN = NaN: %b\n" (Float8.nan = Float8.nan)
+Printf.printf "NaN = NaN: %b\n" (Float8.nan Format.B8P3 = Float8.nan Format.B8P3)
 
 let chk_neg x f =
   Printf.printf "-(%s) = %s\n" (Float8.to_string f x)

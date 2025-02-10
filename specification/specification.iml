@@ -7,34 +7,50 @@
 module Format = struct
   type t =
     | B3P1 | B3P2
+    | B4P1 | B4P2 | B4P3
+    | B5P1 | B5P2 | B5P3 | B5P4
     | B6P1 | B6P2 | B6P3 | B6P4 | B6P5
     | B7P1 | B7P2 | B7P3 | B7P4 | B7P5 | B7P6
     | B8P1 | B8P2 | B8P3 | B8P4 | B8P5 | B8P6 | B8P7
+    | B9P1 | B9P2 | B9P3 | B9P4 | B9P5 | B9P6 | B9P7 | B9P8
+    | B10P1 | B10P2 | B10P3 | B10P4 | B10P5 | B10P6 | B10P7 | B10P8 | B10P9
+    | B11P1 | B11P2 | B11P3 | B11P4 | B11P5 | B11P6 | B11P7 | B11P8 | B11P9 | B11P10
+    | B12P1 | B12P2 | B12P3 | B12P4 | B12P5 | B12P6 | B12P7 | B12P8 | B12P9 | B12P10 | B12P11
+    | B13P1 | B13P2 | B13P3 | B13P4 | B13P5 | B13P6 | B13P7 | B13P8 | B13P9 | B13P10 | B13P11 | B13P12
+    | B14P1 | B14P2 | B14P3 | B14P4 | B14P5 | B14P6 | B14P7 | B14P8 | B14P9 | B14P10 | B14P11 | B14P12 | B14P13
     | B15P1 | B15P2 | B15P3 | B15P4 | B15P5 | B15P6 | B15P7 | B15P8 | B15P9 | B15P10 | B15P11 | B15P12 | B15P13 | B15P14
 
   let precision (f : t) : int =
     match f with
-    | B15P1 | B8P1 | B7P1 | B6P1 | B3P1 -> 1
-    | B15P2 | B8P2 | B7P2 | B6P2 | B3P2 -> 2
-    | B15P3 | B8P3 | B7P3 | B6P3 -> 3
-    | B15P4 | B8P4 | B7P4 | B6P4 -> 4
-    | B15P5 | B8P5 | B7P5 | B6P5 -> 5
-    | B15P6 | B8P6 | B7P6 -> 6
-    | B15P7 | B8P7 -> 7
-    | B15P8 -> 8
-    | B15P9 -> 9
-    | B15P10 -> 10
-    | B15P11 -> 11
-    | B15P12 -> 12
-    | B15P13 -> 13
+    | B15P1  | B14P1  | B13P1  | B12P1  | B11P1  | B10P1 | B9P1 | B8P1 | B7P1 | B6P1 | B5P1 | B4P1 | B3P1 -> 1
+    | B15P2  | B14P2  | B13P2  | B12P2  | B11P2  | B10P2 | B9P2 | B8P2 | B7P2 | B6P2 | B5P2 | B4P2 | B3P2 -> 2
+    | B15P3  | B14P3  | B13P3  | B12P3  | B11P3  | B10P3 | B9P3 | B8P3 | B7P3 | B6P3 | B5P3 | B4P3 -> 3
+    | B15P4  | B14P4  | B13P4  | B12P4  | B11P4  | B10P4 | B9P4 | B8P4 | B7P4 | B6P4 | B5P4 -> 4
+    | B15P5  | B14P5  | B13P5  | B12P5  | B11P5  | B10P5 | B9P5 | B8P5 | B7P5 | B6P5 -> 5
+    | B15P6  | B14P6  | B13P6  | B12P6  | B11P6  | B10P6 | B9P6 | B8P6 | B7P6 -> 6
+    | B15P7  | B14P7  | B13P7  | B12P7  | B11P7  | B10P7 | B9P7 | B8P7 -> 7
+    | B15P8  | B14P8  | B13P8  | B12P8  | B11P8  | B10P8 | B9P8 -> 8
+    | B15P9  | B14P9  | B13P9  | B12P9  | B11P9  | B10P9 -> 9
+    | B15P10 | B14P10 | B13P10 | B12P10 | B11P10 -> 10
+    | B15P11 | B14P11 | B13P11 | B12P11 -> 11
+    | B15P12 | B14P12 | B13P12 -> 12
+    | B15P13 | B14P13 -> 13
     | B15P14 -> 14
     [@@macro]
 
   let k (f : t) : int = match f with
     | B3P1 | B3P2 -> 3
+    | B4P1 | B4P2 | B4P3 -> 4
+    | B5P1 | B5P2 | B5P3 | B5P4 -> 5
     | B6P1 | B6P2 | B6P3 | B6P4 | B6P5 -> 6
     | B7P1 | B7P2 | B7P3 | B7P4 | B7P5 | B7P6 -> 7
     | B8P1 | B8P2 | B8P3 | B8P4 | B8P5 | B8P6 | B8P7 -> 8
+    | B9P1 | B9P2 | B9P3 | B9P4 | B9P5 | B9P6 | B9P7 | B9P8 -> 9
+    | B10P1 | B10P2 | B10P3 | B10P4 | B10P5 | B10P6 | B10P7 | B10P8 | B10P9 -> 10
+    | B11P1 | B11P2 | B11P3 | B11P4 | B11P5 | B11P6 | B11P7 | B11P8 | B11P9 | B11P10 -> 11
+    | B12P1 | B12P2 | B12P3 | B12P4 | B12P5 | B12P6 | B12P7 | B12P8 | B12P9 | B12P10 | B12P11 -> 12
+    | B13P1 | B13P2 | B13P3 | B13P4 | B13P5 | B13P6 | B13P7 | B13P8 | B13P9 | B13P10 | B13P11 | B13P12 -> 13
+    | B14P1 | B14P2 | B14P3 | B14P4 | B14P5 | B14P6 | B14P7 | B14P8 | B14P9 | B14P10 | B14P11 | B14P12 | B14P13 -> 14
     | B15P1 | B15P2 | B15P3 | B15P4 | B15P5 | B15P6 | B15P7 | B15P8 | B15P9 | B15P10 | B15P11 | B15P12 | B15P13 | B15P14 -> 15
   [@@macro]
 
@@ -167,9 +183,6 @@ module Float8 = struct
       | Error e -> Error e)
 
     | _ -> Error "unreachable"
-  [@@timeout 3600]
-  (* [@@disable of_int_repr, of_int_repr_aux] *)
-  [@@by auto]
 
   (* 4.6.3 RoundToPrecision *)
 

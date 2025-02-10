@@ -141,8 +141,8 @@ let ln2 p : Q.t =
   | Error _ -> assert false
 
 let inv_log2 (x : Q.t) (p : int) : (Q.t, string) Result.t =
-  (* let ln2 = Log.ln (Q.of_int 2) (Z.of_int 20) in *)
-  let ln2 = Q.of_ints 1048576 1512775 in
+  (* let ln2 = Q.of_ints 1048576 1512775 in *)
+  let ln2 = Q.of_ints 4194304 6051101 in
   Ok (Exp.exp (Q.mul x ln2) (Z.of_int p))
 
 let inv_ln _ _ = Error ""
@@ -152,6 +152,10 @@ let inv_exp _ _ = Error ""
 let inv_exp2 _ _ = Error ""
 
 let run (cli : params) : unit =
+  (* let ln2 = Log.ln (Q.of_int 2) (Z.of_int 21) in
+  (match ln2 with
+  | Ok ln2 -> Printf.printf "ln(2) = %s%!" (Q.to_string ln2)
+  | Error _ -> ()); *)
   let f = Format.B8P4 in
   match cli with
   | Sqrt ps -> mk_fn_tbl sqrt inv_sqrt f ps.precision

@@ -12,53 +12,53 @@ theorem correct_abs (f : Format.t) (x : Float8.t) =
   Specification.Format.k f = 8 ==>
   i2s (Implementation.Float8.abs f x) = Specification.Float8.abs f (i2s x)
   [@@by enumerate ["f"; "x"] @> ground_eval]
-  [@@timeout 10]
+  [@@timeout 60]
 
 (** Proof that our implementation of [negate] is correct *)
 theorem correct_negate (f : Format.t) (x : Float8.t) =
   Specification.Format.k f = 8 ==>
   i2s (Implementation.Float8.negate f x) = Specification.Float8.negate f (i2s x)
   [@@by enumerate ["f"; "x"] @> ground_eval]
-  [@@timeout 10]
+  [@@timeout 60]
 
 (** Proof that our implementation of [is_zero] is correct *)
 theorem correct_is_zero (f : Format.t) (x : Float8.t) =
   Specification.Format.k f = 8 ==>
   Implementation.Float8.is_zero f x = Specification.Float8.is_zero f (i2s x)
   [@@by enumerate ["f"; "x"] @> ground_eval]
-  [@@timeout 10]
+  [@@timeout 60]
 
 (** Proof that our implementation of [is_one] is correct *)
 theorem correct_is_one (f : Format.t) (x : Float8.t) =
   Specification.Format.k f = 8 ==>
   Implementation.Float8.is_one f x = Specification.Float8.is_one f (i2s x)
   [@@by enumerate ["f"; "x"] @> ground_eval]
-  [@@timeout 10]
+  [@@timeout 60]
 
 (** Proof that our implementation of [is_nan] is correct *)
 theorem correct_is_nan (f : Format.t) (x : Float8.t) =
 Specification.Format.k f = 8 ==>
   Implementation.Float8.is_nan f x = Specification.Float8.is_nan f (i2s x)
   [@@by enumerate ["f"; "x"] @> ground_eval]
-  [@@timeout 10]
+  [@@timeout 60]
 
 (** Proof that our implementation of [is_sign_minus] is correct *)
 theorem correct_is_sign_minus (f : Format.t) (x : Float8.t) =
   Specification.Format.k f = 8 ==>
   Implementation.Float8.is_sign_minus f x = Specification.Float8.is_sign_minus f (i2s x)
   [@@by enumerate ["f"; "x"] @> ground_eval]
-  [@@timeout 10]
+  [@@timeout 60]
 
 (** Proof that our implementation of [is_normal] is correct *)
 theorem correct_is_normal (f : Format.t) (x : Float8.t) =
   Specification.Format.k f = 8 ==>
   Implementation.Float8.is_normal f x = Specification.Float8.is_normal f (i2s x)
   [@@by enumerate ["f"; "x"] @> ground_eval]
-  [@@timeout 10]
+  [@@timeout 60]
 
 (** Proof that our implementation of [is_subnormal] is correct *)
 theorem correct_is_subnormal (f : Format.t) (x : Float8.t) =
   Specification.Format.k f = 8 ==>
   Implementation.Float8.is_subnormal f x = Specification.Float8.is_subnormal f (i2s x)
   [@@by enumerate ["f"; "x"] @> ground_eval]
-  [@@timeout 10]
+  [@@timeout 60]
