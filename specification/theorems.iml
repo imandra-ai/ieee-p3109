@@ -13,10 +13,10 @@ let unroll_nonlin qt nqt steps = Tactic.unroll ~smt:"z3-full-nonlinear" ~query_t
 (** 4.6 Functions *)
 
 (** All [Float8.t] are classified *)
-theorem thm_class_internal_ok (f : Format.t) (x : Float8.t) =
+theorem internal_class_ok (f : Format.t) (x : Float8.t) =
   Result.is_ok (Float8.class_internal f x)
   [@@timeout 360]
-  [@@by unroll_nonlin 20 5 100]
+  [@@by unroll_nonlin 30 5 100]
 
 theorem internal_saturate_ok (m : real) (sat : bool) (rnd : RoundingMode.t) (x : ExReal.t) =
   Result.is_ok (Float8.internal_saturate m sat rnd x [@trigger])
@@ -77,8 +77,8 @@ theorem saturate_is_within_range (f : Format.t) (x : ExReal.t) (sat : bool) (rnd
   let _, _, _, fmax = Format.get_format_parameters f in
   let s = (Float8.saturate fmax sat rnd x [@trigger]) in
   Float8.exreal_is_within_range f s
-  [@@timeout 3600]
-  [@@disable Float8.saturate, Util.ipow2, Format.get_format_parameters]
+  [@@timeout 60]
+  [@@disable Float8.saturate, Util.ipow2, Format.get_format_parameters, Float8.exreal_is_within_range]
   [@@by auto]
   [@@fc]
 
@@ -240,6 +240,7 @@ theorem internal_log2_ok (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (
 theorem internal_add_scaled_ok (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (pi : Projection.t)
   (x : Float8.t) (s_x : int) (y : Float8.t) (s_y : int) =
   Result.is_ok (Float8.internal_add_scaled f_x f_y f_z pi x s_x y s_y)
+  [@@timeout 60]
   [@@disable Specification.Float8.project, Specification.Float8.decode, Util.pow2, Util.ipow2, Format.get_format_parameters]
   [@@by auto]
 

@@ -26,6 +26,3 @@ let ulp (f : Format.t) (x : Float8.t) : (real, string) Result.t =
   match (decode f (Float8.of_int_repr f (Float8.to_int_repr f oe + 1))), decode f oe with
   | Ok(XR (R u)), Ok(XR (R l)) -> Ok(u -. l)
   | _ -> Error("undefined")
-
-eval (only_exponent Format.B8P3 0xFF)
-

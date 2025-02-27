@@ -954,7 +954,7 @@ module Float8 = struct
     | PositiveNormal
     | PositiveInfinity
 
-  let class_internal (f : Format.t) (x : t) : (class_, string) Result.t =
+  let internal_class (f : Format.t) (x : t) : (class_, string) Result.t =
     if is_nan f x then Ok NaN
     else if is_infinite f x && is_sign_minus f x then Ok NegativeInfinity
     else if is_normal f x && is_sign_minus f x then Ok NegativeNormal
@@ -966,7 +966,7 @@ module Float8 = struct
     else Error "unclassified"
 
   let class_ (f : Format.t) (x : t) : class_ =
-    match class_internal f x with
+    match internal_class f x with
     | Ok c -> c
     | Error _ -> NaN (* Unchreable by thm_class_internal_ok *)
 
