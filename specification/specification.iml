@@ -561,7 +561,7 @@ module Float8 = struct
 
     | _ -> (
       let open ExReal.ResultInfix in
-      match (Ok z) +. (Ok x) *. (Ok y)  with
+      match (Ok x) *. (Ok y) +. (Ok z) with
       | Ok r -> Ok (XR r)
       | Error e -> Error e
       )
