@@ -590,7 +590,7 @@ module Float8 = struct
   let fma (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (f_r: Format.t) (pi : Projection.t) (x : t) (y : t) (z : t): t =
     match internal_fma f_x f_y f_z f_r pi x y z with
     | Ok x -> x
-    | Error _ -> (nan f_z) (* unreachable by theorem internal_fma_ok *)
+    | Error _ -> (nan f_r) (* unreachable by theorem internal_fma_ok *)
 
 
   (** 4.8.5 Unary mathematical operations *)
