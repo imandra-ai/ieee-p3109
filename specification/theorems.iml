@@ -14,7 +14,7 @@ let unroll_nonlin qt nqt steps = Tactic.unroll ~smt:"z3-full-nonlinear" ~query_t
 
 (** All [Float8.t] are classified *)
 theorem internal_class_ok (f : Format.t) (x : Float8.t) =
-  Result.is_ok (Float8.class_internal f x)
+  Result.is_ok (Float8.internal_class f x)
   [@@timeout 360]
   [@@by unroll_nonlin 30 5 100]
 
@@ -203,6 +203,25 @@ theorem internal_divide_ok (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (p
 
 (** 4.8.4 Unary mathematical operations *)
 
+(** [internal_fma_xreal] never returns an error *)
+theorem internal_fma_xreal_ok (x : ExReal.t) (y : ExReal.t) (z : ExReal.t) =
+  Result.is_ok (Float8.internal_fma_xreal x y z)
+  [@@disable Util.pow2, Util.ipow2]
+  [@@by auto]
+  [@@fc]
+
+(** [internal_fma] never returns an error *)
+theorem internal_fma_ok (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (f_r : Format.t) (pi : Projection.t)
+  (x : Float8.t) (y : Float8.t) (z : Float8.t) =
+  Result.is_ok (Float8.internal_fma f_x f_y f_z f_r pi x y z)
+  [@@timeout 3600]
+  [@@disable Float8.project, Float8.decode, Float8.round_to_precision, Float8.saturate, Util.pow2, Util.ipow2,
+    Format.get_format_parameters, Float8.internal_fma]
+  [@@by auto]
+
+
+(** 4.8.5 Unary mathematical operations *)
+
 (** [internal_sqrt] never returns an error *)
 theorem internal_sqrt_ok (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : Float8.t) =
   Result.is_ok (Float8.internal_sqrt f_x f_z pi x)
@@ -234,7 +253,7 @@ theorem internal_log2_ok (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (
   [@@by auto]
 
 
-(** 4.8.5 Scaled addition *)
+(** 4.8.6 Scaled addition *)
 
 (** [internal_add_scaled] never returns an error *)
 theorem internal_add_scaled_ok (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (pi : Projection.t)
@@ -245,7 +264,7 @@ theorem internal_add_scaled_ok (f_x : Format.t) (f_y : Format.t) (f_z : Format.t
   [@@by auto]
 
 
-(** 4.8.6 Scaled multiplication *)
+(** 4.8.7 Scaled multiplication *)
 
 (** [internal_multiply_scaled] never returns an error *)
 theorem internal_multiply_scaled_ok (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (pi : Projection.t)
