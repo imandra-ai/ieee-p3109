@@ -587,6 +587,54 @@ module Float8 = struct
     | Error _ -> (nan f_r) (* unreachable by theorem internal_fma_ok *)
 
 
+  (** 4.8.xx Fused Add Add *)
+
+  let internal_faa_xreal (x : ExReal.t) (y : ExReal.t) (z : ExReal.t) : (NaNOrExReal.t, string) Result.t =
+    let open ExReal in
+    let open ExReal.Infix in
+
+    match x, y, z with
+    | PINF, NINF, _ -> Ok NaN
+    | NINF, PINF, _ -> Ok NaN
+    | PINF, _, NINF -> Ok NaN
+    | NINF, _, PINF -> Ok NaN
+    | _, PINF, NINF -> Ok NaN
+    | _, NINF, PINF -> Ok NaN
+
+    | _ -> (
+      let open ExReal.ResultInfix in
+      match (Ok x) +. (Ok y) +. (Ok z) with
+      | Ok r -> Ok (XR r)
+      | Error e -> Error e
+      )
+
+  let internal_faa (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (f_r: Format.t) (pi : Projection.t)
+    (x : t) (y : t) (z : t): (t, string) Result.t =
+    let open NaNOrExReal in
+    match x, y, z with
+    | _, _, _ when x = nan f_x -> Ok (nan f_r)
+    | _, _, _ when y = nan f_y -> Ok (nan f_r)
+    | _, _, _ when z = nan f_z -> Ok (nan f_r)
+    | _ ->
+      (match decode f_x x, decode f_y y, decode f_z z with
+      | Ok NaN, _ , _
+      | _ , Ok NaN, _
+      | _ , _, Ok NaN -> Ok (nan f_r)
+      | Ok (XR x), Ok (XR y), Ok (XR z) -> (
+        (match internal_faa_xreal x y z with
+        | Ok NaN -> Ok (nan f_r)
+        | Ok (XR r) -> project f_r pi r
+        | Error e -> Error e))
+      | Error e, _, _ -> Error e
+      | _, Error e, _ -> Error e
+      | _, _, Error e -> Error e)
+
+  let faa (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (f_r: Format.t) (pi : Projection.t) (x : t) (y : t) (z : t): t =
+    match internal_faa f_x f_y f_z f_r pi x y z with
+    | Ok r -> r
+    | Error _ -> (nan f_r) (* unreachable by theorem internal_faa_ok *)
+
+
   (** 4.8.5 Unary mathematical operations *)
 
   let internal_sqrt (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) : (t, string) Result.t =

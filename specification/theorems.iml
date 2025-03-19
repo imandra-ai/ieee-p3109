@@ -231,6 +231,21 @@ theorem internal_fma_ok (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (f_r 
   [@@by auto]
 
 
+(** 4.8.xx Fused Add Add *)
+
+(** [internal_faa_xreal] never returns an error *)
+theorem internal_faa_xreal_ok (x : ExReal.t) (y : ExReal.t) (z : ExReal.t) =
+  Result.is_ok (Float8.internal_faa_xreal x y z)
+  [@@by auto]
+  [@@fc]
+
+(** [internal_faa] never returns an error *)
+theorem internal_faa_ok (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (f_r : Format.t) (pi : Projection.t)
+  (x : Float8.t) (y : Float8.t) (z : Float8.t) =
+  Result.is_ok (Float8.internal_faa f_x f_y f_z f_r pi x y z)
+  [@@disable Float8.project, Float8.decode, Float8.round_to_precision, Float8.saturate, Util.pow2, Util.ipow2, Format.get_format_parameters]
+  [@@by auto]
+
 (** 4.8.5 Unary mathematical operations *)
 
 (** [internal_sqrt] never returns an error *)

@@ -118,3 +118,7 @@ lemma fma_two =
   =
   Ok two [@@by auto]
 
+lemma faa_two =
+  (Float8.internal_faa Format.B8P3 Format.B8P3 Format.B8P3 Format.B8P3 (false, RoundingMode.NearestTiesToEven) one zero one)
+  =
+  Ok two [@@by auto]
