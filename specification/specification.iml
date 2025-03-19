@@ -457,8 +457,6 @@ module Float8 = struct
       let y = decode f_y y in
       (match x, y with
       | Ok NaN, _ |  _, Ok NaN -> Ok (nan f_z)
-      | Ok XR PINF, Ok XR PINF -> Ok (nan f_z) (* unreachable *)
-      | Ok XR NINF, Ok XR NINF -> Ok (nan f_z) (* unreachable *)
       | Ok (XR x) , Ok (XR y)  ->
         let open ExReal.Infix in
         (match (x -. y) with
@@ -498,9 +496,7 @@ module Float8 = struct
 
   (** For [x] (in [f_x]), [y] (in [f_y]) compute x * y and return in [f_z],
       with rounding mode [rnd] and saturation mode [ovf] *)
-  let multiply (f_x : Format.t) (f_y : Format.t) (x : t) (y : t)
-      (f_z : Format.t) (pi : Projection.t) :
-      t =
+  let multiply (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) (y : t) : t =
     match internal_multiply f_x f_y f_z pi x y with
     | Ok x -> x
     | Error _ -> nan f_z (* unreachable by theorem internal_multiply_ok *)
@@ -523,12 +519,7 @@ module Float8 = struct
       let y = decode f_y y in
       (match x, y with
       | Ok NaN, _ |  _, Ok NaN -> Ok (nan f_z) (* unreachable *)
-      | Ok (XR NINF), Ok (XR NINF)
-      | Ok (XR NINF), Ok (XR PINF)
-      | Ok (XR PINF), Ok (XR NINF)
-      | Ok (XR PINF), Ok (XR PINF) -> Ok (nan f_z) (* unreachable *)
-      | Ok _, Ok (XR (ExReal.R 0.0)) -> Ok (nan f_z) (* unreachable *)
-      | Ok (XR x) , Ok (XR y)  ->
+      | Ok (XR x), Ok (XR y) ->
         let open ExReal.Infix in
         (match (x /. y) with
         | Ok z -> project f_z pi z
@@ -549,47 +540,50 @@ module Float8 = struct
     let open ExReal in
     let open ExReal.Infix in
     match x, y, z with
-    | _, PINF, PINF when x <. R 0.0 -> Ok NaN
-    | PINF, _, PINF when y <. R 0.0 -> Ok NaN
-    | _, NINF, PINF when x >=. R 0.0 -> Ok NaN
-    | NINF, _, PINF when y >=. R 0.0 -> Ok NaN
+    | R 0.0, (PINF | NINF), _ -> Ok NaN
+    | (PINF | NINF), R 0.0, _ -> Ok NaN
 
-    | _, NINF, NINF when x <. R 0.0 -> Ok NaN
-    | NINF, _, NINF when y <. R 0.0 -> Ok NaN
-    | _, PINF, NINF when x >=. R 0.0 -> Ok NaN
-    | PINF, _, NINF when y >=. R 0.0 -> Ok NaN
+    | x, PINF, PINF when x <. R 0.0 -> Ok NaN
+    | x, NINF, PINF when x >. R 0.0 -> Ok NaN
+    | PINF, y, PINF when y <. R 0.0 -> Ok NaN
+    | NINF, y, PINF when y >. R 0.0 -> Ok NaN
+
+    | x, NINF, NINF when x <. R 0.0 -> Ok NaN
+    | x, PINF, NINF when x >. R 0.0 -> Ok NaN
+    | NINF, y, NINF when y <. R 0.0 -> Ok NaN
+    | PINF, y, NINF when y >. R 0.0 -> Ok NaN
 
     | _ -> (
       let open ExReal.ResultInfix in
-      match (Ok x) *. (Ok y) +. (Ok z) with
+      match ((Ok x) *. (Ok y)) +. (Ok z) with
       | Ok r -> Ok (XR r)
       | Error e -> Error e
       )
 
   let internal_fma (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (f_r: Format.t) (pi : Projection.t)
     (x : t) (y : t) (z : t): (t, string) Result.t =
-  let open NaNOrExReal in
-  match x, y, z with
-  | _, _, _ when x = nan f_x -> Ok (nan f_r)
-  | _, _, _ when y = nan f_y -> Ok (nan f_r)
-  | _, _, _ when z = nan f_z -> Ok (nan f_r)
-  | _ ->
-    (match decode f_x x, decode f_y y, decode f_z z with
-    | Ok NaN, _ , _
-    | _ , Ok NaN, _
-    | _ , _, Ok NaN -> Ok (nan f_r)
-    | Ok (XR x), Ok (XR y), Ok (XR z) -> (
-      (match internal_fma_xreal x y z with
-      | Ok NaN -> Ok (nan f_r)
-      | Ok (XR r) -> project f_r pi r
-      | Error e -> Error e))
-    | Error e, _, _ -> Error e
-    | _, Error e, _ -> Error e
-    | _, _, Error e -> Error e)
+    let open NaNOrExReal in
+    match x, y, z with
+    | _, _, _ when x = nan f_x -> Ok (nan f_r)
+    | _, _, _ when y = nan f_y -> Ok (nan f_r)
+    | _, _, _ when z = nan f_z -> Ok (nan f_r)
+    | _ ->
+      (match decode f_x x, decode f_y y, decode f_z z with
+      | Ok NaN, _ , _
+      | _ , Ok NaN, _
+      | _ , _, Ok NaN -> Ok (nan f_r)
+      | Ok (XR x), Ok (XR y), Ok (XR z) -> (
+        (match internal_fma_xreal x y z with
+        | Ok NaN -> Ok (nan f_r)
+        | Ok (XR r) -> project f_r pi r
+        | Error e -> Error e))
+      | Error e, _, _ -> Error e
+      | _, Error e, _ -> Error e
+      | _, _, Error e -> Error e)
 
   let fma (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (f_r: Format.t) (pi : Projection.t) (x : t) (y : t) (z : t): t =
     match internal_fma f_x f_y f_z f_r pi x y z with
-    | Ok x -> x
+    | Ok r -> r
     | Error _ -> (nan f_r) (* unreachable by theorem internal_fma_ok *)
 
 
@@ -647,7 +641,6 @@ module Float8 = struct
       let x = decode f_x x in
       (match x with
       | Ok NaN -> Ok (nan f_z) (* unreachable *)
-      | Ok (XR NINF) | Ok (XR PINF) -> Ok (nan f_z) (* unreachable *)
       | Ok (XR x) ->
         (match ExReal.exp2 x 9 with (* TODO: Proof that 9 is enough *)
         | Ok z -> project f_z pi z
@@ -721,10 +714,6 @@ module Float8 = struct
         let y = decode f_y y in
         (match x, y with
         | Ok NaN, _ |  _, Ok NaN -> Ok (nan f_z)
-        | Ok (XR PINF), Ok (XR PINF) -> Ok (pinf f_z) (* necessary? *)
-        | Ok (XR NINF), Ok (XR NINF) -> Ok (ninf f_z) (* necessary? *)
-        | Ok (XR NINF), Ok (XR PINF) -> Ok (nan f_z) (* necessary? *)
-        | Ok (XR PINF), Ok (XR NINF) -> Ok (nan f_z) (* necessary? *)
         | Ok (XR x), Ok (XR y) ->
           let open ExReal.ResultInfix in
           (match ((Ok x) *. (2 ^. s_x)) +. ((Ok y) *. (2 ^. s_y)) with

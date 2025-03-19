@@ -26,6 +26,7 @@ let rec find_pow2_dn (x : real) : int =
     0
   else
     find_pow2_dn (x *. 2.0) - 1
+  [@@timeout 60]
   [@@measure Ordinal.of_int (Real.to_int (1.0 /. x))]
   [@@by auto]
 

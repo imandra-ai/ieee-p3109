@@ -50,11 +50,11 @@ let mul (x : t) (y : t) : (t, string) Result.t =
   | NINF, NINF | PINF, PINF -> Ok PINF
   | NINF, PINF | PINF, NINF  -> Ok NINF
 
-  | _, R x when x = 0.0 -> Ok (R 0.0)
-  | R x, _ when x = 0.0 -> Ok (R 0.0)
-
   | NINF, R x | PINF, R x when x = 0.0 -> Error "invalid"
   | R x, NINF | R x, PINF when x = 0.0 -> Error "invalid"
+
+  | _, R x when x = 0.0 -> Ok (R 0.0)
+  | R x, _ when x = 0.0 -> Ok (R 0.0)
 
   | PINF, R x | R x, PINF when x >. 0.0 -> Ok PINF
   | PINF, R x | R x, PINF when x <. 0.0 -> Ok NINF

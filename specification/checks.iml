@@ -55,6 +55,7 @@ lemma real_neg_one = is_r (decode Format.B8P3 (p3_neg_one)) (ExReal.R (- 1.0)) [
 let tiny : Float8.t = 0x01 [@@macro]
 let small : Float8.t = 0x04 [@@macro]
 let one : Float8.t = 0x40 [@@macro]
+let two : Float8.t = 0x44 [@@macro]
 let huge : Float8.t = 0x7E [@@macro]
 let ntiny : Float8.t = 0x81 [@@macro]
 let nsmall : Float8.t = 0x84 [@@macro]
@@ -65,6 +66,7 @@ lemma tiny_value = is_r (decode Format.B8P3 tiny) (ExReal.R (0.25 *. Util.pow2 (
 lemma tiny_value = is_r (decode Format.B8P3 tiny) (ExReal.R (0.00000762939453125)) [@@by auto]
 lemma small_value = is_r (decode Format.B8P3 small) (ExReal.R (1.0 *. Util.pow2 (- 15))) [@@by auto]
 lemma one_value = is_r (decode Format.B8P3 one) (ExReal.R 1.0) [@@by auto]
+lemma two_value = is_r (decode Format.B8P3 two) (ExReal.R 2.0) [@@by auto]
 lemma huge_value = is_r (decode Format.B8P3 huge) (ExReal.R 49152.0) [@@by auto]
 lemma ntiny_value = is_r (decode Format.B8P3 ntiny) (ExReal.R (-. (0.25 *. Util.pow2 (- 15)))) [@@by auto]
 lemma nsmall_value = is_r (decode Format.B8P3 nsmall) (ExReal.R (-. (1.0 *. Util.pow2 (- 15)))) [@@by auto]
@@ -105,3 +107,14 @@ lemma rBB1 = is_r (Float8.decode Format.B8P1 (of_int_repr Format.B8P3 0x3B)) (Ex
 lemma rBB2 = is_r (Float8.decode Format.B8P2 (of_int_repr Format.B8P3 0x3B)) (ExReal.R 0.1875) [@@by auto]
 
 lemma rBB3 = is_r (Float8.decode Format.B8P3 (of_int_repr Format.B8P3 0x3B)) (ExReal.R 0.4375) [@@by auto]
+
+lemma fma_one =
+  (Float8.internal_fma Format.B8P3 Format.B8P3 Format.B8P3 Format.B8P3 (false, RoundingMode.NearestTiesToEven) one one zero)
+  =
+  Ok one [@@by auto]
+
+lemma fma_two =
+  (Float8.internal_fma Format.B8P3 Format.B8P3 Format.B8P3 Format.B8P3 (false, RoundingMode.NearestTiesToEven) one one one)
+  =
+  Ok two [@@by auto]
+
