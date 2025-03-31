@@ -238,12 +238,12 @@ module Float8 = struct
     let m = ExReal.of_real m in
     match (sat, rnd), x with
     | (_, _), x when (~-. m) <=. x && x <=. m -> Ok (x)
-    | (true, _), x when x <. (~-. m) || x >. m -> ExReal.sign x *. m
+    | (true, _), x when x <. (~-. m) || x >. m -> sign x *. m
     | (false, _), x when x = PINF || x = NINF -> Ok (x)
     | (false, TowardZero), x when abs x >=. m || x = PINF -> sign x *. m
     | (false, TowardPositive), x when x <=. ~-. m && x <> NINF -> Ok (~-. m)
     | (false, TowardNegative), x when x >. m && x <> PINF -> Ok (m)
-    | (false, _), x -> ExReal.sign x *. PINF
+    | (false, _), x -> sign x *. PINF
     | _ -> Error "unreachable"
 
   (** Saturate extended real [x] to +-INF, or to maximum value [m], according to projection specification [pi]. *)
@@ -591,7 +591,6 @@ module Float8 = struct
 
   let internal_faa_xreal (x : ExReal.t) (y : ExReal.t) (z : ExReal.t) : (NaNOrExReal.t, string) Result.t =
     let open ExReal in
-    let open ExReal.Infix in
 
     match x, y, z with
     | PINF, NINF, _ -> Ok NaN
@@ -882,10 +881,9 @@ module Float8 = struct
   let internal_minimum (f : Format.t) (x : t) (y : t) : (t, string) Result.t =
     let open NaNOrExReal in
     match decode f x, decode f y with
-    | Ok NaN, Ok _
-    | Ok _, Ok NaN -> Ok (nan f)
-    | Ok (XR xr), Ok (XR yr) ->
-      if ExReal.lt xr yr then Ok x else Ok y
+    | Ok _, Ok NaN
+    | Ok NaN, Ok _ -> Ok (nan f)
+    | Ok (XR xr), Ok (XR yr) -> encode f (XR (ExReal.min xr yr))
     | Error e, _ | _, Error e -> Error e
 
   let minimum (f : Format.t) (x : t) (y : t)  : t =
@@ -896,10 +894,9 @@ module Float8 = struct
   let internal_maximum (f : Format.t) (x : t) (y : t) : (t, string) Result.t =
     let open NaNOrExReal in
     match decode f x, decode f y with
-    | Ok NaN, Ok _
-    | Ok _, Ok NaN -> Ok (nan f)
-    | Ok (XR xr), Ok (XR yr) ->
-      if ExReal.lt xr yr then Ok y else Ok x
+    | Ok _, Ok NaN
+    | Ok NaN, Ok _ -> Ok (nan f)
+    | Ok (XR xr), Ok (XR yr) -> encode f (XR (ExReal.max xr yr))
     | Error e, _ | _, Error e -> Error e
 
   let maximum (f : Format.t) (x : t) (y : t)  : t =
@@ -907,6 +904,81 @@ module Float8 = struct
     | Ok r -> r
     | Error _ -> nan f (* unreachable by theorem internal_maximum_ok *)
 
+  let minimum_number (f : Format.t) (x : t) (y : t)  : t =
+    match x, y with
+    | _, _ when y = nan f -> x
+    | _, _ when x = nan f -> y
+    | _, _ -> minimum f x y
+
+  let maximum_number (f : Format.t) (x : t) (y : t)  : t =
+    match x, y with
+    | _, _ when y = nan f -> x
+    | _, _ when x = nan f -> y
+    | _, _ -> maximum f x y
+
+
+  (** 4.xx MinimumMagnitude, MaximumMagnitude, and 'Number' variants *)
+
+  let internal_minimum_magnitude (f : Format.t) (x : t) (y : t) : (t, string) Result.t =
+    let open NaNOrExReal in
+    let open ExReal.Infix in
+    match decode f x, decode f y with
+    | Ok _, Ok NaN -> Ok x
+    | Ok NaN, Ok _ -> Ok y
+    | Ok (XR x), Ok (XR y) ->
+        let r = (
+          match x, y with
+          | _, _ when ExReal.abs x <. ExReal.abs y -> Ok x
+          | _, _ when ExReal.abs x >. ExReal.abs y -> Ok y
+          | _, _ when ExReal.abs x = ExReal.abs y -> Ok (ExReal.min x y)
+          | _ -> Error "unreachable"
+        ) in
+        (match r with
+        | Ok r -> encode f (XR r)
+        | Error e -> Error e)
+    | Error e, _ | _, Error e -> Error e
+
+  let minimum_magnitude (f : Format.t) (x : t) (y : t)  : t =
+    match internal_minimum_magnitude f x y  with
+    | Ok r -> r
+    | Error _ -> nan f (* unreachable by theorem internal_minimum_magnitude_ok *)
+
+  let internal_maximum_magnitude (f : Format.t) (x : t) (y : t) : (t, string) Result.t =
+    let open NaNOrExReal in
+    match decode f x, decode f y with
+    | Ok _, Ok NaN -> Ok x
+    | Ok NaN, Ok _ -> Ok y
+    | Ok (XR x), Ok (XR y) ->
+        let open ExReal in
+        let open ExReal.Infix in
+        let r = (
+          match x, y with
+          | _, _ when ExReal.abs x >. ExReal.abs y -> Ok x
+          | _, _ when ExReal.abs x <. ExReal.abs y -> Ok y
+          | _, _ when ExReal.abs x = ExReal.abs y -> Ok (ExReal.max x y)
+          | _ -> Error "unreachable"
+        ) in
+        (match r with
+        | Ok r -> encode f (XR r)
+        | Error e -> Error e)
+    | Error e, _ | _, Error e -> Error e
+
+  let maximum_magnitude (f : Format.t) (x : t) (y : t)  : t =
+    match internal_maximum_magnitude f x y  with
+    | Ok r -> r
+    | Error _ -> nan f (* unreachable by theorem internal_maximum_magnitude_ok *)
+
+  let minimum_magnitude_number (f : Format.t) (x : t) (y : t)  : t =
+    match x, y with
+    | _, _ when y = nan f -> x
+    | _, _ when x = nan f -> y
+    | _, _ -> minimum_magnitude f x y
+
+  let maximum_magnitude_number (f : Format.t) (x : t) (y : t)  : t =
+    match x, y with
+    | _, _ when y = nan f -> x
+    | _, _ when x = nan f -> y
+    | _, _ -> maximum_magnitude f x y
 
   (** 4.10.2 Comparisons *)
 

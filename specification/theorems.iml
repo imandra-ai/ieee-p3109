@@ -12,12 +12,6 @@ let unroll_nonlin qt nqt steps = Tactic.unroll ~smt:"z3-full-nonlinear" ~query_t
 
 (** 4.6 Functions *)
 
-(** All [Float8.t] are classified *)
-theorem internal_class_ok (f : Format.t) (x : Float8.t) =
-  Result.is_ok (Float8.internal_class f x)
-  [@@timeout 600]
-  [@@by unroll_nonlin 30 5 150]
-
 theorem internal_saturate_ok (m : real) (sat : bool) (rnd : RoundingMode.t) (x : ExReal.t) =
   Result.is_ok (Float8.internal_saturate m sat rnd x [@trigger])
   [@@fc]
@@ -130,6 +124,8 @@ theorem zero_decodes_to_zero (f : Format.t) (x : Float8.t) =
   let open Float8.NaNOrExReal in
   Float8.decode f x [@trigger] = Ok (XR ExReal.zero) <==> x = Float8.zero
   [@@timeout 3600]
+  [@@by unroll_nonlin 600 10 150]
+  [@@fc]
   [@@disable Specification.Float8.decode, Util.pow2, Util.ipow2, Format.get_format_parameters]
   [@@by unroll_nonlin 600 5 150]
   [@@fc]
@@ -320,64 +316,87 @@ theorem internal_scaled_fma_ok (phi : IEEE754.Format.t) (f_x : Format.t) (f_y : 
 (** 4.10.1 Minimum and Maximum *)
 
 (** [internal_minimum] never returns an error *)
-theorem internal_minimum_ok (f : Format.t) (x : Float8.t) (y : Float8.t)  =
+theorem internal_minimum_ok (f : Format.t) (x : Float8.t) (y : Float8.t) =
   Result.is_ok (Float8.internal_minimum f x y)
-  [@@by
-    [%use decode_ok f x]
-    @> [%use decode_ok f y]
-    @> unroll_nonlin 10 10 100]
+  [@@disable Specification.Float8.decode, Specification.Float8.encode]
+  [@@by auto]
 
 (** [internal_maximum] never returns an error *)
-theorem internal_maximum_ok (f : Format.t) (x : Float8.t) (y : Float8.t)  =
+theorem internal_maximum_ok (f : Format.t) (x : Float8.t) (y : Float8.t) =
   Result.is_ok (Float8.internal_maximum f x y)
-  [@@by
-    [%use decode_ok f x]
-    @> [%use decode_ok f y]
-    @> unroll_nonlin 10 10 100]
+  [@@disable Specification.Float8.decode, Specification.Float8.encode]
+  [@@by auto]
+
+
+(** 4.xx MinimumMagnitude, MaximumMagnitude, and 'Number' variants *)
+
+(** [internal_minimum_magnitude] never returns an error *)
+theorem internal_minimum_magnitude_ok (f : Format.t) (x : Float8.t) (y : Float8.t) =
+  Result.is_ok (Float8.internal_minimum_magnitude f x y)
+  [@@disable Specification.Float8.decode, Specification.Float8.encode]
+  [@@by auto]
+
+(** [internal_maximum_magnitude] never returns an error *)
+theorem internal_maximum_magnitude_ok (f : Format.t) (x : Float8.t) (y : Float8.t) =
+  Result.is_ok (Float8.internal_maximum_magnitude f x y)
+  [@@disable Specification.Float8.decode, Specification.Float8.encode]
+  [@@by auto]
+
 
 (** 4.10.2 Comparisons *)
 
 (** [internal_compare_less] never returns an error *)
 theorem internal_compare_less_ok (f_x : Format.t) (f_y : Format.t) (x : Float8.t) (y : Float8.t)  =
   Result.is_ok (Float8.internal_compare_less f_x f_y x y)
-  [@@by
-    [%use decode_ok f_x x]
-    @> [%use decode_ok f_y y]
-    @> unroll_nonlin 10 10 100]
+  [@@disable Specification.Float8.decode, Specification.Float8.encode]
+  [@@by auto]
 
 theorem internal_compare_less_equal_ok (f_x : Format.t) (f_y : Format.t) (x : Float8.t) (y : Float8.t)  =
   Result.is_ok (Float8.internal_compare_less_equal f_x f_y x y)
-  [@@by
-    [%use decode_ok f_x x]
-    @> [%use decode_ok f_y y]
-    @> unroll_nonlin 10 10 100]
+  [@@disable Specification.Float8.decode, Specification.Float8.encode]
+  [@@by auto]
 
 theorem internal_compare_equal_ok (f_x : Format.t) (f_y : Format.t) (x : Float8.t) (y : Float8.t)  =
   Result.is_ok (Float8.internal_compare_equal f_x f_y x y)
-  [@@by
-    [%use decode_ok f_x x]
-    @> [%use decode_ok f_y y]
-    @> unroll_nonlin 10 10 100]
+  [@@disable Specification.Float8.decode, Specification.Float8.encode]
+  [@@by auto]
 
 theorem internal_compare_greater_ok (f_x : Format.t) (f_y : Format.t) (x : Float8.t) (y : Float8.t)  =
   Result.is_ok (Float8.internal_compare_greater f_x f_y x y)
-  [@@by
-    [%use decode_ok f_x x]
-    @> [%use decode_ok f_y y]
-    @> unroll_nonlin 10 10 100]
+  [@@disable Specification.Float8.decode, Specification.Float8.encode]
+  [@@by auto]
 
 
 theorem internal_compare_greater_equal_ok (f_x : Format.t) (f_y : Format.t) (x : Float8.t) (y : Float8.t)  =
   Result.is_ok (Float8.internal_compare_greater_equal f_x f_y x y)
-  [@@by
-    [%use decode_ok f_x x]
-    @> [%use decode_ok f_y y]
-    @> unroll_nonlin 10 10 100]
+  [@@disable Specification.Float8.decode, Specification.Float8.encode]
+  [@@by auto]
 
 
 (** 4.10.3 Predicates and classification *)
+
 (** 4.10.4 Classifier operation *)
+
+theorem predicate_coverage (f : Format.t) (x : Float8.t) =
+  Float8.is_nan f x ||
+  Float8.is_infinite f x ||
+  Float8.is_zero f x ||
+  Float8.is_normal f x ||
+  Float8.is_subnormal f x
+  [@@timeout 3600]
+  [@@by unroll_nonlin 60 6 250]
+  (* [@@disable Specification.Float8.decode, Specification.Float8.encode, Specification.Format.get_format_parameters, Util.pow2, Util.ipow2] *)
+  (* [@@by auto] *)
+  [@@fc]
+
+(** All [Float8.t] are classified *)
+theorem internal_class_ok (f : Format.t) (x : Float8.t) =
+  Result.is_ok (Float8.internal_class f x)
+  [@@disable Float8.internal_class]
+  [@@by auto]
+
 (** 4.10.5 Total order predicate *)
+
 (** 4.10.6 Comparison predicates *)
 
 (* (Nothing) *)

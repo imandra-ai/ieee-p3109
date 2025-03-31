@@ -167,6 +167,12 @@ let lt (x : t) (y : t) =
   | PINF, R _ | R _, NINF -> false
   | R rx, R ry -> rx <. ry
 
+let min (x : t) (y : t) =
+  if lt x y then x else y
+
+let max (x : t) (y : t) =
+  if lt x y then y else x
+
 module Infix = struct
   let ix (x : int) = of_int x [@@macro]
 
