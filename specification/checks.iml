@@ -14,21 +14,21 @@ lemma fmt_prec_p3 (f:Format.t) = (f = Format.B8P3) ==> (Format.precision f) = 3
 (** Check that the format parameters for B8P3 are as expected *)
 lemma fmt_params_p3 (f:Format.t) =
   (f = Format.B8P3) ==>
-    let k, p, b, max = Format.get_format_parameters f in
+    let k, p, b, max, _, _ = Format.get_format_parameters f in
     k = 8 && p = 3 && b = 16 && max = 49152.0
   [@@by auto]
 
   (** Check that the format parameters for B8P2 are as expected *)
 lemma fmt_params_p2 (f:Format.t) =
   (f = Format.B8P2) ==>
-    let k, p, b, max = Format.get_format_parameters f in
+    let k, p, b, max, _, _ = Format.get_format_parameters f in
     k = 8 && p = 2 && b = 32 && max = 2147483648.0
   [@@by auto]
 
 (** Check that the format parameters for B8P1 are as expected *)
 lemma fmt_params_p1 (f:Format.t) =
   (f = Format.B8P1) ==>
-    let k, p, b, max = Format.get_format_parameters f in
+    let k, p, b, max, _, _ = Format.get_format_parameters f in
     k = 8 && p = 1 && b = 63 && max = Util.pow2 63
   [@@by auto]
 
