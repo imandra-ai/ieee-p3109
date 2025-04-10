@@ -8,9 +8,13 @@ open ExReal.Infix
 open Format
 open Util
 
-let is_within (f : Format.t) (x : Float8.t) : bool =
+open Signedness
+open Domain
+
+let is_within (kp : Format.kpt) (x : Float8.t) : bool =
   let open Float8.NaNOrExReal in
-  let _, _, _, fmax = Format.get_format_parameters f in
+  let f = { kp = kp; s = Signed; d = Extended } in
+  let _, _, _, fmax, _, _ = Format.get_format_parameters f in
   match Float8.decode f x with
   | Ok NaN
   | Ok (XR NINF)
@@ -29,14 +33,15 @@ theorem forall_elim (p: int -> bool) (l : int) (u : int) (x : int) =
   forall_in_range p l u ==> (l <= x && x <= u ==> p x)
   [@@by auto]
 
-theorem wfr_neg (f : Format.t) (x : Float8.t) =
+theorem wfr_neg (f : Format.kpt) (x : Float8.t) =
   x < 0 ==> is_within f x [@trigger]
   [@@by auto]
   [@@fc]
 
-theorem wfr_above (f : Format.t) (x : Float8.t) =
-  let k, _, _, _ = Format.get_format_parameters f in
-  (x > ipow2 k) ==> is_within f x [@trigger]
+theorem wfr_above (kp : Format.kpt) (x : Float8.t) =
+  let f = { kp = kp; s = Signed; d = Extended } in
+  let k, _, _, _, _, _ = Format.get_format_parameters f in
+  (x > ipow2 k) ==> is_within kp x [@trigger]
   [@@disable Format.get_format_parameters]
   [@@by auto]
   [@@fc]
@@ -651,8 +656,8 @@ theorem wfr_3 (x : Float8.t) =
     auto]
 
 
-theorem within_format_range (f : Format.t) (x : Float8.t) =
-  is_within f x
+theorem within_format_range (kp : Format.kpt) (x : Float8.t) =
+  is_within kp x
   [@@by
     [%use wfr_15 x] @>
     [%use wfr_14 x] @>
