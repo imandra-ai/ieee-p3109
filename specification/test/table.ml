@@ -13,12 +13,32 @@
 open Math
 open Specification
 
+let signedness_to_string (s : Signedness.t) =
+  match s with
+  | Signed -> "signed"
+  | Unsigned -> "unsigned"
+
+let domain_to_string (d : Domain.t) =
+  match d with
+  | Finite -> "finite"
+  | Extended -> "extended"
+
+let signedness_to_char (s : Signedness.t) =
+  match s with
+  | Signed -> "s"
+  | Unsigned -> "u"
+
+let domain_to_char (d : Domain.t) =
+  match d with
+  | Finite -> "f"
+  | Extended -> "e"
+
 let nanox_to_string (x : Float8.NaNOrExReal.t) : string =
   let open Float8.NaNOrExReal in
   match x with
   | NaN -> "NaN"
   | XR PINF -> "+oo"
-  | XR NINF -> "+oo"
+  | XR NINF -> "-oo"
   | XR (R r) -> Q.to_string r
 
 let rat_to_string_dec (x : Q.t) : string =
@@ -31,7 +51,7 @@ let rat_to_string_dec (x : Q.t) : string =
 let exreal_to_string_dec (x : ExReal.t) : string =
   match x with
   | PINF -> "+oo"
-  | NINF -> "+oo"
+  | NINF -> "-oo"
   | R r -> Printf.sprintf "%s" (rat_to_string_dec r)
 
 let nanox_to_dec_string (x : Float8.NaNOrExReal.t) : string =
@@ -54,8 +74,8 @@ let mk_fn_tbl (fn : Q.t -> int -> (bool * Q.t, string) Result.t)
     (inv_fn : Q.t -> int -> (Q.t, string) Result.t) (f : Format.t) (p : int) :
     unit =
   let open Float8.NaNOrExReal in
-  let pi = false, RoundingMode.NearestTiesToEven in
-  let k, _, _, _ = Format.get_format_parameters f in
+  let pi = SaturationMode.SatPropagate, RoundingMode.NearestTiesToEven in
+  let k, _, _, _, _, _, _ = Format.get_format_parameters f in
   Printf.printf
     "\"in int\",\"in dec\",\"out \
      real*\",\"precise?\",\"rev*\",\"diff*\",\"ulp\",\"within?\",\"out \
@@ -112,6 +132,13 @@ type params =
   | Ln of subparams
   | Exp of subparams
   | Exp2 of subparams
+  | Format of {
+      k: int; [@pos 0]
+      p: int; [@pos 1]
+      s: bool; [@pos 2]
+      e: bool; [@pos 3]
+    }
+  | Formats
 [@@deriving subliner]
 
 let sqrt x p =
@@ -151,17 +178,71 @@ let inv_exp _ _ = Error ""
 
 let inv_exp2 _ _ = Error ""
 
+let int2bin_str i n : string =
+  let i = ref i in
+  let r = ref "" in
+  for _ = 0 to n - 1 do
+    if !i mod 2 = 1 then r := "1" ^ !r else r := "0" ^ !r;
+    i := !i / 2
+  done;
+  !r
+
+exception InvalidFormat of string
+
+let mk_f_tbl (k : int) (p : int) (s : bool) (e : bool) =
+  let f : Format.t =
+    match Format.of_kp (Z.of_int k) (Z.of_int p) with
+    | Ok kp ->
+      {
+        kp;
+        s = (if s then Signed else Unsigned);
+        d = (if e then Extended else Finite);
+      }
+    | Error e -> raise (InvalidFormat e)
+  in
+  let kf, pf, bias, _, m_hi, s, d = Format.get_format_parameters f in
+  Printf.printf "B%sP%s%s%s: bias = %s, m_hi = %s\n\n" (Z.to_string kf)
+    (Z.to_string pf) (domain_to_char d) (signedness_to_char s)
+    (Z.to_string bias) (rat_to_string_dec m_hi);
+  for i = 0 to (1 lsl k) - 1 do
+    let iz = Float8.to_int_repr f (Z.of_int i) in
+    let d = Float8.decode f iz in
+    let ds =
+      match d with
+      | Ok r -> nanox_to_dec_string r
+      | Error e -> Printf.sprintf "Error: %s" e
+    in
+    Printf.printf "%02x | %s | %s\n" i (int2bin_str i k) ds
+  done
+
 let run (cli : params) : unit =
-  (* let ln2 = Log.ln (Q.of_int 2) (Z.of_int 21) in
+  try
+    (* let ln2 = Log.ln (Q.of_int 2) (Z.of_int 21) in
   (match ln2 with
   | Ok ln2 -> Printf.printf "ln(2) = %s%!" (Q.to_string ln2)
   | Error _ -> ()); *)
-  let f = Format.B8P4 in
-  match cli with
-  | Sqrt ps -> mk_fn_tbl sqrt inv_sqrt f ps.precision
-  | Log2 ps -> mk_fn_tbl log2 inv_log2 f ps.precision
-  | Ln ps -> mk_fn_tbl ln inv_ln f ps.precision
-  | Exp ps -> mk_fn_tbl exp inv_exp f ps.precision
-  | Exp2 ps -> mk_fn_tbl exp2 inv_exp2 f ps.precision
+    let f : Format.t =
+      { kp = Format.B8P4; s = Signedness.Signed; d = Domain.Extended }
+    in
+    match cli with
+    | Sqrt ps -> mk_fn_tbl sqrt inv_sqrt f ps.precision
+    | Log2 ps -> mk_fn_tbl log2 inv_log2 f ps.precision
+    | Ln ps -> mk_fn_tbl ln inv_ln f ps.precision
+    | Exp ps -> mk_fn_tbl exp inv_exp f ps.precision
+    | Exp2 ps -> mk_fn_tbl exp2 inv_exp2 f ps.precision
+    | Format { k; p; s; e } -> mk_f_tbl k p s e
+    | Formats ->
+      for k = 3 to 8 do
+        for p = 1 to k - 1 do
+          for s = 0 to 1 do
+            for d = 0 to 1 do
+              Printf.printf "-------------------------\n";
+              mk_f_tbl k p (s == 0) (d == 0);
+              Printf.printf "\n\n"
+            done
+          done
+        done
+      done
+  with exc -> Printf.printf "Exception: %s\n" (Printexc.to_string exc)
 
 [%%subliner.cmds eval.params <- run] [@@name "run"] [@@version "1.0"]

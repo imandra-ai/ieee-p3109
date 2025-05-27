@@ -2,7 +2,7 @@
 
 (* let unroll_nonlin qt nqt steps = Tactic.unroll ~smt:"z3-full-nonlinear" ~query_timeout:qt ~no_asm_query_timeout:nqt steps *)
 
-let rec aux i p y g =
+let rec aux i p y g : real =
   if i > p then
     g
   else if g *. g = y then

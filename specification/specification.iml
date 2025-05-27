@@ -4,8 +4,16 @@
 
 (** Format definitions *)
 
+module Signedness = struct
+  type t = Signed | Unsigned
+end
+
+module Domain = struct
+  type t = Extended | Finite
+end
+
 module Format = struct
-  type t =
+  type kpt =
     | B3P1 | B3P2
     | B4P1 | B4P2 | B4P3
     | B5P1 | B5P2 | B5P3 | B5P4
@@ -20,8 +28,14 @@ module Format = struct
     | B14P1 | B14P2 | B14P3 | B14P4 | B14P5 | B14P6 | B14P7 | B14P8 | B14P9 | B14P10 | B14P11 | B14P12 | B14P13
     | B15P1 | B15P2 | B15P3 | B15P4 | B15P5 | B15P6 | B15P7 | B15P8 | B15P9 | B15P10 | B15P11 | B15P12 | B15P13 | B15P14
 
+  type t = {
+    kp: kpt;
+    s: Signedness.t;
+    d: Domain.t;
+  }
+
   let precision (f : t) : int =
-    match f with
+    match f.kp with
     | B15P1  | B14P1  | B13P1  | B12P1  | B11P1  | B10P1 | B9P1 | B8P1 | B7P1 | B6P1 | B5P1 | B4P1 | B3P1 -> 1
     | B15P2  | B14P2  | B13P2  | B12P2  | B11P2  | B10P2 | B9P2 | B8P2 | B7P2 | B6P2 | B5P2 | B4P2 | B3P2 -> 2
     | B15P3  | B14P3  | B13P3  | B12P3  | B11P3  | B10P3 | B9P3 | B8P3 | B7P3 | B6P3 | B5P3 | B4P3 -> 3
@@ -38,7 +52,8 @@ module Format = struct
     | B15P14 -> 14
     [@@macro]
 
-  let k (f : t) : int = match f with
+  let k_of_kp (kp : kpt) =
+    match kp with
     | B3P1 | B3P2 -> 3
     | B4P1 | B4P2 | B4P3 -> 4
     | B5P1 | B5P2 | B5P3 | B5P4 -> 5
@@ -54,27 +69,66 @@ module Format = struct
     | B15P1 | B15P2 | B15P3 | B15P4 | B15P5 | B15P6 | B15P7 | B15P8 | B15P9 | B15P10 | B15P11 | B15P12 | B15P13 | B15P14 -> 15
   [@@macro]
 
-  let get_format_parameters (f : t) : int * int * int * real =
+  let k (f : t) : int = k_of_kp f.kp [@@macro]
+
+  let of_kp (k : int) (p : int) : (kpt, string) Result.t =
+    match k with
+    | 3 -> (match p with 1 -> Ok B3P1 | 2 -> Ok B3P2 | _ -> Error "invalid precision")
+    | 4 -> (match p with 1 -> Ok B4P1 | 2 -> Ok B4P2 | 3 -> Ok B4P3 | _ -> Error "invalid precision")
+    | 5 -> (match p with 1 -> Ok B5P1 | 2 -> Ok B5P2 | 3 -> Ok B5P3 | 4 -> Ok B5P4 | _ -> Error "invalid precision")
+    | 6 -> (match p with 1 -> Ok B6P1 | 2 -> Ok B6P2 | 3 -> Ok B6P3 | 4 -> Ok B6P4 | 5 -> Ok B6P5 | _ -> Error "invalid precision")
+    | 7 -> (match p with 1 -> Ok B7P1 | 2 -> Ok B7P2 | 3 -> Ok B7P3 | 4 -> Ok B7P4 | 5 -> Ok B7P5 | 6 -> Ok B7P6 | _ -> Error "invalid precision")
+    | 8 -> (match p with 1 -> Ok B8P1 | 2 -> Ok B8P2 | 3 -> Ok B8P3 | 4 -> Ok B8P4 | 5 -> Ok B8P5 | 6 -> Ok B8P6 | 7 -> Ok B8P7 | _ -> Error "invalid precision")
+    | 9 -> (match p with 1 -> Ok B9P1 | 2 -> Ok B9P2 | 3 -> Ok B9P3 | 4 -> Ok B9P4 | 5 -> Ok B9P5 | 6 -> Ok B9P6 | 7 -> Ok B9P7 | 8 -> Ok B9P8 | _ -> Error "invalid precision")
+    | 10 -> (match p with 1 -> Ok B10P1 | 2 -> Ok B10P2 | 3 -> Ok B10P3 | 4 -> Ok B10P4 | 5 -> Ok B10P5 | 6 -> Ok B10P6 | 7 -> Ok B10P7 | 8 -> Ok B10P8 | 9 -> Ok B10P9 | _ -> Error "invalid precision")
+    | 11 -> (match p with 1 -> Ok B11P1 | 2 -> Ok B11P2 | 3 -> Ok B11P3 | 4 -> Ok B11P4 | 5 -> Ok B11P5 | 6 -> Ok B11P6 | 7 -> Ok B11P7 | 8 -> Ok B11P8 | 9 -> Ok B11P9 | 10 -> Ok B11P10 | _ -> Error "invalid precision")
+    | 12 -> (match p with 1 -> Ok B12P1 | 2 -> Ok B12P2 | 3 -> Ok B12P3 | 4 -> Ok B12P4 | 5 -> Ok B12P5 | 6 -> Ok B12P6 | 7 -> Ok B12P7 | 8 -> Ok B12P8 | 9 -> Ok B12P9 | 10 -> Ok B12P10 | 11 -> Ok B12P11 | _ -> Error "invalid precision")
+    | 13 -> (match p with 1 -> Ok B13P1 | 2 -> Ok B13P2 | 3 -> Ok B13P3 | 4 -> Ok B13P4 | 5 -> Ok B13P5 | 6 -> Ok B13P6 | 7 -> Ok B13P7 | 8 -> Ok B13P8 | 9 -> Ok B13P9 | 10 -> Ok B13P10 | 11 -> Ok B13P11 | 12 -> Ok B13P12 | _ -> Error "invalid precision")
+    | 14 -> (match p with 1 -> Ok B14P1 | 2 -> Ok B14P2 | 3 -> Ok B14P3 | 4 -> Ok B14P4 | 5 -> Ok B14P5 | 6 -> Ok B14P6 | 7 -> Ok B14P7 | 8 -> Ok B14P8 | 9 -> Ok B14P9 | 10 -> Ok B14P10 | 11 -> Ok B14P11 | 12 -> Ok B14P12 | 13 -> Ok B14P13 | _ -> Error "invalid precision")
+    | 15 -> (match p with 1 -> Ok B15P1 | 2 -> Ok B15P2 | 3 -> Ok B15P3 | 4 -> Ok B15P4 | 5 -> Ok B15P5 | 6 -> Ok B15P6 | 7 -> Ok B15P7 | 8 -> Ok B15P8 | 9 -> Ok B15P9 | 10 -> Ok B15P10 | 11 -> Ok B15P11 | 12 -> Ok B15P12 | 13 -> Ok B15P13 | 14 -> Ok B15P14 | _ -> Error "invalid precision")
+    | _ -> Error "invalid width"
+
+  let get_format_parameters (f : t) : int * int * int * real * real * Signedness.t * Domain.t =
     let open Util in
+    let open Signedness in
+    let open Domain in
     let k : int = k f in
     let p : int = precision f in
-    let emax : int = ipow2 (k - p - 1) - 1 in
-    let max : real =
+    let bias : int =
+      match f.s with
+      | Signed ->
+        if k = p then -1 else ipow2 (k - p - 1) - 1
+        (*  = floor (pow2 (k - p - 1) - 1) *)
+      | Unsigned -> ipow2 (k - p    ) - 1 in
+    let emax : int = if p = 1 then bias else bias + 1 in
+    let m_hi : real =
       if p = 1 then
-        pow2 emax
+        match f.s, f.d with
+        | Signed, Extended ->   pow2 emax
+        | Signed, Finite ->     pow2 (emax + 1)
+        | Unsigned, Extended -> pow2 (emax - 1)
+        | Unsigned, Finite ->   pow2 emax
       else
-        pow2 emax *. (2. -. pow2 (2 - p)) in
-    let bias : int = if p = 1 then
-        emax
-      else
-        emax + 1 in
-    k, p, bias, max
+        match f.s, f.d with
+        | Signed, Extended ->   pow2 emax *. (2. -. pow2 (2 - p))
+        | Signed, Finite ->     pow2 emax *. (2. -. pow2 (2 - p - 1))
+        | Unsigned, Extended -> (
+          match p with
+          | 2 ->                pow2 (emax - 1) *. (2. -. pow2 (2 - p - 1))            (* SE = true *)
+          | _ ->                pow2 emax *. (2. -. pow2 (2 - p) -. pow2 (2 - p - 1))  (* SE = false *)
+        )
+        | Unsigned, Finite ->   pow2 emax *. (2. -. pow2 (2 - p))
+      in
+
+    let m_lo = if f.s = Signed then -. m_hi else 0.0 in
+    k, p, bias, m_lo, m_hi, f.s, f.d
 end
 
-(** Saturation mode is just a bool *)
-
 module SaturationMode = struct
-  type t = bool
+  type t =
+    | SatFinite
+    | SatPropagate
+    | OvfInf
 end
 
 (** Rounding mode definitions *)
@@ -101,36 +155,65 @@ module Float8 = struct
 
   (* Constants *)
 
+  let nan_ks (k : int) (s : Signedness.t): t =
+    let open Signedness in
+    match s with
+    | Signed -> Util.ipow2 (k - 1)
+    | Unsigned -> Util.ipow2 k - 1
+
   let nan (f : Format.t): t =
-    let k, _, _, _ = Format.get_format_parameters f in
-    Util.ipow2 (k - 1) [@@macro]
+    let k, _, _, _, _, s, _ = Format.get_format_parameters f in
+    nan_ks k s
 
-  let ninf (f : Format.t) : t =
-    let k, _, _, _ = Format.get_format_parameters f in
-    Util.ipow2 k - 1 [@@macro]
+  let ninf (f : Format.t) : (t, string) Result.t =
+    let open Signedness in
+    let open Domain in
+    let k, _, _, _, _, s, d = Format.get_format_parameters f in
+    match s, d with
+    | Unsigned, _
+    | _, Finite -> Error "invalid"
+    | _ -> Ok (Util.ipow2 k - 1)
 
-  let pinf (f : Format.t) : t =
-    let k, _, _, _ = Format.get_format_parameters f in
-    Util.ipow2 (k - 1) - 1 [@@macro]
+  let pinf (f : Format.t) : (t, string) Result.t =
+    let open Signedness in
+    let open Domain in
+    let k, _, _, _, _, s, d = Format.get_format_parameters f in
+    match s, d with
+    | Signed, Extended -> Ok (Util.ipow2 (k - 1) - 1)
+    | Unsigned, Extended -> Ok (Util.ipow2 k - 2)
+    | _, Finite -> Error "invalid"
 
   let zero : t = 0 [@@macro]
 
+  (* Internal helpers *)
+
   let to_int_repr (f : Format.t) (i : t) : int =
-    let k, _, _, _ = Format.get_format_parameters f in
-    if i >= Util.ipow2 k then nan f else if i < 0 then nan f else i
+    let k, _, _, _, _, _, _ = Format.get_format_parameters f in
+    if i < 0 || i >= Util.ipow2 k then nan f else i
+
+  let to_int_repr_k (k : int) (i : t) (s : Signedness.t): int =
+    if i < 0 || i >= Util.ipow2 k then (nan_ks k s) else i
 
   let of_int_repr (f : Format.t) (i : int) : t =
-    let k, _, _, _ = Format.get_format_parameters f in
-    if i >= Util.ipow2 k then nan f else if i < 0 then nan f else i
+    let k, _, _, _, _, _, _ = Format.get_format_parameters f in
+    if i < 0 || i >= Util.ipow2 k then nan f else i
+
+  let of_int_repr_k (k : int) (s : Signedness.t) (i : int) : t =
+    if i < 0 || i >= Util.ipow2 k then (nan_ks k s) else i
 
   let real_is_within_range (f : Format.t) (x : real) : bool =
-    let _, _, _, fmax = Format.get_format_parameters f in
-    (-. fmax) <=. x && x <=. fmax
+    let _, _, _, m_lo, m_hi, _, _ = Format.get_format_parameters f in
+    m_lo <=. x && x <=. m_hi
 
   let exreal_is_within_range (f : Format.t) (x : ExReal.t)  : bool =
     match x with
     | ExReal.PINF | ExReal.NINF -> true
     | ExReal.R r -> real_is_within_range f r
+
+  let is_nan f x = to_int_repr f x = nan f
+  let is_ninf f x = Ok (to_int_repr f x) = ninf f
+  let is_pinf f x = Ok (to_int_repr f x) = pinf f
+  let is_inf f x = is_ninf f x || is_pinf f x
 
   module NaNOrExReal = struct
     type t =
@@ -149,40 +232,52 @@ module Float8 = struct
       | XR xr -> exreal_is_within_range f xr
   end
 
-
   (** 4.6.1 Decode *)
-
-  let rec decode (f : Format.t) (x : t) : (NaNOrExReal.t, string) Result.t =
+  let rec decode_aux (k : int) (p : int) (b : int) (s: Signedness.t) (d : Domain.t) x : (NaNOrExReal.t, string) Result.t =
     let open Util in
-    let k, p, b, _ = Format.get_format_parameters f in
-    match to_int_repr f x with
-    | x when x = ipow2 (k - 1) -> Ok (NaNOrExReal.NaN)
-    | x when x = ipow2 (k - 1) - 1 -> Ok (NaNOrExReal.XR ExReal.PINF)
-    | x when ipow2 (k - 1) < x && x < ipow2 k ->
+    let open Signedness in
+    let open Domain in
+    let open NaNOrExReal in
+    let open ExReal in
+    (* if k > 15 then Error "invalid format" else (* Note: termination checks go off the rails if k is unbounded *) *)
+    match to_int_repr_k k x s with
+    | x when x = ipow2 (k - 1)     && s = Signed -> Ok NaN
+    | x when x = ipow2  k      - 1 && s = Unsigned -> Ok NaN
 
-      (match decode f (of_int_repr f (x - ipow2 (k - 1))) with
-      | Ok (r:NaNOrExReal.t) ->
+    | x when x = ipow2 (k - 1) - 1 && d = Extended && s = Signed -> Ok (XR PINF)
+    | x when x = ipow2  k      - 1 && d = Extended && s = Signed -> Ok (XR NINF)
+    | x when x = ipow2  k      - 2 && d = Extended && s = Unsigned -> Ok (XR PINF)
+
+    | x when ipow2 (k - 1) < x && x < ipow2 k && s = Signed ->
+
+      (match decode_aux k p b s d (of_int_repr_k k s (x - ipow2 (k - 1))) with
+      | Ok (r : NaNOrExReal.t) ->
         let open ExReal.Infix in
-        Ok (match r with
-            | NaNOrExReal.NaN -> NaN
-            | NaNOrExReal.XR xr -> XR (~-. xr))
+        (match r with
+        | NaN -> Ok NaN (* Unreachable *)
+        | XR xr -> Ok (XR (~-. xr)))
       | Error e -> Error e)
 
-    | x when 0 <= x && x < (ipow2 (k - 1)) - 1 ->
+    | x ->
       let t = x mod (ipow2 (p - 1)) in
       let e = (Util.machine_idiv x (ipow2 (p - 1))) - b in
 
       let open ExReal.ResultInfix in
       let r = (
-        if e = - b then
+        if e = Int.(- b) then
           (ix 0 +. ix t *. (pow2 (1 - p))) *. (pow2 (e + 1))
         else
           (ix 1 +. ix t *. (pow2 (1 - p))) *. (pow2 e)) in
       (match r with
       | Ok xr -> Ok (XR xr)
       | Error e -> Error e)
+    [@@timeout 3600]
+    [@@measure Ordinal.of_int x]
+    [@@by auto]
 
-    | _ -> Error "unreachable"
+  let decode (f : Format.t) (x : t) : (NaNOrExReal.t, string) Result.t =
+    let k, p, b, _, _, s, d = Format.get_format_parameters f in
+    decode_aux k p b s d x
 
   (* 4.6.3 RoundToPrecision *)
 
@@ -231,24 +326,34 @@ module Float8 = struct
 
   (** 4.6.4 Saturate *)
 
-  let internal_saturate (m : real) (sat : bool) (rnd : RoundingMode.t) (x : ExReal.t) : (ExReal.t, string) Result.t =
+  let internal_saturate (m_lo : ExReal.t) (m_hi : ExReal.t) (s : Signedness.t) (sat : SaturationMode.t) (rnd : RoundingMode.t) (x : ExReal.t) : (ExReal.t, string) Result.t =
     let open ExReal in
     let open ExReal.Infix in
     let open RoundingMode in
-    let m = ExReal.of_real m in
+    let open SaturationMode in
+    let open Signedness in
     match (sat, rnd), x with
-    | (_, _), x when (~-. m) <=. x && x <=. m -> Ok (x)
-    | (true, _), x when x <. (~-. m) || x >. m -> sign x *. m
-    | (false, _), x when x = PINF || x = NINF -> Ok (x)
-    | (false, TowardZero), x when abs x >=. m || x = PINF -> sign x *. m
-    | (false, TowardPositive), x when x <=. ~-. m && x <> NINF -> Ok (~-. m)
-    | (false, TowardNegative), x when x >. m && x <> PINF -> Ok (m)
-    | (false, _), x -> sign x *. PINF
+    | (_, _), x when m_lo <=. x && x <=. m_hi -> Ok (x)
+
+    | (SatFinite, _), x when x <=. m_lo -> Ok m_lo
+    | (SatFinite, _), x when x >=. m_hi -> Ok m_hi
+
+    | (SatPropagate, _), (PINF | NINF) -> Ok (x)
+    | (SatPropagate, _), x when x <=. m_lo -> Ok m_lo
+    | (SatPropagate, _), x when x >=. m_hi -> Ok m_hi
+
+    | (OvfInf, _), (PINF | NINF) -> Ok (x)
+    | (OvfInf, _), x when (rnd = TowardZero || rnd = TowardPositive) && x <=. m_lo -> Ok m_lo
+    | (OvfInf, _), x when (rnd = TowardZero || rnd = TowardNegative) && x >=. m_hi -> Ok m_hi
+
+    | (OvfInf, _), x when x <=. m_lo -> if s = Signed then Ok ExReal.NINF else Ok m_lo
+    | (OvfInf, _), x when x >=. m_hi -> Ok ExReal.PINF
+
     | _ -> Error "unreachable"
 
   (** Saturate extended real [x] to +-INF, or to maximum value [m], according to projection specification [pi]. *)
-  let saturate (m : real) (sat : bool) (rnd : RoundingMode.t) (x : ExReal.t) : ExReal.t =
-    match internal_saturate m sat rnd x with
+  let saturate (m_lo : ExReal.t) (m_hi : ExReal.t) (s : Signedness.t) (sat : SaturationMode.t) (rnd : RoundingMode.t) (x : ExReal.t) : ExReal.t =
+    match internal_saturate m_lo m_hi s sat rnd x with
     | Ok x -> x
     | Error _ -> R 0.0 (* unreachable by theorem internal_saturate_ok *)
 
@@ -257,20 +362,26 @@ module Float8 = struct
 
   let rec encode (f : Format.t) (x : NaNOrExReal.t) : (t, string) Result.t =
     let open Util in
-    let k, p, b, _ = Format.get_format_parameters f in
+    let k, p, b, _, _, _, _ = Format.get_format_parameters f in
     if not (NaNOrExReal.is_within_range f x)  then
         Error "precondition violation"
     else
       match x with
-      | NaNOrExReal.NaN -> Ok (of_int_repr f (ipow2 (k - 1)))
-      | NaNOrExReal.XR PINF -> Ok (of_int_repr f (ipow2 (k - 1) - 1))
+      | NaNOrExReal.NaN -> Ok (of_int_repr f (
+        if f.s = Signedness.Signed then ipow2 (k - 1)
+        else ipow2 k - 1
+        ))
+      | NaNOrExReal.XR PINF -> Ok (of_int_repr f (
+        if f.s = Signedness.Signed then ipow2 (k - 1) - 1
+        else ipow2 k - 2)
+        )
       | NaNOrExReal.XR x when ExReal.Infix.(x <. rx 0.0) ->
 
         let open ExReal.ResultInfix in
         (match (~-. (Ok x)) with
           | Ok neg_x ->
             (match encode f (NaNOrExReal.XR neg_x) with
-            | Ok (v : t) -> Ok (of_int_repr f ((to_int_repr f v) + (ipow2 (k - 1))))
+            | Ok v -> Ok (of_int_repr f ((to_int_repr f v) + (ipow2 (k - 1))))
             | Error e -> Error e)
           | Error e -> Error e)
 
@@ -302,10 +413,10 @@ module Float8 = struct
 
   (** Project extended real value [x] to P3109 format [f]. *)
   let project (f : Format.t) (pi : Projection.t) (x : ExReal.t) : (t, string) Result.t =
-    let _, p, b, m = Format.get_format_parameters f in
+    let _, p, b, m_lo, m_hi, _, _ = Format.get_format_parameters f in
     let sat, rnd = pi in
     let r : ExReal.t = round_to_precision p b rnd x in
-    let s : ExReal.t = saturate m sat rnd r in
+    let s : ExReal.t = saturate (ExReal.of_real m_lo) (ExReal.of_real m_hi) f.s sat rnd r in
     encode f (NaNOrExReal.XR s)
 
 
@@ -336,7 +447,7 @@ module Float8 = struct
   (* Convert [x] (in [f_x]) to IEEE−754 binary interchange format Binary{[k]} under IEEE−754 rounding mode [rnd754] *)
   let convert_to_ieee_754 (f : Format.t) (pi : Projection.t) (phi : IEEE754.Format.t) (x : t) : IEEE754.t =
     let open NaNOrExReal in
-    if x = nan f then (* canonical if defined else quiet *)
+    if is_nan f x then (* canonical if defined else quiet *)
       IEEE754.canonical_nan phi
     else (
       match decode f x with
@@ -344,7 +455,7 @@ module Float8 = struct
       | Ok (XR y) ->
         let _, _, _, _, _, p, b, m = IEEE754.Format.get_format_parameters phi in
         let r = round_to_precision p b (snd pi) y in
-        let x = saturate m (fst pi) (snd pi) r in
+        let x = saturate (ExReal.of_real (-. m)) (ExReal.of_real m) f.s (fst pi) (snd pi) r in
         encode754 phi x
       | Error _ -> IEEE754.quiet_nan phi)
 
@@ -355,7 +466,7 @@ module Float8 = struct
   let convert_p3109_to_p3109 (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) : (t, string) Result.t =
     let open NaNOrExReal in
     match x with
-    | x when x = nan f_x -> encode f_z NaN
+    | x when is_nan f_x x -> Ok (nan f_z)
     | x ->
       match decode f_x x with
       | Ok (XR x) -> project f_z pi x
@@ -377,12 +488,21 @@ module Float8 = struct
     | Error _ -> nan f (* unreachable by theorem internal_abs_ok *)
 
   let internal_negate (f : Format.t) (x : t) : (t, string) Result.t =
+    let open NaNOrExReal in
+    let open Signedness in
+    let open ExReal.Infix in
+    let _, _, _, _, _, s, _ = Format.get_format_parameters f in
     match x with
-    | x when x = nan f -> Ok (nan f)
+    | x when is_nan f x -> Ok (nan f)
     | x ->
       let x = decode f x in
       match x with
-      | Ok x -> encode f NaNOrExReal.(~- x)
+      | Ok NaN -> Ok (nan f)
+      | Ok (XR x) ->
+        if s = Unsigned then
+          Ok zero (* TODO: disallow negate for unsigned formats *)
+        else
+          encode f (XR (~-. x))
       | Error e -> Error e
 
   (** Return the negation of [x] in [f] *)
@@ -398,7 +518,7 @@ module Float8 = struct
     let open ExReal.Infix in
     let open NaNOrExReal in
     match x, y with
-    | x, y when x = nan f || y = nan f -> Ok (nan f)
+    | x, y when is_nan f x || is_nan f y -> Ok (nan f)
     | _ ->
       match decode f y with
       | Ok (NaN) -> Ok (nan f)
@@ -418,24 +538,26 @@ module Float8 = struct
       (x : t) (y : t) : (t, string) Result.t =
     let open NaNOrExReal in
     match (x, y) with
-    | _, y when y = nan f_y -> Ok (nan f_z)
-    | x, _ when x = nan f_x -> Ok (nan f_z)
-    | x, y when x = ninf f_x && y = pinf f_y -> Ok (nan f_z)
-    | x, y when x = pinf f_x && y = ninf f_y -> Ok (nan f_z)
+    | x, _ when is_nan f_x x -> Ok (nan f_z)
+    | _, y when is_nan f_y y -> Ok (nan f_z)
+    | x, y when is_ninf f_x x && is_pinf f_y y -> Ok (nan f_z)
+    | x, y when is_pinf f_x x && is_ninf f_y y -> Ok (nan f_z)
     | x, y ->
       let x = decode f_x x in
       let y = decode f_y y in
       (match x, y with
-      | Ok NaN, _ |  _, Ok NaN -> Ok (nan f_z)
-      | Ok XR PINF, Ok XR NINF
-      | Ok XR NINF, Ok XR PINF -> Ok (nan f_z)
+      (* | Ok NaN, _
+      |  _, Ok NaN -> Ok (nan f_x)
+      | Ok (XR PINF), Ok (XR NINF) -> Ok (nan f_x)
+      | Ok (XR NINF), Ok (XR PINF) -> Ok (nan f_x) *)
       | Ok (XR x), Ok (XR y)  ->
         let open ExReal.Infix in
         (match (x +. y) with
         | Ok z -> project f_z pi z
         | Error e -> Error e)
       | _, Error e
-      | Error e, _ -> Error e)
+      | Error e, _ -> Error e
+      | _ -> Error "unreachable")
 
   (** Add [x] (in [f_x]) to [y] (in [f_y]), and return in [f_z] under projection specification [pi] *)
   let add (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (pi : Projection.t)
@@ -448,22 +570,25 @@ module Float8 = struct
       (x : t) (y : t) : (t, string) Result.t =
     let open NaNOrExReal in
     match (x, y) with
-    | _, y when y = nan f_x -> Ok (nan f_z)
-    | x, _ when x = nan f_y -> Ok (nan f_z)
-    | x, y when x = pinf f_x && y = pinf f_y -> Ok (nan f_z)
-    | x, y when x = ninf f_x && y = ninf f_y -> Ok (nan f_z)
+    | x, _ when is_nan f_x x -> Ok (nan f_z)
+    | _, y when is_nan f_y y -> Ok (nan f_z)
+    | x, y when is_pinf f_x x && is_pinf f_y y -> Ok (nan f_z)
+    | x, y when is_ninf f_x x && is_ninf f_y y -> Ok (nan f_z)
     | x, y ->
       let x = decode f_x x in
       let y = decode f_y y in
       (match x, y with
-      | Ok NaN, _ |  _, Ok NaN -> Ok (nan f_z)
+      (* | Ok NaN, _ |  _, Ok NaN -> Ok (nan f_z)
+      | Ok (XR PINF), Ok (XR PINF)
+      | Ok (XR NINF), Ok (XR NINF) -> Ok (nan f_z) *)
       | Ok (XR x) , Ok (XR y)  ->
         let open ExReal.Infix in
         (match (x -. y) with
         | Ok z -> project f_z pi z
         | Error e -> Error e)
       | _, Error e -> Error e
-      | Error e, _ -> Error e)
+      | Error e, _ -> Error e
+      | _ -> Error "unreachable")
 
   (** For [x] (in [f_x]), [y] (in [f_y]) compute [x-y] and return in [f_z],
       with projection specification [pi] *)
@@ -478,19 +603,24 @@ module Float8 = struct
     (x : t) (y : t) : (t, string) Result.t =
     let open NaNOrExReal in
     match x, y with
-    | _, y when y = nan f_y -> Ok (nan f_z)
-    | x, _ when x = nan f_x -> Ok (nan f_z)
-    | x, y when (x = pinf f_x || x = ninf f_x) && y = zero -> Ok (nan f_z)
-    | x, y when x = zero && (y = pinf f_y || y = ninf f_y) -> Ok (nan f_z)
+    | x, _ when is_nan f_x x -> Ok (nan f_z)
+    | _, y when is_nan f_y y -> Ok (nan f_z)
+    | x, y when is_inf f_x x && y = zero -> Ok (nan f_z)
+    | x, y when x = zero && is_inf f_y y -> Ok (nan f_z)
     | x, y ->
       let x = decode f_x x in
       let y = decode f_y y in
       (match x, y with
       | Ok NaN, _ |  _, Ok NaN -> Ok (nan f_z) (* unreachable *)
+      | Ok (XR PINF), Ok (XR (R 0.0)) -> Ok (nan f_z)
+      | Ok (XR NINF), Ok (XR (R 0.0)) -> Ok (nan f_z)
+      | Ok (XR (R 0.0)), Ok (XR PINF) -> Ok (nan f_z)
+      | Ok (XR (R 0.0)), Ok (XR NINF) -> Ok (nan f_z)
       | Ok (XR x) , Ok (XR y)  ->
         let open ExReal.Infix in
         (match (x *. y) with
         | Ok z -> project f_z pi z
+          (* Error "should hit this" *)
         | Error e -> Error e)
       | _ -> Error "unreachable")
 
@@ -503,22 +633,23 @@ module Float8 = struct
 
   let internal_divide (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (pi : Projection.t)
     (x : t) (y : t) : (t, string) Result.t =
-    let is_finite (f : Format.t) (x : t) : bool = (x <> ninf f && x <> pinf f && x <> nan f) in
-    let is_inf (f : Format.t) (x : t) : bool = x = pinf f || x = ninf f in
+    let is_finite (f : Format.t) (x : t) : bool = (not (is_inf f x) && not (is_nan f  x)) [@@macro] in
     let open NaNOrExReal in
     match x, y with
-    | _, y when y = nan f_x -> Ok (nan f_z)
-    | x, _ when x = nan f_y -> Ok (nan f_z)
+    | x, _ when is_nan f_x x -> Ok (nan f_z)
+    | _, y when is_nan f_y y -> Ok (nan f_z)
     | _, y when y = zero -> Ok (nan f_z)
-    | x, y when is_inf f_x x && is_inf f_y y  -> Ok (nan f_z)
-    | _, y when y = zero -> Ok (nan f_z)
-    | x, _ when x = ninf f_x || x = pinf f_x -> Ok (nan f_z)
-    | x, y when is_finite f_x x && (is_inf f_y y) -> Ok zero
+    | x, y when is_inf f_x x && is_inf f_y y -> Ok (nan f_z)
     | x, y ->
       let x = decode f_x x in
       let y = decode f_y y in
       (match x, y with
       | Ok NaN, _ |  _, Ok NaN -> Ok (nan f_z) (* unreachable *)
+      | Ok _, Ok (XR (R 0.0)) -> Ok (nan f_z)
+      | Ok (XR NINF), Ok (XR NINF)
+      | Ok (XR PINF), Ok (XR PINF)
+      | Ok (XR NINF), Ok (XR PINF)
+      | Ok (XR PINF), Ok (XR NINF) -> Ok (nan f_z)
       | Ok (XR x), Ok (XR y) ->
         let open ExReal.Infix in
         (match (x /. y) with
@@ -564,9 +695,9 @@ module Float8 = struct
     (x : t) (y : t) (z : t): (t, string) Result.t =
     let open NaNOrExReal in
     match x, y, z with
-    | _, _, _ when x = nan f_x -> Ok (nan f_r)
-    | _, _, _ when y = nan f_y -> Ok (nan f_r)
-    | _, _, _ when z = nan f_z -> Ok (nan f_r)
+    | _, _, _ when is_nan f_x x -> Ok (nan f_r)
+    | _, _, _ when is_nan f_y y -> Ok (nan f_r)
+    | _, _, _ when is_nan f_z z -> Ok (nan f_r)
     | _ ->
       (match decode f_x x, decode f_y y, decode f_z z with
       | Ok NaN, _ , _
@@ -611,9 +742,9 @@ module Float8 = struct
     (x : t) (y : t) (z : t): (t, string) Result.t =
     let open NaNOrExReal in
     match x, y, z with
-    | _, _, _ when x = nan f_x -> Ok (nan f_r)
-    | _, _, _ when y = nan f_y -> Ok (nan f_r)
-    | _, _, _ when z = nan f_z -> Ok (nan f_r)
+    | _, _, _ when is_nan f_x x -> Ok (nan f_r)
+    | _, _, _ when is_nan f_y y -> Ok (nan f_r)
+    | _, _, _ when is_nan f_z z -> Ok (nan f_r)
     | _ ->
       (match decode f_x x, decode f_y y, decode f_z z with
       | Ok NaN, _ , _
@@ -638,15 +769,14 @@ module Float8 = struct
 
   let internal_sqrt (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) : (t, string) Result.t =
     let open NaNOrExReal in
+    let open ExReal.Infix in
     match x with
-    | x when x = nan f_x -> Ok (nan f_z)
+    | x when is_nan f_x x -> Ok (nan f_z)
     | _ ->
       let x = decode f_x x in
       (match x with
       | Ok NaN -> Ok (nan f_z)
-      | Ok (XR NINF)
-      | Ok (XR PINF) -> Ok (nan f_z)
-      | Ok (XR (R x)) when x <. 0.0 -> Ok (nan f_z)
+      | Ok (XR x) when x <. ExReal.zero -> Ok (nan f_z)
       | Ok (XR x) ->
         (match ExReal.sqrt x 8 with (* TODO: Proof that 8 is enough *)
         | Ok z -> project f_z pi z
@@ -658,10 +788,70 @@ module Float8 = struct
   | Ok x -> x
   | Error _ -> (nan f_z) (* unreachable by theorem internal_sqrt_ok *)
 
+  let internal_rsqrt (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) : (t, string) Result.t =
+    let open NaNOrExReal in
+    let open ExReal.Infix in
+    match x with
+    | x when is_nan f_x x -> Ok (nan f_z)
+    | x when is_ninf f_x x -> Ok (nan f_z)
+    | _ ->
+      let x = decode f_x x in
+      (match x with
+      | Ok NaN -> Ok (nan f_z)
+      | Ok (XR x) when x <=. ExReal.zero -> Ok (nan f_z)
+      | Ok (XR x) ->
+        let open ExReal in
+        let open ExReal.ResultInfix in
+        (match Ok (R 1.0) /. ExReal.sqrt x 8 with (* TODO: Proof that 8 is enough *)
+        | Ok z -> project f_z pi z
+        | Error e -> Error e)
+      | Error e -> Error e)
+
+  let rsqrt (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) : t =
+  match internal_rsqrt f_x f_z pi x with
+  | Ok x -> x
+  | Error _ -> (nan f_z) (* unreachable by theorem internal_rsqrt_ok *)
+
+  let internal_hypot_xreal (x : ExReal.t) (y : ExReal.t) : (NaNOrExReal.t, string) Result.t =
+    let open ExReal in
+    let open ExReal.Infix in
+    let open ExReal.ResultInfix in
+    match x, y with
+    | _, _ ->
+      (* TODO: Proof that 8 is enough *)
+      (match ExReal.ResultInfix.sqrt (((ExReal.abs x) ^ 2) +. ((ExReal.abs y) ^ 2)) 8 with
+      | Ok r -> Ok (XR r)
+      | Error e -> Error e)
+
+  let internal_hypot (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) (y : t) : (t, string) Result.t =
+    let open ExReal in
+    let open NaNOrExReal in
+    match x, y with
+    | _, _ when is_nan f_x x -> Ok (nan f_z)
+    | _, _ when is_nan f_y y -> Ok (nan f_z)
+    | _, _ ->
+      let x = decode f_x x in
+      let y = decode f_y y in
+      (match x, y with
+      | Ok NaN, _ | _, Ok NaN -> Ok (nan f_z) (* unreachable *)
+      | Ok (XR x), Ok (XR y) ->
+        (match internal_hypot_xreal x y with
+        | Ok (XR z) -> project f_z pi z
+        | Ok NaN -> Error "unreachable"
+        | Error e -> Error e)
+      | Error e, _
+      | _, Error e -> Error e)
+
+  let hypot (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) (y : t): t =
+  match internal_hypot f_x f_y f_z pi x y with
+  | Ok r -> r
+  | Error _ -> (nan f_z) (* unreachable by theorem internal_hypot_ok *)
+
   let internal_exp (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) : (t, string) Result.t =
     let open NaNOrExReal in
     match x with
-    | x when x = nan f_x -> Ok (nan f_z)
+    | x when is_nan f_x x -> Ok (nan f_z)
+    | x when is_inf f_x x -> Ok (nan f_z)
     | _ ->
       let x = decode f_x x in
       (match x with
@@ -682,12 +872,14 @@ module Float8 = struct
   let internal_exp2 (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) : (t, string) Result.t =
     let open NaNOrExReal in
     match x with
-    | x when x = nan f_x -> Ok (nan f_z)
-    | x when x = ninf f_x || x = pinf f_x -> Ok (nan f_z)
+    | x when is_nan f_x x -> Ok (nan f_z)
+    | x when is_inf f_x x -> Ok (nan f_z)
     | _ ->
       let x = decode f_x x in
       (match x with
       | Ok NaN -> Ok (nan f_z) (* unreachable *)
+      | Ok (XR NINF)
+      | Ok (XR PINF) -> Ok (nan f_z) (* unreachable *)
       | Ok (XR x) ->
         (match ExReal.exp2 x 9 with (* TODO: Proof that 9 is enough *)
         | Ok z -> project f_z pi z
@@ -702,15 +894,15 @@ module Float8 = struct
   let internal_log (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) : (t, string) Result.t =
     let open NaNOrExReal in
     match x with
-    | x when x = nan f_x -> Ok (nan f_z)
-    | x when x = ninf f_x || x = pinf f_x -> Ok (nan f_z)
+    | x when is_nan f_x x -> Ok (nan f_z)
+    | x when is_inf f_x x -> Ok (nan f_z)
     | _ ->
       let x = decode f_x x in
       (match x with
       | Ok NaN -> Ok (nan f_z)
       | Ok (XR NINF)
       | Ok (XR PINF) -> Ok (nan f_z)
-      | Ok (XR (R x)) when x <=. 0.0 -> Ok (nan f_z)
+      | Ok (XR (R x)) when x <. 0.0 -> Ok (nan f_z)
       | Ok (XR x) ->
         (match ExReal.ln x 9 with (* TODO: Proof that 9 is enough *)
         | Ok z -> project f_z pi z
@@ -725,14 +917,15 @@ module Float8 = struct
   let internal_log2 (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) : (t, string) Result.t =
     let open NaNOrExReal in
     match x with
-    | x when x = nan f_x -> Ok (nan f_z)
+    | x when is_nan f_x x -> Ok (nan f_z)
+    | x when is_inf f_x x -> Ok (nan f_z)
     | _ ->
       let x = decode f_x x in
       (match x with
       | Ok NaN -> Ok (nan f_z)
       | Ok (XR NINF)
       | Ok (XR PINF) -> Ok (nan f_z)
-      | Ok (XR (R x)) when x <=. 0.0 -> Ok (nan f_z)
+      | Ok (XR (R x)) when x <. 0.0 -> Ok (nan f_z)
       | Ok (XR x) ->
         (match ExReal.log2 x 9 with (* TODO: Proof that 9 is enough *)
         | Ok z -> project f_z pi z
@@ -752,15 +945,17 @@ module Float8 = struct
       : (t, string) Result.t =
       let open NaNOrExReal in
       match x, y with
-      | _, y when y = nan f_y -> Ok (nan f_z)
-      | x, _ when x = nan f_x -> Ok (nan f_z)
-      | x, y when x = ninf f_x && y = pinf f_y -> Ok (nan f_z)
-      | x, y when x = pinf f_x && y = ninf f_y -> Ok (nan f_z)
+      | x, _ when is_nan f_x x -> Ok (nan f_z)
+      | _, y when is_nan f_y y -> Ok (nan f_z)
+      | x, y when is_ninf f_x x && is_pinf f_y y -> Ok (nan f_z)
+      | x, y when is_pinf f_x x && is_ninf f_y y -> Ok (nan f_z)
       | x, y ->
         let x = decode f_x x in
         let y = decode f_y y in
         (match x, y with
         | Ok NaN, _ |  _, Ok NaN -> Ok (nan f_z)
+        | Ok (XR PINF), Ok (XR NINF) -> Ok (nan f_z)
+        | Ok (XR NINF), Ok (XR PINF) -> Ok (nan f_z)
         | Ok (XR x), Ok (XR y) ->
           let open ExReal.ResultInfix in
           (match ((Ok x) *. (2 ^. s_x)) +. ((Ok y) *. (2 ^. s_y)) with
@@ -787,15 +982,20 @@ module Float8 = struct
       (x : t) (y : t) (s : int) : (t, string) Result.t =
     let open NaNOrExReal in
     match x, y with
-    | _, y  when y = nan f_y -> Ok (nan f_z)
-    | x, _ when x = nan f_x -> Ok (nan f_z)
-    | x, y when (x = pinf f_x || x = ninf f_x) && y = zero -> Ok (nan f_z)
-    | x, y when x = zero && (y = pinf f_y || y = ninf f_y) -> Ok (nan f_z)
+    | x, _ when is_nan f_x x -> Ok (nan f_z)
+    | _, y when is_nan f_y y -> Ok (nan f_z)
+    | x, y when is_inf f_x x && y = zero -> Ok (nan f_z)
+    | x, y when x = zero && is_inf f_y y -> Ok (nan f_z)
     | x, y ->
+      let open ExReal in
       let x = decode f_x x in
       let y = decode f_y y in
       (match x, y with
       | Ok NaN, _ |  _, Ok NaN -> Ok (nan f_z)
+      | Ok (XR PINF), Ok (XR (R 0.0)) -> Ok (nan f_z)
+      | Ok (XR NINF), Ok (XR (R 0.0)) -> Ok (nan f_z)
+      | Ok (XR (R 0.0)), Ok (XR PINF) -> Ok (nan f_z)
+      | Ok (XR (R 0.0)), Ok (XR NINF)  -> Ok (nan f_z)
       | Ok (XR x) , Ok (XR y)  ->
         let open ExReal.ResultInfix in
         (match (xx x *. xx y *. (2 ^. s)) with
@@ -845,12 +1045,13 @@ module Float8 = struct
   let internal_scaled_fma (phi : IEEE754.Format.t) (f_x : Format.t) (f_y : Format.t) (pi : Projection.t)
     (a : IEEE754.t) (s_a : int) (x : t) (y : t) (s : int) : (IEEE754.t, string) Result.t =
     let open NaNOrExReal in
+    let open Signedness in
     let nan754 = IEEE754.quiet_nan phi in
     let _, p, _, b, _, _, _, m = IEEE754.Format.get_format_parameters phi in
     match a, s_a, x, y, s with
     | _ when IEEE754.is_nan a phi -> Ok nan754
-    | _, _, _, _, _ when x = nan f_x -> Ok nan754
-    | _, _, _, _, _ when y = nan f_y -> Ok nan754
+    | _, _, _, _, _ when is_nan f_x x -> Ok nan754
+    | _, _, _, _, _ when is_nan f_y y -> Ok nan754
     | _ ->
       (match IEEE754.as_extended_real phi a with
       | Ok a_ ->
@@ -861,7 +1062,7 @@ module Float8 = struct
             | Ok NaN -> Ok nan754
             | Ok (XR z_) ->
               let z_' = round_to_precision p b (snd pi) z_ in
-              let z_'' = saturate m (fst pi) (snd pi) z_' in
+              let z_'' = saturate (ExReal.of_real (-. m)) (ExReal.of_real m) Signed (fst pi) (snd pi) z_' in
               let z = encode754 phi z_'' in
               Ok z
             | Error e -> Error e))
@@ -899,21 +1100,21 @@ module Float8 = struct
     | Ok (XR xr), Ok (XR yr) -> encode f (XR (ExReal.max xr yr))
     | Error e, _ | _, Error e -> Error e
 
-  let maximum (f : Format.t) (x : t) (y : t)  : t =
+  let maximum (f : Format.t) (x : t) (y : t) : t =
     match internal_maximum f x y  with
     | Ok r -> r
     | Error _ -> nan f (* unreachable by theorem internal_maximum_ok *)
 
-  let minimum_number (f : Format.t) (x : t) (y : t)  : t =
+  let minimum_number (f : Format.t) (x : t) (y : t) : t =
     match x, y with
-    | _, _ when y = nan f -> x
-    | _, _ when x = nan f -> y
+    | _, _ when is_nan f x -> x
+    | _, _ when is_nan f y -> y
     | _, _ -> minimum f x y
 
-  let maximum_number (f : Format.t) (x : t) (y : t)  : t =
+  let maximum_number (f : Format.t) (x : t) (y : t) : t =
     match x, y with
-    | _, _ when y = nan f -> x
-    | _, _ when x = nan f -> y
+    | _, _ when is_nan f x -> x
+    | _, _ when is_nan f y -> y
     | _, _ -> maximum f x y
 
 
@@ -949,7 +1150,6 @@ module Float8 = struct
     | Ok _, Ok NaN -> Ok x
     | Ok NaN, Ok _ -> Ok y
     | Ok (XR x), Ok (XR y) ->
-        let open ExReal in
         let open ExReal.Infix in
         let r = (
           match x, y with
@@ -963,22 +1163,46 @@ module Float8 = struct
         | Error e -> Error e)
     | Error e, _ | _, Error e -> Error e
 
-  let maximum_magnitude (f : Format.t) (x : t) (y : t)  : t =
+  let maximum_magnitude (f : Format.t) (x : t) (y : t) : t =
     match internal_maximum_magnitude f x y  with
     | Ok r -> r
     | Error _ -> nan f (* unreachable by theorem internal_maximum_magnitude_ok *)
 
-  let minimum_magnitude_number (f : Format.t) (x : t) (y : t)  : t =
+  let minimum_magnitude_number (f : Format.t) (x : t) (y : t) : t =
     match x, y with
-    | _, _ when y = nan f -> x
-    | _, _ when x = nan f -> y
+    | _, _ when is_nan f x -> x
+    | _, _ when is_nan f y -> y
     | _, _ -> minimum_magnitude f x y
 
-  let maximum_magnitude_number (f : Format.t) (x : t) (y : t)  : t =
+  let maximum_magnitude_number (f : Format.t) (x : t) (y : t) : t =
     match x, y with
-    | _, _ when y = nan f -> x
-    | _, _ when x = nan f -> y
+    | _, _ when is_nan f x -> x
+    | _, _ when is_nan f y -> y
     | _, _ -> maximum_magnitude f x y
+
+
+  (**  4.9.3 Clamp *)
+
+  let internal_clamp (f : Format.t) (x : t) (lo : t) (hi : t) : (t, string) Result.t =
+    let open NaNOrExReal in
+    let open ExReal.Infix in
+    if (is_nan f x || is_nan f lo || is_nan f hi) then Ok (nan f)
+    else (match decode f x, decode f lo, decode f hi with
+      | Ok NaN, _, _
+      | _, Ok NaN, _
+      | _, _, Ok NaN -> Ok (nan f)
+      | Ok (XR x_), Ok (XR lo_), Ok (XR hi_) ->
+          if x_ <=. lo_ then Ok lo
+          else if x_ >=. hi_ then Ok hi
+          else Ok x
+      | _ -> Error "undefined"
+      )
+
+  let clamp (f : Format.t) (x : t) (lo : t) (hi : t) : t =
+    match internal_clamp f x lo hi with
+    | Ok r -> r
+    | Error _ -> nan f (* unreachable by theorem internal_clamp_ok *)
+
 
   (** 4.10.2 Comparisons *)
 
@@ -1053,7 +1277,7 @@ module Float8 = struct
   let is_zero (f : Format.t) (x : t) : bool =
     let open NaNOrExReal in
     match x with
-    | _ when x = nan f -> false
+    | _ when is_nan f x -> false
     | _ ->
       (match decode f x with
       | Ok NaN -> false
@@ -1063,19 +1287,19 @@ module Float8 = struct
   let is_one (f : Format.t) (x : t) : bool =
     let open NaNOrExReal in
     match x with
-    | x when x = nan f -> false
+    | _ when is_nan f x -> false
     | _ ->
       (match decode f x with
       | Ok NaN -> false
       | Ok (XR xr) -> xr = ExReal.one
-      | _ -> false)
+      | _ -> false (* unreachable by theorem decode_ok *))
 
-  let is_nan (f : Format.t) (x : t) : bool = x = nan f [@@macro]
+  let is_nan (f : Format.t) (x : t) : bool = is_nan f x [@@macro]
 
   let is_sign_minus (f : Format.t) (x : t) : bool =
     let open NaNOrExReal in
     match x with
-    | _ when x = nan f -> true
+    | _ when is_nan f x -> true
     | _ ->
       (match decode f x with
       | Ok NaN -> false
@@ -1083,20 +1307,26 @@ module Float8 = struct
       | _ -> false)
 
   let is_normal (f : Format.t) (x : t) : bool =
-    let k, p, _, _ = Format.get_format_parameters f in
+    let open Signedness in
+    let k, p, _, _, _, _, _ = Format.get_format_parameters f in
     match x with
-    | _ when x = zero || x = ninf f || x = pinf f || x = nan f -> false
-    | _ -> Util.machine_idiv ((to_int_repr f x) mod (Util.ipow2 (k - 1))) (Util.ipow2 (p - 1)) > 0
+    | _ when is_zero f x || is_ninf f x || is_pinf f x || is_nan f x -> false
+    | _ ->
+      let x = to_int_repr f x in
+      (match f.s with
+      | Signed -> Util.machine_idiv (x mod (Util.ipow2 (k - 1))) (Util.ipow2 (p - 1)) > 0
+      | Unsigned -> Util.machine_idiv x (Util.ipow2 (p - 1)) > 0
+      )
 
   let is_subnormal (f : Format.t) (x : t) : bool =
-    let k, p, _, _ = Format.get_format_parameters f in
+    let k, p, _, _, _, _, _ = Format.get_format_parameters f in
     match x with
-    | _ when x = zero || x = ninf f || x = pinf f || x = nan f -> false
-    | _ -> Util.machine_idiv ((to_int_repr f x) mod (Util.ipow2 (k - 1))) (Util.ipow2 (p - 1)) = 0
+    | _ when is_zero f x || is_ninf f x || is_pinf f x || is_nan f x -> false
+    | _ -> not (is_normal f x)
 
-  let is_finite (f : Format.t) (x : t) : bool = x <> ninf f && x <> pinf f && x <> nan f [@@macro]
+  let is_finite (f : Format.t) (x : t) : bool = not (is_ninf f x) && not (is_pinf f x) && not (is_nan f x) [@@macro]
 
-  let is_infinite (f : Format.t) (x : t) : bool = x = ninf f || x = pinf f [@@macro]
+  let is_infinite (f : Format.t) (x : t) : bool = is_ninf f x || is_pinf f x [@@macro]
 
   let is_signaling (_f : Format.t) (_x : t) : bool = false
 
@@ -1135,8 +1365,8 @@ module Float8 = struct
 
   let total_order (f_x : Format.t) (f_y : Format.t) (x : t) (y: t) : bool =
     match x, y with
-    | x, _ when x = nan f_x -> true
-    | _, y when y = nan f_y -> false
+    | _, _ when is_nan f_x x -> true
+    | _, _ when is_nan f_y y -> false
     | _ -> compare_less_equal f_x f_y x y
 
 
@@ -1177,27 +1407,4 @@ module Float8 = struct
       Printf.sprintf "%s"
         (if is_nan f x then "NaN" else ExReal.to_string xreal)
         [@@ocamlformat "if-then-else=compact"] [@@program]
-end
-
-module Ulp = struct
-  let one_up (f : Format.t) (x : Float8.t) : Float8.t =
-    if Float8.is_nan f x || Float8.is_infinite f x then x
-    else (Float8.of_int_repr f ((Float8.to_int_repr f x) + 1))
-
-  let one_down (f : Format.t) (x : Float8.t) : Float8.t =
-    if Float8.is_nan f x || Float8.is_infinite f x then x
-    else (Float8.of_int_repr f ((Float8.to_int_repr f x) - 1))
-
-  let only_exponent (f : Format.t) (x : Float8.t) : Float8.t =
-    let _, p, _, _ = Format.get_format_parameters f in
-    let x = Float8.abs f x in
-    let pwr = Util.ipow2 (p - 1) in
-    (Util.machine_idiv x pwr) * pwr
-
-  let ulp (f : Format.t) (x : Float8.t) : (real, string) Result.t =
-    let open Float8.NaNOrExReal in
-    let oe = only_exponent f x in
-    match (Float8.decode f (Float8.of_int_repr f (Float8.to_int_repr f oe + 1))), Float8.decode f oe with
-    | Ok(XR (R u)), Ok(XR (R l)) -> Ok(u -. l)
-    | _ -> Error("undefined")
 end

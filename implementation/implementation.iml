@@ -35,7 +35,7 @@ module Float8 = struct
   let is_one (f : Format.t) (x : t) : bool =
     let open Specification.Format in
     not x.b7 &&
-    match f with
+    match f.kp with
     | B8P1 -> not x.b6 && x.b5 && x.b4 && x.b3 && x.b2 && x.b1 && x.b0
     | _ -> x.b6 && not x.b5 && not x.b4 && not x.b3 && not x.b2 && not x.b1 && not x.b0
 
@@ -50,7 +50,7 @@ module Float8 = struct
     let open Specification.Format in
     is_finite f x
     &&
-    match f with
+    match f.kp with
     | B8P1 -> x.b6 || x.b5 || x.b4 || x.b3 || x.b2 || x.b1 || x.b0
     | B8P2 -> x.b6 || x.b5 || x.b4 || x.b3 || x.b2 || x.b1
     | B8P3 -> x.b6 || x.b5 || x.b4 || x.b3 || x.b2
@@ -64,7 +64,7 @@ module Float8 = struct
     let open Specification.Format in
     is_finite f x && not (is_zero f x)
     &&
-    match f with
+    match f.kp with
     | B8P1 -> not x.b6 && not x.b5 && not x.b4 && not x.b3 && not x.b2 && not x.b1 && not x.b0
     | B8P2 -> not x.b6 && not x.b5 && not x.b4 && not x.b3 && not x.b2 && not x.b1
     | B8P3 -> not x.b6 && not x.b5 && not x.b4 && not x.b3 && not x.b2
