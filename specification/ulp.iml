@@ -15,7 +15,7 @@ let one_down (f : Format.t) (x : Float8.t) : Float8.t =
   else (Float8.of_int_repr f ((Float8.to_int_repr f x) - 1))
 
 let only_exponent (f : Format.t) (x : Float8.t) : Float8.t =
-  let _, p, _, _ = Format.get_format_parameters f in
+  let _, p, _, _, _, _, _ = Format.get_format_parameters f in
   let x = Float8.abs f x in
   let pwr = Util.ipow2 (p - 1) in
   (Util.machine_idiv x pwr) * pwr

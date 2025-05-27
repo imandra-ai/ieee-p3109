@@ -48,7 +48,7 @@ let _ =
 
 let chk_add f x y =
   Printf.printf "(%s + %s) = %s\n" (Float8.to_string f x) (Float8.to_string f y)
-    (Float8.to_string f (Float8.add f f f (true, RoundingMode.TowardZero) x y))
+    (Float8.to_string f (Float8.add f f f (SaturationMode.SatPropagate, RoundingMode.TowardZero) x y))
 
 let _ =
   let f = f in
@@ -80,7 +80,7 @@ let chk_add_scaled x y s_x s_y f =
     (Z.to_string s_x) (Float8.to_string f y) (Z.to_string s_y)
     (Float8.to_string f
        (Float8.add_scaled f f f
-          (false, RoundingMode.TowardPositive)
+          (SaturationMode.SatPropagate, RoundingMode.TowardPositive)
           x s_x y s_y))
 
 let _ =

@@ -10,10 +10,34 @@ open Specification
 
 let unroll_nonlin qt nqt steps = Tactic.unroll ~smt:"z3-full-nonlinear" ~query_timeout:qt ~no_asm_query_timeout:nqt steps
 
+(** Formats *)
+
+theorem format_parameter_limits (f : Format.t) =
+  let k, p, b, _, _, s, d = (Format.get_format_parameters f [@trigger]) in
+  0 < k && k <= 15 &&
+  0 < p && p <= 15 &&
+  b < Util.ipow2 (k - p)
+  [@@timeout 60]
+  [@@by unroll_nonlin 10 10 25]
+  [@@fc]
+
+theorem m_hi_gt_0 (f : Format.t) =
+  let _, _, _, m_lo, m_hi, _, _ = Format.get_format_parameters f in
+  m_hi >. 0.0
+  [@@timeout 20]
+  [@@by enumerate ["f"] @> ground_eval]
+
+theorem m_lo_lt_m_hi (f : Format.t) =
+  let _, _, _, m_lo, m_hi, _, _ = Format.get_format_parameters f [@trigger] in
+  m_lo <. m_hi
+  [@@disable Format.get_format_parameters, Util.ipow2, Util.pow2]
+  [@@by [%use m_hi_gt_0 f] @> auto]
+  [@@fc]
+
 (** 4.6 Functions *)
 
-theorem internal_saturate_ok (m : real) (sat : bool) (rnd : RoundingMode.t) (x : ExReal.t) =
-  Result.is_ok (Float8.internal_saturate m sat rnd x [@trigger])
+theorem internal_saturate_ok (m_lo : ExReal.t) (m_hi : ExReal.t) (s : Signedness.t) (sat : SaturationMode.t) (rnd : RoundingMode.t) (x : ExReal.t) =
+  Result.is_ok (Float8.internal_saturate m_lo m_hi s sat rnd x [@trigger])
   [@@fc]
 
 theorem internal_round_to_precision_ok (p : int) (b : int) (rnd : RoundingMode.t) (x : ExReal.t) =
@@ -21,7 +45,7 @@ theorem internal_round_to_precision_ok (p : int) (b : int) (rnd : RoundingMode.t
 
 (* [decode] never throws an error *)
 theorem decode_ok (f : Format.t) (x : Float8.t) =
-  Result.is_ok (Float8.decode f x [@trigger])
+  Result.is_ok ((Float8.decode f x) [@trigger])
   [@@timeout 120]
   [@@by unroll_nonlin 10 1 50]
   [@@fc]
@@ -29,26 +53,27 @@ theorem decode_ok (f : Format.t) (x : Float8.t) =
 (* [decode] always produces numbers within the format range *)
 theorem decode_within_range (f : Format.t) (x : Float8.t) =
   let open Float8.NaNOrExReal in
-  let _, _, _, fmax, _, _ = Format.get_format_parameters f in
+  let _, _, _, m_lo, m_hi, _, _ = Format.get_format_parameters f in
   let d = Float8.decode f x [@@trigger] in
   match d with
-  | Ok (XR (ExReal.R r)) -> (-. fmax) <=. r && r <=. fmax
+  | Ok (XR (ExReal.R r)) -> m_lo <=. r && r <=. m_hi
   | _ -> true
   [@@timeout 600]
   [@@disable Float8.decode, Float8.decode_aux, Format.get_format_parameters]
   [@@by
-    [%use Theorems_format_ranges.within_format_range f.kp x] @>
+    [%use Theorems_format_ranges.within_format_range f x] @>
     auto]
   [@@fc]
 
 (* [encode] is ok if the input is within the format range *)
 theorem encode_ok_within_range (f : Format.t) (x : Float8.NaNOrExReal.t) =
-  let open Float8.NaNOrExReal in
-  let open ExReal in
-  let _, _, _, fmax, _, _ = Format.get_format_parameters f in
+let open Float8.NaNOrExReal in
+let open Signedness in
+let open ExReal in
+  let _, _, _, m_lo, m_hi, s, _ = Format.get_format_parameters f in
   let encoded = Float8.encode f x [@@trigger] in
   match x with
-  | XR (R x) when x <. (-. fmax) || x >. fmax ->
+  | XR (R x) when (x <. m_lo || x >. m_hi) ->
     (* When x is outside the format range, encode returns an error *)
     Result.is_error encoded
   | _ ->
@@ -62,24 +87,24 @@ theorem decode_encode_ok (f : Format.t)  (x : Float8.t) =
   match Float8.decode f x with
   | Ok y -> Result.is_ok (Float8.encode f y [@trigger])
   | Error _ -> false
-  [@@disable Specification.Float8.encode, Specification.Float8.decode, Float8.decode_aux, Util.pow2, Util.ipow2]
+  [@@disable Float8.decode, Float8.encode, Util.pow2, Util.ipow2]
   [@@by auto]
   [@@fc]
 
 (* [saturate] always produces a number within the format range *)
-theorem saturate_is_within_range (f : Format.t) (x : ExReal.t) (sat : bool) (rnd : RoundingMode.t) =
-  let _, _, _, fmax, _, _ = Format.get_format_parameters f in
-  let s = (Float8.saturate fmax sat rnd x [@trigger]) in
+theorem saturate_is_within_range (f : Format.t) (x : ExReal.t) (sat : SaturationMode.t) (rnd : RoundingMode.t) =
+  let _, _, _, m_lo, m_hi, _, _ = Format.get_format_parameters f in
+  let s = (Float8.saturate (ExReal.of_real m_lo) (ExReal.of_real m_hi) f.s sat rnd x [@trigger]) in
   Float8.exreal_is_within_range f s
-  [@@timeout 120]
+  [@@timeout 3600]
   [@@disable Float8.saturate, Format.get_format_parameters, Util.ipow2, Util.pow2]
-  [@@by auto]
+  [@@by [%use m_lo_lt_m_hi f] @> [%use m_hi_gt_0 f] @> auto]
   [@@fc]
 
 (* Encoding after saturation is always ok *)
-theorem saturate_encode_ok (f : Format.t) (x : ExReal.t) (sat : bool) (rnd : RoundingMode.t) =
-  let _, _, _, fmax, _, _ = Format.get_format_parameters f in
-  Result.is_ok (Float8.encode f (Float8.NaNOrExReal.XR (Float8.saturate fmax sat rnd x)) [@trigger])
+theorem saturate_encode_ok (f : Format.t) (x : ExReal.t) (sat : SaturationMode.t) (rnd : RoundingMode.t) =
+  let _, _, _, m_lo, m_hi, _, _ = Format.get_format_parameters f in
+  Result.is_ok (Float8.encode f (Float8.NaNOrExReal.XR (Float8.saturate (ExReal.of_real m_lo) (ExReal.of_real m_hi) f.s sat rnd x)) [@trigger])
   [@@timeout 60]
   [@@by
     [%use saturate_is_within_range f x sat rnd]
@@ -87,12 +112,12 @@ theorem saturate_encode_ok (f : Format.t) (x : ExReal.t) (sat : bool) (rnd : Rou
   [@@fc]
 
 let rounded f rnd x =
-  let _, p, b, m, _, _ = Format.get_format_parameters f in
+  let _, p, b, _, _, _, _ = Format.get_format_parameters f in
   Float8.round_to_precision p b rnd x
 
 (** [project] never returns an error *)
 theorem project_ok (f : Format.t) (pi : Projection.t) (x : ExReal.t) =
-  Result.is_ok (Float8.project f pi x [@trigger])
+  Result.is_ok ((Float8.project f pi x) [@trigger])
   [@@timeout 30]
   [@@by
     [%use saturate_encode_ok f (rounded f (snd pi) x) (fst pi) (snd pi)]
@@ -100,63 +125,106 @@ theorem project_ok (f : Format.t) (pi : Projection.t) (x : ExReal.t) =
   [@@fc]
 
 (** Some helpers *)
-theorem nan_decodes_to_nan (f : Format.t) =
+
+theorem pinf_decodes_to_pinf (f : Format.t) (x : Float8.t) =
   let open Float8.NaNOrExReal in
-  Float8.decode f (Float8.nan f) [@trigger] = Ok NaN
+  Float8.is_pinf f x <==> ((Float8.decode f x = Ok (XR PINF)) [@trigger])
+  [@@timeout 360]
   [@@by unroll_nonlin 10 10 100]
   [@@fc]
 
 theorem ninf_decodes_to_ninf (f : Format.t) (x : Float8.t) =
   let open Float8.NaNOrExReal in
-  Float8.decode f x [@trigger] = Ok (XR ExReal.NINF) <==> x = Float8.ninf f
-  [@@timeout 120]
-  [@@by unroll_nonlin 5 2 50]
+  Float8.is_ninf f x <==> ((Float8.decode f x = Ok (XR NINF)) [@trigger])
+  [@@timeout 360]
+  [@@by unroll_nonlin 10 10 100]
   [@@fc]
 
-theorem pinf_decodes_to_pinf (f : Format.t) (x : Float8.t) =
+theorem inf_decodes_to_inf (f : Format.t) (x : Float8.t) =
   let open Float8.NaNOrExReal in
-  Float8.decode f x [@trigger] = Ok (XR ExReal.PINF) <==> x = Float8.pinf f
-  [@@timeout 60]
-  [@@by unroll_nonlin 5 2 50]
-  [@@fc]
-
-theorem zero_decodes_to_zero_1 (f : Format.t) (x : Float8.t) =
-  let open Float8.NaNOrExReal in
-  x = Float8.zero ==> Float8.decode f x [@trigger] = Ok (XR ExReal.zero)
-  [@@timeout 3600]
-  [@@by unroll_nonlin 20 5 150]
-  (* [@@by auto] *)
-  [@@fc]
-
-theorem dec_zero_1 (f: Format.t) x =
-  let open Util in
-  let k, p, b, _, _, _ = Format.get_format_parameters f in
-  Float8.decode f x = Ok (Float8.NaNOrExReal.XR ExReal.zero)
-    ==>
-  Float8.to_int_repr_k k x = 0
-  [@@timeout 3600]
-  [@@by induct ~do_not:["gen"; "fert"] ~max_induct:5 ()] (* 12m *)
-  (* [@@by auto] *)
-  [@@fc]
-
-theorem zero_decodes_to_zero_2 (f : Format.t) (x : Float8.t) =
-  let open Float8.NaNOrExReal in
-  Float8.decode f x [@trigger] = Ok (XR ExReal.zero) ==> x = Float8.zero
-  [@@disable Float8.decode, Format.get_format_parameters]
+  ((Float8.is_inf f x) [@trigger]) <==> (Float8.decode f x = Ok (XR NINF) || Float8.decode f x = Ok (XR PINF))
   [@@by
-    [%use zero_decodes_to_zero_1 f x] @>
-    [%use dec_zero_1 f x] @>
-    auto]
+    [%use pinf_decodes_to_pinf f x] @>
+    [%use ninf_decodes_to_ninf f x] @>
+    unroll 1]
+  [@@fc]
+
+theorem nan_decodes_to_nan (f : Format.t) (x : Float8.t) =
+  let open Float8.NaNOrExReal in
+  Float8.is_nan f x <==> ((Float8.decode f x = Ok NaN) [@trigger])
+  [@@timeout 120]
+  [@@by unroll 50]
   [@@fc]
 
 theorem zero_decodes_to_zero (f : Format.t) (x : Float8.t) =
   let open Float8.NaNOrExReal in
-  Float8.decode f x [@trigger] = Ok (XR ExReal.zero) <==> x = Float8.zero
+  Float8.is_zero f x <==> (Float8.decode f x = Ok (XR (R 0.0))) [@trigger]
+  [@@timeout 60]
+  [@@by unroll 25]
+  [@@fc]
+
+theorem ipow2_gt_0 (n:int) =
+  (Util.ipow2 n) [@trigger] > 0
+  [@@timeout 10]
+  [@@by auto]
+  [@@fc]
+
+theorem decode_0_is_0 (f : Format.t)  =
+  let open Float8.NaNOrExReal in
+  (Float8.decode f 0) [@trigger] = Ok (XR (R 0.0))
+  [@@timeout 60]
+  [@@by enumerate ["f"] @> ground_eval]
+  [@@fc]
+
+theorem zero_means_is_zero (f : Format.t) (x : Float8.t) =
+  let open Float8.NaNOrExReal in
+  x = 0 ==> ((Float8.is_zero f x) [@trigger])
+  [@@timeout 3600]
+  [@@disable Util.ipow2, Util.pow2]
+  [@@by enumerate ["f"] @> repeat split_and @>>| auto]
+  (* [@@by unroll 1000] *)
+  [@@fc]
+
+theorem zero_is_zero_fwd (f : Format.t) (x : Float8.t) =
+  let open Float8.NaNOrExReal in
+  x = 0 ==> ((Float8.decode f x = Ok (XR (R 0.0))) [@trigger])
+  [@@timeout 360]
+  [@@by enumerate ["f"] @> auto]
+
+theorem zero_is_zero_bwd (f : Format.t) (x : Float8.t) =
+  let open Float8.NaNOrExReal in
+  x = 0 <== ((Float8.decode f x = Ok (XR (R 0.0))) [@trigger])
+  [@@timeout 1200]
+  [@@disable Util.pow2]
+  [@@by enumerate ["f"] @> auto]
+
+theorem zero_is_zero (f : Format.t) (x : Float8.t) =
+  let open Float8.NaNOrExReal in
+  x = 0 <==> ((Float8.decode f x = Ok (XR (R 0.0))) [@trigger])
+  [@@timeout 60]
+  [@@disable Float8.decode, Float8.decode_aux]
   [@@by
-    [%use zero_decodes_to_zero_1 f x] @>
-    [%use zero_decodes_to_zero_2 f x] @>
+    [%use zero_is_zero_fwd f x] @>
+    [%use zero_is_zero_bwd f x] @>
     auto]
   [@@fc]
+
+theorem decode_specials (f : Format.t) (x : Float8.t) =
+  let open Float8.NaNOrExReal in
+  ((Float8.is_pinf f x) <==> (Float8.decode f x = Ok (XR PINF))) &&
+  ((Float8.is_ninf f x) <==> (Float8.decode f x = Ok (XR NINF))) &&
+  ((Float8.is_nan f x) <==> (Float8.decode f x = Ok NaN)) &&
+  ((Float8.is_zero f x) <==> (Float8.decode f x = Ok (XR (R 0.0)))) &&
+  ((x = 0) <==> (Float8.decode f x = Ok (XR (R 0.0))))
+  [@@timeout 3600]
+  [@@disable Float8.decode, Float8.decode_aux, Util.pow2, Util.ipow2, Float8.is_pinf, Float8.is_ninf, Float8.is_nan, Float8.is_zero]
+  [@@by
+    [%use pinf_decodes_to_pinf f x] @>
+    [%use ninf_decodes_to_ninf f x] @>
+    [%use nan_decodes_to_nan f x] @>
+    [%use zero_decodes_to_zero f x] @>
+    [%use zero_is_zero f x] @>
+    auto]
 
 (** 4.7.1 Specification of IEEE Std 754 formats *)
 
@@ -215,26 +283,30 @@ theorem internal_add_ok (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (pi :
   (x : Float8.t) (y : Float8.t) =
   Result.is_ok (Float8.internal_add f_x f_y f_z pi x y)
   [@@disable Specification.Float8.project, Specification.Float8.decode, Float8.decode_aux, Util.pow2, Util.ipow2, Format.get_format_parameters]
-  [@@by auto]
+  [@@timeout 60]
+  [@@by [%use decode_specials f_x x] @> [%use decode_specials f_y y] @> auto]
 
-(** [internal_sub] never returns an error *)
+(** [internal_subtract] never returns an error *)
 theorem internal_subtract_ok (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (pi : Projection.t)
   (x : Float8.t) (y : Float8.t) =
   Result.is_ok (Float8.internal_subtract f_x f_y f_z pi x y)
   [@@disable Specification.Float8.project, Specification.Float8.decode, Float8.decode_aux, Util.pow2, Util.ipow2, Format.get_format_parameters]
-  [@@by auto]
+  [@@timeout 3600]
+  [@@by [%use decode_specials f_x x] @> [%use decode_specials f_y y] @> auto]
 
 (** [internal_multiply] never returns an error *)
 theorem internal_multiply_ok (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (pi : Projection.t) (x : Float8.t) (y : Float8.t)  =
   Result.is_ok (Float8.internal_multiply f_x f_y f_z pi x y)
   [@@disable Specification.Float8.project, Specification.Float8.decode, Float8.decode_aux, Util.pow2, Util.ipow2, Format.get_format_parameters]
-  [@@by auto]
+  [@@timeout 60]
+  [@@by [%use decode_specials f_x x] @> [%use decode_specials f_y y] @> auto]
 
 (** [internal_divide] never returns an error *)
 theorem internal_divide_ok (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (pi : Projection.t) (x : Float8.t) (y : Float8.t)  =
   Result.is_ok (Float8.internal_divide f_x f_y f_z pi x y)
   [@@disable Specification.Float8.project, Specification.Float8.decode, Float8.decode_aux, Util.pow2, Util.ipow2, Format.get_format_parameters]
-  [@@by auto]
+  [@@timeout 60]
+  [@@by [%use decode_specials f_x x] @> [%use decode_specials f_y y] @> auto]
 
 
 (** 4.8.4 Unary mathematical operations *)
@@ -275,7 +347,15 @@ theorem internal_faa_ok (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (f_r 
 (** [internal_sqrt] never returns an error *)
 theorem internal_sqrt_ok (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : Float8.t) =
   Result.is_ok (Float8.internal_sqrt f_x f_z pi x)
-  [@@disable Specification.Float8.project, Specification.Float8.decode, Float8.decode_aux, Util.pow2, Util.ipow2, Format.get_format_parameters]
+  [@@timeout 60]
+  [@@disable Float8.project, Float8.decode, Float8.decode_aux, Float8.round_to_precision, Float8.saturate, Util.pow2, Util.ipow2, Format.get_format_parameters]
+  [@@by auto]
+
+(** [internal_rsqrt] never returns an error *)
+theorem internal_rsqrt_ok (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : Float8.t) =
+  Result.is_ok (Float8.internal_rsqrt f_x f_z pi x)
+  [@@timeout 120]
+  [@@disable Float8.project, Float8.decode, Float8.decode_aux, Float8.round_to_precision, Float8.saturate, Util.pow2, Util.ipow2, Format.get_format_parameters]
   [@@by auto]
 
 (** [internal_exp] never returns an error *)
@@ -287,19 +367,37 @@ theorem internal_exp_ok (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x
 (** [internal_exp2] never returns an error *)
 theorem internal_exp2_ok (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : Float8.t) =
   Result.is_ok (Float8.internal_exp2 f_x f_z pi x)
-  [@@disable Specification.Float8.project, Specification.Float8.decode, Float8.decode_aux, ExReal.exp2, Exp.exp2, Format.get_format_parameters]
+  [@@disable Float8.project, Float8.decode, Float8.decode_aux, Float8.round_to_precision, Float8.saturate, ExReal.exp2, Exp.exp2, Format.get_format_parameters]
   [@@by auto]
 
 (** [internal_log] never returns an error *)
 theorem internal_log_ok (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : Float8.t) =
   Result.is_ok (Float8.internal_log f_x f_z pi x)
-  [@@disable Specification.Float8.project, Specification.Float8.decode, Float8.decode_aux, Log.log, Log.ln, Format.get_format_parameters]
+  [@@disable Float8.project, Float8.decode, Float8.decode_aux, Log.log, Log.ln, Format.get_format_parameters]
   [@@by auto]
 
 (** [internal_log2] never returns an error *)
 theorem internal_log2_ok (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : Float8.t) =
   Result.is_ok (Float8.internal_log2 f_x f_z pi x)
-  [@@disable Specification.Float8.project, Specification.Float8.decode, Float8.decode_aux, Log.log2, Log.log, Log.ln, Format.get_format_parameters]
+  [@@disable Float8.project, Float8.decode, Float8.decode_aux, Log.log2, Log.log, Log.ln, Format.get_format_parameters]
+  [@@by auto]
+
+
+(** 4.x.x Hypothenuse *)
+
+(** [internal_hypot] never returns an error *)
+
+theorem internal_hypot_xreal_ok (x : ExReal.t) (y : ExReal.t) =
+  Result.is_ok ((Float8.internal_hypot_xreal x y) [@trigger])
+  [@@timeout 60]
+  [@@disable Util.pow2, Util.ipow2]
+  [@@by unroll_nonlin 10 10 100]
+  [@@fc]
+
+theorem internal_hypot_ok (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (pi : Projection.t) (x : Float8.t) (y : Float8.t) =
+  Result.is_ok (Float8.internal_hypot f_x f_y f_z pi x y)
+  [@@timeout 3600]
+  [@@disable Float8.internal_hypot_xreal, Float8.project, Float8.decode, Float8.decode_aux, Float8.round_to_precision, Float8.saturate, Util.pow2, Util.ipow2, Format.get_format_parameters]
   [@@by auto]
 
 
@@ -310,7 +408,7 @@ theorem internal_add_scaled_ok (f_x : Format.t) (f_y : Format.t) (f_z : Format.t
   (x : Float8.t) (s_x : int) (y : Float8.t) (s_y : int) =
   Result.is_ok (Float8.internal_add_scaled f_x f_y f_z pi x s_x y s_y)
   [@@timeout 60]
-  [@@disable Specification.Float8.project, Specification.Float8.decode, Float8.decode_aux, Util.pow2, Util.ipow2, Format.get_format_parameters]
+  [@@disable Float8.project, Float8.decode, Float8.decode_aux, Util.pow2, Util.ipow2, Format.get_format_parameters]
   [@@by auto]
 
 
@@ -320,7 +418,7 @@ theorem internal_add_scaled_ok (f_x : Format.t) (f_y : Format.t) (f_z : Format.t
 theorem internal_multiply_scaled_ok (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (pi : Projection.t)
   (x : Float8.t) (y : Float8.t) (s : int) =
   Result.is_ok (Float8.internal_multiply_scaled f_x f_y f_z pi x y s)
-  [@@disable Specification.Float8.project, Specification.Float8.decode, Float8.decode_aux, Util.pow2, Util.ipow2, Format.get_format_parameters]
+  [@@disable Float8.project, Float8.decode, Float8.decode_aux, Util.pow2, Util.ipow2, Format.get_format_parameters]
   [@@by auto]
 
 
@@ -336,6 +434,7 @@ theorem internal_scaled_fma_xreal_is_ok (a : ExReal.t) (s_a : int) (x : ExReal.t
 theorem internal_scaled_fma_ok (phi : IEEE754.Format.t) (f_x : Format.t) (f_y : Format.t) (pi : Projection.t)
     (a : IEEE754.t) (s_a : int) (x : Float8.t) (y : Float8.t) (s : int) =
   Result.is_ok (Float8.internal_scaled_fma phi f_x f_y pi a s_a x y s)
+  [@@timeout 3600]
   [@@disable Float8.project, Float8.decode, Float8.decode_aux, Float8.encode754, Float8.round_to_precision, Float8.saturate,
              Util.pow2, Util.ipow2, IEEE754.as_extended_real, IEEE754.is_nan, Format.get_format_parameters]
   [@@by [%use Theorems_IEEE754.as_extended_real_ok phi a] @> auto]
@@ -346,13 +445,15 @@ theorem internal_scaled_fma_ok (phi : IEEE754.Format.t) (f_x : Format.t) (f_y : 
 (** [internal_minimum] never returns an error *)
 theorem internal_minimum_ok (f : Format.t) (x : Float8.t) (y : Float8.t) =
   Result.is_ok (Float8.internal_minimum f x y)
-  [@@disable Specification.Float8.decode, Float8.decode_aux, Specification.Float8.encode]
+  [@@timeout 600]
+  [@@disable Float8.decode, Float8.decode_aux, Float8.encode]
   [@@by auto]
 
 (** [internal_maximum] never returns an error *)
 theorem internal_maximum_ok (f : Format.t) (x : Float8.t) (y : Float8.t) =
   Result.is_ok (Float8.internal_maximum f x y)
-  [@@disable Specification.Float8.decode, Float8.decode_aux, Specification.Float8.encode]
+  [@@timeout 600]
+  [@@disable Float8.decode, Float8.decode_aux, Float8.encode]
   [@@by auto]
 
 
@@ -361,13 +462,22 @@ theorem internal_maximum_ok (f : Format.t) (x : Float8.t) (y : Float8.t) =
 (** [internal_minimum_magnitude] never returns an error *)
 theorem internal_minimum_magnitude_ok (f : Format.t) (x : Float8.t) (y : Float8.t) =
   Result.is_ok (Float8.internal_minimum_magnitude f x y)
-  [@@disable Specification.Float8.decode, Float8.decode_aux, Specification.Float8.encode]
+  [@@disable Float8.decode, Float8.decode_aux, Float8.encode]
   [@@by auto]
 
 (** [internal_maximum_magnitude] never returns an error *)
 theorem internal_maximum_magnitude_ok (f : Format.t) (x : Float8.t) (y : Float8.t) =
   Result.is_ok (Float8.internal_maximum_magnitude f x y)
-  [@@disable Specification.Float8.decode, Float8.decode_aux, Specification.Float8.encode]
+  [@@disable Float8.decode, Float8.decode_aux, Float8.encode]
+  [@@by auto]
+
+(** 4.9.3 Clamp *)
+
+(** [internal_clamp] never returns an error *)
+theorem internal_clamp_ok (f : Format.t) (x : Float8.t) (lo : Float8.t) (hi : Float8.t) =
+  Result.is_ok (Float8.internal_clamp f x lo hi)
+  [@@timeout 360]
+  [@@disable Float8.decode, Float8.decode_aux, Float8.encode]
   [@@by auto]
 
 
@@ -376,28 +486,28 @@ theorem internal_maximum_magnitude_ok (f : Format.t) (x : Float8.t) (y : Float8.
 (** [internal_compare_less] never returns an error *)
 theorem internal_compare_less_ok (f_x : Format.t) (f_y : Format.t) (x : Float8.t) (y : Float8.t)  =
   Result.is_ok (Float8.internal_compare_less f_x f_y x y)
-  [@@disable Specification.Float8.decode, Float8.decode_aux, Specification.Float8.encode]
+  [@@disable Float8.decode, Float8.decode_aux, Float8.encode]
   [@@by auto]
 
 theorem internal_compare_less_equal_ok (f_x : Format.t) (f_y : Format.t) (x : Float8.t) (y : Float8.t)  =
   Result.is_ok (Float8.internal_compare_less_equal f_x f_y x y)
-  [@@disable Specification.Float8.decode, Float8.decode_aux, Specification.Float8.encode]
+  [@@disable Float8.decode, Float8.decode_aux, Float8.encode]
   [@@by auto]
 
 theorem internal_compare_equal_ok (f_x : Format.t) (f_y : Format.t) (x : Float8.t) (y : Float8.t)  =
   Result.is_ok (Float8.internal_compare_equal f_x f_y x y)
-  [@@disable Specification.Float8.decode, Float8.decode_aux, Specification.Float8.encode]
+  [@@disable Float8.decode, Float8.decode_aux, Float8.encode]
   [@@by auto]
 
 theorem internal_compare_greater_ok (f_x : Format.t) (f_y : Format.t) (x : Float8.t) (y : Float8.t)  =
   Result.is_ok (Float8.internal_compare_greater f_x f_y x y)
-  [@@disable Specification.Float8.decode, Float8.decode_aux, Specification.Float8.encode]
+  [@@disable Float8.decode, Float8.decode_aux, Float8.encode]
   [@@by auto]
 
 
 theorem internal_compare_greater_equal_ok (f_x : Format.t) (f_y : Format.t) (x : Float8.t) (y : Float8.t)  =
   Result.is_ok (Float8.internal_compare_greater_equal f_x f_y x y)
-  [@@disable Specification.Float8.decode, Float8.decode_aux, Specification.Float8.encode]
+  [@@disable Float8.decode, Float8.decode_aux, Float8.encode]
   [@@by auto]
 
 
@@ -405,7 +515,6 @@ theorem internal_compare_greater_equal_ok (f_x : Format.t) (f_y : Format.t) (x :
 
 (** 4.10.4 Classifier operation *)
 
-(* theorem t1 (f : Format.t)= let k, _, _, _ = (Specification.Format.get_format_parameters f) in k > 0 [@@fc] *)
 
 theorem predicate_coverage (f : Format.t) (x : Float8.t) =
   Float8.is_nan f x ||
@@ -415,8 +524,6 @@ theorem predicate_coverage (f : Format.t) (x : Float8.t) =
   Float8.is_subnormal f x
   [@@timeout 3600]
   [@@by unroll_nonlin 600 10 250]
-  (* [@@disable Specification.Float8.decode, Specification.Float8.encode, Specification.Format.get_format_parameters, Util.pow2, Util.ipow2] *)
-  (* [@@by auto] *)
   [@@fc]
 
 (** All [Float8.t] are classified *)

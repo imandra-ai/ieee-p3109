@@ -86,7 +86,8 @@ let div (x : t) (y : t) : (t, string) Result.t =
 
 let sqrt (x : t) (p : int) : (t, string) Result.t =
   match x with
-  | NINF | PINF -> Error "invalid"
+  | PINF -> Ok PINF
+  | NINF -> Error "invalid"
   | R r when r <. 0.0 -> Error "invalid"
   | R r -> (
     match Sqrt.sqrt r p with
@@ -117,14 +118,14 @@ let log2 (x : t) (p : int) : (t, string) Result.t =
 
 let exp (x : t) (p : int): (t, string) Result.t =
   match x with
-  | NINF
-  | PINF -> Error "invalid"
+  | PINF -> Ok PINF
+  | NINF -> Ok (R 0.0)
   | R r -> Ok (R (Exp.exp r p))
 
 let exp2 (x : t) (p : int) : (t, string) Result.t =
   match x with
-  | NINF
-  | PINF -> Error "invalid"
+  | PINF -> Ok PINF
+  | NINF -> Ok (R 0.0)
   | R r ->
     (match Exp.exp2 r p with
     | Ok l -> Ok (R l)
@@ -215,6 +216,14 @@ module Infix = struct
   let ( ^. ) (x : int) (y : int) : (t, string) Result.t =
     Ok (R (Util.pow x y))
     [@@macro]
+
+  let rec ( ^ ) (x : t) (y : int) : (t, string) Result.t =
+    if y < 0 then Error "invalid"
+    else if y = 0 then Ok (R 1.0)
+    else
+      match (x ^ (y-1)) with
+      | Ok y -> x *. y
+      | Error e -> Error e
 end
 
 module ResultInfix = struct
@@ -295,8 +304,14 @@ module ResultInfix = struct
     | Error s, _ | _, Error s -> Error s
     [@@macro]
 
-  let ( ^. ) (x : int) (y : int) : (t, string) Result.t =
+  let ( ^. ) (x : int) (y : int) : xres =
     let open Infix in
     x ^. y
+    [@@macro]
+
+  let sqrt (x : xres) (p : int): xres =
+    match x with
+    | Ok r -> sqrt r p
+    | Error e -> Error e
     [@@macro]
 end

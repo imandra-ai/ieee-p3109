@@ -100,11 +100,11 @@ verify (log2 3.1415 10 = Ok 1.6513671875) [@@by auto]
 
 let tiny : Float8.t = 0x01 [@@macro]
 let small : Float8.t = 0x04 [@@macro]
-let one : Float8.t = 0x40 [@@macro]
+let one : Float8.t = 0x3C [@@macro]
 let huge : Float8.t = 0x7E [@@macro]
 let ntiny : Float8.t = 0x81 [@@macro]
 let nsmall : Float8.t = 0x84 [@@macro]
-let none : Float8.t = 0xC0 [@@macro]
+let none : Float8.t = 0xBC [@@macro]
 let nhuge : Float8.t = 0xFE [@@macro]
 
 (* theorem log2_refine_frac (i : int) (p : int) (x : real) =
