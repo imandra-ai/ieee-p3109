@@ -238,7 +238,6 @@ module Float8 = struct
     let open Signedness in
     let open Domain in
     let open NaNOrExReal in
-    let open ExReal in
     (* if k > 15 then Error "invalid format" else (* Note: termination checks go off the rails if k is unbounded *) *)
     match to_int_repr_k k x s with
     | x when x = ipow2 (k - 1)     && s = Signed -> Ok NaN
@@ -327,7 +326,6 @@ module Float8 = struct
   (** 4.6.4 Saturate *)
 
   let internal_saturate (m_lo : ExReal.t) (m_hi : ExReal.t) (s : Signedness.t) (sat : SaturationMode.t) (rnd : RoundingMode.t) (x : ExReal.t) : (ExReal.t, string) Result.t =
-    let open ExReal in
     let open ExReal.Infix in
     let open RoundingMode in
     let open SaturationMode in
@@ -633,7 +631,6 @@ module Float8 = struct
 
   let internal_divide (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (pi : Projection.t)
     (x : t) (y : t) : (t, string) Result.t =
-    let is_finite (f : Format.t) (x : t) : bool = (not (is_inf f x) && not (is_nan f  x)) [@@macro] in
     let open NaNOrExReal in
     match x, y with
     | x, _ when is_nan f_x x -> Ok (nan f_z)
@@ -721,8 +718,6 @@ module Float8 = struct
   (** 4.8.xx Fused Add Add *)
 
   let internal_faa_xreal (x : ExReal.t) (y : ExReal.t) (z : ExReal.t) : (NaNOrExReal.t, string) Result.t =
-    let open ExReal in
-
     match x, y, z with
     | PINF, NINF, _ -> Ok NaN
     | NINF, PINF, _ -> Ok NaN
@@ -813,7 +808,6 @@ module Float8 = struct
   | Error _ -> (nan f_z) (* unreachable by theorem internal_rsqrt_ok *)
 
   let internal_hypot_xreal (x : ExReal.t) (y : ExReal.t) : (NaNOrExReal.t, string) Result.t =
-    let open ExReal in
     let open ExReal.Infix in
     let open ExReal.ResultInfix in
     match x, y with
@@ -824,7 +818,6 @@ module Float8 = struct
       | Error e -> Error e)
 
   let internal_hypot (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) (y : t) : (t, string) Result.t =
-    let open ExReal in
     let open NaNOrExReal in
     match x, y with
     | _, _ when is_nan f_x x -> Ok (nan f_z)
@@ -1319,7 +1312,6 @@ module Float8 = struct
       )
 
   let is_subnormal (f : Format.t) (x : t) : bool =
-    let k, p, _, _, _, _, _ = Format.get_format_parameters f in
     match x with
     | _ when is_zero f x || is_ninf f x || is_pinf f x || is_nan f x -> false
     | _ -> not (is_normal f x)

@@ -7,11 +7,12 @@
 [@@@import Sqrt, "dune:math"]
 
 [@@@import Specification, "dune:specification"]
+[@@@import Theorems, "dune:theorems"]
 
-[@@@import Ulp, "ulp.iml"]
 
 open Math
 open Specification
+open Theorems
 
 let signedness_to_string (s : Signedness.t) =
   match s with

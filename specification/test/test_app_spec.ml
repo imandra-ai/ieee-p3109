@@ -16,15 +16,15 @@ let fse (kp : Specification.Format.kpt) : Specification.Format.t =
 
 let f = fse Specification.Format.B8P3
 
-let some_check f = Float8.nan f = Float8.ninf f;;
+let some_check f = Ok (Float8.nan f) = Float8.ninf f;;
 
 Printf.printf "NaN = -oo: %b\n" (some_check f);;
 
-Printf.printf "+oo = %s\n" (Float8.to_string f (Float8.pinf f));;
+Printf.printf "+oo = %s\n" (Float8.to_string f (Result.get_ok (Float8.pinf f)));;
 
-Printf.printf "-oo = %s\n" (Float8.to_string f (Float8.ninf f))
+Printf.printf "-oo = %s\n" (Float8.to_string f (Result.get_ok (Float8.ninf f)))
 
-let neg_pinf = Float8.negate f (Float8.pinf f);;
+let neg_pinf = Float8.negate f (Result.get_ok (Float8.pinf f));;
 
 Printf.printf "(- +oo) = %s\n" (Float8.to_string f neg_pinf);;
 
@@ -57,7 +57,7 @@ let _ =
   chk_add f one one;
   chk_add f one two;
   chk_add f two one;
-  chk_add f (Float8.pinf f) one
+  chk_add f (Result.get_ok (Float8.pinf f)) one
 
 let result_to_string (x : ('a, string) Result.t) ~(f : 'a -> string) : string =
   match x with
@@ -85,8 +85,8 @@ let chk_add_scaled x y s_x s_y f =
 
 let _ =
   chk_add_scaled
-    (Float8.pinf (fse Format.B8P1))
-    (Float8.pinf (fse Format.B8P1))
+    (Result.get_ok (Float8.pinf (fse Format.B8P1)))
+    (Result.get_ok (Float8.pinf (fse Format.B8P1)))
     Z.zero Z.zero (fse Format.B8P1)
 
 let print_decode x =

@@ -4,7 +4,7 @@
 open Specification
 open Float8
 
-let unroll_nonlin qt nqt steps = Tactic.unroll ~smt:"z3-full-nonlinear" ~query_timeout:qt ~no_asm_query_timeout:nqt steps
+let unroll_nonlin qt nqt steps = Tactic.unroll ~smt:"z3-full-nonlinear" ~query_timeout:qt ~no_asm_query_timeout:nqt steps [@@no_extract]
 
 let one_up (f : Format.t) (x : Float8.t) : Float8.t =
   if Float8.is_nan f x || Float8.is_infinite f x then x

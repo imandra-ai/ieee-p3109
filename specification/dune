@@ -20,7 +20,7 @@
  (name theorems)
  (package p3109)
  (flags :standard -open Imandrax_prelude -open Prelude_extracted -open Math)
- (modules Theorems_format_ranges)
+ (modules Theorems_format_ranges Ulp)
  (modes byte native)
  (libraries imandrax_prelude math specification)
  (preprocess

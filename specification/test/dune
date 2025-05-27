@@ -8,6 +8,6 @@
  (name table)
  (modules Table)
  (modes byte native)
- (libraries math specification unix bignum)
+ (libraries math specification unix bignum theorems)
  (preprocess
   (pps ppx_subliner ppx_deriving.std)))
