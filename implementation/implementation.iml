@@ -16,7 +16,7 @@ end
 
 (** 8-bit Floating-point numbers *)
 
-module Float8 = struct
+module Float = struct
   (* Type definition. Our implementation supports only 8-bit formats. *)
   type t = { b7 : bool; b6 : bool; b5 : bool; b4 : bool; b3 : bool; b2 : bool; b1 : bool; b0 : bool }
 
@@ -82,7 +82,7 @@ module Float8 = struct
 
   (** Classifier *)
 
-  type class_ = Specification.Float8.class_
+  type class_ = Specification.Float.class_
 
   let class_ (f : Format.t) (x : t) : class_ =
       if is_nan f x then NaN
@@ -137,13 +137,13 @@ module Float8 = struct
     + (if x.b7 then 128 else 0)
 
   let to_string (f : Format.t) (x : t) =
-    let open Specification.Float8.NaNOrExReal in
+    let open Specification.Float.NaNOrExReal in
     let bool_to_bin x = if x then "1" else "0" in
     Printf.sprintf "%s%s%s%s%s%s%s%s = %s" (bool_to_bin x.b7) (bool_to_bin x.b6)
       (bool_to_bin x.b5) (bool_to_bin x.b4) (bool_to_bin x.b3)
       (bool_to_bin x.b2) (bool_to_bin x.b1) (bool_to_bin x.b0)
       (
-        (match Specification.Float8.decode f (i2s x) with
+        (match Specification.Float.decode f (i2s x) with
         | Ok(NaN) -> "NaN"
         | Ok(XR xreal) -> Math.ExReal.to_string xreal
         | _ -> ""))

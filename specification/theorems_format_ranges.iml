@@ -11,10 +11,10 @@ open Util
 open Signedness
 open Domain
 
-let is_within_f (f : Format.t) (x : Float8.t) : bool =
-  let open Float8.NaNOrExReal in
+let is_within_f (f : Format.t) (x : Float.t) : bool =
+  let open Float.NaNOrExReal in
   let _, _, _, m_lo, m_hi, _, _ = Format.get_format_parameters f in
-  match Float8.decode f x with
+  match Float.decode f x with
   | Ok NaN
   | Ok (XR NINF)
   | Ok (XR PINF) -> true
@@ -22,7 +22,7 @@ let is_within_f (f : Format.t) (x : Float8.t) : bool =
     R m_lo <=. r && r <=. R m_hi
   | _ -> false
 
-let is_within (kp : Format.kpt) (x : Float8.t) : bool =
+let is_within (kp : Format.kpt) (x : Float.t) : bool =
   is_within_f { kp = kp; s = Signed; d = Extended } x &&
   is_within_f { kp = kp; s = Signed; d = Finite } x &&
   is_within_f { kp = kp; s = Unsigned; d = Extended } x &&
@@ -39,13 +39,13 @@ theorem forall_elim (p: int -> bool) (l : int) (u : int) (x : int) =
   forall_in_range p l u ==> (l <= x && x <= u ==> p x)
   [@@by auto]
 
-theorem wfr_neg (kp : Format.kpt) (x : Float8.t) =
+theorem wfr_neg (kp : Format.kpt) (x : Float.t) =
   x < 0 ==> is_within kp x [@trigger]
   [@@timeout 60]
   [@@by auto]
   [@@fc]
 
-theorem wfr_above (kp : Format.kpt) (x : Float8.t) =
+theorem wfr_above (kp : Format.kpt) (x : Float.t) =
   let k = Format.k_of_kp kp in
   (x > ipow2 k) ==> is_within kp x [@trigger]
   [@@timeout 120]
@@ -67,7 +67,7 @@ theorem wfr_15p12_mid = forall_in_range (is_within B15P12) 0 (ipow2 15) [@@by gr
 theorem wfr_15p13_mid = forall_in_range (is_within B15P13) 0 (ipow2 15) [@@by ground_eval] [@@timeout 240]
 theorem wfr_15p14_mid = forall_in_range (is_within B15P14) 0 (ipow2 15) [@@by ground_eval] [@@timeout 240]
 
-theorem wfr_15 (x : Float8.t) =
+theorem wfr_15 (x : Float.t) =
   is_within B15P1 x &&
   is_within B15P2 x &&
   is_within B15P3 x &&
@@ -142,7 +142,7 @@ theorem wfr_14p11_mid = forall_in_range (is_within B14P11) 0 (ipow2 14) [@@by gr
 theorem wfr_14p12_mid = forall_in_range (is_within B14P12) 0 (ipow2 14) [@@by ground_eval] [@@timeout 120]
 theorem wfr_14p13_mid = forall_in_range (is_within B14P13) 0 (ipow2 14) [@@by ground_eval] [@@timeout 120]
 
-theorem wfr_14 (x : Float8.t) =
+theorem wfr_14 (x : Float.t) =
   is_within B14P1 x &&
   is_within B14P2 x &&
   is_within B14P3 x &&
@@ -213,7 +213,7 @@ theorem wfr_13p10_mid = forall_in_range (is_within B13P10) 0 (ipow2 13) [@@by gr
 theorem wfr_13p11_mid = forall_in_range (is_within B13P11) 0 (ipow2 13) [@@by ground_eval] [@@timeout 60]
 theorem wfr_13p12_mid = forall_in_range (is_within B13P12) 0 (ipow2 13) [@@by ground_eval] [@@timeout 60]
 
-theorem wfr_13 (x : Float8.t) =
+theorem wfr_13 (x : Float.t) =
   is_within B13P1 x &&
   is_within B13P2 x &&
   is_within B13P3 x &&
@@ -279,7 +279,7 @@ theorem wfr_12p9_mid = forall_in_range (is_within B12P9) 0 (ipow2 12) [@@by grou
 theorem wfr_12p10_mid = forall_in_range (is_within B12P10) 0 (ipow2 12) [@@by ground_eval] [@@timeout 60]
 theorem wfr_12p11_mid = forall_in_range (is_within B12P11) 0 (ipow2 12) [@@by ground_eval] [@@timeout 60]
 
-theorem wfr_12 (x : Float8.t) =
+theorem wfr_12 (x : Float.t) =
   is_within B12P1 x &&
   is_within B12P2 x &&
   is_within B12P3 x &&
@@ -340,7 +340,7 @@ theorem wfr_11p8_mid = forall_in_range (is_within B11P8) 0 (ipow2 11) [@@by grou
 theorem wfr_11p9_mid = forall_in_range (is_within B11P9) 0 (ipow2 11) [@@by ground_eval] [@@timeout 60]
 theorem wfr_11p10_mid = forall_in_range (is_within B11P10) 0 (ipow2 11) [@@by ground_eval] [@@timeout 60]
 
-theorem wfr_11 (x : Float8.t) =
+theorem wfr_11 (x : Float.t) =
   is_within B11P1 x &&
   is_within B11P2 x &&
   is_within B11P3 x &&
@@ -396,7 +396,7 @@ theorem wfr_10p7_mid = forall_in_range (is_within B10P7) 0 (ipow2 10) [@@by grou
 theorem wfr_10p8_mid = forall_in_range (is_within B10P8) 0 (ipow2 10) [@@by ground_eval] [@@timeout 60]
 theorem wfr_10p9_mid = forall_in_range (is_within B10P9) 0 (ipow2 10) [@@by ground_eval] [@@timeout 60]
 
-theorem wfr_10 (x : Float8.t) =
+theorem wfr_10 (x : Float.t) =
   is_within B10P1 x &&
   is_within B10P2 x &&
   is_within B10P3 x &&
@@ -447,7 +447,7 @@ theorem wfr_9p6_mid = forall_in_range (is_within B9P6) 0 (ipow2 9) [@@by ground_
 theorem wfr_9p7_mid = forall_in_range (is_within B9P7) 0 (ipow2 9) [@@by ground_eval] [@@timeout 60]
 theorem wfr_9p8_mid = forall_in_range (is_within B9P8) 0 (ipow2 9) [@@by ground_eval] [@@timeout 60]
 
-theorem wfr_9 (x : Float8.t) =
+theorem wfr_9 (x : Float.t) =
   is_within B9P1 x &&
   is_within B9P2 x &&
   is_within B9P3 x &&
@@ -493,7 +493,7 @@ theorem wfr_8p5_mid = forall_in_range (is_within B8P5) 0 (ipow2 8) [@@by ground_
 theorem wfr_8p6_mid = forall_in_range (is_within B8P6) 0 (ipow2 8) [@@by ground_eval] [@@timeout 60]
 theorem wfr_8p7_mid = forall_in_range (is_within B8P7) 0 (ipow2 8) [@@by ground_eval] [@@timeout 60]
 
-theorem wfr_8 (x : Float8.t) =
+theorem wfr_8 (x : Float.t) =
   is_within B8P1 x &&
   is_within B8P2 x &&
   is_within B8P3 x &&
@@ -534,7 +534,7 @@ theorem wfr_7p4_mid = forall_in_range (is_within B7P4) 0 (ipow2 7) [@@by ground_
 theorem wfr_7p5_mid = forall_in_range (is_within B7P5) 0 (ipow2 7) [@@by ground_eval] [@@timeout 60]
 theorem wfr_7p6_mid = forall_in_range (is_within B7P6) 0 (ipow2 7) [@@by ground_eval] [@@timeout 60]
 
-theorem wfr_7 (x : Float8.t) =
+theorem wfr_7 (x : Float.t) =
   is_within B7P1 x &&
   is_within B7P2 x &&
   is_within B7P3 x &&
@@ -570,7 +570,7 @@ theorem wfr_6p3_mid = forall_in_range (is_within B6P3) 0 (ipow2 6) [@@by ground_
 theorem wfr_6p4_mid = forall_in_range (is_within B6P4) 0 (ipow2 6) [@@by ground_eval] [@@timeout 60]
 theorem wfr_6p5_mid = forall_in_range (is_within B6P5) 0 (ipow2 6) [@@by ground_eval] [@@timeout 60]
 
-theorem wfr_6 (x : Float8.t) =
+theorem wfr_6 (x : Float.t) =
   is_within B6P1 x &&
   is_within B6P2 x &&
   is_within B6P3 x &&
@@ -601,7 +601,7 @@ theorem wfr_5p2_mid = forall_in_range (is_within B5P2) 0 (ipow2 5) [@@by ground_
 theorem wfr_5p3_mid = forall_in_range (is_within B5P3) 0 (ipow2 5) [@@by ground_eval] [@@timeout 50]
 theorem wfr_5p4_mid = forall_in_range (is_within B5P4) 0 (ipow2 5) [@@by ground_eval] [@@timeout 50]
 
-theorem wfr_5 (x : Float8.t) =
+theorem wfr_5 (x : Float.t) =
   is_within B5P1 x &&
   is_within B5P2 x &&
   is_within B5P3 x &&
@@ -627,7 +627,7 @@ theorem wfr_4p1_mid = forall_in_range (is_within B4P1) 0 (ipow2 4) [@@by ground_
 theorem wfr_4p2_mid = forall_in_range (is_within B4P2) 0 (ipow2 4) [@@by ground_eval] [@@timeout 60]
 theorem wfr_4p3_mid = forall_in_range (is_within B4P3) 0 (ipow2 4) [@@by ground_eval] [@@timeout 60]
 
-theorem wfr_4 (x : Float8.t) =
+theorem wfr_4 (x : Float.t) =
   is_within B4P1 x &&
   is_within B4P2 x &&
   is_within B4P3 x
@@ -648,7 +648,7 @@ theorem wfr_4 (x : Float8.t) =
 theorem wfr_3p1_mid = forall_in_range (is_within B3P1) 0 (ipow2 3) [@@by ground_eval] [@@timeout 60]
 theorem wfr_3p2_mid = forall_in_range (is_within B3P2) 0 (ipow2 3) [@@by ground_eval] [@@timeout 60]
 
-theorem wfr_3 (x : Float8.t) =
+theorem wfr_3 (x : Float.t) =
   is_within B3P1 x &&
   is_within B3P2 x
   [@@disable is_within]
@@ -662,7 +662,7 @@ theorem wfr_3 (x : Float8.t) =
     auto]
 
 
-theorem within_format_range_kp (kp : Format.kpt) (x : Float8.t) =
+theorem within_format_range_kp (kp : Format.kpt) (x : Float.t) =
   is_within kp x
   [@@by
     [%use wfr_15 x] @>
@@ -682,7 +682,7 @@ theorem within_format_range_kp (kp : Format.kpt) (x : Float8.t) =
   [@@timeout 10]
   [@@fc]
 
-theorem within_format_range (f : Format.t) (x : Float8.t) =
+theorem within_format_range (f : Format.t) (x : Float.t) =
   is_within_f f x
   [@@by [%use within_format_range_kp f.kp x] @> unroll 0]
   [@@fc]

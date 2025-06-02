@@ -4,7 +4,7 @@
 [@@@import Util, "dune:math"]
 
 open Specification
-open Float8
+open Float
 
 let unroll_nonlin qt nqt steps = Tactic.unroll ~smt:"z3-full-nonlinear" ~query_timeout:qt ~no_asm_query_timeout:nqt steps
 
@@ -46,9 +46,9 @@ let is_r (x : (NaNOrExReal.t, string) Result.t) (r : ExReal.t) =
   [@@macro]
 
 (** Some extended reals sanity checks *)
-lemma real_0 = is_r (decode f83 Float8.zero) (ExReal.R 0.0) [@@by auto]
-let ninf_f83 = match (Float8.ninf f83) with | Ok (x) -> x | _ -> 0
-let pinf_f83 = match (Float8.pinf f83) with | Ok (x) -> x | _ -> 0
+lemma real_0 = is_r (decode f83 Float.zero) (ExReal.R 0.0) [@@by auto]
+let ninf_f83 = match (Float.ninf f83) with | Ok (x) -> x | _ -> 0
+let pinf_f83 = match (Float.pinf f83) with | Ok (x) -> x | _ -> 0
 lemma real_ninf = is_r (decode f83 ninf_f83) ExReal.NINF [@@by auto]
 lemma real_pinf = is_r (decode f83 pinf_f83) ExReal.PINF [@@by auto]
 
@@ -58,15 +58,15 @@ let p3_neg_one : t = 0xBC [@@macro]
 lemma real_pos_one = is_r (decode f83 (p3_pos_one)) (ExReal.R 1.0) [@@by auto]
 lemma real_neg_one = is_r (decode f83 (p3_neg_one)) (ExReal.R (- 1.0)) [@@by auto]
 
-let tiny : Float8.t = 0x01 [@@macro]
-let small : Float8.t = 0x04 [@@macro]
-let one : Float8.t = 0x3C [@@macro]
-let two : Float8.t = 0x40 [@@macro]
-let huge : Float8.t = 0x7E [@@macro]
-let ntiny : Float8.t = 0x81 [@@macro]
-let nsmall : Float8.t = 0x84 [@@macro]
-let none : Float8.t = 0xBC [@@macro]
-let nhuge : Float8.t = 0xFE [@@macro]
+let tiny : Float.t = 0x01 [@@macro]
+let small : Float.t = 0x04 [@@macro]
+let one : Float.t = 0x3C [@@macro]
+let two : Float.t = 0x40 [@@macro]
+let huge : Float.t = 0x7E [@@macro]
+let ntiny : Float.t = 0x81 [@@macro]
+let nsmall : Float.t = 0x84 [@@macro]
+let none : Float.t = 0xBC [@@macro]
+let nhuge : Float.t = 0xFE [@@macro]
 
 lemma tiny_value = is_r (decode f83 tiny) (ExReal.R (0.5 *. Util.pow2 (- 15))) [@@by auto]
 lemma tiny_value = is_r (decode f83 tiny) (ExReal.R (0.0000152587890625)) [@@by auto]
@@ -84,13 +84,13 @@ theorem thm_tiny_val = (to_int_repr f83 tiny) = 1 [@@by unroll 26]
 lemma neg_tiny_not_nan = negate f83 tiny <> nan f83
   [@@by auto]
 
-theorem tiny_encode = Float8.encode f83 (NaNOrExReal.XR (ExReal.R (1.0 /. 65536.0))) = Ok (tiny)
+theorem tiny_encode = Float.encode f83 (NaNOrExReal.XR (ExReal.R (1.0 /. 65536.0))) = Ok (tiny)
   [@@by auto]
 
-theorem neg_tiny_encode = Float8.encode f83 (NaNOrExReal.XR (ExReal.R (-1.0 /. 65536.0))) = Ok (tiny + 128)
+theorem neg_tiny_encode = Float.encode f83 (NaNOrExReal.XR (ExReal.R (-1.0 /. 65536.0))) = Ok (tiny + 128)
   [@@by auto]
 
-theorem x = Float8.encode f83 (NaNOrExReal.XR (ExReal.R (1.0 /. 65536.0))) = Ok ( tiny )
+theorem x = Float.encode f83 (NaNOrExReal.XR (ExReal.R (1.0 /. 65536.0))) = Ok ( tiny )
   [@@by auto]
 
 lemma none_is_neg_one = none = negate f83 one [@@by auto]
@@ -108,23 +108,23 @@ lemma tst2 = is_r (decode f83 (of_int_repr f83 0xF8)) (ExReal.R (- 32768.0)) [@@
 lemma tst2_real = is_r (decode f83 (negate f83 (of_int_repr f83 0xF8))) (ExReal.R 32768.0)
   [@@by auto]
 
-lemma rBB1 = is_r (Float8.decode f81 (of_int_repr f83 0x3B)) (ExReal.R 0.0625) [@@by auto]
+lemma rBB1 = is_r (Float.decode f81 (of_int_repr f83 0x3B)) (ExReal.R 0.0625) [@@by auto]
 
-lemma rBB2 = is_r (Float8.decode f82 (of_int_repr f83 0x3B)) (ExReal.R 0.375) [@@by auto]
+lemma rBB2 = is_r (Float.decode f82 (of_int_repr f83 0x3B)) (ExReal.R 0.375) [@@by auto]
 
-lemma rBB3 = is_r (Float8.decode f83 (of_int_repr f83 0x3B)) (ExReal.R 0.875) [@@by auto]
+lemma rBB3 = is_r (Float.decode f83 (of_int_repr f83 0x3B)) (ExReal.R 0.875) [@@by auto]
 
 lemma fma_one =
-  (Float8.internal_fma f83 f83 f83 f83 (SaturationMode.SatPropagate, RoundingMode.NearestTiesToEven) one one zero)
+  (Float.internal_fma f83 f83 f83 f83 (SaturationMode.SatPropagate, RoundingMode.NearestTiesToEven) one one zero)
   =
   Ok one [@@by auto]
 
 lemma fma_two =
-  (Float8.internal_fma f83 f83 f83 f83 (SaturationMode.SatPropagate, RoundingMode.NearestTiesToEven) one one one)
+  (Float.internal_fma f83 f83 f83 f83 (SaturationMode.SatPropagate, RoundingMode.NearestTiesToEven) one one one)
   =
   Ok two [@@by auto]
 
 lemma faa_two =
-  (Float8.internal_faa f83 f83 f83 f83 (SaturationMode.SatPropagate, RoundingMode.NearestTiesToEven) one zero one)
+  (Float.internal_faa f83 f83 f83 f83 (SaturationMode.SatPropagate, RoundingMode.NearestTiesToEven) one zero one)
   =
   Ok two [@@by auto]

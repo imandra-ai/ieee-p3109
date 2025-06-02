@@ -149,7 +149,7 @@ end
 
 (** Floating-point numeral definitions *)
 
-module Float8 = struct
+module Float = struct
   (* Type definition *)
   type t = int
 

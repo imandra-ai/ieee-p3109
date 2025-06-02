@@ -98,14 +98,14 @@ verify (log2 8.0 10 = Ok 3.0) [@@by auto]
 verify (log2 16.0 10 = Ok 4.0) [@@by auto]
 verify (log2 3.1415 10 = Ok 1.6513671875) [@@by auto]
 
-let tiny : Float8.t = 0x01 [@@macro]
-let small : Float8.t = 0x04 [@@macro]
-let one : Float8.t = 0x3C [@@macro]
-let huge : Float8.t = 0x7E [@@macro]
-let ntiny : Float8.t = 0x81 [@@macro]
-let nsmall : Float8.t = 0x84 [@@macro]
-let none : Float8.t = 0xBC [@@macro]
-let nhuge : Float8.t = 0xFE [@@macro]
+let tiny : Float.t = 0x01 [@@macro]
+let small : Float.t = 0x04 [@@macro]
+let one : Float.t = 0x3C [@@macro]
+let huge : Float.t = 0x7E [@@macro]
+let ntiny : Float.t = 0x81 [@@macro]
+let nsmall : Float.t = 0x84 [@@macro]
+let none : Float.t = 0xBC [@@macro]
+let nhuge : Float.t = 0xFE [@@macro]
 
 (* theorem log2_refine_frac (i : int) (p : int) (x : real) =
   let _, v1 = log2_refine 1 p 0.0 x in
@@ -121,12 +121,12 @@ theorem log2_refine_converges (i : int) (p : int) (acc : real) (x : real) =
   [@@by unroll_nonlin 600 10 1024] *)
 
 (* Show that for any real-numbered Float.t, the iterative refinement is precise enough after some refinement steps. *)
-(* theorem log2_refine_precise (f : Format.t) (x : Float8.t) =
+(* theorem log2_refine_precise (f : Format.t) (x : Float.t) =
   x = one ==>
   let k, _, _, _ = Format.get_format_parameters f in
-  match Float8.decode f x with
-  | Ok (Float8.NaNOrExReal.XR (ExReal.R 0.0)) -> true
-  | Ok (Float8.NaNOrExReal.XR (ExReal.R r)) ->
+  match Float.decode f x with
+  | Ok (Float.NaNOrExReal.XR (ExReal.R 0.0)) -> true
+  | Ok (Float.NaNOrExReal.XR (ExReal.R r)) ->
     (match int_frac_parts r with
      | Ok (_, f) ->
       fst (log2_refine 1 k 0.0 f)
