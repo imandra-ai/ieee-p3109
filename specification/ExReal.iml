@@ -47,14 +47,11 @@ let sign (x : t) : t =
 
 let mul (x : t) (y : t) : (t, string) Result.t =
   match x, y with
-  | NINF, NINF | PINF, PINF -> Ok PINF
-  | NINF, PINF | PINF, NINF  -> Ok NINF
-
-  | NINF, R x | PINF, R x when x = 0.0 -> Error "invalid"
+  | NINF, R x | PINF, R x
   | R x, NINF | R x, PINF when x = 0.0 -> Error "invalid"
 
-  | _, R x when x = 0.0 -> Ok (R 0.0)
-  | R x, _ when x = 0.0 -> Ok (R 0.0)
+  | NINF, NINF | PINF, PINF -> Ok PINF
+  | NINF, PINF | PINF, NINF  -> Ok NINF
 
   | PINF, R x | R x, PINF when x >. 0.0 -> Ok PINF
   | PINF, R x | R x, PINF when x <. 0.0 -> Ok NINF
@@ -71,9 +68,9 @@ let div (x : t) (y : t) : (t, string) Result.t =
   match x, y with
   | NINF, NINF | PINF, PINF -> Error "invalid"
   | NINF, PINF | PINF, NINF  -> Error "invalid"
+  | _, R y when y = 0.0 -> Error "invalid"
 
   | R _, PINF | R _, NINF -> Ok (R 0.0)
-  | _, R y when y = 0.0 -> Error "invalid"
 
   | PINF, R y when y >. 0.0 -> Ok PINF
   | PINF, R y when y <. 0.0 -> Ok NINF
@@ -86,9 +83,9 @@ let div (x : t) (y : t) : (t, string) Result.t =
 
 let sqrt (x : t) (p : int) : (t, string) Result.t =
   match x with
-  | PINF -> Ok PINF
   | NINF -> Error "invalid"
   | R r when r <. 0.0 -> Error "invalid"
+  | PINF -> Ok PINF
   | R r -> (
     match Sqrt.sqrt r p with
     | Ok r -> Ok (R r)
@@ -149,15 +146,15 @@ let neg (x : t) : t =
 let add (x : t) (y : t) : (t, string) Result.t =
   match x, y with
   | NINF, PINF | PINF, NINF -> Error "invalid"
-  | NINF, NINF | R _, NINF | NINF, R _ -> Ok NINF
-  | PINF, PINF | R _, PINF | PINF, R _ -> Ok PINF
+  | NINF, _ | _, NINF -> Ok NINF
+  | PINF, _ | _, PINF -> Ok PINF
   | R x, R y -> Ok (R (x +. y))
 
 let sub (x : t) (y : t) : (t, string) Result.t =
   match x, y with
   | NINF, NINF | PINF, PINF -> Error "invalid"
-  | NINF, PINF | NINF, R _ | R _, PINF -> Ok NINF
-  | PINF, NINF | R _, NINF | PINF, R _ -> Ok PINF
+  | NINF, _  | _, PINF -> Ok NINF
+  | PINF, _  | _, NINF -> Ok PINF
   | R x, R y -> Ok (R (x -. y))
 
 let lt (x : t) (y : t) =
