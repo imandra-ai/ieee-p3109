@@ -15,14 +15,13 @@ theorem find_pow2_up_bounds (x : real) =
   x >=. 1.0 ==>
   let n = find_pow2_up x in
   pow2 n <=. x && x <. pow2 (n + 1)
-  [@@timeout 3600]
-  [@@by auto]
+  [@@by induct ~smt:"z3-full-nonlinear" ()]
 
 theorem find_pow2_dn_bounds (x : real) =
   x >. 0.0 && x <=. 1.0 ==>
   let n = find_pow2_dn x in
   pow2 n <=. x && x <. pow2 (n + 1)
-  [@@by auto]
+  [@@by induct ~smt:"z3-full-nonlinear" ()]
 
 theorem find_pow2_bounds (x : real) =
   x >. 0.0 ==>
@@ -58,7 +57,7 @@ theorem frac_part_within_bounds (x : real) =
   | _ -> true
   [@@by
     [%use find_pow2_bounds x]
-    @> unroll 10]
+    @> unroll_nonlin 1 1 10]
   [@@fc]
 
 (* Check that the integer part and the fractional part produce [x]. *)
@@ -67,7 +66,7 @@ theorem int_frac_parts_add_up (x : real) =
   match int_frac_parts x with
   | Ok (n, f) -> x = pow2 n *. f
   | _ -> true
-  [@@by [%use int_part_bounds x] @> unroll 10]
+  [@@by [%use int_part_bounds x] @> unroll_nonlin 1 1 10]
   [@@fc]
 
 (* A few checks to test whether we get the expected answers from [int_frac_parts]. *)
