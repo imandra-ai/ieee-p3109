@@ -1,6 +1,6 @@
 [@@@import Util, "dune:math"]
 
-(* let unroll_nonlin qt nqt steps = Tactic.unroll ~smt:"z3-full-nonlinear" ~query_timeout:qt ~no_asm_query_timeout:nqt steps *)
+let unroll_nonlin qt nqt steps = Tactic.unroll ~smt:"z3-full-nonlinear" ~query_timeout:qt ~no_asm_query_timeout:nqt steps [@@no_extract]
 
 let ipow2 : int -> int = Util.ipow2 [@@macro]
 let pow2 : int -> real = Util.pow2 [@@macro]
@@ -25,10 +25,10 @@ let rec find_pow2_dn (x : real) : int =
   if x <=. 0.0 || x >=. 1.0 then
     0
   else
-    find_pow2_dn (x *. 2.0) - 1
+    (find_pow2_dn (x *. 2.0)) - 1
   [@@timeout 60]
   [@@measure Ordinal.of_int (Real.to_int (1.0 /. x))]
-  [@@by auto]
+  [@@by unroll_nonlin 10 1 10]
 
 let find_pow2 (x : real) : int =
   if x <. 1.0 then

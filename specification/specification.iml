@@ -96,30 +96,26 @@ module Format = struct
     let p : int = precision f in
     let bias : int =
       match f.s with
-      | Signed ->
-        if k = p then -1 else ipow2 (k - p - 1) - 1
-        (*  = floor (pow2 (k - p - 1) - 1) *)
-      | Unsigned -> ipow2 (k - p    ) - 1 in
-    let emax : int = if p = 1 then bias else bias + 1 in
+      | Signed -> if k = p then -1 else ipow2 (k - p - 1) (* Error for k = p? *)
+      | Unsigned -> ipow2 (k - p) in
     let m_hi : real =
       if p = 1 then
         match f.s, f.d with
-        | Signed, Extended ->   pow2 emax
-        | Signed, Finite ->     pow2 (emax + 1)
-        | Unsigned, Extended -> pow2 (emax - 1)
-        | Unsigned, Finite ->   pow2 emax
+        | Signed, Extended ->   pow2 (ipow2 (k - 1) - bias - 2)
+        | Signed, Finite ->     pow2 (ipow2 (k - 1) - bias - 1)
+        | Unsigned, Extended -> pow2 (ipow2 k       - bias - 3)
+        | Unsigned, Finite ->   pow2 (ipow2 k       - bias - 2)
       else
         match f.s, f.d with
-        | Signed, Extended ->   pow2 emax *. (2. -. pow2 (2 - p))
-        | Signed, Finite ->     pow2 emax *. (2. -. pow2 (2 - p - 1))
+        | Signed, Extended ->   pow2 (ipow2 (k - p) - bias - 1) *. (2. -. pow2 (2 - p))
+        | Signed, Finite ->     pow2 (ipow2 (k - p) - bias - 1) *. (2. -. pow2 (2 - p - 1))
         | Unsigned, Extended -> (
           match p with
-          | 2 ->                pow2 (emax - 1) *. (2. -. pow2 (2 - p - 1))            (* SE = true *)
-          | _ ->                pow2 emax *. (2. -. pow2 (2 - p) -. pow2 (2 - p - 1))  (* SE = false *)
+          | 2 ->                pow2 (ipow2 (k - p + 1) - bias - 2) *. (2. -. pow2 (2 - p - 1))
+          | _ ->                pow2 (ipow2 (k - p + 1) - bias - 1) *. (2. -. pow2 (2 - p) -. pow2 (2 - p - 1))
         )
-        | Unsigned, Finite ->   pow2 emax *. (2. -. pow2 (2 - p))
+        | Unsigned, Finite ->   pow2 (ipow2 (k - p + 1) - bias - 1) *. (2. -. pow2 (2 - p))
       in
-
     let m_lo = if f.s = Signed then -. m_hi else 0.0 in
     k, p, bias, m_lo, m_hi, f.s, f.d
 end
@@ -146,6 +142,33 @@ end
 module Projection = struct
   type t = SaturationMode.t * RoundingMode.t
 end
+
+module NaNOrExReal = struct
+  type t =
+    | NaN
+    | XR of ExReal.t
+
+  let real_is_within_range (f : Format.t) (x : real) : bool =
+    let _, _, _, m_lo, m_hi, _, _ = Format.get_format_parameters f in
+    m_lo <=. x && x <=. m_hi
+
+  let exreal_is_within_range (f : Format.t) (x : ExReal.t)  : bool =
+    match x with
+    | ExReal.PINF | ExReal.NINF -> true
+    | ExReal.R r -> real_is_within_range f r
+
+  let ( ~- ) (x:t) =
+    let open ExReal.Infix in
+    match x with
+    | NaN -> NaN
+    | XR xr -> XR (~-. xr)
+
+  let is_within_range (f : Format.t) (x : t) =
+    match x with
+    | NaN -> true
+    | XR xr -> exreal_is_within_range f xr
+end
+
 
 (** Floating-point numeral definitions *)
 
@@ -201,36 +224,10 @@ module Float = struct
   let of_int_repr_k (k : int) (s : Signedness.t) (i : int) : t =
     if i < 0 || i >= Util.ipow2 k then (nan_ks k s) else i
 
-  let real_is_within_range (f : Format.t) (x : real) : bool =
-    let _, _, _, m_lo, m_hi, _, _ = Format.get_format_parameters f in
-    m_lo <=. x && x <=. m_hi
-
-  let exreal_is_within_range (f : Format.t) (x : ExReal.t)  : bool =
-    match x with
-    | ExReal.PINF | ExReal.NINF -> true
-    | ExReal.R r -> real_is_within_range f r
-
   let is_nan f x = to_int_repr f x = nan f
   let is_ninf f x = Ok (to_int_repr f x) = ninf f
   let is_pinf f x = Ok (to_int_repr f x) = pinf f
   let is_inf f x = is_ninf f x || is_pinf f x
-
-  module NaNOrExReal = struct
-    type t =
-      | NaN
-      | XR of ExReal.t
-
-    let ( ~- ) (x:t) =
-      let open ExReal.Infix in
-      match x with
-      | NaN -> NaN
-      | XR xr -> XR (~-. xr)
-
-    let is_within_range (f : Format.t) (x : t) =
-      match x with
-      | NaN -> true
-      | XR xr -> exreal_is_within_range f xr
-  end
 
   (** 4.6.1 Decode *)
   let rec decode_aux (k : int) (p : int) (b : int) (s: Signedness.t) (d : Domain.t) x : (NaNOrExReal.t, string) Result.t =
@@ -793,11 +790,12 @@ module Float = struct
       let x = decode f_x x in
       (match x with
       | Ok NaN -> Ok (nan f_z)
+      | Ok (XR NINF) -> Ok (nan f_z)
       | Ok (XR x) when x <=. ExReal.zero -> Ok (nan f_z)
       | Ok (XR x) ->
         let open ExReal in
         let open ExReal.ResultInfix in
-        (match Ok (R 1.0) /. ExReal.sqrt x 8 with (* TODO: Proof that 8 is enough *)
+        (match Ok (R 1.0) /. (ExReal.sqrt x 8) with (* TODO: Proof that 8 is enough *)
         | Ok z -> project f_z pi z
         | Error e -> Error e)
       | Error e -> Error e)

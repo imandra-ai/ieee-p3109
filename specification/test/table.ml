@@ -34,8 +34,8 @@ let domain_to_char (d : Domain.t) =
   | Finite -> "f"
   | Extended -> "e"
 
-let nanox_to_string (x : Float8.NaNOrExReal.t) : string =
-  let open Float8.NaNOrExReal in
+let nanox_to_string (x : NaNOrExReal.t) : string =
+  let open NaNOrExReal in
   match x with
   | NaN -> "NaN"
   | XR PINF -> "+oo"
@@ -47,7 +47,7 @@ let rat_to_string_dec (x : Q.t) : string =
   Printf.sprintf "%s"
     (of_bigint (Bigint.of_zarith_bigint (Q.num x))
      / of_bigint (Bigint.of_zarith_bigint (Q.den x))
-    |> to_string_hum ~decimals:32)
+    |> to_string_hum ~decimals:32768)
 
 let exreal_to_string_dec (x : ExReal.t) : string =
   match x with
@@ -55,13 +55,13 @@ let exreal_to_string_dec (x : ExReal.t) : string =
   | NINF -> "-oo"
   | R r -> Printf.sprintf "%s" (rat_to_string_dec r)
 
-let nanox_to_dec_string (x : Float8.NaNOrExReal.t) : string =
-  let open Float8.NaNOrExReal in
+let nanox_to_dec_string (x : NaNOrExReal.t) : string =
+  let open NaNOrExReal in
   match x with
   | NaN -> "NaN"
   | XR xr -> exreal_to_string_dec xr
 
-let print_nanox_dec (x : Float8.NaNOrExReal.t) =
+let print_nanox_dec (x : NaNOrExReal.t) =
   Printf.printf "%s," (nanox_to_dec_string x)
 
 let print_real (x : Q.t) = Printf.printf "%s," (rat_to_string_dec x)
@@ -74,7 +74,7 @@ let print_bool (x : bool) = Printf.printf "%s," (if x then "Y" else "N")
 let mk_fn_tbl (fn : Q.t -> int -> (bool * Q.t, string) Result.t)
     (inv_fn : Q.t -> int -> (Q.t, string) Result.t) (f : Format.t) (p : int) :
     unit =
-  let open Float8.NaNOrExReal in
+  let open NaNOrExReal in
   let pi = SaturationMode.SatPropagate, RoundingMode.NearestTiesToEven in
   let k, _, _, _, _, _, _ = Format.get_format_parameters f in
   Printf.printf
@@ -86,8 +86,8 @@ let mk_fn_tbl (fn : Q.t -> int -> (bool * Q.t, string) Result.t)
   for i = 0 to (2 lsl (Z.to_int k - 1)) - 1 do
     Printf.printf "0x%02x," i;
 
-    let fp = Float8.of_int_repr f (Z.of_int i) in
-    (match Float8.decode f fp with
+    let fp = Float.of_int_repr f (Z.of_int i) in
+    (match Float.decode f fp with
     | Ok decoded ->
       print_nanox_dec decoded;
       (match decoded with
@@ -109,12 +109,12 @@ let mk_fn_tbl (fn : Q.t -> int -> (bool * Q.t, string) Result.t)
                 print_bool (Q.lt (Q.abs diff) ulp)
               | Error _ -> Printf.printf "?,?,")
             | Error e -> Printf.printf "%s," e);
-            (match Float8.project f pi (R out_real) with
+            (match Float.project f pi (R out_real) with
             | Ok projected ->
               Printf.printf "0x%s,%s,"
-                (Z.format "x" (Float8.to_int_repr f projected))
-                (Z.format "08b" (Float8.to_int_repr f projected));
-              (match Float8.decode f projected with
+                (Z.format "x" (Float.to_int_repr f projected))
+                (Z.format "08b" (Float.to_int_repr f projected));
+              (match Float.decode f projected with
               | Ok out_dec -> print_nanox_dec out_dec
               | Error e -> Printf.printf "%s," e)
             | Error e -> Printf.printf "%s," e)
@@ -206,14 +206,19 @@ let mk_f_tbl (k : int) (p : int) (s : bool) (e : bool) =
     (Z.to_string pf) (domain_to_char d) (signedness_to_char s)
     (Z.to_string bias) (rat_to_string_dec m_hi);
   for i = 0 to (1 lsl k) - 1 do
-    let iz = Float8.to_int_repr f (Z.of_int i) in
-    let d = Float8.decode f iz in
+    let iz = Float.to_int_repr f (Z.of_int i) in
+    let d = Float.decode f iz in
+    let rats =
+      match d with
+      | Ok r -> nanox_to_string r
+      | Error e -> Printf.sprintf "Error: %s" e
+    in
     let ds =
       match d with
       | Ok r -> nanox_to_dec_string r
       | Error e -> Printf.sprintf "Error: %s" e
     in
-    Printf.printf "%02x | %s | %s\n" i (int2bin_str i k) ds
+    Printf.printf "%02x | %s | %s | %s\n" i (int2bin_str i k) ds rats
   done
 
 let run (cli : params) : unit =
@@ -234,12 +239,12 @@ let run (cli : params) : unit =
     | Format { k; p; s; e } -> mk_f_tbl k p s e
     | Formats ->
       for k = 3 to 8 do
-        for p = 1 to k - 1 do
+        for p = 1 to k-1 do
           for s = 0 to 1 do
             for d = 0 to 1 do
               Printf.printf "-------------------------\n";
               mk_f_tbl k p (s == 0) (d == 0);
-              Printf.printf "\n\n"
+              Printf.printf "\n\n%!"
             done
           done
         done

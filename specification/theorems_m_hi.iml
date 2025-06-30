@@ -1,0 +1,27 @@
+[@@@import Util, "dune:math"]
+[@@@import ExReal, "dune:math"]
+[@@@import Specification, "specification.iml"]
+
+open Specification
+open Format
+open Util
+
+let unroll_nonlin qt nqt steps = Tactic.unroll ~smt:"z3-full-nonlinear" ~query_timeout:qt ~no_asm_query_timeout:nqt steps [@@no_extract]
+
+let m_hi_codepoint (f : Format.t) : int =
+  let k, _, _, _, _, _, _ = Format.get_format_parameters f in
+  match f.s, f.d with
+  | Signed, Extended ->   ipow2 (k - 1) - 2
+  | Signed, Finite ->     ipow2 (k - 1) - 1
+  | Unsigned, Extended -> ipow2 k - 3
+  | Unsigned, Finite ->   ipow2 k - 2
+  [@@macro]
+
+theorem m_hi_codepoint_decodes_to_m_hi (f : Format.t) =
+  let open NaNOrExReal in
+  let _, _, _, _, m_hi, _, _ = Format.get_format_parameters f in
+  match Float.decode f (m_hi_codepoint f) with
+  | Ok (XR (R r)) -> r = m_hi
+  | _ -> false
+  [@@timeout 120]
+  [@@by enumerate ["f"] @> repeat split_and @>>| auto]

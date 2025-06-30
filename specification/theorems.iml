@@ -16,9 +16,11 @@ theorem format_parameter_limits (f : Format.t) =
   let k, p, b, _, _, s, d = (Format.get_format_parameters f [@trigger]) in
   0 < k && k <= 15 &&
   0 < p && p <= 15 &&
-  b < Util.ipow2 (k - p)
-  [@@timeout 60]
-  [@@by unroll_nonlin 10 10 25]
+  b <= Util.ipow2 (k - p)
+  [@@timeout 600]
+  (* [@@by unroll_nonlin 10 10 100] *)
+  [@@disable Util.ipow2, Util.pow2]
+  [@@by enumerate ["f"] @> repeat split_and @>>| auto]
   [@@fc]
 
 theorem m_hi_gt_0 (f : Format.t) =
@@ -52,7 +54,7 @@ theorem decode_ok (f : Format.t) (x : Float.t) =
 
 (* [decode] always produces numbers within the format range *)
 theorem decode_within_range (f : Format.t) (x : Float.t) =
-  let open Float.NaNOrExReal in
+  let open NaNOrExReal in
   let _, _, _, m_lo, m_hi, _, _ = Format.get_format_parameters f in
   let d = Float.decode f x [@@trigger] in
   match d with
@@ -66,8 +68,8 @@ theorem decode_within_range (f : Format.t) (x : Float.t) =
   [@@fc]
 
 (* [encode] is ok if the input is within the format range *)
-theorem encode_ok_within_range (f : Format.t) (x : Float.NaNOrExReal.t) =
-let open Float.NaNOrExReal in
+theorem encode_ok_within_range (f : Format.t) (x : NaNOrExReal.t) =
+let open NaNOrExReal in
 let open Signedness in
 let open ExReal in
   let _, _, _, m_lo, m_hi, s, _ = Format.get_format_parameters f in
@@ -95,7 +97,7 @@ theorem decode_encode_ok (f : Format.t)  (x : Float.t) =
 theorem saturate_is_within_range (f : Format.t) (x : ExReal.t) (sat : SaturationMode.t) (rnd : RoundingMode.t) =
   let _, _, _, m_lo, m_hi, _, _ = Format.get_format_parameters f in
   let s = (Float.saturate (ExReal.of_real m_lo) (ExReal.of_real m_hi) f.s sat rnd x [@trigger]) in
-  Float.exreal_is_within_range f s
+  NaNOrExReal.exreal_is_within_range f s
   [@@timeout 3600]
   [@@disable Float.saturate, Format.get_format_parameters, Util.ipow2, Util.pow2]
   [@@by [%use m_lo_lt_m_hi f] @> [%use m_hi_gt_0 f] @> auto]
@@ -104,7 +106,7 @@ theorem saturate_is_within_range (f : Format.t) (x : ExReal.t) (sat : Saturation
 (* Encoding after saturation is always ok *)
 theorem saturate_encode_ok (f : Format.t) (x : ExReal.t) (sat : SaturationMode.t) (rnd : RoundingMode.t) =
   let _, _, _, m_lo, m_hi, _, _ = Format.get_format_parameters f in
-  Result.is_ok (Float.encode f (Float.NaNOrExReal.XR (Float.saturate (ExReal.of_real m_lo) (ExReal.of_real m_hi) f.s sat rnd x)) [@trigger])
+  Result.is_ok (Float.encode f (NaNOrExReal.XR (Float.saturate (ExReal.of_real m_lo) (ExReal.of_real m_hi) f.s sat rnd x)) [@trigger])
   [@@timeout 60]
   [@@by
     [%use saturate_is_within_range f x sat rnd]
@@ -127,21 +129,21 @@ theorem project_ok (f : Format.t) (pi : Projection.t) (x : ExReal.t) =
 (** Some helpers *)
 
 theorem pinf_decodes_to_pinf (f : Format.t) (x : Float.t) =
-  let open Float.NaNOrExReal in
+  let open NaNOrExReal in
   Float.is_pinf f x <==> ((Float.decode f x = Ok (XR PINF)) [@trigger])
   [@@timeout 360]
   [@@by unroll_nonlin 10 10 100]
   [@@fc]
 
 theorem ninf_decodes_to_ninf (f : Format.t) (x : Float.t) =
-  let open Float.NaNOrExReal in
+  let open NaNOrExReal in
   Float.is_ninf f x <==> ((Float.decode f x = Ok (XR NINF)) [@trigger])
   [@@timeout 360]
   [@@by unroll_nonlin 10 10 100]
   [@@fc]
 
 theorem inf_decodes_to_inf (f : Format.t) (x : Float.t) =
-  let open Float.NaNOrExReal in
+  let open NaNOrExReal in
   ((Float.is_inf f x) [@trigger]) <==> (Float.decode f x = Ok (XR NINF) || Float.decode f x = Ok (XR PINF))
   [@@by
     [%use pinf_decodes_to_pinf f x] @>
@@ -150,14 +152,14 @@ theorem inf_decodes_to_inf (f : Format.t) (x : Float.t) =
   [@@fc]
 
 theorem nan_decodes_to_nan (f : Format.t) (x : Float.t) =
-  let open Float.NaNOrExReal in
+  let open NaNOrExReal in
   Float.is_nan f x <==> ((Float.decode f x = Ok NaN) [@trigger])
   [@@timeout 120]
   [@@by unroll 50]
   [@@fc]
 
 theorem zero_decodes_to_zero (f : Format.t) (x : Float.t) =
-  let open Float.NaNOrExReal in
+  let open NaNOrExReal in
   Float.is_zero f x <==> (Float.decode f x = Ok (XR (R 0.0))) [@trigger]
   [@@timeout 60]
   [@@by unroll 25]
@@ -170,14 +172,14 @@ theorem ipow2_gt_0 (n:int) =
   [@@fc]
 
 theorem decode_0_is_0 (f : Format.t)  =
-  let open Float.NaNOrExReal in
+  let open NaNOrExReal in
   (Float.decode f 0) [@trigger] = Ok (XR (R 0.0))
   [@@timeout 60]
   [@@by enumerate ["f"] @> ground_eval]
   [@@fc]
 
 theorem zero_means_is_zero (f : Format.t) (x : Float.t) =
-  let open Float.NaNOrExReal in
+  let open NaNOrExReal in
   x = 0 ==> ((Float.is_zero f x) [@trigger])
   [@@timeout 3600]
   [@@disable Util.ipow2, Util.pow2]
@@ -186,20 +188,20 @@ theorem zero_means_is_zero (f : Format.t) (x : Float.t) =
   [@@fc]
 
 theorem zero_is_zero_fwd (f : Format.t) (x : Float.t) =
-  let open Float.NaNOrExReal in
+  let open NaNOrExReal in
   x = 0 ==> ((Float.decode f x = Ok (XR (R 0.0))) [@trigger])
   [@@timeout 360]
   [@@by enumerate ["f"] @> auto]
 
 theorem zero_is_zero_bwd (f : Format.t) (x : Float.t) =
-  let open Float.NaNOrExReal in
+  let open NaNOrExReal in
   x = 0 <== ((Float.decode f x = Ok (XR (R 0.0))) [@trigger])
   [@@timeout 1200]
-  [@@disable Util.pow2]
   [@@by enumerate ["f"] @> auto]
 
+
 theorem zero_is_zero (f : Format.t) (x : Float.t) =
-  let open Float.NaNOrExReal in
+  let open NaNOrExReal in
   x = 0 <==> ((Float.decode f x = Ok (XR (R 0.0))) [@trigger])
   [@@timeout 60]
   [@@disable Float.decode, Float.decode_aux]
@@ -210,7 +212,7 @@ theorem zero_is_zero (f : Format.t) (x : Float.t) =
   [@@fc]
 
 theorem decode_specials (f : Format.t) (x : Float.t) =
-  let open Float.NaNOrExReal in
+  let open NaNOrExReal in
   ((Float.is_pinf f x) <==> (Float.decode f x = Ok (XR PINF))) &&
   ((Float.is_ninf f x) <==> (Float.decode f x = Ok (XR NINF))) &&
   ((Float.is_nan f x) <==> (Float.decode f x = Ok NaN)) &&
@@ -269,7 +271,7 @@ theorem internal_copy_sign_ok (f : Format.t) (x : Float.t) (y : Float.t) =
   Result.is_ok (Float.internal_copy_sign f x y)
   [@@by
     [%use decode_ok f y]
-    @> [%use encode_ok_within_range f (Result.get_or ~default:Float.NaNOrExReal.NaN (Float.decode f y))]
+    @> [%use encode_ok_within_range f (Result.get_or ~default:NaNOrExReal.NaN (Float.decode f y))]
     @> [%use internal_abs_ok f x]
     @> [%use internal_negate_ok f (Float.abs f x)]
     @> unroll_nonlin 10 10 100
@@ -355,7 +357,7 @@ theorem internal_sqrt_ok (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (
 theorem internal_rsqrt_ok (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : Float.t) =
   Result.is_ok (Float.internal_rsqrt f_x f_z pi x)
   [@@timeout 120]
-  [@@disable Float.project, Float.decode, Float.decode_aux, Float.round_to_precision, Float.saturate, Util.pow2, Util.ipow2, Format.get_format_parameters]
+  [@@disable Float.project, Float.decode, Float.decode_aux, Float.round_to_precision, Float.saturate, Util.pow2, Util.ipow2, Format.get_format_parameters, ExReal.sqrt]
   [@@by auto]
 
 (** [internal_exp] never returns an error *)

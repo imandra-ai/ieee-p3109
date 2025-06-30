@@ -12,7 +12,7 @@ open Signedness
 open Domain
 
 let is_within_f (f : Format.t) (x : Float.t) : bool =
-  let open Float.NaNOrExReal in
+  let open NaNOrExReal in
   let _, _, _, m_lo, m_hi, _, _ = Format.get_format_parameters f in
   match Float.decode f x with
   | Ok NaN
