@@ -2,7 +2,7 @@
  (name math)
  (package p3109)
  (flags :standard -open Imandrax_prelude -open Prelude_extracted)
- (modules ExReal Util Sqrt Log Exp Agm)
+ (modules ExReal AugReal Util Sqrt Log Exp Agm)
  (modes byte native)
  (libraries imandrax_prelude))
 

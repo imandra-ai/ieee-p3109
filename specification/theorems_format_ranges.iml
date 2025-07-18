@@ -1,10 +1,8 @@
 [@@@import Util, "dune:math"]
-[@@@import ExReal, "dune:math"]
+[@@@import AugReal, "dune:math"]
 [@@@import Specification, "specification.iml"]
 
 open Specification
-open ExReal
-open ExReal.Infix
 open Format
 open Util
 
@@ -12,15 +10,7 @@ open Signedness
 open Domain
 
 let is_within_f (f : Format.t) (x : Float.t) : bool =
-  let open NaNOrExReal in
-  let _, _, _, m_lo, m_hi, _, _ = Format.get_format_parameters f in
-  match Float.decode f x with
-  | Ok NaN
-  | Ok (XR NINF)
-  | Ok (XR PINF) -> true
-  | Ok (XR r) ->
-    R m_lo <=. r && r <=. R m_hi
-  | _ -> false
+  aug_real_is_within_range f (Float.decode f x)
 
 let is_within (kp : Format.kpt) (x : Float.t) : bool =
   is_within_f { kp = kp; s = Signed; d = Extended } x &&
@@ -48,7 +38,7 @@ theorem wfr_neg (kp : Format.kpt) (x : Float.t) =
 theorem wfr_above (kp : Format.kpt) (x : Float.t) =
   let k = Format.k_of_kp kp in
   (x > ipow2 k) ==> is_within kp x [@trigger]
-  [@@timeout 120]
+  [@@timeout 480]
   [@@by enumerate ["kp"] @> auto]
   [@@fc]
 

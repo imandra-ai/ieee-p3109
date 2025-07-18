@@ -1,4 +1,4 @@
-[@@@import ExReal, "dune:math"]
+[@@@import AugReal, "dune:math"]
 [@@@import Util, "dune:math"]
 
 (** IEEE 754 definitions for conversion functions *)
@@ -93,12 +93,12 @@ let to_binary (x : int) (digits : int) =
   else
     r
 
-let round_internal (x : ExReal.t) (fmt : Format.t) (rnd : RoundingMode.t) : (t,  string) Result.t =
+let round_internal (x : AugReal.t) (fmt : Format.t) (rnd : RoundingMode.t) : (t,  string) Result.t =
   let open RoundingMode in
-  let open ExReal in
-  let open ExReal.ResultInfix in
+  let open AugReal in
   let _, _, emax, bias, _, w, t, _ = Format.get_format_parameters fmt in
   match x with
+  | NaN -> Ok (nan fmt)
   | PINF -> Ok (pinf fmt)
   | NINF -> Ok (ninf fmt)
   | R r ->
@@ -116,8 +116,7 @@ let round_internal (x : ExReal.t) (fmt : Format.t) (rnd : RoundingMode.t) : (t, 
         0
       else
         Int.(exp + bias) in
-    let sigd = Ok (R Real.(r / Util.pow2 exp)) in
-    let sigd = sigd *. pow2 t in
+    let sigd = (r2a Real.(r / Util.pow2 exp)) * (2 ^ t) in
     (match sigd with
     | Ok (R sigd) ->
       if Int.(exp > emax) then
@@ -136,10 +135,10 @@ let round_internal (x : ExReal.t) (fmt : Format.t) (rnd : RoundingMode.t) : (t, 
         Ok (sign @ to_binary biased_exp w @ List.tl fsig)
     | _ -> Error "invalid")
 
-theorem round_internal_ok (x : ExReal.t) (fmt : Format.t) (rnd : RoundingMode.t) =
+theorem round_internal_ok (x : AugReal.t) (fmt : Format.t) (rnd : RoundingMode.t) =
   Result.is_ok (round_internal x fmt rnd)
 
-let round (x : ExReal.t) (fmt : Format.t) (rnd : RoundingMode.t) : t =
+let round (x : AugReal.t) (fmt : Format.t) (rnd : RoundingMode.t) : t =
   match round_internal x fmt rnd with
   | Ok r -> r
   | Error _ -> nan fmt (* unreachable by theorem round_internal_ok *)
@@ -150,9 +149,9 @@ let rec from_binary (x : bool list) : int =
   | x :: xs ->
     (if x then Util.ipow2 (List.length xs) else 0) + (from_binary xs)
 
-let as_extended_real (phi : Format.t) (x : t) : (ExReal.t, string) Result.t =
+let as_aug_real (phi : Format.t) (x : t) : (AugReal.t, string) Result.t =
   if is_nan x phi then
-    Error "invalid"
+    Ok NaN
   else if is_pinf x phi then
     Ok PINF
   else if is_ninf x phi then
@@ -176,14 +175,14 @@ let as_extended_real (phi : Format.t) (x : t) : (ExReal.t, string) Result.t =
         from_binary biased_exp - bias
     in
 
-    let open ExReal.ResultInfix in
+    let open AugReal in
     if biased_exp_is_all_ones then
       if not sig_all_zero then
         Error "cannot convert NaN to extended reals"
       else
         (if sgn = 1.0 then Ok PINF else Ok NINF)
     else
-      (rx sgn) *. (pow2 exp) *. ((ix sigd) /. (pow2 t))
+      ((r2a sgn) * (2 ^ exp)) ** ((i2a sigd) / (2 ^ t))
 
 let bd acc b = acc ^ if b then "1" else "0"
 

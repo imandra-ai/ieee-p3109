@@ -1,0 +1,143 @@
+[@@@import Util, "dune:math"]
+[@@@import ExReal, "dune:math"]
+[@@@import AugReal, "dune:math"]
+[@@@import Sqrt, "dune:math"]
+[@@@import Exp, "dune:math"]
+[@@@import Log, "dune:math"]
+[@@@import Specification, "specification.iml"]
+
+let unroll_nonlin qt nqt steps = Tactic.unroll ~smt:"z3-full-nonlinear" ~query_timeout:qt ~no_asm_query_timeout:nqt steps
+
+open Specification
+
+theorem abs_aug_ex_eq (x : AugReal.t) =
+  let open ExReal.ResultInfix in
+  AugReal.t_aug_eq1 x Float.aug_abs (fun xe -> Ok (ExReal.abs xe))
+  [@@by auto]
+
+theorem negate_aug_ex_eq (x : AugReal.t) =
+  let open ExReal.ResultInfix in
+  AugReal.t_aug_eq1 x Float.aug_negate (fun xe -> Ok (ExReal.neg xe))
+  [@@by auto]
+
+theorem copy_sign_aug_ex_eq (x : AugReal.t) (y : AugReal.t) =
+  AugReal.t_aug_eq2 x y Float.aug_copy_sign
+  (fun xe ye ->
+    let open ExReal.Infix in
+    if ye >=. ExReal.zero then
+      Ok (ExReal.abs xe)
+    else
+      Ok (ExReal.neg xe)
+  )
+  [@@by auto]
+
+theorem add_aug_ex_eq (x : AugReal.t) (y : AugReal.t) =
+  let open ExReal.ResultInfix in
+  AugReal.t_aug_eq2r x y Float.aug_add (fun xe ye -> xe +. ye)
+  [@@by auto]
+
+theorem subtract_aug_ex_eq (x : AugReal.t) (y : AugReal.t) =
+  let open ExReal.ResultInfix in
+  AugReal.t_aug_eq2r x y Float.aug_subtract (fun xe ye -> xe -. ye)
+  [@@by auto]
+
+theorem multiply_aug_ex_eq (x : AugReal.t) (y : AugReal.t) =
+  let open ExReal.ResultInfix in
+  AugReal.t_aug_eq2r x y Float.aug_multiply (fun xe ye -> xe *. ye)
+  [@@by auto]
+
+theorem divide_aug_ex_eq (x : AugReal.t) (y : AugReal.t) =
+  let open ExReal.ResultInfix in
+  AugReal.t_aug_eq2r x y Float.aug_divide (fun xe ye -> xe /. ye)
+  [@@by auto]
+
+theorem fma_aug_ex_eq (x : AugReal.t) (y : AugReal.t) (z : AugReal.t) =
+  let open ExReal.ResultInfix in
+  AugReal.t_aug_eq3 x y z Float.aug_fma (fun xe ye ze -> (xe *. ye) +. ze)
+  [@@by auto]
+
+theorem faa_aug_ex_eq (x : AugReal.t) (y : AugReal.t) (z : AugReal.t) =
+  let open ExReal.ResultInfix in
+  AugReal.t_aug_eq3 x y z Float.aug_faa (fun xe ye ze -> xe +. ye +. ze)
+  [@@by auto]
+
+theorem sqrt_aug_ex_eq (x : AugReal.t) =
+  let open ExReal.ResultInfix in
+  AugReal.t_aug_eq1 x Float.aug_sqrt (fun xe -> ExReal.sqrt xe 8)
+  [@@by auto]
+
+theorem sqrt_zero (x : real) =
+  match (Sqrt.sqrt x 8) [@trigger] with
+  | Ok rt -> x >. 0.0 <==> rt >. 0.0
+  | _ -> true
+  [@@timeout 3600]
+  [@@disable Sqrt.sqrt, Sqrt.aux]
+  [@@by
+    expand "Sqrt.sqrt" @>
+    expand "Sqrt.aux" @>
+    expand "Sqrt.aux" @>
+    expand "Sqrt.aux" @>
+    expand "Sqrt.aux" @>
+    expand "Sqrt.aux" @>
+    expand "Sqrt.aux" @>
+    expand "Sqrt.aux" @>
+    expand "Sqrt.aux" @>
+    expand "Sqrt.aux" @>
+    simp @>
+    (* induct ~smt:"z3-full-nonlinear" () *)
+    (* unroll_nonlin 20 20 1000 *)
+    auto
+    ]
+  [@@fc]
+
+theorem rsqrt_aug_ex_eq (x : AugReal.t) =
+  let open ExReal.ResultInfix in
+  AugReal.t_aug_eq1 x Float.aug_rsqrt (fun xe -> (Ok ExReal.one) /. (ExReal.sqrt xe 8))
+  [@@timeout 3600]
+  (* [@@by unroll_nonlin 10 10 100] *)
+  [@@disable Sqrt.sqrt, Util.pow2, Util.ipow2]
+  [@@by auto]
+
+theorem hypot_aug_ex_eq (x : AugReal.t) (y : AugReal.t) =
+  AugReal.t_aug_eq2 x y Float.aug_hypot (fun xe ye ->
+    let open ExReal.Infix in
+    let open ExReal.ResultInfix in
+    sqrt (((ExReal.abs xe) ^ 2) +. ((ExReal.abs ye) ^ 2)) 8
+  )
+  [@@timeout 3600]
+  [@@by unroll_nonlin 10 10 100]
+  (* [@@disable Sqrt.sqrt, Util.pow2, Util.ipow2]
+  [@@by auto] *)
+
+theorem exp_aug_ex_eq (x : AugReal.t) =
+  AugReal.t_aug_eq1 x Float.aug_exp (fun xe -> ExReal.exp xe 9)
+  [@@by auto]
+
+theorem exp2_aug_ex_eq (x : AugReal.t) =
+  AugReal.t_aug_eq1 x Float.aug_exp2 (fun xe -> ExReal.exp2 xe 9)
+  [@@by auto]
+
+theorem log_aug_ex_eq (x : AugReal.t) =
+  AugReal.t_aug_eq1 x Float.aug_log (fun xe -> ExReal.ln xe 9)
+  [@@by unroll_nonlin 10 10 100]
+
+theorem log2_aug_ex_eq (x : AugReal.t) =
+  AugReal.t_aug_eq1 x Float.aug_log2 (fun xe -> ExReal.log2 xe 9)
+  [@@by unroll_nonlin 10 10 100]
+
+(*
+eval (
+  let open ExReal in
+  let open ExReal.ResultInfix in
+  let z = R 0.0 in
+  let p1 = R 1.0 in
+  let n1 = R (- (1.0)) in
+  ((Ok p1 +. Ok NINF) +. Ok p1))
+
+eval (
+  let open AugReal in
+  let z = R 0.0 in
+  let p1 = R 1.0 in
+  let n1 = R (- (1.0)) in
+  aug_faa p1 NINF p1)
+ *)

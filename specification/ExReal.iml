@@ -306,6 +306,12 @@ module ResultInfix = struct
     x ^. y
     [@@macro]
 
+  let abs (x : xres): xres =
+    match x with
+    | Ok r -> Ok (abs r)
+    | Error e -> Error e
+    [@@macro]
+
   let sqrt (x : xres) (p : int): xres =
     match x with
     | Ok r -> sqrt r p

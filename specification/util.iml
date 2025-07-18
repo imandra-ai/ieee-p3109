@@ -72,3 +72,7 @@ let rec floor_log2_abs (x : real) (max_depth : int) : int =
     else 0)
   [@@adm max_depth]
   [@@unroll 5]
+
+let ( ^ ) (x : int) (y : int) : real = pow x y [@@macro]
+
+let i2r = Real.of_int [@@macro]

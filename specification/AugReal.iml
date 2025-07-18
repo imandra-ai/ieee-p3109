@@ -1,0 +1,211 @@
+(** Augmented Reals *)
+
+[@@@import Util, "util.iml"]
+[@@@import Sqrt, "sqrt.iml"]
+[@@@import Log, "log.iml"]
+[@@@import Exp, "exp.iml"]
+[@@@import ExReal, "ExReal.iml"]
+
+type t =
+  | NaN
+  | PINF
+  | NINF
+  | R of real
+
+let zero = R 0.0
+
+let r2a (x : real) : t = R x [@@macro]
+let i2a (x : int) : t = r2a (Real.of_int x) [@@macro]
+
+let a2e (x : t) : (ExReal.t, string) Result.t =
+  match x with
+  | NaN -> Error "undefined"
+  | PINF -> Ok ExReal.PINF
+  | NINF -> Ok ExReal.NINF
+  | R r -> Ok (ExReal.R r)
+
+let ar2er (x : (t, string) Result.t) : (ExReal.t, string) Result.t =
+  match x with
+  | Ok a -> a2e a
+  | Error e -> Error e
+
+let ( ~- ) (x : t): t =
+  match x with
+  | NaN -> NaN
+  | NINF -> PINF
+  | PINF -> NINF
+  | R x -> (R (-. x))
+
+let ( + ) (x : t) (y : t) : (t, string) Result.t =
+  match x, y with
+  | NaN, _ | _, NaN -> Ok NaN
+  | (PINF | NINF), R _ -> Ok x
+  | R _, (PINF | NINF) -> Ok y
+  | R x, R y -> Ok (R (x +. y))
+  | _ -> Error "undefined"
+
+let ( - ) (x : t) (y : t) : (t, string) Result.t =
+  match x, y with
+  | NaN, _ | _, NaN -> Ok NaN
+  | NINF, _ | _, PINF -> Ok NINF
+  | PINF, _ | _, NINF -> Ok PINF
+  | R x, R y -> Ok (R (x -. y))
+  | _ -> Error "undefined"
+
+let ( * ) (x : t) (y : t) : (t, string) Result.t =
+  match x, y with
+  | NaN, _ | _, NaN -> Ok NaN
+
+  | NINF, NINF | PINF, PINF -> Ok PINF
+  | NINF, PINF | PINF, NINF  -> Ok NINF
+
+  | PINF, R x | R x, PINF when x >. 0.0 -> Ok PINF
+  | PINF, R x | R x, PINF when x <. 0.0 -> Ok NINF
+
+  | NINF, R x | R x, NINF when x >. 0.0 -> Ok NINF
+  | NINF, R x | R x, NINF when x <. 0.0 -> Ok PINF
+
+  | R x, R y -> Ok (R (x *. y))
+
+  | _ -> Error "undefined"
+
+let ( / ) (x : t) (y : t) : (t, string) Result.t =
+  match x, y with
+  | NaN, _ | _, NaN -> Ok NaN
+
+  | NINF, NINF | PINF, PINF -> Error "undefined"
+  | NINF, PINF | PINF, NINF  -> Error "undefined"
+  | _, R y when y = 0.0 -> Error "undefined"
+
+  | R _, PINF | R _, NINF -> Ok (R 0.0)
+
+  | PINF, R y when y >. 0.0 -> Ok PINF
+  | PINF, R y when y <. 0.0 -> Ok NINF
+  | NINF, R y when y >. 0.0 -> Ok NINF
+  | NINF, R y when y <. 0.0 -> Ok PINF
+
+  | R x, R y -> Ok (R (x /. y))
+
+  | _ -> Error "undefined"
+
+let ( < ) (x : t) (y : t) : bool =
+  match x, y with
+  | NaN, _ | _, NaN -> false
+  | NINF, NINF | PINF, PINF | PINF, NINF -> false
+  | NINF, PINF -> true
+  | NINF, R _ | R _, PINF -> true
+  | PINF, R _ | R _, NINF -> false
+  | R rx, R ry -> rx <. ry
+
+let ( <= ) (x : t) (y : t) : bool = x < y || x = y [@@macro]
+let ( > ) (x : t) (y : t) : bool = not (x <= y) [@@macro]
+let ( >= ) (x : t) (y : t) : bool = x > y || x = y [@@macro]
+
+let ( ^ ) (x : int) (y : int) : t = R (Util.pow x y) [@@macro]
+
+let abs (x: t) : t =
+  match x with
+  | NaN -> NaN
+  | NINF | PINF -> PINF
+  | R x -> R (Real.abs x)
+
+let sqrt (x : t) (p : int) : (t, string) Result.t =
+  match x with
+  | NINF -> Error "undefined"
+  | R r when r <. 0.0 -> Error "undefined"
+  | NaN -> Ok NaN
+  | PINF -> Ok PINF
+  | R r -> (
+    match Sqrt.sqrt r p with
+    | Ok r -> Ok (R r)
+    | Error e -> Error e)
+
+let pow2 (x : int) : t = R (Util.pow2 x) [@@macro]
+
+type res = (t, string) Result.t
+
+let ( ++ ) (x : res) (y : res) : res =
+  match x, y with
+  | Error e, _ | _, Error e -> Error e
+  | Ok x, Ok y -> x + y
+
+let ( -- ) (x : res) (y : res) : res =
+  match x, y with
+  | Error e, _ | _, Error e -> Error e
+  | Ok x, Ok y -> x - y
+
+let ( ** ) (x : res) (y : res) : res =
+  match x, y with
+  | Error e, _ | _, Error e -> Error e
+  | Ok x, Ok y -> x * y
+
+let ( // ) (x : res) (y : res) : res =
+  match x, y with
+  | Error e, _ | _, Error e -> Error e
+  | Ok x, Ok y -> x / y
+
+let ( ^^ ) (x : (int, string) Result.t) (y : (int, string) Result.t) : res =
+  match x, y with
+  | Error e, _ | _, Error e -> Error e
+  | Ok x, Ok y -> Ok (x ^ y)
+
+let absr (x : res) : res =
+  match x with
+  | Ok x -> Ok (abs x)
+  | Error e -> Error e
+
+let to_string : t -> string =
+  fun x ->
+    match x with
+    | NaN -> "NaN"
+    | NINF -> "-oo"
+    | PINF -> "+oo"
+    | R x -> Printf.sprintf "%s" (Q.to_string x)
+  [@@program]
+
+
+(** Some templates to check equivalence between AugReal and ExReal functions. *)
+
+let t_aug_eq1 (x : t)
+  (aug_f : t -> (t, string) Result.t)
+  (ex_f : ExReal.t -> (ExReal.t, string) Result.t) =
+  match a2e x with
+  | Ok xe ->
+    let ar = aug_f x in
+    (match ex_f xe with
+    | Ok x -> ar2er ar = Ok x
+    | Error _ -> ar = Ok NaN)
+  | _ -> true
+
+let t_aug_eq2 (x : t) (y : t)
+  (aug_f : t -> t -> (t, string) Result.t)
+  (ex_f : ExReal.t -> ExReal.t -> (ExReal.t, string) Result.t) =
+  match a2e x, a2e y with
+  | Ok xe, Ok ye ->
+    let ar = aug_f x y in
+    (match ex_f xe ye with
+    | Ok x -> ar2er ar = Ok x
+    | Error _ -> ar = Ok NaN)
+  | _ -> true
+
+let t_aug_eq2r (x : t) (y : t)
+  (aug_f : t -> t -> (t, string) Result.t)
+  (ex_f : (ExReal.t, string) Result.t -> (ExReal.t, string) Result.t -> (ExReal.t, string) Result.t) =
+  match a2e x, a2e y with
+  | Ok xe, Ok ye ->
+    let ar = aug_f x y in
+    (match ex_f (Ok xe) (Ok ye) with
+    | Ok x -> ar2er ar = Ok x
+    | Error _ -> ar = Ok NaN)
+  | _ -> true
+
+let t_aug_eq3 (x : t) (y : t) (z : t)
+  (aug_f : t -> t -> t -> (t, string) Result.t)
+  (ex_f : (ExReal.t, string) Result.t -> (ExReal.t, string) Result.t -> (ExReal.t, string) Result.t -> (ExReal.t, string) Result.t) =
+  match a2e x, a2e y, a2e z with
+  | Ok xe, Ok ye, Ok ze ->
+    let ar = aug_f x y z in
+    (match ex_f (Ok xe) (Ok ye) (Ok ze) with
+    | Ok x -> ar2er ar = Ok x
+    | Error _ -> ar = Ok NaN)
+  | _ -> true
