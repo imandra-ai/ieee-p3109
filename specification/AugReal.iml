@@ -15,6 +15,7 @@ type t =
 let zero = R 0.0
 
 let r2a (x : real) : t = R x [@@macro]
+let of_real (x : real) : t = R x [@@macro]
 let i2a (x : int) : t = r2a (Real.of_int x) [@@macro]
 
 let a2e (x : t) : (ExReal.t, string) Result.t =
@@ -162,50 +163,3 @@ let to_string : t -> string =
     | PINF -> "+oo"
     | R x -> Printf.sprintf "%s" (Q.to_string x)
   [@@program]
-
-
-(** Some templates to check equivalence between AugReal and ExReal functions. *)
-
-let t_aug_eq1 (x : t)
-  (aug_f : t -> (t, string) Result.t)
-  (ex_f : ExReal.t -> (ExReal.t, string) Result.t) =
-  match a2e x with
-  | Ok xe ->
-    let ar = aug_f x in
-    (match ex_f xe with
-    | Ok x -> ar2er ar = Ok x
-    | Error _ -> ar = Ok NaN)
-  | _ -> true
-
-let t_aug_eq2 (x : t) (y : t)
-  (aug_f : t -> t -> (t, string) Result.t)
-  (ex_f : ExReal.t -> ExReal.t -> (ExReal.t, string) Result.t) =
-  match a2e x, a2e y with
-  | Ok xe, Ok ye ->
-    let ar = aug_f x y in
-    (match ex_f xe ye with
-    | Ok x -> ar2er ar = Ok x
-    | Error _ -> ar = Ok NaN)
-  | _ -> true
-
-let t_aug_eq2r (x : t) (y : t)
-  (aug_f : t -> t -> (t, string) Result.t)
-  (ex_f : (ExReal.t, string) Result.t -> (ExReal.t, string) Result.t -> (ExReal.t, string) Result.t) =
-  match a2e x, a2e y with
-  | Ok xe, Ok ye ->
-    let ar = aug_f x y in
-    (match ex_f (Ok xe) (Ok ye) with
-    | Ok x -> ar2er ar = Ok x
-    | Error _ -> ar = Ok NaN)
-  | _ -> true
-
-let t_aug_eq3 (x : t) (y : t) (z : t)
-  (aug_f : t -> t -> t -> (t, string) Result.t)
-  (ex_f : (ExReal.t, string) Result.t -> (ExReal.t, string) Result.t -> (ExReal.t, string) Result.t -> (ExReal.t, string) Result.t) =
-  match a2e x, a2e y, a2e z with
-  | Ok xe, Ok ye, Ok ze ->
-    let ar = aug_f x y z in
-    (match ex_f (Ok xe) (Ok ye) (Ok ze) with
-    | Ok x -> ar2er ar = Ok x
-    | Error _ -> ar = Ok NaN)
-  | _ -> true

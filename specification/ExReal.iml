@@ -176,6 +176,12 @@ module Infix = struct
 
   let rx (x : real) = of_real x [@@macro]
 
+  let rec ( ^ ) (x : t) (y : int) : (t, string) Result.t =
+    match x with
+    | NINF -> Error "undefined"
+    | PINF -> Ok PINF
+    | R x -> Ok (R (Util.ripow x y))
+
   let ( <. ) (x : t) (y : t) : bool =
     lt x y
     [@@macro]
@@ -213,14 +219,6 @@ module Infix = struct
   let ( ^. ) (x : int) (y : int) : (t, string) Result.t =
     Ok (R (Util.pow x y))
     [@@macro]
-
-  let rec ( ^ ) (x : t) (y : int) : (t, string) Result.t =
-    if y < 0 then Error "invalid"
-    else if y = 0 then Ok (R 1.0)
-    else
-      match (x ^ (y-1)) with
-      | Ok y -> x *. y
-      | Error e -> Error e
 end
 
 module ResultInfix = struct

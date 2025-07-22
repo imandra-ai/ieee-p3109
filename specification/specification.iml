@@ -1,10 +1,11 @@
 [@@@import Util, "dune:math"]
-[@@@import ExReal, "dune:math"]
 [@@@import AugReal, "dune:math"]
 [@@@import Sqrt, "dune:math"]
 [@@@import Exp, "dune:math"]
 [@@@import Log, "dune:math"]
 [@@@import IEEE754, "IEEE754.iml"]
+
+let ( ^. ) (x : int) (y : int) = Util.pow x y
 
 (** Format definitions *)
 
@@ -150,14 +151,13 @@ module Projection = struct
 end
 
 let aug_real_is_within_range (f : Format.t) (x : AugReal.t) : bool =
-  let open AugReal in
   match x with
   | NaN -> true
   | NINF -> f.s = Signedness.Signed && f.d = Domain.Extended
   | PINF -> f.d = Domain.Extended
-  | R r -> (
+  | R r ->
     let _, _, _, m_lo, m_hi, _, _ = Format.get_format_parameters f in
-    m_lo <=. r && r <=. m_hi)
+    m_lo <=. r && r <=. m_hi
 
 (** Floating-point numeral definitions *)
 
@@ -373,23 +373,17 @@ module Float = struct
       | R x when x = 0.0 -> Ok zero
 
       | R x ->
-        let open ExReal in
-        let open ResultInfix in
         let e : int = Int.max (floor_log2_abs x 32768) (1 - b) in
-        let s = (rx x) *. (2 ^. (- e)) *. (2 ^. (p - 1)) in
-        (match s with
-          | Ok (R s) ->
-            (* [s] is an integer *)
-            let s = Real.to_int s in
-            let t = s mod (ipow2 (p - 1)) in
-            let z =
-              if s < ipow2 (p - 1) then
-                t
-              else
-                t + (e + b) * ipow2 (p - 1) in
-            Ok (of_int_repr f z)
-          | Ok _ -> Error "unreachable"
-          | Error e -> Error e)
+        let s = x *. (2 ^. (- e)) *. (2 ^. (p - 1)) in
+        (* [s] is an integer *)
+        let s = Real.to_int s in
+        let t = s mod (ipow2 (p - 1)) in
+        let z =
+          if s < ipow2 (p - 1) then
+            t
+          else
+            t + (e + b) * ipow2 (p - 1) in
+        Ok (of_int_repr f z)
 
       | _ -> Error "unreachable"
 
@@ -398,11 +392,10 @@ module Float = struct
 
   (** Project extended real value [x] to P3109 format [f]. *)
   let project (f : Format.t) (pi : Projection.t) (x : AugReal.t) : (t, string) Result.t =
-    let open AugReal in
     let _, p, b, m_lo, m_hi, _, _ = Format.get_format_parameters f in
     let sat, rnd = pi in
     let r : AugReal.t = round_to_precision p b rnd x in
-    let s : AugReal.t = saturate (r2a m_lo) (r2a m_hi) f.s sat rnd r in
+    let s : AugReal.t = saturate (AugReal.of_real m_lo) (AugReal.of_real m_hi) f.s sat rnd r in
     encode f s
 
 
@@ -676,39 +669,39 @@ module Float = struct
     | R 0.0, (PINF | NINF), _ -> Ok NaN
     | (PINF | NINF), R 0.0, _ -> Ok NaN
 
-    | _, PINF, PINF when x < R 0.0 -> Ok NaN
-    | _, NINF, PINF when x > R 0.0 -> Ok NaN
-    | PINF, _, PINF when y < R 0.0 -> Ok NaN
-    | NINF, _, PINF when y > R 0.0 -> Ok NaN
+    | R x, PINF, PINF when x <. 0.0 -> Ok NaN
+    | R x, NINF, PINF when x >. 0.0 -> Ok NaN
+    | PINF, R y, PINF when y <. 0.0 -> Ok NaN
+    | NINF, R y, PINF when y >. 0.0 -> Ok NaN
 
-    | _, NINF, NINF when x < R 0.0 -> Ok NaN
-    | _, PINF, NINF when x > R 0.0 -> Ok NaN
-    | NINF, _, NINF when y < R 0.0 -> Ok NaN
-    | PINF, _, NINF when y > R 0.0 -> Ok NaN
+    | R x, NINF, NINF when x <. 0.0 -> Ok NaN
+    | R x, PINF, NINF when x >. 0.0 -> Ok NaN
+    | NINF, R y, NINF when y <. 0.0 -> Ok NaN
+    | PINF, R y, NINF when y >. 0.0 -> Ok NaN
 
     | R _, R _, NINF -> Ok NINF
-    | R _, NINF, R _ when x >= R 0.0 && z < R 0.0 -> Ok NINF
-    | R _, NINF, R _ when x < R 0.0 && z >= R 0.0 -> Ok PINF
-    | R _, NINF, R _ when x >= R 0.0 && z >= R 0.0 -> Ok NINF
-    | R _, NINF, R _ when x < R 0.0 && z < R 0.0 -> Ok PINF
-    | R _, PINF, NINF when x < R 0.0-> Ok NINF
-    | R _, NINF, NINF when x >= R 0.0 -> Ok NINF
+    | R x, NINF, R z when x >=. 0.0 && z <. 0.0 -> Ok NINF
+    | R x, NINF, R z when x <. 0.0 && z >=. 0.0 -> Ok PINF
+    | R x, NINF, R z when x >=. 0.0 && z >=. 0.0 -> Ok NINF
+    | R x, NINF, R z when x <. 0.0 && z <. 0.0 -> Ok PINF
+    | R x, PINF, NINF when x <. 0.0-> Ok NINF
+    | R x, NINF, NINF when x >=. 0.0 -> Ok NINF
 
     | R _, R _, PINF -> Ok PINF
-    | R _, PINF, R _ when x >= R 0.0 && z < R 0.0 -> Ok PINF
-    | R _, PINF, R _ when x < R 0.0 && z >= R 0.0 -> Ok NINF
-    | R _, PINF, R _ when x >= R 0.0 && z >= R 0.0 -> Ok PINF
-    | R _, PINF, R _ when x < R 0.0 && z < R 0.0 -> Ok NINF
+    | R x, PINF, R z when x >=. 0.0 && z <. 0.0 -> Ok PINF
+    | R x, PINF, R z when x <. 0.0 && z >=. 0.0 -> Ok NINF
+    | R x, PINF, R z when x >=. 0.0 && z >=. 0.0 -> Ok PINF
+    | R x, PINF, R z when x <. 0.0 && z <. 0.0 -> Ok NINF
     | R _, PINF, PINF -> Ok PINF
-    | R _, NINF, PINF when x < R 0.0 -> Ok PINF
+    | R x, NINF, PINF when x <. 0.0 -> Ok PINF
 
-    | PINF, R _, R _ when y >= R 0.0 && z >= R 0.0 -> Ok PINF
-    | PINF, R _, R _ when y >= R 0.0 && z < R 0.0 -> Ok PINF
-    | PINF, R _, R _ when y < R 0.0 && z >= R 0.0 -> Ok NINF
-    | PINF, R _, R _ when y < R 0.0 && z < R 0.0 -> Ok NINF
+    | PINF, R y, R z when y >=. 0.0 && z >=. 0.0 -> Ok PINF
+    | PINF, R y, R z when y >=. 0.0 && z <. 0.0 -> Ok PINF
+    | PINF, R y, R z when y <. 0.0 && z >=. 0.0 -> Ok NINF
+    | PINF, R y, R z when y <. 0.0 && z <. 0.0 -> Ok NINF
 
-    | PINF, R _, PINF when y >= R 0.0 -> Ok PINF
-    | PINF, R _, NINF when y < R 0.0 -> Ok NINF
+    | PINF, R y, PINF when y >=. 0.0 -> Ok PINF
+    | PINF, R y, NINF when y <. 0.0 -> Ok NINF
 
     | PINF, PINF, R _ -> Ok PINF
     | PINF, PINF, PINF -> Ok PINF
@@ -716,13 +709,13 @@ module Float = struct
     | PINF, NINF, R _ -> Ok NINF
     | PINF, NINF, NINF -> Ok NINF
 
-    | NINF, R _, R _ when y >= R 0.0 && z >= R 0.0 -> Ok NINF
-    | NINF, R _, R _ when y >= R 0.0 && z < R 0.0 -> Ok NINF
-    | NINF, R _, R _ when y < R 0.0 && z >= R 0.0 -> Ok PINF
-    | NINF, R _, R _ when y < R 0.0 && z < R 0.0 -> Ok PINF
+    | NINF, R y, R z when y >=. 0.0 && z >=. 0.0 -> Ok NINF
+    | NINF, R y, R z when y >=. 0.0 && z <. 0.0 -> Ok NINF
+    | NINF, R y, R z when y <. 0.0 && z >=. 0.0 -> Ok PINF
+    | NINF, R y, R z when y <. 0.0 && z <. 0.0 -> Ok PINF
 
-    | NINF, R _, NINF when y >= R 0.0 -> Ok NINF
-    | NINF, R _, PINF when y < R 0.0 -> Ok PINF
+    | NINF, R y, NINF when y >=. 0.0 -> Ok NINF
+    | NINF, R y, PINF when y <. 0.0 -> Ok PINF
 
     | NINF, PINF, R _ -> Ok NINF
     | NINF, PINF, NINF -> Ok NINF
@@ -951,8 +944,14 @@ module Float = struct
     match x, y with
     | NaN, _ -> Ok NaN
     | _, NaN -> Ok NaN
-    | NINF, PINF -> Ok NaN
     | PINF, NINF -> Ok NaN
+    | NINF, PINF -> Ok NaN
+    | PINF, PINF -> Ok PINF
+    | NINF, NINF -> Ok NINF
+    | PINF, R _ -> Ok PINF
+    | NINF, R _ -> Ok NINF
+    | R _, PINF -> Ok PINF
+    | R _, NINF -> Ok NINF
     | R x, R y -> Ok (R (x *. (Util.pow2 s_x) +. y *. (Util.pow2 s_y)))
     | _ -> Error "undefined"
 
@@ -979,8 +978,21 @@ module Float = struct
     match x, y with
     | NaN, _ -> Ok NaN
     | _, NaN -> Ok NaN
-    | (PINF | NINF), R y when y = 0.0 -> Ok NaN
-    | R x, (PINF | NINF) when x = 0.0 -> Ok NaN
+
+    | NINF, R y
+    | PINF, R y when y = 0.0 -> Ok NaN
+    | R x, NINF
+    | R x, PINF when x = 0.0 -> Ok NaN
+
+    | NINF, NINF | PINF, PINF -> Ok PINF
+    | NINF, PINF | PINF, NINF -> Ok NINF
+
+    | PINF, R x | R x, PINF when x >. 0.0 -> Ok PINF
+    | PINF, R x | R x, PINF when x <. 0.0 -> Ok NINF
+
+    | NINF, R x | R x, NINF when x >. 0.0 -> Ok NINF
+    | NINF, R x | R x, NINF when x <. 0.0 -> Ok PINF
+
     | R x, R y -> Ok (R (x *. y *. (Util.pow2 s)))
     | _ -> Error "undefined"
 
@@ -1003,26 +1015,68 @@ module Float = struct
 
   (** 4.9 Mixed IEEE Std 754 and P3109 operations *)
   let aug_scaled_fma (a : AugReal.t) (s_a : int) (x : AugReal.t) (y : AugReal.t) (s : int) : (AugReal.t, string) Result.t =
-    let open AugReal in
     match a, x, y with
+    | NaN, _, _ -> Ok NaN
+    | _, NaN, _ -> Ok NaN
+    | _, _, NaN -> Ok NaN
+
     | _, PINF, R 0.0 -> Ok NaN
     | _, NINF, R 0.0 -> Ok NaN
     | _, R 0.0, PINF -> Ok NaN
     | _, R 0.0, NINF -> Ok NaN
 
-    | NINF, PINF, y when y > R 0.0 -> Ok NaN
-    | NINF, x, PINF when x > R 0.0 -> Ok NaN
+    | NINF, PINF, PINF -> Ok NaN
+    | PINF, NINF, PINF -> Ok NaN
+    | PINF, PINF, NINF -> Ok NaN
+    | NINF, NINF, NINF -> Ok NaN
+    | PINF, PINF, PINF -> Ok PINF
+    | NINF, NINF, NINF -> Ok NINF
+    | NINF, NINF, PINF -> Ok NINF
+    | NINF, PINF, NINF -> Ok NINF
+    | PINF, NINF, NINF -> Ok PINF
 
-    | NINF, NINF, y when y < R 0.0 -> Ok NaN
-    | NINF, x, NINF when x < R 0.0 -> Ok NaN
+    | NINF, PINF, R y when y >. 0.0 -> Ok NaN
+    | NINF, R x, PINF when x >. 0.0 -> Ok NaN
 
-    | PINF, PINF, y when y < R 0.0 -> Ok NaN
-    | PINF, x, PINF when x < R 0.0 -> Ok NaN
+    | NINF, NINF, R y when y <. 0.0 -> Ok NaN
+    | NINF, R x, NINF when x <. 0.0 -> Ok NaN
 
-    | PINF, NINF, y when y > R 0.0 -> Ok NaN
-    | PINF, x, NINF when x > R 0.0 -> Ok NaN
+    | PINF, PINF, R y when y <. 0.0 -> Ok NaN
+    | PINF, R x, PINF when x <. 0.0 -> Ok NaN
 
-    | R a, R x, R y -> Ok (R (a *. (Util.pow2 s_a) +. x *. y *. (Util.pow2 s)))
+    | PINF, NINF, R y when y >. 0.0 -> Ok NaN
+    | PINF, R x, NINF when x >. 0.0 -> Ok NaN
+
+    | PINF, R x, R y -> Ok PINF
+    | NINF, R x, R y -> Ok NINF
+    | PINF, PINF, R _ -> Ok PINF
+
+    | R _, PINF, R y when y >=. 0.0 -> Ok PINF
+    | R _, PINF, R y when y <. 0.0 -> Ok NINF
+
+    | NINF, PINF, R y when y <. 0.0 -> Ok NINF
+
+    | R _, NINF, R y when y >=. 0.0 -> Ok NINF
+    | R _, NINF, R y when y <. 0.0 -> Ok PINF
+
+    | NINF, NINF, R y when y >=. 0.0 -> Ok NINF
+
+    | PINF, NINF, R y when y <. 0.0 -> Ok PINF
+
+    | R _, R x, PINF when x >=. 0.0 -> Ok PINF
+    | R _, R x, PINF when x <. 0.0 -> Ok NINF
+    | R _, PINF, PINF -> Ok PINF
+    | PINF, R _, PINF -> Ok PINF
+    | NINF, R x, PINF when x <. 0.0 -> Ok NINF
+    | R _, NINF, PINF -> Ok NINF
+    | R _, R x, NINF when x >=. 0.0 -> Ok NINF
+    | R _, R x, NINF when x <. 0.0 -> Ok PINF
+    | NINF, R _, NINF -> Ok NINF
+    | PINF, R x, NINF when x <. 0.0 -> Ok PINF
+    | R _, PINF, NINF -> Ok NINF
+    | R _, NINF, NINF -> Ok PINF
+
+    | R a, R x, R y -> Ok (R (a *. (2 ^. s_a) +. x *. y *. (2 ^. s)))
 
     | _ -> Error "undefined"
 
@@ -1061,6 +1115,14 @@ module Float = struct
     match x, y with
     | NaN, _ -> Ok NaN
     | _, NaN -> Ok NaN
+    | PINF, PINF -> Ok PINF
+    | NINF, NINF -> Ok NINF
+    | PINF, NINF -> Ok NINF
+    | NINF, PINF -> Ok NINF
+    | PINF, R _ -> Ok y
+    | R _, PINF -> Ok x
+    | NINF, R _ -> Ok x
+    | R _, NINF -> Ok y
     | R x, R y -> Ok (R (if x <. y then x else y))
     | _ -> Error "undefined"
 
@@ -1079,6 +1141,14 @@ module Float = struct
     match x, y with
     | NaN, _ -> Ok NaN
     | _, NaN -> Ok NaN
+    | PINF, PINF -> Ok PINF
+    | NINF, NINF -> Ok NINF
+    | PINF, NINF -> Ok PINF
+    | NINF, PINF -> Ok PINF
+    | PINF, R _ -> Ok PINF
+    | R _, PINF -> Ok PINF
+    | NINF, R _ -> Ok y
+    | R _, NINF -> Ok x
     | R x, R y -> Ok (R (if x >. y then x else y))
     | _ -> Error "undefined"
 
@@ -1112,6 +1182,14 @@ module Float = struct
     match x, y with
     | NaN, _ -> Ok NaN
     | _, NaN -> Ok NaN
+    | PINF, PINF -> Ok PINF
+    | NINF, NINF -> Ok NINF
+    | PINF, NINF -> Ok NINF
+    | NINF, PINF -> Ok NINF
+    | PINF, R y  -> Ok (R y)
+    | NINF, R y  -> Ok (R y)
+    | R x, PINF  -> Ok (R x)
+    | R x, NINF  -> Ok (R x)
     | R x, R y when Real.abs x <. Real.abs y -> Ok (R x)
     | R x, R y when Real.abs x >. Real.abs y -> Ok (R y)
     | R x, R y when Real.abs x = Real.abs y -> Ok (R (Real.min x y))
@@ -1132,6 +1210,14 @@ module Float = struct
     match x, y with
     | NaN, _ -> Ok NaN
     | _, NaN -> Ok NaN
+    | PINF, PINF -> Ok PINF
+    | NINF, NINF -> Ok NINF
+    | PINF, NINF -> Ok PINF
+    | NINF, PINF -> Ok PINF
+    | PINF, R y  -> Ok PINF
+    | NINF, R y  -> Ok NINF
+    | R x, PINF  -> Ok PINF
+    | R x, NINF  -> Ok NINF
     | R x, R y when Real.abs x >. Real.abs y -> Ok (R x)
     | R x, R y when Real.abs x <. Real.abs y -> Ok (R y)
     | R x, R y when Real.abs x = Real.abs y -> Ok (R (Real.max x y))
@@ -1163,16 +1249,29 @@ module Float = struct
   (**  4.9.3 Clamp *)
 
   let aug_clamp (x : AugReal.t) (lo : AugReal.t) (hi : AugReal.t) : (AugReal.t, string) Result.t =
-    let open AugReal in
     match x, lo, hi with
     | NaN, _, _ -> Ok NaN
     | _, NaN, _ -> Ok NaN
     | _, _, NaN -> Ok NaN
-    (* TODO: infs *)
+
+    | _, (PINF | R _), NINF -> Ok NaN
+    | _, PINF, R _ -> Ok NaN
+    | _, R x, R y when x >. y -> Ok NaN
+
+    | _, PINF, PINF -> Ok PINF
+    | _, _, NINF -> Ok NINF
+    | PINF, _, (PINF | R _) -> Ok hi
+    | NINF, _, (PINF | R _) -> Ok lo
+    | _, NINF, PINF -> Ok x
+    | R x, NINF, R hi when x <=. hi -> Ok (R x)
+    | R x, NINF, R hi when x >. hi -> Ok (R hi)
+    | R x, R lo, PINF when x <=. lo -> Ok (R lo)
+    | R x, R lo, PINF when x >. lo -> Ok (R x)
+
     | R x, R lo, R hi -> Ok (R (
-      if x <=. lo then lo
-      else if x >=. hi then hi
-      else x))
+        if x <=. lo then lo
+        else if x >=. hi then hi
+        else x))
     | _ -> Error "undefined"
 
   let internal_clamp (f : Format.t) (x : t) (lo : t) (hi : t) : (t, string) Result.t =
@@ -1193,6 +1292,12 @@ module Float = struct
     match x, y with
     | NaN, _ -> Ok false
     | _, NaN -> Ok false
+    | (NINF | R _), PINF -> Ok true
+    | (PINF | R _), NINF -> Ok false
+    | PINF, PINF -> Ok false
+    | NINF, NINF -> Ok false
+    | PINF, R _ -> Ok false
+    | NINF, R _ -> Ok true
     | R x, R y -> Ok (x <. y)
     | _ -> Error "undefined"
 
@@ -1210,7 +1315,13 @@ module Float = struct
     match x, y with
     | NaN, _ -> Ok false
     | _, NaN -> Ok false
-    | R x, R y -> Ok (x <. y)
+    | _, PINF -> Ok true
+    | NINF, _ -> Ok true
+    | PINF, PINF -> Ok true
+    | NINF, NINF -> Ok true
+    | PINF, (R _ | NINF) -> Ok false
+    | R _, NINF -> Ok false
+    | R x, R y -> Ok (x <=. y)
     | _ -> Error "undefined"
 
   let internal_compare_less_equal (f_x : Format.t) (f_y : Format.t)  (x : t) (y : t) : (bool, string) Result.t =
@@ -1227,6 +1338,14 @@ module Float = struct
     match x, y with
     | NaN, _ -> Ok false
     | _, NaN -> Ok false
+    | PINF, PINF -> Ok true
+    | NINF, NINF -> Ok true
+    | PINF, NINF -> Ok false
+    | NINF, PINF -> Ok false
+    | PINF, R _ -> Ok false
+    | NINF, R _ -> Ok false
+    | R _, NINF -> Ok false
+    | R _, PINF -> Ok false
     | R x, R y -> Ok (x = y)
     | _ -> Error "undefined"
 
@@ -1244,6 +1363,12 @@ module Float = struct
     match x, y with
     | NaN, _ -> Ok false
     | _, NaN -> Ok false
+    | (NINF | R _), PINF -> Ok false
+    | (PINF | R _), NINF -> Ok true
+    | PINF, PINF -> Ok false
+    | NINF, NINF -> Ok false
+    | PINF, R _ -> Ok true
+    | NINF, R _ -> Ok false
     | R x, R y -> Ok (x >. y)
     | _ -> Error "undefined"
 
@@ -1261,6 +1386,12 @@ module Float = struct
     match x, y with
     | NaN, _ -> Ok false
     | _, NaN -> Ok false
+    | (NINF | R _), PINF -> Ok false
+    | (PINF | R _), NINF -> Ok true
+    | PINF, PINF -> Ok true
+    | NINF, NINF -> Ok true
+    | PINF, R _ -> Ok true
+    | NINF, R _ -> Ok false
     | R x, R y -> Ok (x >=. y)
     | _ -> Error "undefined"
 
@@ -1281,6 +1412,7 @@ module Float = struct
     | NINF -> Ok false
     | PINF -> Ok false
     | R x when x = 0.0 -> Ok true
+    | R x when x <> 0.0 -> Ok false
     | _ -> Error "undefined"
 
   let internal_is_zero (f : Format.t) (x : t) : (bool, string) Result.t =
@@ -1298,6 +1430,7 @@ module Float = struct
     | NINF -> Ok false
     | PINF -> Ok false
     | R x when x = 1.0 -> Ok true
+    | R x when x <> 1.0 -> Ok false
     | _ -> Error "undefined"
 
   let internal_is_one (f : Format.t) (x : t) : (bool, string) Result.t =
@@ -1316,6 +1449,7 @@ module Float = struct
     | PINF -> Ok false
     | NINF -> Ok true
     | R x when x <. 0.0 -> Ok true
+    | R x when x >=. 0.0 -> Ok false
     | _ -> Error "undefined"
 
   let internal_is_sign_minus (f : Format.t) (x : t) : (bool, string) Result.t =
