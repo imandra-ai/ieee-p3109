@@ -679,6 +679,11 @@ module Float = struct
     | NINF, R y, NINF when y <. 0.0 -> Ok NaN
     | PINF, R y, NINF when y >. 0.0 -> Ok NaN
 
+    | NINF, PINF, PINF -> Ok NaN
+    | PINF, NINF, PINF -> Ok NaN
+    | PINF, PINF, NINF -> Ok NaN
+    | NINF, NINF, NINF -> Ok NaN
+
     | R _, R _, NINF -> Ok NINF
     | R x, NINF, R z when x >=. 0.0 && z <. 0.0 -> Ok NINF
     | R x, NINF, R z when x <. 0.0 && z >=. 0.0 -> Ok PINF
@@ -804,8 +809,8 @@ module Float = struct
     match x with
     | NaN -> Ok NaN
     | NINF -> Ok NaN
-    | PINF -> Ok (R 0.0)
     | R x when x <=. 0.0 -> Ok NaN
+    | PINF -> Ok (R 0.0)
     | R x ->
       (match Sqrt.sqrt x 8 with (* TODO: Proof that 8 is enough *)
       | Ok r -> Ok (R (1.0 /. r))
@@ -835,7 +840,6 @@ module Float = struct
     | PINF, R _ -> Ok PINF
     | R _, NINF -> Ok PINF
     | NINF, R _ -> Ok PINF
-    (* TODO: more cases? *)
     | R x, R y ->
       (match Sqrt.sqrt ((Util.ripow (Real.abs x) 2) +. (Util.ripow (Real.abs y) 2)) 8 with (* TODO: Proof that 8 is enough *)
       | Ok r -> Ok (R r)
@@ -1020,20 +1024,15 @@ module Float = struct
     | _, NaN, _ -> Ok NaN
     | _, _, NaN -> Ok NaN
 
-    | _, PINF, R 0.0 -> Ok NaN
-    | _, NINF, R 0.0 -> Ok NaN
-    | _, R 0.0, PINF -> Ok NaN
-    | _, R 0.0, NINF -> Ok NaN
-
     | NINF, PINF, PINF -> Ok NaN
     | PINF, NINF, PINF -> Ok NaN
     | PINF, PINF, NINF -> Ok NaN
     | NINF, NINF, NINF -> Ok NaN
-    | PINF, PINF, PINF -> Ok PINF
-    | NINF, NINF, NINF -> Ok NINF
-    | NINF, NINF, PINF -> Ok NINF
-    | NINF, PINF, NINF -> Ok NINF
-    | PINF, NINF, NINF -> Ok PINF
+
+    | _, PINF, R 0.0 -> Ok NaN
+    | _, NINF, R 0.0 -> Ok NaN
+    | _, R 0.0, PINF -> Ok NaN
+    | _, R 0.0, NINF -> Ok NaN
 
     | NINF, PINF, R y when y >. 0.0 -> Ok NaN
     | NINF, R x, PINF when x >. 0.0 -> Ok NaN
@@ -1046,6 +1045,12 @@ module Float = struct
 
     | PINF, NINF, R y when y >. 0.0 -> Ok NaN
     | PINF, R x, NINF when x >. 0.0 -> Ok NaN
+
+    | PINF, PINF, PINF -> Ok PINF
+    | NINF, NINF, NINF -> Ok NINF
+    | NINF, NINF, PINF -> Ok NINF
+    | NINF, PINF, NINF -> Ok NINF
+    | PINF, NINF, NINF -> Ok PINF
 
     | PINF, R x, R y -> Ok PINF
     | NINF, R x, R y -> Ok NINF

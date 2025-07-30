@@ -33,6 +33,7 @@ let rec pow (x : int) (n : int) : real =
 let rec ripow (x : real) (n : int) : real =
     if (x = 0.0) then 0.0 else
     if (x = 2.0) then pow2 n else
+    if (n = 2) then x *. x else
     match n with
     | 0 -> 1.0
     | 1 -> x

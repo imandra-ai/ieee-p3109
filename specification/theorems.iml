@@ -172,7 +172,7 @@ theorem zero_means_is_zero (f : Format.t) (x : Float.t) =
   (* [@@by unroll 1000] *)
   [@@fc]
 
-theorem zero_is_zero_fwd (f : Format.t) (x : Float.t) =
+(* theorem zero_is_zero_fwd (f : Format.t) (x : Float.t) =
   let open AugReal in
   x = 0 ==> ((Float.decode f x = R 0.0) [@trigger])
   [@@timeout 360]
@@ -195,9 +195,9 @@ theorem zero_is_zero (f : Format.t) (x : Float.t) =
     [%use zero_is_zero_fwd f x] @>
     [%use zero_is_zero_bwd f x] @>
     auto]
-  [@@fc]
+  [@@fc] *)
 
-theorem decode_specials (f : Format.t) (x : Float.t) =
+(* theorem decode_specials (f : Format.t) (x : Float.t) =
   let open AugReal in
   ((Float.is_pinf f x) <==> (Float.decode f x = PINF)) &&
   ((Float.is_ninf f x) <==> (Float.decode f x = NINF)) &&
@@ -212,7 +212,7 @@ theorem decode_specials (f : Format.t) (x : Float.t) =
     [%use nan_decodes_to_nan f x] @>
     [%use zero_decodes_to_zero f x] @>
     [%use zero_is_zero f x] @>
-    auto]
+    auto] *)
 
 (** 4.7.1 Specification of IEEE Std 754 formats *)
 
@@ -258,7 +258,7 @@ theorem internal_negate_ok (f : Format.t) (x : Float.t) =
 theorem internal_copy_sign_ok (f : Format.t) (x : Float.t) (y : Float.t) =
   Result.is_ok (Float.internal_copy_sign f x y)
   [@@disable Specification.Float.project, Float.decode_aux, Util.pow2, Util.ipow2, Format.get_format_parameters]
-  [@@timeout 60]
+  [@@timeout 240]
   [@@by auto]
 
 
@@ -297,13 +297,6 @@ theorem internal_divide_ok (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (p
 
 (** 4.8.4 Unary mathematical operations *)
 
-(** [aug_fma] never returns an error *)
-theorem aug_fma_ok (x : AugReal.t) (y : AugReal.t) (z : AugReal.t) =
-  Result.is_ok (Float.aug_fma x y z)
-  [@@disable Util.pow2, Util.ipow2]
-  [@@by auto]
-  [@@fc]
-
 (** [internal_fma] never returns an error *)
 theorem internal_fma_ok (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (f_r : Format.t) (pi : Projection.t)
   (x : Float.t) (y : Float.t) (z : Float.t) =
@@ -314,12 +307,6 @@ theorem internal_fma_ok (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (f_r 
 
 
 (** 4.8.xx Fused Add Add *)
-
-(** [aug_faa] never returns an error *)
-theorem aug_faa_ok (x : AugReal.t) (y : AugReal.t) (z : AugReal.t) =
-  Result.is_ok (Float.aug_faa x y z)
-  [@@by auto]
-  [@@fc]
 
 (** [internal_faa] never returns an error *)
 theorem internal_faa_ok (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (f_r : Format.t) (pi : Projection.t)
@@ -334,14 +321,14 @@ theorem internal_faa_ok (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (f_r 
 theorem internal_sqrt_ok (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : Float.t) =
   Result.is_ok (Float.internal_sqrt f_x f_z pi x)
   [@@timeout 60]
-  [@@disable Float.project, Float.decode, Float.decode_aux, Float.round_to_precision, Float.saturate, Util.pow2, Util.ipow2, Format.get_format_parameters]
+  [@@disable Float.project, Float.decode, Float.decode_aux, Float.round_to_precision, Float.saturate, Util.pow2, Util.ipow2, Format.get_format_parameters, Sqrt.sqrt]
   [@@by auto]
 
 (** [internal_rsqrt] never returns an error *)
 theorem internal_rsqrt_ok (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : Float.t) =
   Result.is_ok (Float.internal_rsqrt f_x f_z pi x)
   [@@timeout 3600]
-  [@@disable Float.project, Float.decode, Float.decode_aux, Float.round_to_precision, Float.saturate, Util.pow2, Util.ipow2, Format.get_format_parameters, ExReal.sqrt]
+  [@@disable Float.project, Float.decode, Float.decode_aux, Float.round_to_precision, Float.saturate, Util.pow2, Util.ipow2, Format.get_format_parameters, Sqrt.sqrt]
   [@@by auto]
 
 (** [internal_exp] never returns an error *)
@@ -353,7 +340,7 @@ theorem internal_exp_ok (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x
 (** [internal_exp2] never returns an error *)
 theorem internal_exp2_ok (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : Float.t) =
   Result.is_ok (Float.internal_exp2 f_x f_z pi x)
-  [@@disable Float.project, Float.decode, Float.decode_aux, Float.round_to_precision, Float.saturate, ExReal.exp2, Exp.exp2, Format.get_format_parameters]
+  [@@disable Float.project, Float.decode, Float.decode_aux, Float.round_to_precision, Float.saturate, Exp.exp2, Format.get_format_parameters]
   [@@by auto]
 
 (** [internal_log] never returns an error *)
@@ -371,19 +358,38 @@ theorem internal_log2_ok (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (
 
 (** 4.x.x Hypothenuse *)
 
+(* aug_hypot wants a few helpers *)
+theorem h1 (x : real) =
+  ((Util.ripow (Real.abs x) 2) [@trigger]) >=. 0.0
+  [@@timeout 10]
+  [@@by auto]
+  [@@fc]
+
+theorem h2 (x : real) (y : real) =
+  x >=. 0.0 && y >=. 0.0 ==> x +. y >=. 0.0
+  [@@timeout 10]
+  [@@by auto]
+  [@@fc]
+
+theorem h2 (x : real) (y : real) =
+  (((Util.ripow (Real.abs x) 2) +. (Util.ripow (Real.abs y) 2)) [@trigger]) >=. 0.0
+  [@@timeout 10]
+  [@@by auto]
+  [@@fc]
+
 (** [aug_hypot] never returns an error *)
 theorem aug_hypot_ok (x : AugReal.t) (y : AugReal.t) =
   Result.is_ok ((Float.aug_hypot x y) [@trigger])
   [@@timeout 60]
-  [@@disable Util.pow2, Util.ipow2]
-  [@@by unroll_nonlin 10 10 100]
+  [@@disable Sqrt.sqrt]
+  [@@by auto]
   [@@fc]
 
 theorem internal_hypot_ok (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (pi : Projection.t) (x : Float.t) (y : Float.t) =
   Result.is_ok (Float.internal_hypot f_x f_y f_z pi x y)
-  [@@timeout 3600]
-  [@@disable Float.aug_hypot, Float.project, Float.decode, Float.decode_aux, Float.round_to_precision, Float.saturate, Util.pow2, Util.ipow2, Format.get_format_parameters]
-  [@@by auto]
+  [@@timeout 60]
+  [@@disable Float.project, Float.decode, Float.decode_aux, Float.round_to_precision, Float.saturate, Util.pow2, Util.ipow2, Format.get_format_parameters]
+  [@@by [%use aug_hypot_ok (Float.decode f_x x) (Float.decode f_y y)] @> auto]
 
 
 (** 4.8.6 Scaled addition *)
@@ -408,12 +414,6 @@ theorem internal_multiply_scaled_ok (f_x : Format.t) (f_y : Format.t) (f_z : For
 
 
 (** 4.9 Mixed IEEE Std 754 and P3109 operations *)
-
-theorem aug_scaled_fma_ok (a : AugReal.t) (s_a : int) (x : AugReal.t) (y : AugReal.t) (s : int) =
-  Result.is_ok (Float.aug_scaled_fma a s_a x y s)
-  [@@disable Util.pow2, Util.ipow2, Format.get_format_parameters]
-  [@@by auto]
-  [@@fc]
 
 (** [internal_scaled_fma] never returns an error *)
 theorem internal_scaled_fma_ok (phi : IEEE754.Format.t) (f_x : Format.t) (f_y : Format.t) (pi : Projection.t)

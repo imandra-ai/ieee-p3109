@@ -1,0 +1,26 @@
+[@@@import Specification, "dune:specification"]
+[@@@import Sqrt, "sqrt.iml"]
+
+open Specification
+open Sqrt
+
+let unroll_nonlin qt nqt steps = Tactic.unroll ~smt:"z3-full-nonlinear" ~query_timeout:qt ~no_asm_query_timeout:nqt steps
+
+let f81 = {Format.kp = Format.B8P1; s = Signedness.Signed; d = Domain.Extended}
+let f83 = {Format.kp = Format.B8P3; s = Signedness.Signed; d = Domain.Extended}
+
+let fmt = f83 [@@macro]
+let enc (r : real) = match Float.encode fmt (AugReal.R r) with | Ok e -> e | _ -> Float.nan f83
+let dec (x : Float.t) = match Float.decode fmt x with | AugReal.R e -> e | _ -> 0.0
+
+(* Just some checks; the important theorems are all in sqrt.iml *)
+verify (Float.sqrt fmt fmt (SaturationMode.OvfInf, RoundingMode.TowardZero) (enc 1.0) = (enc 1.0)) [@@by ground_eval]
+verify (dec (Float.sqrt fmt fmt (SaturationMode.OvfInf, RoundingMode.TowardZero) (enc 1.0)) = 1.0) [@@by ground_eval]
+verify (Float.sqrt fmt fmt (SaturationMode.OvfInf, RoundingMode.TowardZero) (enc 4.0) = (enc 2.0)) [@@by ground_eval]
+verify (dec(Float.sqrt fmt fmt (SaturationMode.OvfInf, RoundingMode.TowardZero) (enc 4.0)) = 2.0) [@@by ground_eval]
+verify (Float.sqrt fmt fmt (SaturationMode.OvfInf, RoundingMode.TowardZero) (enc 16.0) = (enc 4.0)) [@@by ground_eval]
+verify (Float.sqrt fmt fmt (SaturationMode.OvfInf, RoundingMode.TowardZero) (enc 64.0) = (enc 8.0)) [@@by ground_eval]
+verify (Float.sqrt fmt fmt (SaturationMode.OvfInf, RoundingMode.TowardZero) (enc 256.0) = (enc 16.0)) [@@by ground_eval]
+verify (dec (Float.sqrt fmt fmt (SaturationMode.OvfInf, RoundingMode.TowardZero) (enc 256.0)) = 16.0) [@@by ground_eval]
+verify (Float.sqrt fmt fmt (SaturationMode.OvfInf, RoundingMode.TowardZero) (Float.nan f83) = Float.nan f83)
+
