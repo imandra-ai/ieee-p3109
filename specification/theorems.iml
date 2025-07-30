@@ -257,9 +257,15 @@ theorem internal_negate_ok (f : Format.t) (x : Float.t) =
 (** [internal_copy_sign] never returns an error *)
 theorem internal_copy_sign_ok (f : Format.t) (x : Float.t) (y : Float.t) =
   Result.is_ok (Float.internal_copy_sign f x y)
-  [@@disable Specification.Float.project, Float.decode_aux, Util.pow2, Util.ipow2, Format.get_format_parameters]
-  [@@timeout 240]
-  [@@by auto]
+  [@@disable Float.encode, Float.decode_aux, Util.pow2, Util.ipow2, Format.get_format_parameters]
+  [@@timeout 120]
+  [@@by
+    [%use decode_within_range f x] @>
+    [%use decode_within_range f y] @>
+    [%use encode_ok_within_range f (Float.decode f x)] @>
+    [%use encode_ok_within_range f AugReal.(~- (Float.decode f x))] @>
+    [%use encode_ok_within_range f AugReal.NaN] @>
+    auto]
 
 
 (** 4.8.3 Binary arithmetic operations *)
