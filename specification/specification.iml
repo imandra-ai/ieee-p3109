@@ -540,12 +540,10 @@ module Float = struct
     | _, NaN -> Ok NaN
     | PINF, NINF -> Ok NaN
     | NINF, PINF -> Ok NaN
-    | PINF, PINF -> Ok PINF
-    | NINF, NINF -> Ok NINF
-    | R _, PINF -> Ok PINF
-    | PINF, R _ -> Ok PINF
-    | R _, NINF -> Ok NINF
-    | NINF, R _ -> Ok NINF
+    | PINF, _ -> Ok PINF
+    | _, PINF -> Ok PINF
+    | NINF, _ -> Ok NINF
+    |  _, NINF -> Ok NINF
     | R x, R y -> Ok (R (x +. y))
     | _ -> Error "undefined"
 
