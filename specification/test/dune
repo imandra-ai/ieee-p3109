@@ -2,7 +2,7 @@
  (name test_app_spec)
  (modules Test_app_spec)
  (modes byte native)
- (libraries math specification unix theorems containers))
+ (libraries math specification unix theorems containers bignum))
 
 (executable
  (name table)

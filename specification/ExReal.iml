@@ -176,7 +176,7 @@ module Infix = struct
 
   let rx (x : real) = of_real x [@@macro]
 
-  let rec ( ^ ) (x : t) (y : int) : (t, string) Result.t =
+  let ( ^ ) (x : t) (y : int) : (t, string) Result.t =
     match x with
     | NINF -> Error "undefined"
     | PINF -> Ok PINF
