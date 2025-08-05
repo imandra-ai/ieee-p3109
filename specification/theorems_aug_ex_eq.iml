@@ -164,8 +164,8 @@ theorem rsqrt_aug_ex_eq (x : AugReal.t) =
     | R x ->
       let open ExReal.ResultInfix in
       (Ok ExReal.one) /. (ExReal.sqrt xe 8))
-  [@@timeout 3600]
-  [@@by unroll_nonlin 20 20 1000]
+  [@@timeout 60]
+  [@@by auto]
 
 theorem hypot_aug_ex_eq (x : AugReal.t) (y : AugReal.t) =
   t_aug_eq2 x y Float.aug_hypot (fun xe ye ->
