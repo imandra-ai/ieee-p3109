@@ -137,16 +137,11 @@ module Float = struct
     + (if x.b7 then 128 else 0)
 
   let to_string (f : Format.t) (x : t) =
-    let open Specification.NaNOrExReal in
     let bool_to_bin x = if x then "1" else "0" in
     Printf.sprintf "%s%s%s%s%s%s%s%s = %s" (bool_to_bin x.b7) (bool_to_bin x.b6)
       (bool_to_bin x.b5) (bool_to_bin x.b4) (bool_to_bin x.b3)
       (bool_to_bin x.b2) (bool_to_bin x.b1) (bool_to_bin x.b0)
-      (
-        (match Specification.Float.decode f (i2s x) with
-        | Ok(NaN) -> "NaN"
-        | Ok(XR xreal) -> Math.ExReal.to_string xreal
-        | _ -> ""))
+      (Math.AugReal.to_string (Specification.Float.decode f (i2s x)))
       [@@ocamlformat "if-then-else=compact"] [@@program]
 
   [@@program]

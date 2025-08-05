@@ -34,13 +34,13 @@ let domain_to_char (d : Domain.t) =
   | Finite -> "f"
   | Extended -> "e"
 
-let nanox_to_string (x : NaNOrExReal.t) : string =
-  let open NaNOrExReal in
+let augreal_to_string (x : AugReal.t) : string =
+  let open AugReal in
   match x with
   | NaN -> "NaN"
-  | XR PINF -> "+oo"
-  | XR NINF -> "-oo"
-  | XR (R r) -> Q.to_string r
+  | PINF -> "+oo"
+  | NINF -> "-oo"
+  | R r -> Q.to_string r
 
 let rat_to_string_dec (x : Q.t) : string =
   let open Bignum in
@@ -49,32 +49,23 @@ let rat_to_string_dec (x : Q.t) : string =
      / of_bigint (Bigint.of_zarith_bigint (Q.den x))
     |> to_string_hum ~decimals:32768)
 
-let exreal_to_string_dec (x : ExReal.t) : string =
+let augreal_to_string_dec (x : AugReal.t) : string =
   match x with
+  | NaN -> "NaN"
   | PINF -> "+oo"
   | NINF -> "-oo"
   | R r -> Printf.sprintf "%s" (rat_to_string_dec r)
 
-let nanox_to_dec_string (x : NaNOrExReal.t) : string =
-  let open NaNOrExReal in
-  match x with
-  | NaN -> "NaN"
-  | XR xr -> exreal_to_string_dec xr
-
-let print_nanox_dec (x : NaNOrExReal.t) =
-  Printf.printf "%s," (nanox_to_dec_string x)
+let print_augreal_dec (x : AugReal.t) =
+  Printf.printf "%s," (augreal_to_string_dec x)
 
 let print_real (x : Q.t) = Printf.printf "%s," (rat_to_string_dec x)
-
-let print_exreal_dec (x : ExReal.t) =
-  Printf.printf "%s," (exreal_to_string_dec x)
 
 let print_bool (x : bool) = Printf.printf "%s," (if x then "Y" else "N")
 
 let mk_fn_tbl (fn : Q.t -> int -> (bool * Q.t, string) Result.t)
     (inv_fn : Q.t -> int -> (Q.t, string) Result.t) (f : Format.t) (p : int) :
     unit =
-  let open NaNOrExReal in
   let pi = SaturationMode.SatPropagate, RoundingMode.NearestTiesToEven in
   let k, _, _, _, _, _, _ = Format.get_format_parameters f in
   Printf.printf
@@ -88,10 +79,10 @@ let mk_fn_tbl (fn : Q.t -> int -> (bool * Q.t, string) Result.t)
 
     let fp = Float.of_int_repr f (Z.of_int i) in
     (match Float.decode f fp with
-    | Ok decoded ->
-      print_nanox_dec decoded;
+    | decoded ->
+      print_augreal_dec decoded;
       (match decoded with
-      | XR dec_xr ->
+      | dec_xr ->
         (match dec_xr with
         | R d ->
           (match fn d p with
@@ -115,13 +106,12 @@ let mk_fn_tbl (fn : Q.t -> int -> (bool * Q.t, string) Result.t)
                 (Z.format "x" (Float.to_int_repr f projected))
                 (Z.format "08b" (Float.to_int_repr f projected));
               (match Float.decode f projected with
-              | Ok out_dec -> print_nanox_dec out_dec
-              | Error e -> Printf.printf "%s," e)
+              | out_dec -> print_augreal_dec out_dec)
             | Error e -> Printf.printf "%s," e)
           | Error e -> Printf.printf "%s" e)
-        | _ -> Printf.printf "%s" (nanox_to_string decoded))
-      | _ -> Printf.printf "%s" (nanox_to_string decoded))
-    | Error e -> Printf.printf "decoding error: %s" e);
+        | _ -> Printf.printf "%s" (augreal_to_string decoded))
+      | _ -> Printf.printf "%s" (augreal_to_string decoded))
+    );
     Printf.printf "\n%!"
   done
 
@@ -208,16 +198,8 @@ let mk_f_tbl (k : int) (p : int) (s : bool) (e : bool) =
   for i = 0 to (1 lsl k) - 1 do
     let iz = Float.to_int_repr f (Z.of_int i) in
     let d = Float.decode f iz in
-    let rats =
-      match d with
-      | Ok r -> nanox_to_string r
-      | Error e -> Printf.sprintf "Error: %s" e
-    in
-    let ds =
-      match d with
-      | Ok r -> nanox_to_dec_string r
-      | Error e -> Printf.sprintf "Error: %s" e
-    in
+    let rats = augreal_to_string d in
+    let ds = augreal_to_string_dec d in
     Printf.printf "%02x | %s | %s | %s\n" i (int2bin_str i k) ds rats
   done
 

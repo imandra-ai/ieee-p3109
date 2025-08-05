@@ -21,8 +21,7 @@ let only_exponent (f : Format.t) (x : Float.t) : Float.t =
   (Util.machine_idiv x pwr) * pwr
 
 let ulp (f : Format.t) (x : Float.t) : (real, string) Result.t =
-  let open NaNOrExReal in
   let oe = only_exponent f x in
   match (decode f (Float.of_int_repr f (Float.to_int_repr f oe + 1))), decode f oe with
-  | Ok(XR (R u)), Ok(XR (R l)) -> Ok(u -. l)
+  | R u, R l -> Ok(u -. l)
   | _ -> Error("undefined")
