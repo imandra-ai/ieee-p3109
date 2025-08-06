@@ -76,4 +76,12 @@ let rec floor_log2_abs (x : real) (max_depth : int) : int =
 
 let ( ^ ) (x : int) (y : int) : real = pow x y [@@macro]
 
+let ( ^. ) (x : int) (y : int) = pow x y
+
 let i2r = Real.of_int [@@macro]
+
+let reciprocal (x : (real, string) Result.t) : (real, string) Result.t =
+  match x with
+  | Ok r when r = 0.0 -> Error "division by zero"
+  | Ok r -> Ok (1.0 /. r)
+  | Error e -> Error e

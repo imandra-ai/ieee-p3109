@@ -173,7 +173,7 @@ theorem hypot_aug_ex_eq (x : AugReal.t) (y : AugReal.t) =
     let open ExReal.ResultInfix in
     ExReal.ResultInfix.sqrt (((ExReal.abs xe) ^ 2) +. ((ExReal.abs ye) ^ 2)) 8
   )
-  [@@timeout 3600]
+  [@@timeout 120]
   [@@by unroll_nonlin 10 10 100]
 
 theorem exp_aug_ex_eq (x : AugReal.t) =

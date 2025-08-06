@@ -246,7 +246,7 @@ theorem internal_abs_ok (f : Format.t) (x : Float.t) =
 theorem internal_negate_ok (f : Format.t) (x : Float.t) =
   f.s = Signedness.Signed ==>
   Result.is_ok (Float.internal_negate f x)
-  [@@timeout 60]
+  [@@timeout 120]
   [@@by
     [%use decode_encode_ok f x]
     @> unroll_nonlin 10 10 1000]

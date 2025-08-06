@@ -1,0 +1,70 @@
+% Ruler code from https://www.overleaf.com/project/6840180868802ee29d095c2e
+\usepackage{eso_pic}
+
+\newif\ifcvprfinal
+\cvprfinaltrue
+%\cvprfinalfalse
+
+\font\cvprtenhv  = phvb at 8pt % *** IF THIS FAILS, SEE cvpr.sty ***
+\font\elvbf  = ptmb scaled 1100
+%% --------- Page background marks: Ruler and confidentiality
+
+% ----- define vruler
+\makeatletter
+\newbox\cvprrulerbox
+\newcount\cvprrulercount
+\newdimen\cvprruleroffset
+\newdimen\cv@lineheight
+\newdimen\cv@boxheight
+\newbox\cv@tmpbox
+\newcount\cv@refno
+\newcount\cv@tot
+% NUMBER with left flushed zeros  \fillzeros[<WIDTH>]<NUMBER>
+\newcount\cv@tmpc@ \newcount\cv@tmpc
+\def\fillzeros[#1]#2{\cv@tmpc@=#2\relax\ifnum\cv@tmpc@<0\cv@tmpc@=-\cv@tmpc@\fi
+\cv@tmpc=1 %
+\loop\ifnum\cv@tmpc@<10 \else \divide\cv@tmpc@ by 10 \advance\cv@tmpc by 1 \fi
+   \ifnum\cv@tmpc@=10\relax\cv@tmpc@=11\relax\fi \ifnum\cv@tmpc@>10 \repeat
+\ifnum#2<0\advance\cv@tmpc1\relax-\fi
+\loop\ifnum\cv@tmpc<#1\relax0\advance\cv@tmpc1\relax\fi \ifnum\cv@tmpc<#1 \repeat
+\cv@tmpc@=#2\relax\ifnum\cv@tmpc@<0\cv@tmpc@=-\cv@tmpc@\fi \relax\the\cv@tmpc@}%
+% \makevruler[<SCALE>][<INITIAL_COUNT>][<STEP>][<DIGITS>][<HEIGHT>]
+\def\makevruler[#1][#2][#3][#4][#5]{\begingroup\offinterlineskip
+\textheight=#5\vbadness=10000\vfuzz=120ex\overfullrule=0pt%
+\global\setbox\cvprrulerbox=\vbox to \textheight{%
+{\parskip=0pt\hfuzz=150em\cv@boxheight=\textheight
+\cv@lineheight=#1\global\cvprrulercount=#2%
+\cv@tot\cv@boxheight\divide\cv@tot\cv@lineheight\advance\cv@tot2%
+\cv@refno1\vskip-\cv@lineheight\vskip1ex%
+\loop\setbox\cv@tmpbox=\hbox to0cm{{\cvprtenhv\hfil\fillzeros[#4]\cvprrulercount}}%
+\ht\cv@tmpbox\cv@lineheight\dp\cv@tmpbox0pt\box\cv@tmpbox\break
+\advance\cv@refno1\global\advance\cvprrulercount#3\relax
+\ifnum\cv@refno<\cv@tot\repeat}}\endgroup}%
+\makeatother
+% ----- end of vruler
+
+% \makevruler[<SCALE>][<INITIAL_COUNT>][<STEP>][<DIGITS>][<HEIGHT>]
+\def\cvprruler#1{\makevruler[12pt][#1][1][3][0.993\textheight]\usebox{\cvprrulerbox}}
+\AddToShipoutPicture{%
+\ifcvprfinal\else
+  %\AtTextLowerLeft{%
+  % \color[gray]{.15}\framebox(\LenToUnit{\textwidth},\LenToUnit{\textheight}){}
+  %}
+\cvprruleroffset=\textheight
+\advance\cvprruleroffset by -3.7pt
+  \AtTextUpperLeft{%
+  \color[rgb]{1,.7,.7}
+    \put(\LenToUnit{-65pt},\LenToUnit{-\cvprruleroffset}){%left ruler
+      \cvprruler{\cvprrulercount}}
+  }
+
+ %  \AtTextUpperLeft{%confidential
+ %  \color[rgb]{.5,0,0}
+ %    \put(0,\LenToUnit{1cm}){\parbox{\textwidth}{\centering\cvprtenhv
+ %       IEEE P3109 Internal Review Only.  DO NOT DISTRIBUTE.
+ %      }}
+ % }
+\fi
+}
+
+

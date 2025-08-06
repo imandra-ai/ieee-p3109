@@ -1,0 +1,190 @@
+\usepackage{times}
+\usepackage{etoolbox}
+\usepackage[left=1in,right=1in,letterpaper]{geometry}
+\usepackage{alltt}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{array}
+\usepackage{commonunicode}
+\usepackage{mathtools}
+\usepackage{listings}
+\usepackage[section]{minted}
+\usemintedstyle[julia]{bw} % stata-light 
+%\setminted{fontsize=\normalsize}
+\usepackage{appendix}
+\usepackage{threeparttable}
+\usepackage{booktabs}
+\usepackage{tabularray} % table without lines
+\usepackage{enumitem}
+\usepackage{multicol}
+
+\usepackage{xspace}
+\usepackage{fvextra}
+\usepackage{graphicx}
+\usepackage{soul}
+\usepackage{microtype}
+\usepackage{fancyhdr}
+\usepackage{parskip}
+\usepackage{float}
+\usepackage{comment}
+\usepackage{colortbl}
+\usepackage[font=sf,labelfont=sf]{caption}
+\usepackage{csquotes}
+\usepackage[svgnames]{xcolor}
+\usepackage[hidelinks]{hyperref}
+\usepackage{pdflscape}
+\usepackage{afterpage}
+\usepackage{adjustbox}
+\usepackage{forloop}
+\usepackage{datetime2}
+\usepackage{titlesec}
+\titleformat{\section}
+  {\normalfont\sffamily\Large\bfseries\color{CadetBlue}}
+  {\thesection}{1em}{}
+\titleformat{\subsection}
+  {\normalfont\sffamily\large\bfseries\color{black}}
+  {\thesubsection}{1em}{}
+\titleformat{\subsubsection}
+  {\normalfont\sffamily\large\color{black}}
+  {\thesubsubsection}{1em}{}
+
+\setcounter{secnumdepth}{8}
+
+\setlength{\parskip}{8pt} % Space between paragraphs
+% Be more consistent with use of \val, includign for zero
+\usepackage{bbm}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Document-specific macros
+
+ % for \shortminus def
+\DeclareMathSymbol{\shortminus}{\mathbin}{AMSa}{"39}
+\def\sminus{\ensuremath{\mathord{\shortminus}}} % looks better in tables
+
+\def\parameter#1{\ensuremath{\mathsf{#1}}\xspace}
+\def\val#1{$\mathsf{#1}$}
+\def\code#1{$\mathtt{#1}$}
+
+\def\emax{\parameter{emax}}
+\def\emin{\parameter{emin}}
+\def\bias{\parameter{bias}}
+\def\SE{\parameter{SE}}
+\def\x{$x$\xspace}
+\def\s{\sigma} % should be "s", temporarily "S" during typographical edits
+\def\p{\parameter{P}} % should be "p", temporarily "P" during typographical edits
+\def\w{\parameter{W}} % should be "w", temporarily "W" during typographical edits
+\def\t{\parameter{T}} % should be "t", temporarily "T" during typographical edits
+\def\k{\parameter{K}} % should be "k", temporarily "K" during typographical edits
+\def\b{\parameter{B}} % should be "b", temporarily "B" during typographical edits
+\def\minusZero{$\sminus{0}$}
+
+\makeatletter
+\def\binarypptailp p{\ensuremath{\mathsf{pP}}}
+\def\binarypptail#1#2#3{\ensuremath{\mathsf{p#1#2#3}}}
+\def\binaryptail p{\@ifnextchar p\binarypptailp\binarypptail}
+\def\binarytail{\xspace}
+\def\binary#1{\ensuremath{\mathsf{binary#1}}\@ifnextchar p\binaryptail\binarytail}
+\makeatother
+
+\def\Binary#1#2{\ensuremath{\mathsf{Binary#1#2}}}
+
+
+\makeatletter
+\def\runopnormal{}
+\def\runopangle<#1>{\textcolor{darkgray}{_{#1}}}
+\def\runopnormalQ{}
+\def\runopangleQ<#1>{}
+\def\runoptail{\@ifnextchar<\runopangle\runopnormal}
+\def\runoptailQ*{\@ifnextchar<\runopangleQ\runopnormalQ}
+\def\runoptailstar{\@ifnextchar*\runoptailQ\runoptail}
+\def\runop#1{\mathsf{#1}\runoptailstar}
+\makeatother
+
+\newcommand{\newop}[1]{\expandafter\def\csname #1\endcsname{\runop{#1}}}
+\newcommand{\newops}[1]{\forcsvlist{\newop}{#1}}
+
+\def\ssec#1{{\bf #1}\\[2pt]}
+\def\Opnd#1#2{\parbox{1cm}{\hfill {#1} :}~#2}
+%\def\opnd#1:#2;{\Opnd{#1}{#2}}
+\def\Case#1{${}\qquad #1$}
+%\def\case #1;{\Case{#1}}
+\def\comment#1{\hfill\mbox{\textcolor{blue}{\quad ---#1}}}
+
+\def\any{\ast}
+\def\sign{\operatorname{sign}}
+\def\Or{\vee}
+\def\And{\wedge}
+\def\Not{\neg}
+\def\OneFromBool#1{\mathbbm 1\!\left[#1\right]}
+\def\gives{\rightarrow\,\xspace}
+\def\bool{\operatorname{Boolean}}
+
+% https://tex.stackexchange.com/questions/83509/hfill-in-math-mode
+\makeatletter
+\newcommand{\pushright}[1]{\ifmeasuring@#1\else\omit\hfill$\displaystyle#1$\fi\ignorespaces}
+\newcommand{\pushleft}[1]{\ifmeasuring@#1\else\omit$\displaystyle#1$\hfill\fi\ignorespaces}
+\makeatother
+
+\def\floor#1{\lfloor#1\rfloor}
+\def\ceil#1{\lceil#1\rceil}
+
+\def\sumop{Σ}
+
+\def\NInf{\sminus\parameter{Inf}}
+\def\Inf{\parameter{Inf}}
+\def\NaN{\parameter{NaN}}
+\def\NaNs{\parameter{NaNs}}
+
+\makeatletter
+\def\NaNinStar*#1{\NaN_{#1}}
+\def\NaNinNormal#1{\NaN}
+\def\NaNin{\@ifnextchar*\NaNinStar\NaNinNormal}
+\makeatother
+
+\newops{compareLess,compareLessEqual,compareEqual,compareGreaterEqual,compareGreater}
+
+\newop{Encode}
+\newop{Decode}
+\newops{True,False}
+\newops{Max,Min,Add,BitwiseAnd,BitShiftRight}
+
+\newcommand{\newkeyword}[1]{\expandafter\def\csname #1\endcsname{\mathop{\mathbf{\lowercase{#1}}}}}
+
+\forcsvlist{\newkeyword}{If,Then,Else,End,Where}
+
+\makeatletter
+\def\WhereStar*{\mathbf{where}\quad}
+\def\WhereNormal{\quad\WhereStar*}
+\def\Where{\@ifnextchar*\WhereStar\WhereNormal}
+\makeatother
+
+\newcommand\ieeestd{IEEE Std 754\xspace}
+\newcommand\ieeenew{IEEE Std 754-2019\xspace}
+
+
+% Blue-underlined url in heading font
+\def\myurl#1{\href{#1}{\setulcolor{blue}\ul{#1}}}
+
+% Print a float as M \times 2^{E}, with E width fixed to that of "-88"
+\def\binaryfloat#1#2{\ensuremath{#1 \times 2^{\mathrlap{#2}\phantom{-88}}}}
+
+
+\newcommand{\spec}[1]{{\bf \boldmath  #1}}
+
+% Environment to scope the local \defs
+% E.g.
+% \begin{scope}
+%  \def\stuff{...}
+%  use \stuff here
+% \end{scope}
+\newenvironment{scope}{}{} 
+
+% enable line numbers, if desired
+% \usepackage{lineno}
+% \linenumbers
+% \pagewiselinenumbers
+
+\newops{isSignMinus,isNormal,isPositive,isInfinite,isFinite,isSubnormal,isNaN,totalOrder,isSignaling,isCanonical}
+
+\newcommand{\cmw}[1]{\marginpar{\color{red}#1}}

@@ -1,0 +1,6 @@
+node_modules
+*.sty
+*.out
+*.aux
+*.log
+*.pdf
