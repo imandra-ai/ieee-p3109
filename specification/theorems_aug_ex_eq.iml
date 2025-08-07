@@ -167,6 +167,11 @@ theorem rsqrt_aug_ex_eq (x : AugReal.t) =
   [@@timeout 60]
   [@@by auto]
 
+theorem hypot_helper x =
+  ((Util.ripow (Real.abs x) 2) [@trigger]) >=. 0.0
+  [@@by auto]
+  [@@fc]
+
 theorem hypot_aug_ex_eq (x : AugReal.t) (y : AugReal.t) =
   t_aug_eq2 x y Float.aug_hypot (fun xe ye ->
     let open ExReal.Infix in
@@ -174,7 +179,8 @@ theorem hypot_aug_ex_eq (x : AugReal.t) (y : AugReal.t) =
     ExReal.ResultInfix.sqrt (((ExReal.abs xe) ^ 2) +. ((ExReal.abs ye) ^ 2)) 8
   )
   [@@timeout 120]
-  [@@by unroll_nonlin 10 10 100]
+  [@@disable Sqrt.sqrt, Util.ripow, Real.abs]
+  [@@by auto]
 
 theorem exp_aug_ex_eq (x : AugReal.t) =
   t_aug_eq1 x Float.aug_exp (fun xe -> ExReal.exp xe 9)
