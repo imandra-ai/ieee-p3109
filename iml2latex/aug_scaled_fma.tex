@@ -112,14 +112,14 @@
   \Case{\Cer\ScaledFMA(\any, -\infty, \zero) \gives  \NaN}\\
   \Case{\Cer\ScaledFMA(\any, \zero, +\infty) \gives  \NaN}\\
   \Case{\Cer\ScaledFMA(\any, \zero, -\infty) \gives  \NaN}\\
-  \Case{\Cer\ScaledFMA(-\infty, +\infty, y) \quad \If y > \zero\gives  \NaN}\\
-  \Case{\Cer\ScaledFMA(-\infty, x, +\infty) \quad \If x > \zero\gives  \NaN}\\
-  \Case{\Cer\ScaledFMA(-\infty, -\infty, y) \quad \If y < \zero\gives  \NaN}\\
-  \Case{\Cer\ScaledFMA(-\infty, x, -\infty) \quad \If x < \zero\gives  \NaN}\\
-  \Case{\Cer\ScaledFMA(+\infty, +\infty, y) \quad \If y < \zero\gives  \NaN}\\
-  \Case{\Cer\ScaledFMA(+\infty, x, +\infty) \quad \If x < \zero\gives  \NaN}\\
-  \Case{\Cer\ScaledFMA(+\infty, -\infty, y) \quad \If y > \zero\gives  \NaN}\\
-  \Case{\Cer\ScaledFMA(+\infty, x, -\infty) \quad \If x > \zero\gives  \NaN}\\
+  \Case{\Cer\ScaledFMA(-\infty, +\infty, y) ~\If y > \zero\gives  \NaN}\\
+  \Case{\Cer\ScaledFMA(-\infty, x, +\infty) ~\If x > \zero\gives  \NaN}\\
+  \Case{\Cer\ScaledFMA(-\infty, -\infty, y) ~\If y < \zero\gives  \NaN}\\
+  \Case{\Cer\ScaledFMA(-\infty, x, -\infty) ~\If x < \zero\gives  \NaN}\\
+  \Case{\Cer\ScaledFMA(+\infty, +\infty, y) ~\If y < \zero\gives  \NaN}\\
+  \Case{\Cer\ScaledFMA(+\infty, x, +\infty) ~\If x < \zero\gives  \NaN}\\
+  \Case{\Cer\ScaledFMA(+\infty, -\infty, y) ~\If y > \zero\gives  \NaN}\\
+  \Case{\Cer\ScaledFMA(+\infty, x, -\infty) ~\If x > \zero\gives  \NaN}\\
   \Case{\Cer\ScaledFMA(+\infty, \pm\infty, \any) \gives  +\infty}\\
   \Case{\Cer\ScaledFMA(-\infty, \pm\infty, \any) \gives  -\infty}\\
   \Case{\Cer\ScaledFMA(\any, +\infty, +\infty) \gives  +\infty}\\
@@ -130,16 +130,16 @@
   \Case{\Cer\ScaledFMA(\any, -\infty, -\infty) \gives  +\infty}\\
   \Case{\Cer\ScaledFMA(+\infty, \any, \any) \gives  +\infty}\\
   \Case{\Cer\ScaledFMA(-\infty, \any, \any) \gives  -\infty}\\
-  \Case{\Cer\ScaledFMA(\any, +\infty, y) \quad \If y \geq \zero\gives  +\infty}\\
-  \Case{\Cer\ScaledFMA(\any, +\infty, y) \quad \If y < \zero\gives  -\infty}\\
-  \Case{\Cer\ScaledFMA(\any, -\infty, y) \quad \If y \geq \zero\gives  -\infty}\\
-  \Case{\Cer\ScaledFMA(\any, -\infty, y) \quad \If y < \zero\gives  +\infty}\\
-  \Case{\Cer\ScaledFMA(\any, x, +\infty) \quad \If x \geq \zero\gives  +\infty}\\
-  \Case{\Cer\ScaledFMA(\any, x, +\infty) \quad \If x < \zero\gives  -\infty}\\
-  \Case{\Cer\ScaledFMA(-\infty, x, +\infty) \quad \If x < \zero\gives  -\infty}\\
-  \Case{\Cer\ScaledFMA(\any, x, -\infty) \quad \If x \geq \zero\gives  -\infty}\\
-  \Case{\Cer\ScaledFMA(\any, x, -\infty) \quad \If x < \zero\gives  +\infty}\\
-  \Case{\Cer\ScaledFMA(+\infty, x, -\infty) \quad \If x < \zero\gives  +\infty}\\
+  \Case{\Cer\ScaledFMA(\any, +\infty, y) ~\If y \geq \zero\gives  +\infty}\\
+  \Case{\Cer\ScaledFMA(\any, +\infty, y) ~\If y < \zero\gives  -\infty}\\
+  \Case{\Cer\ScaledFMA(\any, -\infty, y) ~\If y \geq \zero\gives  -\infty}\\
+  \Case{\Cer\ScaledFMA(\any, -\infty, y) ~\If y < \zero\gives  +\infty}\\
+  \Case{\Cer\ScaledFMA(\any, x, +\infty) ~\If x \geq \zero\gives  +\infty}\\
+  \Case{\Cer\ScaledFMA(\any, x, +\infty) ~\If x < \zero\gives  -\infty}\\
+  \Case{\Cer\ScaledFMA(-\infty, x, +\infty) ~\If x < \zero\gives  -\infty}\\
+  \Case{\Cer\ScaledFMA(\any, x, -\infty) ~\If x \geq \zero\gives  -\infty}\\
+  \Case{\Cer\ScaledFMA(\any, x, -\infty) ~\If x < \zero\gives  +\infty}\\
+  \Case{\Cer\ScaledFMA(+\infty, x, -\infty) ~\If x < \zero\gives  +\infty}\\
   \Case{\Cer\ScaledFMA(a, x, y) \gives  a * (2 ^ {s_{a}}) + x * y * (2 ^ s)}\\
 
 

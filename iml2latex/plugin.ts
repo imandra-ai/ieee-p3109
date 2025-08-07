@@ -1626,7 +1626,6 @@ function print_structure_item_desc(node: AST, options: Options): Doc {
       }
       else if (args[1].length > 0 && pvb.pvb_expr.pexp_desc[0] == "Pexp_function") {
         let fname = pvb.pvb_pat.ppat_desc[1].txt;
-        // console.log(`VALUE: ${fname}`);
         if (fun_filter(fname, options)) {
           // fname = fname.replaceAll("_", "\\_");
           fname = camelize(fname);
@@ -1656,7 +1655,7 @@ function print_structure_item_desc(node: AST, options: Options): Doc {
                 print_pattern(arg.pc_lhs, options),
                 ")", line,
                 ...(arg.pc_guard ?
-                  ["\\quad \\If", line, print_expression(arg.pc_guard, options)] : []),
+                  ["~\\If", line, print_expression(arg.pc_guard, options)] : []),
                 "\\gives", line,
                 print_expression(rhs_expr, options), "}\\\\", hardline]));
             }

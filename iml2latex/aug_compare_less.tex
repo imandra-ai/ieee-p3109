@@ -129,12 +129,11 @@
 
   \noindent\Case{\Cer\CompareLess(\NaN, \any) \gives  \False}\\
   \Case{\Cer\CompareLess(\any, \NaN) \gives  \False}\\
-  \Case{\Cer\CompareLess(-\infty | {\color{red}REAL\any}, +\infty) \gives  \True}\\
-  \Case{\Cer\CompareLess(+\infty | {\color{red}REAL\any}, -\infty) \gives
-   \False}\\
   \Case{\Cer\CompareLess(+\infty, \any) \gives  \False}\\
+  \Case{\Cer\CompareLess(\any, +\infty) \gives  \True}\\
   \Case{\Cer\CompareLess(-\infty, -\infty) \gives  \False}\\
   \Case{\Cer\CompareLess(-\infty, \any) \gives  \True}\\
+  \Case{\Cer\CompareLess(\any, -\infty) \gives  \False}\\
   \Case{\Cer\CompareLess(x, y) \gives  x < y}\\
 
 

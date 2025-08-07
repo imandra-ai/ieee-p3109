@@ -128,16 +128,16 @@
   \Case{\Cer\Clamp(\any, \any, \NaN) \gives  \NaN}\\
   \Case{\Cer\Clamp(\any, +\infty | {\color{red}REAL\any}, -\infty) \gives  \NaN}\\
   \Case{\Cer\Clamp(\any, +\infty, {\color{red}REAL\any}) \gives  \NaN}\\
-  \Case{\Cer\Clamp(\any, x, y) \quad \If x > y\gives  \NaN}\\
+  \Case{\Cer\Clamp(\any, x, y) ~\If x > y\gives  \NaN}\\
   \Case{\Cer\Clamp(\any, +\infty, +\infty) \gives  +\infty}\\
   \Case{\Cer\Clamp(\any, \any, -\infty) \gives  -\infty}\\
   \Case{\Cer\Clamp(+\infty, \any, \any) \gives  hi}\\
   \Case{\Cer\Clamp(-\infty, \any, \any) \gives  lo}\\
   \Case{\Cer\Clamp(\any, -\infty, +\infty) \gives  x}\\
-  \Case{\Cer\Clamp(x, -\infty, hi) \quad \If x \leq hi\gives  x}\\
-  \Case{\Cer\Clamp(x, -\infty, hi) \quad \If x > hi\gives  hi}\\
-  \Case{\Cer\Clamp(x, lo, +\infty) \quad \If x \leq lo\gives  lo}\\
-  \Case{\Cer\Clamp(x, lo, +\infty) \quad \If x > lo\gives  x}\\
+  \Case{\Cer\Clamp(x, -\infty, hi) ~\If x \leq hi\gives  x}\\
+  \Case{\Cer\Clamp(x, -\infty, hi) ~\If x > hi\gives  hi}\\
+  \Case{\Cer\Clamp(x, lo, +\infty) ~\If x \leq lo\gives  lo}\\
+  \Case{\Cer\Clamp(x, lo, +\infty) ~\If x > lo\gives  x}\\
   \Case{\Cer\Clamp(x, lo, hi) \gives
    \If x \leq lo \Then lo \Else \If x \geq hi \Then hi \Else x}\\
 

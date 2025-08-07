@@ -119,14 +119,13 @@
 
   \noindent\Case{\Cer\MaximumMagnitude(\NaN, \any) \gives  \NaN}\\
   \Case{\Cer\MaximumMagnitude(\any, \NaN) \gives  \NaN}\\
-  \Case{\Cer\MaximumMagnitude(+\infty, \pm\infty | {\color{red}REAL\any}) \gives
-   +\infty}\\
-  \Case{\Cer\MaximumMagnitude(-\infty | \any, +\infty) \gives  +\infty}\\
-  \Case{\Cer\MaximumMagnitude(-\infty, -\infty | \any) \gives  -\infty}\\
+  \Case{\Cer\MaximumMagnitude(+\infty, \any) \gives  +\infty}\\
+  \Case{\Cer\MaximumMagnitude(\any, +\infty) \gives  +\infty}\\
+  \Case{\Cer\MaximumMagnitude(-\infty, \any) \gives  -\infty}\\
   \Case{\Cer\MaximumMagnitude(\any, -\infty) \gives  -\infty}\\
-  \Case{\Cer\MaximumMagnitude(x, y) \quad \If | x| > | y|\gives  x}\\
-  \Case{\Cer\MaximumMagnitude(x, y) \quad \If | x| < | y|\gives  y}\\
-  \Case{\Cer\MaximumMagnitude(x, y) \quad \If | x| = | y|\gives  \Max{( x,  y)}}\\
+  \Case{\Cer\MaximumMagnitude(x, y) ~\If | x| > | y|\gives  x}\\
+  \Case{\Cer\MaximumMagnitude(x, y) ~\If | x| < | y|\gives  y}\\
+  \Case{\Cer\MaximumMagnitude(x, y) ~\If | x| = | y|\gives  \Max{( x,  y)}}\\
 
 
 

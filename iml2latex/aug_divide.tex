@@ -64,11 +64,11 @@
   \Case{\Cer\Divide(\any, \NaN) \gives  \NaN}\\
   \Case{\Cer\Divide(\pm\infty, -\infty) \gives  \NaN}\\
   \Case{\Cer\Divide(\pm\infty, +\infty) \gives  \NaN}\\
-  \Case{\Cer\Divide(\any, y) \quad \If y = \zero\gives  \NaN}\\
-  \Case{\Cer\Divide(+\infty, y) \quad \If y > \zero\gives  +\infty}\\
-  \Case{\Cer\Divide(+\infty, y) \quad \If y < \zero\gives  -\infty}\\
-  \Case{\Cer\Divide(-\infty, y) \quad \If y > \zero\gives  -\infty}\\
-  \Case{\Cer\Divide(-\infty, y) \quad \If y < \zero\gives  +\infty}\\
+  \Case{\Cer\Divide(\any, y) ~\If y = \zero\gives  \NaN}\\
+  \Case{\Cer\Divide(+\infty, y) ~\If y > \zero\gives  +\infty}\\
+  \Case{\Cer\Divide(+\infty, y) ~\If y < \zero\gives  -\infty}\\
+  \Case{\Cer\Divide(-\infty, y) ~\If y > \zero\gives  -\infty}\\
+  \Case{\Cer\Divide(-\infty, y) ~\If y < \zero\gives  +\infty}\\
   \Case{\Cer\Divide(\any, +\infty | \any, -\infty) \gives  \zero}\\
   \Case{\Cer\Divide(x, y) \gives  x / y}\\
 

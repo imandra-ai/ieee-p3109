@@ -1186,9 +1186,9 @@ module Float = struct
     match x, y with
     | NaN, _ -> Ok NaN
     | _, NaN -> Ok NaN
-    | PINF, (PINF | NINF | R _) -> Ok PINF
-    | (NINF | _), PINF -> Ok PINF
-    | NINF, (NINF | _) -> Ok NINF
+    | PINF, _ -> Ok PINF
+    | _, PINF -> Ok PINF
+    | NINF, _ -> Ok NINF
     | _, NINF  -> Ok NINF
     | R x, R y when Real.abs x >. Real.abs y -> Ok (R x)
     | R x, R y when Real.abs x <. Real.abs y -> Ok (R y)
@@ -1264,11 +1264,11 @@ module Float = struct
     match x, y with
     | NaN, _ -> Ok false
     | _, NaN -> Ok false
-    | (NINF | R _), PINF -> Ok true
-    | (PINF | R _), NINF -> Ok false
     | PINF, _ -> Ok false
+    | _, PINF -> Ok true
     | NINF, NINF -> Ok false
     | NINF, _ -> Ok true
+    | _, NINF -> Ok false
     | R x, R y -> Ok (x <. y)
     | _ -> Error "undefined"
 

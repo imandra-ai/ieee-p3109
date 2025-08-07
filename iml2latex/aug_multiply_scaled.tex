@@ -100,14 +100,14 @@
 
   \noindent\Case{\Cer\MultiplyScaled(\NaN, \any) \gives  \NaN}\\
   \Case{\Cer\MultiplyScaled(\any, \NaN) \gives  \NaN}\\
-  \Case{\Cer\MultiplyScaled(-\infty, y | +\infty, y) \quad \If y = \zero\gives  \NaN}\\
-  \Case{\Cer\MultiplyScaled(x, -\infty | x, +\infty) \quad \If x = \zero\gives  \NaN}\\
+  \Case{\Cer\MultiplyScaled(-\infty, y | +\infty, y) ~\If y = \zero\gives  \NaN}\\
+  \Case{\Cer\MultiplyScaled(x, -\infty | x, +\infty) ~\If x = \zero\gives  \NaN}\\
   \Case{\Cer\MultiplyScaled(-\infty, -\infty | +\infty, +\infty) \gives  +\infty}\\
   \Case{\Cer\MultiplyScaled(-\infty, +\infty | +\infty, -\infty) \gives  -\infty}\\
-  \Case{\Cer\MultiplyScaled(+\infty, x | x, +\infty) \quad \If x > \zero\gives  +\infty}\\
-  \Case{\Cer\MultiplyScaled(+\infty, x | x, +\infty) \quad \If x < \zero\gives  -\infty}\\
-  \Case{\Cer\MultiplyScaled(-\infty, x | x, -\infty) \quad \If x > \zero\gives  -\infty}\\
-  \Case{\Cer\MultiplyScaled(-\infty, x | x, -\infty) \quad \If x < \zero\gives  +\infty}\\
+  \Case{\Cer\MultiplyScaled(+\infty, x | x, +\infty) ~\If x > \zero\gives  +\infty}\\
+  \Case{\Cer\MultiplyScaled(+\infty, x | x, +\infty) ~\If x < \zero\gives  -\infty}\\
+  \Case{\Cer\MultiplyScaled(-\infty, x | x, -\infty) ~\If x > \zero\gives  -\infty}\\
+  \Case{\Cer\MultiplyScaled(-\infty, x | x, -\infty) ~\If x < \zero\gives  +\infty}\\
   \Case{\Cer\MultiplyScaled(x, y) \gives  x * y * (2^{ s})}\\
 
 
