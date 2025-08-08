@@ -250,9 +250,9 @@ function operator_precedence_info(op: string | undefined, more_than_one_arg = fa
   else if (op == "Real.max")
     return new PrecedenceInfo("\\Max", Notation.Prefix, Associativity.Left, 17);
   else if (op == "Util.pow2")
-    return new PrecedenceInfo("2^", Notation.Prefix, Associativity.None, 14);
+    return new PrecedenceInfo("2^", Notation.Prefix, Associativity.None, 15);
   else if (op == "Util.reciprocal")
-    return new PrecedenceInfo("1/", Notation.Prefix, Associativity.None, 14);
+    return new PrecedenceInfo("1/", Notation.Prefix, Associativity.None, 12);
   else if (op == "Exp.exp")
     return new PrecedenceInfo("e^", Notation.Prefix, Associativity.None, 14);
   else if (op == "Log.log")
@@ -260,9 +260,9 @@ function operator_precedence_info(op: string | undefined, more_than_one_arg = fa
   else if (op == "Log.log2")
     return new PrecedenceInfo("log_2", Notation.Prefix, Associativity.Left, 17);
   else if (op == "Util.ripow")
-    return new PrecedenceInfo("^", Notation.Infix, Associativity.Right, 11);
+    return new PrecedenceInfo("^", Notation.Infix, Associativity.None, 13);
   else if (op == "Sqrt.sqrt")
-    return new PrecedenceInfo("\\sqrt", Notation.Prefix, Associativity.Left, 17);
+    return new PrecedenceInfo("\\sqrt", Notation.Prefix, Associativity.Left, 12);
 
   // function application, constructor application, tag application
   return new PrecedenceInfo(op, Notation.Prefix, Associativity.Left, 17);
@@ -1075,8 +1075,9 @@ function print_expression_desc(node: AST, options: Options): Doc {
             r = r.concat([
               ...print_arg_label(op_args[1][0], options),
               ...par_if(
-                op_info_right.precedence < op_info.precedence ||
-                (op_info_right.precedence == op_info.precedence && op_info.associativity == Associativity.Left),
+                // op_info_right.precedence < op_info.precedence ||
+                // (op_info_right.precedence == op_info.precedence && op_info.associativity == Associativity.Left),
+                false,
                 print_expression(op_args[1][1], options))]);
           }
           return f(r);
@@ -1090,7 +1091,7 @@ function print_expression_desc(node: AST, options: Options): Doc {
               ...par_if(
                 op_info_arg.precedence < op_info.precedence ||
                 (op_info_arg.precedence == op_info.precedence &&
-                  (is_apply_with_args(arg[1]) || is_construct_with_args(arg[1]) || is_neg_const(arg[1]) || is_infix_op(arg[1]))),
+                  (/* is_apply_with_args(arg[1]) || */ is_construct_with_args(arg[1]) || is_neg_const(arg[1]) || is_infix_op(arg[1]))),
                 print_expression(arg[1], options))];
           }));
           let opname = op_info.name;
