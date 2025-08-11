@@ -424,7 +424,7 @@ theorem internal_multiply_scaled_ok (f_x : Format.t) (f_y : Format.t) (f_z : For
 (** [internal_scaled_fma] never returns an error *)
 theorem internal_scaled_fma_ok (phi : IEEE754.Format.t) (f_x : Format.t) (f_y : Format.t) (pi : Projection.t)
     (a : IEEE754.t) (s_a : int) (x : Float.t) (y : Float.t) (s : int) =
-  Result.is_ok (Float.internal_scaled_fma phi f_x f_y pi a s_a x y s)
+  Result.is_ok (Float.internal_scaled_fma phi f_x f_y pi x y s a s_a )
   [@@timeout 3600]
   [@@disable Float.project, Float.decode, Float.decode_aux, Float.encode754, Float.round_to_precision, Float.saturate,
              Util.pow2, Util.ipow2, IEEE754.as_aug_real, IEEE754.is_nan, Format.get_format_parameters]

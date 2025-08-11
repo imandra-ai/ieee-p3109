@@ -115,7 +115,7 @@ theorem copy_sign_aug_ex_eq (x : AugReal.t) (y : AugReal.t) =
     if ye >=. ExReal.zero then
       Ok (ExReal.abs xe)
     else
-      Ok (ExReal.neg xe)
+      Ok (ExReal.neg (ExReal.abs xe))
   )
   [@@by auto]
 
@@ -228,16 +228,16 @@ theorem multiply_scaled_aug_ex_eq (x : AugReal.t) (y : AugReal.t) (s : int) =
   | _ -> true
   [@@by auto]
 
-theorem scaled_fma_aug_ex_eq (a : AugReal.t) (s_a : int) (x : AugReal.t) (y : AugReal.t) (s : int) =
-  let ex_f (a : (ExReal.t, string) Result.t) (s_a : int) (x : (ExReal.t, string) Result.t) (y : (ExReal.t, string) Result.t) (s : int) : (ExReal.t, string) Result.t =
+theorem scaled_fma_aug_ex_eq (x : AugReal.t) (y : AugReal.t) (s : int) (a : AugReal.t) (s_a : int) =
+  let ex_f (x : (ExReal.t, string) Result.t) (y : (ExReal.t, string) Result.t) (s : int) (a : (ExReal.t, string) Result.t) (s_a : int) : (ExReal.t, string) Result.t =
     let open ExReal.ResultInfix in
     a *. (2 ^. s_a) +. x *. y *. (2 ^. s)
   in
   let open AugReal in
   match a2e a, a2e x, a2e y with
   | Ok ae, Ok xe, Ok ye ->
-    let ar = Float.aug_scaled_fma a s_a x y s in
-    (match ex_f (Ok ae) s_a (Ok xe) (Ok ye) s with
+    let ar = Float.aug_scaled_fma x y s a s_a in
+    (match ex_f (Ok xe) (Ok ye) s (Ok ae) s_a with
     | Ok x -> ar2er ar = Ok x
     | Error _ -> ar = Ok NaN)
   | _ -> true

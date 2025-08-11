@@ -272,7 +272,7 @@ module Float = struct
     | PINF -> Ok x
     | R 0.0 -> Ok x
     | R x ->
-      let e : int = (max (floor_log2_abs x 32768) (1 - b)) - p + 1 in
+      let e : int = (max (floor_log2_abs x 32768) (1 - b)) - p + 1 in (* TODO: is 32768 always enough? *)
       let s : real = Real.abs x *. pow2 (- e) in
       let delta : real = Real.(s - floor s) in
       let code_is_even : bool =
@@ -505,19 +505,13 @@ module Float = struct
     | NaN, _ -> Ok NaN
     | _, NaN -> Ok NaN
     | (PINF | NINF), PINF -> Ok PINF
-    | NINF, NINF -> Ok PINF
-    | PINF, NINF -> Ok NINF
-    | R x,  PINF when x <. 0.0 -> Ok (R (-. x))
-    | R x,  PINF when x >=. 0.0 -> Ok (R x)
-    | R x,  NINF -> Ok (R (-. x))
-    | PINF, R y when y <. 0.0 -> Ok NINF
-    | PINF, R y when y >=. 0.0 -> Ok PINF
-    | NINF, R y when y <. 0.0 -> Ok PINF
-    | NINF, R y when y >=. 0.0 -> Ok PINF
-    | R x,  R y when x >=. 0.0 && y >=. 0.0 -> Ok (R x)
-    | R x,  R y when x <. 0.0 && y >=. 0.0 -> Ok (R (-. x))
-    | R x,  R y when x >=. 0.0 && y <. 0.0 -> Ok (R (-. x))
-    | R x,  R y when x <. 0.0 && y <. 0.0 -> Ok (R (-. x))
+    | (PINF | NINF), NINF -> Ok NINF
+    | (PINF | NINF), R y when y >=. 0.0 -> Ok PINF
+    | (PINF | NINF), R y when y <. 0.0 -> Ok NINF
+    | R x,  PINF  -> Ok (R (Real.abs x))
+    | R x,  NINF -> Ok (R (-. (Real.abs x)))
+    | R x,  R y when y >=. 0.0 -> Ok (R (Real.abs x))
+    | R x,  R y when y <. 0.0 -> Ok (R (-. (Real.abs x)))
     | _ -> Error "undefined"
 
   let internal_copy_sign (f : Format.t) (x : t) (y : t) : (t, string) Result.t =
@@ -591,21 +585,21 @@ module Float = struct
     match x, y with
     | NaN, _ -> Ok NaN
     | _, NaN -> Ok NaN
-    | PINF, R y when y = 0.0 -> Ok NaN
-    | R x, PINF when x = 0.0 -> Ok NaN
-    | NINF, R y when y = 0.0 -> Ok NaN
-    | R x, NINF when x = 0.0 -> Ok NaN
     | PINF, PINF -> Ok PINF
     | NINF, NINF -> Ok PINF
     | NINF, PINF -> Ok NINF
     | PINF, NINF -> Ok NINF
     | PINF, R y when y >. 0.0 -> Ok PINF
+    | PINF, R y when y = 0.0 -> Ok NaN
     | PINF, R y when y <. 0.0 -> Ok NINF
     | R x, PINF when x >. 0.0 -> Ok PINF
+    | R x, PINF when x = 0.0 -> Ok NaN
     | R x, PINF when x <. 0.0 -> Ok NINF
     | NINF, R y when y >. 0.0 -> Ok NINF
+    | NINF, R y when y = 0.0 -> Ok NaN
     | NINF, R y when y <. 0.0 -> Ok PINF
     | R x, NINF when x >. 0.0 -> Ok NINF
+    | R x, NINF when x = 0.0 -> Ok NaN
     | R x, NINF when x <. 0.0 -> Ok PINF
     | R x, R y -> Ok (R (x *. y))
     | _ -> Error "undefined"
@@ -997,67 +991,68 @@ module Float = struct
 
 
   (** 4.9 Mixed IEEE Std 754 and P3109 operations *)
-  let aug_scaled_fma (a : AugReal.t) (s_a : int) (x : AugReal.t) (y : AugReal.t) (s : int) : (AugReal.t, string) Result.t =
-    match a, x, y with
-    | NaN, _, _ -> Ok NaN
-    | _, NaN, _ -> Ok NaN
-    | _, _, NaN -> Ok NaN
+  let aug_scaled_fma (x : AugReal.t) (y : AugReal.t) (s : int) (a : AugReal.t) (s_a : int) : (AugReal.t, string) Result.t =
+    let open AugReal in
+    match x, y, s, a, s_a with
+    | NaN, _, _,  _ , _ -> Ok NaN
+    | _, NaN, _,  _ , _ -> Ok NaN
+    | _, _, _ , NaN, _ -> Ok NaN
 
-    | NINF, PINF, PINF -> Ok NaN
-    | PINF, NINF, PINF -> Ok NaN
-    | PINF, PINF, NINF -> Ok NaN
-    | NINF, NINF, NINF -> Ok NaN
+    | PINF, PINF, _ , NINF, _ -> Ok NaN
+    | NINF, PINF, _ , PINF, _ -> Ok NaN
+    | PINF, NINF, _ , PINF, _ -> Ok NaN
+    | NINF, NINF, _ , NINF, _ -> Ok NaN
 
-    | _, PINF, R 0.0 -> Ok NaN
-    | _, NINF, R 0.0 -> Ok NaN
-    | _, R 0.0, PINF -> Ok NaN
-    | _, R 0.0, NINF -> Ok NaN
+    | PINF, R 0.0, _, _, _ -> Ok NaN
+    | NINF, R 0.0, _, _, _ -> Ok NaN
+    | R 0.0, PINF, _, _, _ -> Ok NaN
+    | R 0.0, NINF, _, _, _ -> Ok NaN
 
-    | NINF, PINF, R y when y >. 0.0 -> Ok NaN
-    | NINF, R x, PINF when x >. 0.0 -> Ok NaN
+    | PINF, R y, _, NINF, _ when y >. 0.0 -> Ok NaN
+    | R x, PINF, _, NINF, _ when x >. 0.0 -> Ok NaN
 
-    | NINF, NINF, R y when y <. 0.0 -> Ok NaN
-    | NINF, R x, NINF when x <. 0.0 -> Ok NaN
+    | NINF, R y, _, NINF, _ when y <. 0.0 -> Ok NaN
+    | R x, NINF, _, NINF, _ when x <. 0.0 -> Ok NaN
 
-    | PINF, PINF, R y when y <. 0.0 -> Ok NaN
-    | PINF, R x, PINF when x <. 0.0 -> Ok NaN
+    | PINF, R y, _, PINF, _ when y <. 0.0 -> Ok NaN
+    | R x, PINF, _, PINF, _ when x <. 0.0 -> Ok NaN
 
-    | PINF, NINF, R y when y >. 0.0 -> Ok NaN
-    | PINF, R x, NINF when x >. 0.0 -> Ok NaN
+    | NINF, R y, _, PINF, _ when y >. 0.0 -> Ok NaN
+    | R x, NINF, _, PINF, _ when x >. 0.0 -> Ok NaN
 
-    | PINF, (PINF | NINF), _ -> Ok PINF
-    | NINF, (PINF | NINF), _ -> Ok NINF
-    | _, PINF, PINF -> Ok PINF
-    | PINF, _, PINF -> Ok PINF
-    | _, NINF, PINF -> Ok NINF
-    | NINF, _, NINF -> Ok NINF
-    | _, PINF, NINF -> Ok NINF
-    | _, NINF, NINF -> Ok PINF
-    | PINF, _, _ -> Ok PINF
-    | NINF, _, _ -> Ok NINF
+    | (PINF | NINF), _, _, PINF, _ -> Ok PINF
+    | (PINF | NINF), _, _, NINF, _ -> Ok NINF
+    | PINF, PINF, _, _, _ -> Ok PINF
+    | _, PINF, _, PINF, _ -> Ok PINF
+    | NINF, PINF, _, _, _ -> Ok NINF
+    | _, NINF, _, NINF, _ -> Ok NINF
+    | PINF, NINF, _, _, _ -> Ok NINF
+    | NINF, NINF, _, _, _ -> Ok PINF
+    | _, _, _, PINF, _ -> Ok PINF
+    | _, _, _, NINF, _ -> Ok NINF
 
-    | _, PINF, R y when y >=. 0.0 -> Ok PINF
-    | _, PINF, R y when y <. 0.0 -> Ok NINF
+    | PINF, R y, _, _, _ when y >=. 0.0 -> Ok PINF
+    | PINF, R y, _, _, _ when y <. 0.0 -> Ok NINF
 
-    | _, NINF, R y when y >=. 0.0 -> Ok NINF
-    | _, NINF, R y when y <. 0.0 -> Ok PINF
+    | NINF, R y, _, _, _ when y >=. 0.0 -> Ok NINF
+    | NINF, R y, _, _, _ when y <. 0.0 -> Ok PINF
 
-    | _, R x, PINF when x >=. 0.0 -> Ok PINF
-    | _, R x, PINF when x <. 0.0 -> Ok NINF
-    | NINF, R x, PINF when x <. 0.0 -> Ok NINF
+    | R x, PINF, _, _, _ when x >=. 0.0 -> Ok PINF
+    | R x, PINF, _, _, _ when x <. 0.0 -> Ok NINF
+    | R x, PINF, _, NINF, _ when x <. 0.0 -> Ok NINF
 
-    | _, R x, NINF when x >=. 0.0 -> Ok NINF
-    | _, R x, NINF when x <. 0.0 -> Ok PINF
-    | PINF, R x, NINF when x <. 0.0 -> Ok PINF
+    | R x, NINF, _, _, _ when x >=. 0.0 -> Ok NINF
+    | R x, NINF, _, _, _ when x <. 0.0 -> Ok PINF
+    | R x, NINF, _, PINF, _ when x <. 0.0 -> Ok PINF
 
-    | R a, R x, R y ->
+    | R x, R y, s, R a, s_a ->
       let open Util in
-      Ok (R (a *. (2 ^. s_a) +. x *. y *. (2 ^. s)))
+      Ok (R (x *. y *. (2 ^. s) +. a *. (2 ^. s_a)))
 
     | _ -> Error "undefined"
 
   let internal_scaled_fma (phi : IEEE754.Format.t) (f_x : Format.t) (f_y : Format.t) (pi : Projection.t)
-    (a : IEEE754.t) (s_a : int) (x : t) (y : t) (s : int) : (IEEE754.t, string) Result.t =
+    (x : t) (y : t) (s : int) (a : IEEE754.t) (s_a : int) : (IEEE754.t, string) Result.t =
     let open AugReal in
     let open Signedness in
     let nan754 = IEEE754.quiet_nan phi in
@@ -1065,7 +1060,7 @@ module Float = struct
     match IEEE754.as_aug_real phi a with
     | Ok NaN -> Ok nan754
     | Ok a_ -> (
-      match aug_scaled_fma a_ s_a (decode f_x x) (decode f_y y) s with
+      match aug_scaled_fma (decode f_x x) (decode f_y y) s a_ s_a with
       | Ok NaN -> Ok nan754
       | Ok PINF -> Ok (IEEE754.pinf phi)
       | Ok NINF -> Ok (IEEE754.ninf phi)
@@ -1078,8 +1073,8 @@ module Float = struct
     | Error e -> Error e
 
   let scaled_fma (phi : IEEE754.Format.t) (f_x : Format.t) (f_y : Format.t) (pi : Projection.t)
-    (a : IEEE754.t) (s_a : int) (x : t) (y : t) (s : int) : IEEE754.t =
-    match internal_scaled_fma phi f_x f_y pi a s_a x y s with
+    (x : t) (y : t) (s : int) (a : IEEE754.t) (s_a : int) : IEEE754.t =
+    match internal_scaled_fma phi f_x f_y pi x y s a s_a  with
     | Ok r -> r
     | _ -> IEEE754.quiet_nan phi (* unreachable by theorem internal_scaled_fma_ok *)
 
@@ -1221,14 +1216,15 @@ module Float = struct
   (**  4.9.3 Clamp *)
 
   let aug_clamp (x : AugReal.t) (lo : AugReal.t) (hi : AugReal.t) : (AugReal.t, string) Result.t =
+    let open AugReal in
     match x, lo, hi with
     | NaN, _, _ -> Ok NaN
     | _, NaN, _ -> Ok NaN
     | _, _, NaN -> Ok NaN
 
-    | _, (PINF | R _), NINF -> Ok NaN
-    | _, PINF, R _ -> Ok NaN
-    | _, R x, R y when x >. y -> Ok NaN
+    | _, lo, NINF when lo <> NINF -> Ok NaN
+    | _, PINF, hi when hi <> PINF -> Ok NaN
+    | _, R lo, R hi when lo >. hi -> Ok NaN
 
     | _, PINF, PINF -> Ok PINF
     | _, _, NINF -> Ok NINF

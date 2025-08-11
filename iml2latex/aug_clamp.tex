@@ -126,20 +126,20 @@
   \noindent\Case{\Cer\Clamp(\NaN, \any, \any) \gives  \NaN}\\
   \Case{\Cer\Clamp(\any, \NaN, \any) \gives  \NaN}\\
   \Case{\Cer\Clamp(\any, \any, \NaN) \gives  \NaN}\\
-  \Case{\Cer\Clamp(\any, +\infty | {\color{red}REAL\any}, -\infty) \gives  \NaN}\\
-  \Case{\Cer\Clamp(\any, +\infty, {\color{red}REAL\any}) \gives  \NaN}\\
-  \Case{\Cer\Clamp(\any, x, y) ~\If x > y\gives  \NaN}\\
+  \Case{\Cer\Clamp(\any, lo, -\infty) ~\If lo \neq -\infty\gives  \NaN}\\
+  \Case{\Cer\Clamp(\any, +\infty, hi) ~\If hi \neq +\infty\gives  \NaN}\\
+  \Case{\Cer\Clamp(\any, LO, HI) ~\If LO > HI\gives  \NaN}\\
   \Case{\Cer\Clamp(\any, +\infty, +\infty) \gives  +\infty}\\
   \Case{\Cer\Clamp(\any, \any, -\infty) \gives  -\infty}\\
   \Case{\Cer\Clamp(+\infty, \any, \any) \gives  hi}\\
   \Case{\Cer\Clamp(-\infty, \any, \any) \gives  lo}\\
   \Case{\Cer\Clamp(\any, -\infty, +\infty) \gives  x}\\
-  \Case{\Cer\Clamp(x, -\infty, hi) ~\If x \leq hi\gives  x}\\
-  \Case{\Cer\Clamp(x, -\infty, hi) ~\If x > hi\gives  hi}\\
-  \Case{\Cer\Clamp(x, lo, +\infty) ~\If x \leq lo\gives  lo}\\
-  \Case{\Cer\Clamp(x, lo, +\infty) ~\If x > lo\gives  x}\\
-  \Case{\Cer\Clamp(x, lo, hi) \gives
-   \If x \leq lo \Then lo \Else \If x \geq hi \Then hi \Else x}\\
+  \Case{\Cer\Clamp(X, -\infty, HI) ~\If X \leq HI\gives  X}\\
+  \Case{\Cer\Clamp(X, -\infty, HI) ~\If X > HI\gives  HI}\\
+  \Case{\Cer\Clamp(X, LO, +\infty) ~\If X \leq LO\gives  LO}\\
+  \Case{\Cer\Clamp(X, LO, +\infty) ~\If X > LO\gives  X}\\
+  \Case{\Cer\Clamp(X, LO, HI) \gives
+   \If X \leq LO \Then LO \Else \If X \geq HI \Then HI \Else X}\\
 
 
 

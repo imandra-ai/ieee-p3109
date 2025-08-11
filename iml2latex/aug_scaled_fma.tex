@@ -101,46 +101,47 @@
 
 
 
-  \noindent\Case{\Cer\ScaledFMA(\NaN, \any, \any) \gives  \NaN}\\
-  \Case{\Cer\ScaledFMA(\any, \NaN, \any) \gives  \NaN}\\
-  \Case{\Cer\ScaledFMA(\any, \any, \NaN) \gives  \NaN}\\
-  \Case{\Cer\ScaledFMA(-\infty, +\infty, +\infty) \gives  \NaN}\\
-  \Case{\Cer\ScaledFMA(+\infty, -\infty, +\infty) \gives  \NaN}\\
-  \Case{\Cer\ScaledFMA(+\infty, +\infty, -\infty) \gives  \NaN}\\
-  \Case{\Cer\ScaledFMA(-\infty, -\infty, -\infty) \gives  \NaN}\\
-  \Case{\Cer\ScaledFMA(\any, +\infty, \zero) \gives  \NaN}\\
-  \Case{\Cer\ScaledFMA(\any, -\infty, \zero) \gives  \NaN}\\
-  \Case{\Cer\ScaledFMA(\any, \zero, +\infty) \gives  \NaN}\\
-  \Case{\Cer\ScaledFMA(\any, \zero, -\infty) \gives  \NaN}\\
-  \Case{\Cer\ScaledFMA(-\infty, +\infty, y) ~\If y > \zero\gives  \NaN}\\
-  \Case{\Cer\ScaledFMA(-\infty, x, +\infty) ~\If x > \zero\gives  \NaN}\\
-  \Case{\Cer\ScaledFMA(-\infty, -\infty, y) ~\If y < \zero\gives  \NaN}\\
-  \Case{\Cer\ScaledFMA(-\infty, x, -\infty) ~\If x < \zero\gives  \NaN}\\
-  \Case{\Cer\ScaledFMA(+\infty, +\infty, y) ~\If y < \zero\gives  \NaN}\\
-  \Case{\Cer\ScaledFMA(+\infty, x, +\infty) ~\If x < \zero\gives  \NaN}\\
-  \Case{\Cer\ScaledFMA(+\infty, -\infty, y) ~\If y > \zero\gives  \NaN}\\
-  \Case{\Cer\ScaledFMA(+\infty, x, -\infty) ~\If x > \zero\gives  \NaN}\\
-  \Case{\Cer\ScaledFMA(+\infty, \pm\infty, \any) \gives  +\infty}\\
-  \Case{\Cer\ScaledFMA(-\infty, \pm\infty, \any) \gives  -\infty}\\
-  \Case{\Cer\ScaledFMA(\any, +\infty, +\infty) \gives  +\infty}\\
-  \Case{\Cer\ScaledFMA(+\infty, \any, +\infty) \gives  +\infty}\\
-  \Case{\Cer\ScaledFMA(\any, -\infty, +\infty) \gives  -\infty}\\
-  \Case{\Cer\ScaledFMA(-\infty, \any, -\infty) \gives  -\infty}\\
-  \Case{\Cer\ScaledFMA(\any, +\infty, -\infty) \gives  -\infty}\\
-  \Case{\Cer\ScaledFMA(\any, -\infty, -\infty) \gives  +\infty}\\
-  \Case{\Cer\ScaledFMA(+\infty, \any, \any) \gives  +\infty}\\
-  \Case{\Cer\ScaledFMA(-\infty, \any, \any) \gives  -\infty}\\
-  \Case{\Cer\ScaledFMA(\any, +\infty, y) ~\If y \geq \zero\gives  +\infty}\\
-  \Case{\Cer\ScaledFMA(\any, +\infty, y) ~\If y < \zero\gives  -\infty}\\
-  \Case{\Cer\ScaledFMA(\any, -\infty, y) ~\If y \geq \zero\gives  -\infty}\\
-  \Case{\Cer\ScaledFMA(\any, -\infty, y) ~\If y < \zero\gives  +\infty}\\
-  \Case{\Cer\ScaledFMA(\any, x, +\infty) ~\If x \geq \zero\gives  +\infty}\\
-  \Case{\Cer\ScaledFMA(\any, x, +\infty) ~\If x < \zero\gives  -\infty}\\
-  \Case{\Cer\ScaledFMA(-\infty, x, +\infty) ~\If x < \zero\gives  -\infty}\\
-  \Case{\Cer\ScaledFMA(\any, x, -\infty) ~\If x \geq \zero\gives  -\infty}\\
-  \Case{\Cer\ScaledFMA(\any, x, -\infty) ~\If x < \zero\gives  +\infty}\\
-  \Case{\Cer\ScaledFMA(+\infty, x, -\infty) ~\If x < \zero\gives  +\infty}\\
-  \Case{\Cer\ScaledFMA(a, x, y) \gives  a * 2 ^ {s_{a}} + x * y * 2 ^ s}\\
+  \noindent\Case{\Cer\ScaledFMA(\NaN, \any, \any, \any, \any) \gives  \NaN}\\
+  \Case{\Cer\ScaledFMA(\any, \NaN, \any, \any, \any) \gives  \NaN}\\
+  \Case{\Cer\ScaledFMA(\any, \any, \any, \NaN, \any) \gives  \NaN}\\
+  \Case{\Cer\ScaledFMA(+\infty, +\infty, \any, -\infty, \any) \gives  \NaN}\\
+  \Case{\Cer\ScaledFMA(-\infty, +\infty, \any, +\infty, \any) \gives  \NaN}\\
+  \Case{\Cer\ScaledFMA(+\infty, -\infty, \any, +\infty, \any) \gives  \NaN}\\
+  \Case{\Cer\ScaledFMA(-\infty, -\infty, \any, -\infty, \any) \gives  \NaN}\\
+  \Case{\Cer\ScaledFMA(+\infty, \zero, \any, \any, \any) \gives  \NaN}\\
+  \Case{\Cer\ScaledFMA(-\infty, \zero, \any, \any, \any) \gives  \NaN}\\
+  \Case{\Cer\ScaledFMA(\zero, +\infty, \any, \any, \any) \gives  \NaN}\\
+  \Case{\Cer\ScaledFMA(\zero, -\infty, \any, \any, \any) \gives  \NaN}\\
+  \Case{\Cer\ScaledFMA(+\infty, Y, \any, -\infty, \any) ~\If Y > \zero\gives  \NaN}\\
+  \Case{\Cer\ScaledFMA(X, +\infty, \any, -\infty, \any) ~\If X > \zero\gives  \NaN}\\
+  \Case{\Cer\ScaledFMA(-\infty, Y, \any, -\infty, \any) ~\If Y < \zero\gives  \NaN}\\
+  \Case{\Cer\ScaledFMA(X, -\infty, \any, -\infty, \any) ~\If X < \zero\gives  \NaN}\\
+  \Case{\Cer\ScaledFMA(+\infty, Y, \any, +\infty, \any) ~\If Y < \zero\gives  \NaN}\\
+  \Case{\Cer\ScaledFMA(X, +\infty, \any, +\infty, \any) ~\If X < \zero\gives  \NaN}\\
+  \Case{\Cer\ScaledFMA(-\infty, Y, \any, +\infty, \any) ~\If Y > \zero\gives  \NaN}\\
+  \Case{\Cer\ScaledFMA(X, -\infty, \any, +\infty, \any) ~\If X > \zero\gives  \NaN}\\
+  \Case{\Cer\ScaledFMA(\pm\infty, \any, \any, +\infty, \any) \gives  +\infty}\\
+  \Case{\Cer\ScaledFMA(\pm\infty, \any, \any, -\infty, \any) \gives  -\infty}\\
+  \Case{\Cer\ScaledFMA(+\infty, +\infty, \any, \any, \any) \gives  +\infty}\\
+  \Case{\Cer\ScaledFMA(\any, +\infty, \any, +\infty, \any) \gives  +\infty}\\
+  \Case{\Cer\ScaledFMA(-\infty, +\infty, \any, \any, \any) \gives  -\infty}\\
+  \Case{\Cer\ScaledFMA(\any, -\infty, \any, -\infty, \any) \gives  -\infty}\\
+  \Case{\Cer\ScaledFMA(+\infty, -\infty, \any, \any, \any) \gives  -\infty}\\
+  \Case{\Cer\ScaledFMA(-\infty, -\infty, \any, \any, \any) \gives  +\infty}\\
+  \Case{\Cer\ScaledFMA(\any, \any, \any, +\infty, \any) \gives  +\infty}\\
+  \Case{\Cer\ScaledFMA(\any, \any, \any, -\infty, \any) \gives  -\infty}\\
+  \Case{\Cer\ScaledFMA(+\infty, Y, \any, \any, \any) ~\If Y \geq \zero\gives  +\infty}\\
+  \Case{\Cer\ScaledFMA(+\infty, Y, \any, \any, \any) ~\If Y < \zero\gives  -\infty}\\
+  \Case{\Cer\ScaledFMA(-\infty, Y, \any, \any, \any) ~\If Y \geq \zero\gives  -\infty}\\
+  \Case{\Cer\ScaledFMA(-\infty, Y, \any, \any, \any) ~\If Y < \zero\gives  +\infty}\\
+  \Case{\Cer\ScaledFMA(X, +\infty, \any, \any, \any) ~\If X \geq \zero\gives  +\infty}\\
+  \Case{\Cer\ScaledFMA(X, +\infty, \any, \any, \any) ~\If X < \zero\gives  -\infty}\\
+  \Case{\Cer\ScaledFMA(X, +\infty, \any, -\infty, \any) ~\If X < \zero\gives  -\infty}\\
+  \Case{\Cer\ScaledFMA(X, -\infty, \any, \any, \any) ~\If X \geq \zero\gives  -\infty}\\
+  \Case{\Cer\ScaledFMA(X, -\infty, \any, \any, \any) ~\If X < \zero\gives  +\infty}\\
+  \Case{\Cer\ScaledFMA(X, -\infty, \any, +\infty, \any) ~\If X < \zero\gives  +\infty}\\
+  \Case{\Cer\ScaledFMA(X, Y, s, A, s_a) \gives
+   X \times Y \times 2 ^ S + A \times 2 ^ {S_{A}}}\\
 
 
 
