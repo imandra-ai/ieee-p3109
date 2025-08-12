@@ -446,7 +446,7 @@ function print_module_expr_desc(node: AST, options: Options): Doc {
   }
 }
 
-function print_string_loc(node: AST, options: Options): Doc {
+function print_string_loc(node: AST, options: Options): string {
   return node.txt;
 }
 
@@ -571,7 +571,10 @@ function print_pattern_desc(node: AST, options: Options): Doc {
       return "\\any";
     case "Ppat_var":
       // | Ppat_var of string loc  (** A variable pattern such as [x] *)
-      return print_string_loc(args[0], options);
+      if (options.hasOwnProperty("pattern_reals") && options.pattern_reals instanceof Array && options.pattern_reals.includes(args[0].txt))
+        return [print_string_loc(args[0], options).toUpperCase()];
+      else
+        return print_string_loc(args[0], options);
     case "Ppat_alias":
       // | Ppat_alias of pattern * string loc
       //     (** An alias pattern such as [P as 'a] *)
@@ -607,8 +610,12 @@ function print_pattern_desc(node: AST, options: Options): Doc {
         if (op_ident == "R") {
           if (args[1][1].ppat_desc[0] != 'Ppat_var' && args[1][1].ppat_desc[0] != 'Ppat_constant')
             return ["{\\color{red}REAL", print_pattern(args[1][1], options), "}"];
-          else
-            return [print_pattern(args[1][1], options)];
+          else {
+            if (args[1][1].ppat_desc[0] == 'Ppat_var' && options.pattern_reals instanceof Array)
+              options.pattern_reals.push(args[1][1].ppat_desc[1].txt);
+            let r = [print_pattern(args[1][1], options)];
+            return r;
+          }
         }
         else if (op_info.notation == Notation.Infix) {
           assert(args[1][1].ppat_desc[0] == "Ppat_tuple");
@@ -973,7 +980,11 @@ function print_expression_desc(node: AST, options: Options): Doc {
       // | Pexp_ident of Longident.t loc
       //     (** Identifiers such as [x] and [M.x]
       //        *)
-      return print_longident_loc(args[0], options);
+      if ((options.hasOwnProperty("is_real") && options.is_real) ||
+        (options.hasOwnProperty("pattern_reals") && options.pattern_reals instanceof Array && options.pattern_reals.includes(args[0].txt[1])))
+        return [print_longident_loc(args[0], options)[0].toUpperCase()];
+      else
+        return print_longident_loc(args[0], options);
     case "Pexp_constant":
       // | Pexp_constant of constant
       //     (** Expressions constant such as [1], ['a'], ["true"], [1.0], [1l],
@@ -1049,6 +1060,7 @@ function print_expression_desc(node: AST, options: Options): Doc {
 
       op_info.name = op_info.name.replace("&&", "\\And");
       op_info.name = op_info.name.replace("||", "\\Or");
+      op_info.name = op_info.name.replace("*.", "\\times");
 
       switch (op_info.notation) {
         case Notation.Infix: {
@@ -1175,12 +1187,17 @@ function print_expression_desc(node: AST, options: Options): Doc {
       //   *)
       const id = print_longident_loc(args[0], options);
 
-      if (id == "R") { return [print_expression(args[1], options)]; }
+      if (id == "R") {
+        options.is_real = true;
+        let r = [print_expression(args[1], options)];
+        options.is_real = false;
+        return r;
+      }
       else if (id == "Ok") {
         let r = [];
         if (args[1]) {
-          const op_info = operator_precedence_info(undefined);
-          const op_info_arg = op_info_of_expr(args[1]);
+          // const op_info = operator_precedence_info(undefined);
+          // const op_info_arg = op_info_of_expr(args[1]);
           r = r.concat([
             line,
             // ...par_if(
@@ -1659,6 +1676,7 @@ function print_structure_item_desc(node: AST, options: Options): Doc {
                   ["~\\If", line, print_expression(arg.pc_guard, options)] : []),
                 "\\gives", line,
                 print_expression(rhs_expr, options), "}\\\\", hardline]));
+              options.pattern_reals = [];
             }
             return f(r);
           }
@@ -1757,5 +1775,6 @@ function print_toplevel_phrase(node: AST, options: Options): Doc {
 }
 
 function print(path: AstPath<Tree>, options: Options, _print: (path: AstPath<any>) => Doc): Doc {
+  options.pattern_reals = [];
   return [path.node.top_defs.map(n => print_toplevel_phrase(n, options))];
 }

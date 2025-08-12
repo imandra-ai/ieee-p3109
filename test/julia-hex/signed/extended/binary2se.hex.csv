@@ -1,0 +1,5 @@
+ code  , binary2p1se 
+ 0x00  , 0x0p+0      
+ 0x01  , Inf         
+ 0x02  , NaN         
+ 0x03  , -Inf        

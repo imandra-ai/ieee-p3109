@@ -1,0 +1,5 @@
+ code  , binary2p1ue , binary2p2ue 
+ 0x00  , 0x0p+0      , 0x0p+0      
+ 0x01  , 0x1p-1      , 0x1p-1      
+ 0x02  , Inf         , Inf         
+ 0x03  , NaN         , NaN         

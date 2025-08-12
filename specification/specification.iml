@@ -17,19 +17,20 @@ end
 
 module Format = struct
   type kpt =
-    | B3P1 | B3P2
-    | B4P1 | B4P2 | B4P3
-    | B5P1 | B5P2 | B5P3 | B5P4
-    | B6P1 | B6P2 | B6P3 | B6P4 | B6P5
-    | B7P1 | B7P2 | B7P3 | B7P4 | B7P5 | B7P6
-    | B8P1 | B8P2 | B8P3 | B8P4 | B8P5 | B8P6 | B8P7
-    | B9P1 | B9P2 | B9P3 | B9P4 | B9P5 | B9P6 | B9P7 | B9P8
-    | B10P1 | B10P2 | B10P3 | B10P4 | B10P5 | B10P6 | B10P7 | B10P8 | B10P9
-    | B11P1 | B11P2 | B11P3 | B11P4 | B11P5 | B11P6 | B11P7 | B11P8 | B11P9 | B11P10
-    | B12P1 | B12P2 | B12P3 | B12P4 | B12P5 | B12P6 | B12P7 | B12P8 | B12P9 | B12P10 | B12P11
-    | B13P1 | B13P2 | B13P3 | B13P4 | B13P5 | B13P6 | B13P7 | B13P8 | B13P9 | B13P10 | B13P11 | B13P12
-    | B14P1 | B14P2 | B14P3 | B14P4 | B14P5 | B14P6 | B14P7 | B14P8 | B14P9 | B14P10 | B14P11 | B14P12 | B14P13
-    | B15P1 | B15P2 | B15P3 | B15P4 | B15P5 | B15P6 | B15P7 | B15P8 | B15P9 | B15P10 | B15P11 | B15P12 | B15P13 | B15P14
+    | B2P1 | B2P2
+    | B3P1 | B3P2 | B3P3
+    | B4P1 | B4P2 | B4P3 | B4P4
+    | B5P1 | B5P2 | B5P3 | B5P4 | B5P5
+    | B6P1 | B6P2 | B6P3 | B6P4 | B6P5| B6P6
+    | B7P1 | B7P2 | B7P3 | B7P4 | B7P5 | B7P6 | B7P7
+    | B8P1 | B8P2 | B8P3 | B8P4 | B8P5 | B8P6 | B8P7 | B8P8
+    | B9P1 | B9P2 | B9P3 | B9P4 | B9P5 | B9P6 | B9P7 | B9P8 | B9P9
+    | B10P1 | B10P2 | B10P3 | B10P4 | B10P5 | B10P6 | B10P7 | B10P8 | B10P9 | B10P10
+    | B11P1 | B11P2 | B11P3 | B11P4 | B11P5 | B11P6 | B11P7 | B11P8 | B11P9 | B11P10 | B11P11
+    | B12P1 | B12P2 | B12P3 | B12P4 | B12P5 | B12P6 | B12P7 | B12P8 | B12P9 | B12P10 | B12P11 | B12P12
+    | B13P1 | B13P2 | B13P3 | B13P4 | B13P5 | B13P6 | B13P7 | B13P8 | B13P9 | B13P10 | B13P11 | B13P12 | B13P13
+    | B14P1 | B14P2 | B14P3 | B14P4 | B14P5 | B14P6 | B14P7 | B14P8 | B14P9 | B14P10 | B14P11 | B14P12 | B14P13 | B14P14
+    | B15P1 | B15P2 | B15P3 | B15P4 | B15P5 | B15P6 | B15P7 | B15P8 | B15P9 | B15P10 | B15P11 | B15P12 | B15P13 | B15P14 | B15P15
 
   type t = {
     kp: kpt;
@@ -39,37 +40,39 @@ module Format = struct
 
   let precision (f : t) : int =
     match f.kp with
-    | B15P1  | B14P1  | B13P1  | B12P1  | B11P1  | B10P1 | B9P1 | B8P1 | B7P1 | B6P1 | B5P1 | B4P1 | B3P1 -> 1
-    | B15P2  | B14P2  | B13P2  | B12P2  | B11P2  | B10P2 | B9P2 | B8P2 | B7P2 | B6P2 | B5P2 | B4P2 | B3P2 -> 2
-    | B15P3  | B14P3  | B13P3  | B12P3  | B11P3  | B10P3 | B9P3 | B8P3 | B7P3 | B6P3 | B5P3 | B4P3 -> 3
-    | B15P4  | B14P4  | B13P4  | B12P4  | B11P4  | B10P4 | B9P4 | B8P4 | B7P4 | B6P4 | B5P4 -> 4
-    | B15P5  | B14P5  | B13P5  | B12P5  | B11P5  | B10P5 | B9P5 | B8P5 | B7P5 | B6P5 -> 5
-    | B15P6  | B14P6  | B13P6  | B12P6  | B11P6  | B10P6 | B9P6 | B8P6 | B7P6 -> 6
-    | B15P7  | B14P7  | B13P7  | B12P7  | B11P7  | B10P7 | B9P7 | B8P7 -> 7
-    | B15P8  | B14P8  | B13P8  | B12P8  | B11P8  | B10P8 | B9P8 -> 8
-    | B15P9  | B14P9  | B13P9  | B12P9  | B11P9  | B10P9 -> 9
-    | B15P10 | B14P10 | B13P10 | B12P10 | B11P10 -> 10
-    | B15P11 | B14P11 | B13P11 | B12P11 -> 11
-    | B15P12 | B14P12 | B13P12 -> 12
-    | B15P13 | B14P13 -> 13
-    | B15P14 -> 14
+    | B15P1  | B14P1  | B13P1  | B12P1  | B11P1  | B10P1 | B9P1 | B8P1 | B7P1 | B6P1 | B5P1 | B4P1 | B3P1 | B2P1 -> 1
+    | B15P2  | B14P2  | B13P2  | B12P2  | B11P2  | B10P2 | B9P2 | B8P2 | B7P2 | B6P2 | B5P2 | B4P2 | B3P2 | B2P2 -> 2
+    | B15P3  | B14P3  | B13P3  | B12P3  | B11P3  | B10P3 | B9P3 | B8P3 | B7P3 | B6P3 | B5P3 | B4P3 | B3P3 -> 3
+    | B15P4  | B14P4  | B13P4  | B12P4  | B11P4  | B10P4 | B9P4 | B8P4 | B7P4 | B6P4 | B5P4 | B4P4 -> 4
+    | B15P5  | B14P5  | B13P5  | B12P5  | B11P5  | B10P5 | B9P5 | B8P5 | B7P5 | B6P5 | B5P5-> 5
+    | B15P6  | B14P6  | B13P6  | B12P6  | B11P6  | B10P6 | B9P6 | B8P6 | B7P6 | B6P6 -> 6
+    | B15P7  | B14P7  | B13P7  | B12P7  | B11P7  | B10P7 | B9P7 | B8P7 | B7P7-> 7
+    | B15P8  | B14P8  | B13P8  | B12P8  | B11P8  | B10P8 | B9P8 | B8P8 -> 8
+    | B15P9  | B14P9  | B13P9  | B12P9  | B11P9  | B10P9 | B9P9 -> 9
+    | B15P10 | B14P10 | B13P10 | B12P10 | B11P10 | B10P10 -> 10
+    | B15P11 | B14P11 | B13P11 | B12P11 | B11P11-> 11
+    | B15P12 | B14P12 | B13P12 | B12P12 -> 12
+    | B15P13 | B14P13 | B13P13 -> 13
+    | B15P14 | B14P14 -> 14
+    | B15P15 -> 15
     [@@macro]
 
   let k_of_kp (kp : kpt) =
     match kp with
-    | B3P1 | B3P2 -> 3
-    | B4P1 | B4P2 | B4P3 -> 4
-    | B5P1 | B5P2 | B5P3 | B5P4 -> 5
-    | B6P1 | B6P2 | B6P3 | B6P4 | B6P5 -> 6
-    | B7P1 | B7P2 | B7P3 | B7P4 | B7P5 | B7P6 -> 7
-    | B8P1 | B8P2 | B8P3 | B8P4 | B8P5 | B8P6 | B8P7 -> 8
-    | B9P1 | B9P2 | B9P3 | B9P4 | B9P5 | B9P6 | B9P7 | B9P8 -> 9
-    | B10P1 | B10P2 | B10P3 | B10P4 | B10P5 | B10P6 | B10P7 | B10P8 | B10P9 -> 10
-    | B11P1 | B11P2 | B11P3 | B11P4 | B11P5 | B11P6 | B11P7 | B11P8 | B11P9 | B11P10 -> 11
-    | B12P1 | B12P2 | B12P3 | B12P4 | B12P5 | B12P6 | B12P7 | B12P8 | B12P9 | B12P10 | B12P11 -> 12
-    | B13P1 | B13P2 | B13P3 | B13P4 | B13P5 | B13P6 | B13P7 | B13P8 | B13P9 | B13P10 | B13P11 | B13P12 -> 13
-    | B14P1 | B14P2 | B14P3 | B14P4 | B14P5 | B14P6 | B14P7 | B14P8 | B14P9 | B14P10 | B14P11 | B14P12 | B14P13 -> 14
-    | B15P1 | B15P2 | B15P3 | B15P4 | B15P5 | B15P6 | B15P7 | B15P8 | B15P9 | B15P10 | B15P11 | B15P12 | B15P13 | B15P14 -> 15
+    | B2P1 | B2P2 -> 2
+    | B3P1 | B3P2 | B3P3 -> 3
+    | B4P1 | B4P2 | B4P3 | B4P4 -> 4
+    | B5P1 | B5P2 | B5P3 | B5P4 | B5P5 -> 5
+    | B6P1 | B6P2 | B6P3 | B6P4 | B6P5 | B6P6 -> 6
+    | B7P1 | B7P2 | B7P3 | B7P4 | B7P5 | B7P6 | B7P7 -> 7
+    | B8P1 | B8P2 | B8P3 | B8P4 | B8P5 | B8P6 | B8P7 | B8P8 -> 8
+    | B9P1 | B9P2 | B9P3 | B9P4 | B9P5 | B9P6 | B9P7 | B9P8 | B9P9 -> 9
+    | B10P1 | B10P2 | B10P3 | B10P4 | B10P5 | B10P6 | B10P7 | B10P8 | B10P9 | B10P10 -> 10
+    | B11P1 | B11P2 | B11P3 | B11P4 | B11P5 | B11P6 | B11P7 | B11P8 | B11P9 | B11P10 | B11P11  -> 11
+    | B12P1 | B12P2 | B12P3 | B12P4 | B12P5 | B12P6 | B12P7 | B12P8 | B12P9 | B12P10 | B12P11 | B12P12 -> 12
+    | B13P1 | B13P2 | B13P3 | B13P4 | B13P5 | B13P6 | B13P7 | B13P8 | B13P9 | B13P10 | B13P11 | B13P12 | B13P13 -> 13
+    | B14P1 | B14P2 | B14P3 | B14P4 | B14P5 | B14P6 | B14P7 | B14P8 | B14P9 | B14P10 | B14P11 | B14P12 | B14P13 | B14P14-> 14
+    | B15P1 | B15P2 | B15P3 | B15P4 | B15P5 | B15P6 | B15P7 | B15P8 | B15P9 | B15P10 | B15P11 | B15P12 | B15P13 | B15P14 | B15P15 -> 15
   [@@macro]
 
   let width (f : t) : int = k_of_kp f.kp [@@macro]
@@ -80,19 +83,20 @@ module Format = struct
 
   let of_kp (k : int) (p : int) : (kpt, string) Result.t =
     match k with
-    | 3 -> (match p with 1 -> Ok B3P1 | 2 -> Ok B3P2 | _ -> Error "invalid precision")
-    | 4 -> (match p with 1 -> Ok B4P1 | 2 -> Ok B4P2 | 3 -> Ok B4P3 | _ -> Error "invalid precision")
-    | 5 -> (match p with 1 -> Ok B5P1 | 2 -> Ok B5P2 | 3 -> Ok B5P3 | 4 -> Ok B5P4 | _ -> Error "invalid precision")
-    | 6 -> (match p with 1 -> Ok B6P1 | 2 -> Ok B6P2 | 3 -> Ok B6P3 | 4 -> Ok B6P4 | 5 -> Ok B6P5 | _ -> Error "invalid precision")
-    | 7 -> (match p with 1 -> Ok B7P1 | 2 -> Ok B7P2 | 3 -> Ok B7P3 | 4 -> Ok B7P4 | 5 -> Ok B7P5 | 6 -> Ok B7P6 | _ -> Error "invalid precision")
-    | 8 -> (match p with 1 -> Ok B8P1 | 2 -> Ok B8P2 | 3 -> Ok B8P3 | 4 -> Ok B8P4 | 5 -> Ok B8P5 | 6 -> Ok B8P6 | 7 -> Ok B8P7 | _ -> Error "invalid precision")
-    | 9 -> (match p with 1 -> Ok B9P1 | 2 -> Ok B9P2 | 3 -> Ok B9P3 | 4 -> Ok B9P4 | 5 -> Ok B9P5 | 6 -> Ok B9P6 | 7 -> Ok B9P7 | 8 -> Ok B9P8 | _ -> Error "invalid precision")
-    | 10 -> (match p with 1 -> Ok B10P1 | 2 -> Ok B10P2 | 3 -> Ok B10P3 | 4 -> Ok B10P4 | 5 -> Ok B10P5 | 6 -> Ok B10P6 | 7 -> Ok B10P7 | 8 -> Ok B10P8 | 9 -> Ok B10P9 | _ -> Error "invalid precision")
-    | 11 -> (match p with 1 -> Ok B11P1 | 2 -> Ok B11P2 | 3 -> Ok B11P3 | 4 -> Ok B11P4 | 5 -> Ok B11P5 | 6 -> Ok B11P6 | 7 -> Ok B11P7 | 8 -> Ok B11P8 | 9 -> Ok B11P9 | 10 -> Ok B11P10 | _ -> Error "invalid precision")
-    | 12 -> (match p with 1 -> Ok B12P1 | 2 -> Ok B12P2 | 3 -> Ok B12P3 | 4 -> Ok B12P4 | 5 -> Ok B12P5 | 6 -> Ok B12P6 | 7 -> Ok B12P7 | 8 -> Ok B12P8 | 9 -> Ok B12P9 | 10 -> Ok B12P10 | 11 -> Ok B12P11 | _ -> Error "invalid precision")
-    | 13 -> (match p with 1 -> Ok B13P1 | 2 -> Ok B13P2 | 3 -> Ok B13P3 | 4 -> Ok B13P4 | 5 -> Ok B13P5 | 6 -> Ok B13P6 | 7 -> Ok B13P7 | 8 -> Ok B13P8 | 9 -> Ok B13P9 | 10 -> Ok B13P10 | 11 -> Ok B13P11 | 12 -> Ok B13P12 | _ -> Error "invalid precision")
-    | 14 -> (match p with 1 -> Ok B14P1 | 2 -> Ok B14P2 | 3 -> Ok B14P3 | 4 -> Ok B14P4 | 5 -> Ok B14P5 | 6 -> Ok B14P6 | 7 -> Ok B14P7 | 8 -> Ok B14P8 | 9 -> Ok B14P9 | 10 -> Ok B14P10 | 11 -> Ok B14P11 | 12 -> Ok B14P12 | 13 -> Ok B14P13 | _ -> Error "invalid precision")
-    | 15 -> (match p with 1 -> Ok B15P1 | 2 -> Ok B15P2 | 3 -> Ok B15P3 | 4 -> Ok B15P4 | 5 -> Ok B15P5 | 6 -> Ok B15P6 | 7 -> Ok B15P7 | 8 -> Ok B15P8 | 9 -> Ok B15P9 | 10 -> Ok B15P10 | 11 -> Ok B15P11 | 12 -> Ok B15P12 | 13 -> Ok B15P13 | 14 -> Ok B15P14 | _ -> Error "invalid precision")
+    | 2 -> (match p with 1 -> Ok B2P1 | 2 -> Ok B2P2 | _ -> Error "invalid precision")
+    | 3 -> (match p with 1 -> Ok B3P1 | 2 -> Ok B3P2 | 3 -> Ok B3P3 | _ -> Error "invalid precision")
+    | 4 -> (match p with 1 -> Ok B4P1 | 2 -> Ok B4P2 | 3 -> Ok B4P3 | 4 -> Ok B4P4 | _ -> Error "invalid precision")
+    | 5 -> (match p with 1 -> Ok B5P1 | 2 -> Ok B5P2 | 3 -> Ok B5P3 | 4 -> Ok B5P4 | 5 -> Ok B5P5 | _ -> Error "invalid precision")
+    | 6 -> (match p with 1 -> Ok B6P1 | 2 -> Ok B6P2 | 3 -> Ok B6P3 | 4 -> Ok B6P4 | 5 -> Ok B6P5 | 6 -> Ok B6P6 | _ -> Error "invalid precision")
+    | 7 -> (match p with 1 -> Ok B7P1 | 2 -> Ok B7P2 | 3 -> Ok B7P3 | 4 -> Ok B7P4 | 5 -> Ok B7P5 | 6 -> Ok B7P6 | 7 -> Ok B7P7 | _ -> Error "invalid precision")
+    | 8 -> (match p with 1 -> Ok B8P1 | 2 -> Ok B8P2 | 3 -> Ok B8P3 | 4 -> Ok B8P4 | 5 -> Ok B8P5 | 6 -> Ok B8P6 | 7 -> Ok B8P7 | 8 -> Ok B8P8 | _ -> Error "invalid precision")
+    | 9 -> (match p with 1 -> Ok B9P1 | 2 -> Ok B9P2 | 3 -> Ok B9P3 | 4 -> Ok B9P4 | 5 -> Ok B9P5 | 6 -> Ok B9P6 | 7 -> Ok B9P7 | 8 -> Ok B9P8 | 9 -> Ok B9P9 | _ -> Error "invalid precision")
+    | 10 -> (match p with 1 -> Ok B10P1 | 2 -> Ok B10P2 | 3 -> Ok B10P3 | 4 -> Ok B10P4 | 5 -> Ok B10P5 | 6 -> Ok B10P6 | 7 -> Ok B10P7 | 8 -> Ok B10P8 | 9 -> Ok B10P9 | 10 -> Ok B10P10 | _ -> Error "invalid precision")
+    | 11 -> (match p with 1 -> Ok B11P1 | 2 -> Ok B11P2 | 3 -> Ok B11P3 | 4 -> Ok B11P4 | 5 -> Ok B11P5 | 6 -> Ok B11P6 | 7 -> Ok B11P7 | 8 -> Ok B11P8 | 9 -> Ok B11P9 | 10 -> Ok B11P10 | 11 -> Ok B11P11 | _ -> Error "invalid precision")
+    | 12 -> (match p with 1 -> Ok B12P1 | 2 -> Ok B12P2 | 3 -> Ok B12P3 | 4 -> Ok B12P4 | 5 -> Ok B12P5 | 6 -> Ok B12P6 | 7 -> Ok B12P7 | 8 -> Ok B12P8 | 9 -> Ok B12P9 | 10 -> Ok B12P10 | 11 -> Ok B12P11 | 12 -> Ok B12P12 | _ -> Error "invalid precision")
+    | 13 -> (match p with 1 -> Ok B13P1 | 2 -> Ok B13P2 | 3 -> Ok B13P3 | 4 -> Ok B13P4 | 5 -> Ok B13P5 | 6 -> Ok B13P6 | 7 -> Ok B13P7 | 8 -> Ok B13P8 | 9 -> Ok B13P9 | 10 -> Ok B13P10 | 11 -> Ok B13P11 | 12 -> Ok B13P12 | 13 -> Ok B13P13 | _ -> Error "invalid precision")
+    | 14 -> (match p with 1 -> Ok B14P1 | 2 -> Ok B14P2 | 3 -> Ok B14P3 | 4 -> Ok B14P4 | 5 -> Ok B14P5 | 6 -> Ok B14P6 | 7 -> Ok B14P7 | 8 -> Ok B14P8 | 9 -> Ok B14P9 | 10 -> Ok B14P10 | 11 -> Ok B14P11 | 12 -> Ok B14P12 | 13 -> Ok B14P13 | 14 -> Ok B14P14 | _ -> Error "invalid precision")
+    | 15 -> (match p with 1 -> Ok B15P1 | 2 -> Ok B15P2 | 3 -> Ok B15P3 | 4 -> Ok B15P4 | 5 -> Ok B15P5 | 6 -> Ok B15P6 | 7 -> Ok B15P7 | 8 -> Ok B15P8 | 9 -> Ok B15P9 | 10 -> Ok B15P10 | 11 -> Ok B15P11 | 12 -> Ok B15P12 | 13 -> Ok B15P13 | 14 -> Ok B15P14 | 15 -> Ok B15P15 | _ -> Error "invalid precision")
     | _ -> Error "invalid width"
 
   let get_format_parameters (f : t) : int * int * int * real * real * Signedness.t * Domain.t =
@@ -303,13 +307,14 @@ module Float = struct
   (** 4.6.4 Saturate *)
 
   let internal_saturate
-    (m_lo : AugReal.t) (m_hi : AugReal.t) (s : Signedness.t)
+    (m_lo : AugReal.t) (m_hi : AugReal.t) (s : Signedness.t) (d : Domain.t)
     (sat : SaturationMode.t) (rnd : RoundingMode.t)
     (x : AugReal.t)
     : (AugReal.t, string) Result.t =
     let open RoundingMode in
     let open SaturationMode in
     let open Signedness in
+    let open Domain in
     let open AugReal in
     match (sat, rnd), x with
     | _, NaN -> Ok NaN
@@ -320,22 +325,24 @@ module Float = struct
     | (SatFinite, _), x when x <= m_lo -> Ok m_lo
     | (SatFinite, _), x when x >= m_hi -> Ok m_hi
 
-    | (SatPropagate, _), (PINF | NINF) -> Ok (x)
+    | (SatPropagate, _), PINF when d = Extended ->  Ok x
+    | (SatPropagate, _), NINF when d = Extended && s = Signed -> Ok x
     | (SatPropagate, _), x when x <= m_lo -> Ok m_lo
     | (SatPropagate, _), x when x >= m_hi -> Ok m_hi
 
-    | (OvfInf, _), (PINF | NINF) -> Ok (x)
+    | (OvfInf, _), PINF when d = Extended -> Ok (x)
+    | (OvfInf, _), NINF when d = Extended && s = Signed -> Ok (x)
     | (OvfInf, _), x when (rnd = TowardZero || rnd = TowardPositive) && x <= m_lo -> Ok m_lo
     | (OvfInf, _), x when (rnd = TowardZero || rnd = TowardNegative) && x >= m_hi -> Ok m_hi
 
-    | (OvfInf, _), x when x <= m_lo -> if s = Signed then Ok NINF else Ok m_lo
-    | (OvfInf, _), x when x >= m_hi -> Ok PINF
+    | (OvfInf, _), x when x <= m_lo -> if s = Signed && d = Extended then Ok NINF else Ok m_lo
+    | (OvfInf, _), x when x >= m_hi -> if d = Extended then Ok PINF else Ok m_hi
 
     | _ -> Error "unreachable"
 
   (** Saturate extended real [x] to +-INF, or to maximum value [m], according to projection specification [pi]. *)
-  let saturate (m_lo : AugReal.t) (m_hi : AugReal.t) (s : Signedness.t) (sat : SaturationMode.t) (rnd : RoundingMode.t) (x : AugReal.t) : AugReal.t =
-    match internal_saturate m_lo m_hi s sat rnd x with
+  let saturate (m_lo : AugReal.t) (m_hi : AugReal.t) (s : Signedness.t) (d : Domain.t) (sat : SaturationMode.t) (rnd : RoundingMode.t) (x : AugReal.t) : AugReal.t =
+    match internal_saturate m_lo m_hi s d sat rnd x with
     | Ok x -> x
     | Error _ -> R 0.0 (* unreachable by theorem internal_saturate_ok *)
 
@@ -395,7 +402,7 @@ module Float = struct
     let _, p, b, m_lo, m_hi, _, _ = Format.get_format_parameters f in
     let sat, rnd = pi in
     let r : AugReal.t = round_to_precision p b rnd x in
-    let s : AugReal.t = saturate (AugReal.of_real m_lo) (AugReal.of_real m_hi) f.s sat rnd r in
+    let s : AugReal.t = saturate (AugReal.of_real m_lo) (AugReal.of_real m_hi) f.s f.d sat rnd r in
     encode f s
 
 
@@ -436,7 +443,7 @@ module Float = struct
       | R y ->
         let _, _, _, _, _, p, b, m = IEEE754.Format.get_format_parameters phi in
         let r = round_to_precision p b (snd pi) (r2a y) in
-        let x = saturate (r2a (-. m)) (r2a m) f.s (fst pi) (snd pi) r in
+        let x = saturate (r2a (-. m)) (r2a m) f.s f.d (fst pi) (snd pi) r in
         encode754 phi x)
 
 
@@ -1066,7 +1073,7 @@ module Float = struct
       | Ok NINF -> Ok (IEEE754.ninf phi)
       | Ok z_ ->
         let z_' = round_to_precision p b (snd pi) z_ in
-        let z_'' = saturate (r2a (-. m)) (r2a m) Signed (fst pi) (snd pi) z_' in
+        let z_'' = saturate (r2a (-. m)) (r2a m) Signed Domain.Extended (fst pi) (snd pi) z_' in
         let z = encode754 phi z_'' in
         Ok z
       | Error e -> Error e)

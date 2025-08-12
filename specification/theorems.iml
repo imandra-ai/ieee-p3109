@@ -36,8 +36,8 @@ theorem m_lo_lt_m_hi (f : Format.t) =
 
 (** 4.6 Functions *)
 
-theorem internal_saturate_ok (m_lo : AugReal.t) (m_hi : AugReal.t) (s : Signedness.t) (sat : SaturationMode.t) (rnd : RoundingMode.t) (x : AugReal.t) =
-  Result.is_ok (Float.internal_saturate m_lo m_hi s sat rnd x [@trigger])
+theorem internal_saturate_ok (m_lo : AugReal.t) (m_hi : AugReal.t) (s : Signedness.t) (d : Domain.t) (sat : SaturationMode.t) (rnd : RoundingMode.t) (x : AugReal.t) =
+  Result.is_ok (Float.internal_saturate m_lo m_hi s d sat rnd x [@trigger])
   [@@by auto]
   [@@fc]
 
@@ -82,19 +82,19 @@ theorem decode_encode_ok (f : Format.t)  (x : Float.t) =
 (* [saturate] always produces a number within the format range *)
 theorem saturate_is_within_range (f : Format.t) (x : AugReal.t) (sat : SaturationMode.t) (rnd : RoundingMode.t) =
   let _, _, _, m_lo, m_hi, _, _ = Format.get_format_parameters f in
-  let s = (Float.saturate (AugReal.R m_lo) (AugReal.R m_hi) f.s sat rnd x [@trigger]) in
+  let s = (Float.saturate (AugReal.R m_lo) (AugReal.R m_hi) f.s f.d sat rnd x [@trigger]) in
   aug_real_is_within_range f s
   [@@timeout 3600]
-  [@@disable Float.saturate, Format.get_format_parameters, Util.ipow2, Util.pow2]
+  [@@disable Format.get_format_parameters, Util.ipow2, Util.pow2]
   [@@by auto]
   [@@fc]
 
 (* Encoding after saturation is always ok *)
 theorem saturate_encode_ok (f : Format.t) (x : AugReal.t) (sat : SaturationMode.t) (rnd : RoundingMode.t) =
   let _, _, _, m_lo, m_hi, _, _ = Format.get_format_parameters f in
-  Result.is_ok (Float.encode f (Float.saturate (AugReal.R m_lo) (AugReal.R m_hi) f.s sat rnd x) [@trigger])
+  Result.is_ok (Float.encode f (Float.saturate (AugReal.R m_lo) (AugReal.R m_hi) f.s f.d sat rnd x) [@trigger])
   [@@disable Float.encode, Float.saturate, Format.get_format_parameters]
-  [@@by auto]
+  [@@by [%use saturate_is_within_range f x sat rnd] @> auto]
   [@@fc]
 
 let rounded f rnd x =

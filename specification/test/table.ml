@@ -7,8 +7,8 @@
 [@@@import Sqrt, "dune:math"]
 
 [@@@import Specification, "dune:specification"]
-[@@@import Theorems, "dune:theorems"]
 
+[@@@import Theorems, "dune:theorems"]
 
 open Math
 open Specification
@@ -110,8 +110,7 @@ let mk_fn_tbl (fn : Q.t -> int -> (bool * Q.t, string) Result.t)
             | Error e -> Printf.printf "%s," e)
           | Error e -> Printf.printf "%s" e)
         | _ -> Printf.printf "%s" (augreal_to_string decoded))
-      | _ -> Printf.printf "%s" (augreal_to_string decoded))
-    );
+      | _ -> Printf.printf "%s" (augreal_to_string decoded)));
     Printf.printf "\n%!"
   done
 
@@ -130,6 +129,7 @@ type params =
       e: bool; [@pos 3]
     }
   | Formats
+  | Formats_CSV of { dir: string [@pos 0] }
 [@@deriving subliner]
 
 let sqrt x p =
@@ -203,6 +203,34 @@ let mk_f_tbl (k : int) (p : int) (s : bool) (e : bool) =
     Printf.printf "%02x | %s | %s | %s\n" i (int2bin_str i k) ds rats
   done
 
+let mk_f_csv_tbl (dir : string) (k : int) (p : int) (s : bool) (e : bool) =
+  if not (try Sys.is_directory dir with _ -> false) then Sys.mkdir dir 0o755;
+  let f : Format.t =
+    match Format.of_kp (Z.of_int k) (Z.of_int p) with
+    | Ok kp ->
+      {
+        kp;
+        s = (if s then Signed else Unsigned);
+        d = (if e then Extended else Finite);
+      }
+    | Error e -> raise (InvalidFormat e)
+  in
+  let kf, pf, bias, _, m_hi, s, d = Format.get_format_parameters f in
+  let fn =
+    Printf.sprintf "%s/binary%sp%s%s%s.csv" dir (Z.to_string kf) (Z.to_string pf)
+    (if s = Signedness.Signed then "s" else "u")
+    (if d = Domain.Extended then "e" else "f")
+  in
+  let oc = open_out fn in
+  for i = 0 to (1 lsl k) - 1 do
+    let iz = Float.to_int_repr f (Z.of_int i) in
+    let d = Float.decode f iz in
+    let rats = augreal_to_string d in
+    let ds = augreal_to_string_dec d in
+    Printf.fprintf oc "%02x,%s,%s\n" i ds rats
+  done;
+  close_out oc
+
 let run (cli : params) : unit =
   try
     (* let ln2 = Log.ln (Q.of_int 2) (Z.of_int 21) in
@@ -221,12 +249,22 @@ let run (cli : params) : unit =
     | Format { k; p; s; e } -> mk_f_tbl k p s e
     | Formats ->
       for k = 3 to 8 do
-        for p = 1 to k-1 do
+        for p = 1 to k do
           for s = 0 to 1 do
             for d = 0 to 1 do
               Printf.printf "-------------------------\n";
               mk_f_tbl k p (s == 0) (d == 0);
               Printf.printf "\n\n%!"
+            done
+          done
+        done
+      done
+    | Formats_CSV { dir } ->
+      for k = 2 to 15 do
+        for p = 1 to k do
+          for s = 0 to 1 do
+            for d = 0 to 1 do
+              mk_f_csv_tbl dir k p (s == 0) (d == 0);
             done
           done
         done
