@@ -307,7 +307,7 @@ module Float = struct
   (** 4.6.4 Saturate *)
 
   let internal_saturate
-    (m_lo : AugReal.t) (m_hi : AugReal.t) (s : Signedness.t) (d : Domain.t)
+    (m_lo : real) (m_hi : real) (s : Signedness.t) (d : Domain.t)
     (sat : SaturationMode.t) (rnd : RoundingMode.t)
     (x : AugReal.t)
     : (AugReal.t, string) Result.t =
@@ -315,33 +315,32 @@ module Float = struct
     let open SaturationMode in
     let open Signedness in
     let open Domain in
-    let open AugReal in
     match (sat, rnd), x with
     | _, NaN -> Ok NaN
-    | _ when m_lo = NaN || m_hi = NaN -> Ok NaN
 
-    | (_, _), x when m_lo <= x && x <= m_hi -> Ok x
+    | (_, _), R x when m_lo <=. x && x <=. m_hi -> Ok (R x)
 
-    | (SatFinite, _), x when x <= m_lo -> Ok m_lo
-    | (SatFinite, _), x when x >= m_hi -> Ok m_hi
+    | (SatFinite, _), PINF -> Ok (R m_hi)
+    | (SatFinite, _), NINF -> Ok (R m_lo)
+    | (SatFinite, _), R x when x <=. m_lo -> Ok (R m_lo)
+    | (SatFinite, _), R x when x >=. m_hi -> Ok (R m_hi)
 
-    | (SatPropagate, _), PINF when d = Extended ->  Ok x
-    | (SatPropagate, _), NINF when d = Extended && s = Signed -> Ok x
-    | (SatPropagate, _), x when x <= m_lo -> Ok m_lo
-    | (SatPropagate, _), x when x >= m_hi -> Ok m_hi
+    | (SatPropagate, _), PINF -> if d = Extended then Ok PINF else Ok (R m_hi)
+    | (SatPropagate, _), NINF -> if s = Signed && d = Extended then Ok NINF else Ok (R m_lo)
+    | (SatPropagate, _), R x when x <=. m_lo -> Ok (R m_lo)
+    | (SatPropagate, _), R x when x >=. m_hi -> Ok (R m_hi)
 
-    | (OvfInf, _), PINF when d = Extended -> Ok (x)
-    | (OvfInf, _), NINF when d = Extended && s = Signed -> Ok (x)
-    | (OvfInf, _), x when (rnd = TowardZero || rnd = TowardPositive) && x <= m_lo -> Ok m_lo
-    | (OvfInf, _), x when (rnd = TowardZero || rnd = TowardNegative) && x >= m_hi -> Ok m_hi
-
-    | (OvfInf, _), x when x <= m_lo -> if s = Signed && d = Extended then Ok NINF else Ok m_lo
-    | (OvfInf, _), x when x >= m_hi -> if d = Extended then Ok PINF else Ok m_hi
+    | (OvfInf, _), PINF -> if d = Extended then Ok PINF else Ok (R m_hi)
+    | (OvfInf, _), NINF -> if s = Signed && d = Extended then Ok NINF else Ok (R m_lo)
+    | (OvfInf, _), R x when (rnd = TowardZero || rnd = TowardPositive) && x <=. m_lo -> Ok (R m_lo)
+    | (OvfInf, _), R x when (rnd = TowardZero || rnd = TowardNegative) && x >=. m_hi -> Ok (R m_hi)
+    | (OvfInf, _), R x when x <=. m_lo -> if s = Signed && d = Extended then Ok NINF else Ok (R m_lo)
+    | (OvfInf, _), R x when x >=. m_hi -> if d = Extended then Ok PINF else Ok (R m_hi)
 
     | _ -> Error "unreachable"
 
   (** Saturate extended real [x] to +-INF, or to maximum value [m], according to projection specification [pi]. *)
-  let saturate (m_lo : AugReal.t) (m_hi : AugReal.t) (s : Signedness.t) (d : Domain.t) (sat : SaturationMode.t) (rnd : RoundingMode.t) (x : AugReal.t) : AugReal.t =
+  let saturate (m_lo : real) (m_hi : real) (s : Signedness.t) (d : Domain.t) (sat : SaturationMode.t) (rnd : RoundingMode.t) (x : AugReal.t) : AugReal.t =
     match internal_saturate m_lo m_hi s d sat rnd x with
     | Ok x -> x
     | Error _ -> R 0.0 (* unreachable by theorem internal_saturate_ok *)
@@ -402,7 +401,7 @@ module Float = struct
     let _, p, b, m_lo, m_hi, _, _ = Format.get_format_parameters f in
     let sat, rnd = pi in
     let r : AugReal.t = round_to_precision p b rnd x in
-    let s : AugReal.t = saturate (AugReal.of_real m_lo) (AugReal.of_real m_hi) f.s f.d sat rnd r in
+    let s : AugReal.t = saturate m_lo m_hi f.s f.d sat rnd r in
     encode f s
 
 
@@ -443,7 +442,7 @@ module Float = struct
       | R y ->
         let _, _, _, _, _, p, b, m = IEEE754.Format.get_format_parameters phi in
         let r = round_to_precision p b (snd pi) (r2a y) in
-        let x = saturate (r2a (-. m)) (r2a m) f.s f.d (fst pi) (snd pi) r in
+        let x = saturate (-. m) m f.s f.d (fst pi) (snd pi) r in
         encode754 phi x)
 
 
@@ -1073,7 +1072,7 @@ module Float = struct
       | Ok NINF -> Ok (IEEE754.ninf phi)
       | Ok z_ ->
         let z_' = round_to_precision p b (snd pi) z_ in
-        let z_'' = saturate (r2a (-. m)) (r2a m) Signed Domain.Extended (fst pi) (snd pi) z_' in
+        let z_'' = saturate (-. m) m Signed Domain.Extended (fst pi) (snd pi) z_' in
         let z = encode754 phi z_'' in
         Ok z
       | Error e -> Error e)
