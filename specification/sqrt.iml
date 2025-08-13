@@ -16,6 +16,16 @@ type state = {
 let inv (s : state) : bool =
   s.i >= 0 && s.p > 0 && s.x >=. 0.0 && s.g >=. 0.0 && s.g *. s.g >=. s.x
 
+(* The arithmetic mean of over- and under-approximation is again an over-approximation *)
+theorem am_over (x : real) (a : real) =
+  let am (x : real) (y : real) = (x +. y) /. 2.0 in
+  a *. a >=. x
+  ==>
+  let na = am a (x /. a) in
+  na *. na >=. x
+  [@@timeout 60]
+  [@@by unroll_nonlin 10 10 1000]
+
 (* One transition step of the approximation *)
 let step (s: state) : state =
   if s.i > s.p then
@@ -24,7 +34,8 @@ let step (s: state) : state =
     { s with i = s.i + 1 }
   else (
     let t = (s.g +. s.x /. s.g) /. 2.0 in
-    { s with i = s.i + 1; g = t }
+    let am = (t +. s.x /. t) /. 2.0 in (* AM *)
+    { s with i = s.i + 1; g = am }
   )
 
 (* Transition invariant *)
@@ -65,37 +76,39 @@ lemma step_preserves_inv (s : state) (s' : state) =
   [@@by [%use step_step s s'] @> auto]
   [@@fc]
 
+let nil_early_exit (_ : state) : bool = false
+
 (* step_star: repeated application of step, p-i times *)
-let rec step_star (s : state) : state =
-  if s.i < s.p then
-    step_star (step s)
+let rec step_star (early_exit : state -> bool) (s : state) : state =
+  if s.i < s.p && not (early_exit s) then
+    step_star early_exit (step s)
   else
     s
   [@@measure Ordinal.of_int (s.p - s.i)]
 
 (* step_star preserves the invariant *)
-lemma step_star_inv (s : state) (s' : state) =
-  inv s && ((s' = step_star s) [@trigger]) ==> inv s' && s'.x = s.x
+lemma step_star_inv (early_exit : state -> bool) (s : state) (s' : state) =
+  inv s && ((s' = step_star early_exit s) [@trigger]) ==> inv s' && s'.x = s.x
   [@@disable step, inv]
   [@@by auto]
   [@@fc]
 
 (* Define the starting point for the approximation to obtain a complete
   square root computation on states *)
-let sqrt_s (x : real) (p : int) : (state, string) Result.t =
+let sqrt_s (early_exit : state -> bool) (x : real) (p : int) : (state, string) Result.t =
   let s = {
     i = 0;
     p = if p <= 0 then 1 else p;
     x;
     g = if x = 0.0 then 0.0 else if x >=. 1.0 then x else 1.0 } in
   if inv s then
-    Ok (step_star s)
+    Ok (step_star early_exit s)
   else
     Error "initial state invariant violated"
 
 (* sqrt_s preserves the state invariant *)
-lemma sqrt_s_inv (x : real) (p : int) =
-  match ((sqrt_s x p) [@trigger]) with
+lemma sqrt_s_inv (early_exit : state -> bool) (x : real) (p : int) =
+  match ((sqrt_s early_exit x p) [@trigger]) with
   | Ok s -> inv s
   | Error _ -> true
   [@@disable step_star, step, inv]
@@ -103,25 +116,28 @@ lemma sqrt_s_inv (x : real) (p : int) =
   [@@fc]
 
 (* sqrt_s computes an over-approximation of the (positive) square root *)
-lemma sqrt_s_square_greater (x : real) (p : int) =
-  match ((sqrt_s x p) [@trigger]) with
+lemma sqrt_s_square_greater (early_exit : state -> bool) (x : real) (p : int) =
+  match ((sqrt_s early_exit x p) [@trigger]) with
   | Ok s -> s.g *. s.g >=. s.x && s.x = x && s.g >=. 0.0
   | Error _ -> true
   [@@disable step_star, step, inv]
-  [@@by [%use sqrt_s_inv x p] @> auto]
+  [@@by [%use sqrt_s_inv early_exit x p] @> auto]
   [@@fc]
 
 (* Wrap it all up in an easy-to-use function *)
-let sqrt_over (x : real) (p : int) : (real, string) Result.t =
-  match sqrt_s x p with
+let sqrt_over_early (early_exit : state -> bool) (x : real) (p : int) : (real, string) Result.t =
+  match sqrt_s early_exit x p with
   | Ok s -> Ok s.g
   | Error e -> Error e
 
-(* sqrt_over never throws errors as long as x is positive *)
-theorem sqrt_over_ok (x : real) (p : int) =
-  x >=. 0.0 ==> Result.is_ok (sqrt_over x p)
+(* sqrt_over_early never throws errors as long as x is positive *)
+theorem sqrt_over_early_ok (early_exit : state -> bool) (x : real) (p : int) =
+  x >=. 0.0 ==> Result.is_ok (sqrt_over_early early_exit x p)
   [@@by unroll_nonlin 1 1 0]
   [@@fc]
+
+let sqrt_over (x : real) (p : int) : (real, string) Result.t =
+  sqrt_over_early nil_early_exit x p
 
 (* Define what we mean by over-approximation *)
 let is_an_over_approximation (rt : real) (x : real) =
@@ -133,19 +149,22 @@ let is_an_under_approximation (rt : real) (x : real) =
 
 (* Finally, tie everything together to prove that our function computes
   an over-approximation of the (positive) square root *)
-theorem sqrt_over_over_approximates (x : real) (p : int) =
-  match sqrt_over x p with
+theorem sqrt_over_over_approximates (early_exit : state -> bool) (x : real) (p : int) =
+  match sqrt_over_early early_exit x p with
   | Ok rt -> is_an_over_approximation rt x
   | Error _ -> true
   [@@disable sqrt_s, step_star, step, inv]
   [@@by auto]
 
 (* We can divide x by the over-approximated result to obtain an under-approximation *)
-let sqrt_under (x : real) (p : int) : (real, string) Result.t =
-  match sqrt_over x p with
+let sqrt_under_early (early_exit : state -> bool) (x : real) (p : int) : (real, string) Result.t =
+  match sqrt_over_early early_exit x p with
   | Ok _ when x = 0.0 -> Ok 0.0
   | Ok rt -> Ok (x /. rt)
   | Error e -> Error e
+
+let sqrt_under (x : real) (p : int) : (real, string) Result.t =
+  sqrt_under_early nil_early_exit x p
 
 (* A helper lemma: division by root-like numbers inverts the relationship *)
 lemma division_by_rootlike_inverts (x : real) (rt : real) =
@@ -162,12 +181,92 @@ lemma division_stays_gt_0 (x : real) (rt : real) =
   [@@fc]
 
 (* Proof that sqrt_under is an under-approximation *)
-theorem sqrt_under_under_approximates (x : real) (p : int) =
-  match sqrt_under x p with
+theorem sqrt_under_under_approximates (early_exit : state -> bool) (x : real) (p : int) =
+  match sqrt_under_early early_exit x p with
   | Ok rt -> is_an_under_approximation rt x
   | Error _ -> true
   [@@disable sqrt_over]
-  [@@by [%use sqrt_over_over_approximates x p] @> auto]
+  [@@by [%use sqrt_over_over_approximates early_exit x p] @> auto]
 
 (* By default, we use the over-approximation *)
 let sqrt (x : real) (p : int) : (real, string) Result.t = sqrt_over x p
+
+
+type state_pair = { u: state; o: state }
+
+(* step_star, but both approximations at the same time  *)
+let rec step_star_both (early_exit : state -> state -> bool) (u : state) (o : state): (state_pair) =
+  if o.i < o.p && not (early_exit u o) then (
+    if o.x = 0.0 then
+      let u = { u with g = 0.0 } in
+      let o = { o with g = 0.0 } in
+      {u; o}
+    else
+      let next = step o in
+      step_star_both early_exit ({ next with g = next.x /. next.g}) next
+  )
+  else
+    {u; o}
+  [@@measure Ordinal.of_int (o.p - o.i)]
+
+(* step_star_both preserves the over-approximation state invariant *)
+lemma step_star_both_inv (early_exit : state -> state -> bool) (u : state) (o : state) (next: state_pair) =
+  inv o && ((next = step_star_both early_exit u o) [@trigger])
+    ==>
+  inv next.o && next.o.x = o.x
+  [@@disable step, inv]
+  [@@by auto]
+  [@@fc]
+
+let default_start (x : real) (p : int) : (state * state) =
+  let o = {
+    i = 0;
+    p = if p <= 0 then 1 else p;
+    x;
+    g = if x = 0.0 then 0.0 else if x >=. 1.0 then x else 1.0 } in
+  ({o with g = if o.g = 0.0 then 0.0 else o.x /. o.g}), o
+
+let sqrt_both_s (start : real -> int -> (state * state)) (early_exit : state -> state -> bool) (x : real) (p : int) : (state_pair, string) Result.t =
+  let u, o = start x p in
+  if inv o then
+    Ok (step_star_both early_exit u o)
+  else
+    Error "initial state invariant violated"
+
+(* sqrt_both_s preserves the over-approximation state invariant *)
+lemma sqrt_both_s_inv (start : real -> int -> (state * state)) (early_exit : state -> state -> bool) (x : real) (p : int) =
+  match ((sqrt_both_s start early_exit x p) [@trigger]) with
+  | Ok (next) -> inv next.o
+  | Error _ -> true
+  [@@disable step_star_both, step, inv]
+  [@@by auto]
+  [@@fc]
+
+(* step_star_both computes an over-approximation of the (positive) square root *)
+lemma sqrt_both_s_square_greater (early_exit : state -> state -> bool) (x : real) (p : int) =
+  match ((sqrt_both_s default_start early_exit x p) [@trigger]) with
+  | Ok ({o; _}) -> o.g *. o.g >=. o.x && o.x = x && o.g >=. 0.0
+  | Error _ -> true
+  [@@disable step_star_both, step, inv]
+  [@@by [%use sqrt_both_s_inv default_start early_exit x p] @> auto]
+  [@@fc]
+
+let sqrt_both (start : real -> int -> (state * state)) (early_exit : state -> state -> bool) (x : real) (p : int) : ((real * int), string) Result.t =
+  match sqrt_both_s start early_exit x p with
+  | Ok next -> Ok (next.o.g, next.o.i)
+  | Error e -> Error e
+
+(* sqrt_both never throws errors as long as x is positive *)
+theorem sqrt_both_early_ok (early_exit : state -> state -> bool) (x : real) (p : int) =
+  x >=. 0.0 ==> Result.is_ok (sqrt_both default_start early_exit x p)
+  [@@by unroll_nonlin 1 1 0]
+  [@@fc]
+
+theorem sqrt_both_over_approximates (early_exit : state -> state -> bool) (x : real) (p : int) =
+  match sqrt_both default_start early_exit x p with
+  | Ok (rt, _) -> is_an_over_approximation rt x
+  | Error _ -> true
+  [@@disable sqrt_both_s, step_star_both, step, inv]
+  [@@by auto]
+
+(* TODO: Try to prove under-approximations in sqrt_both too? *)

@@ -5,6 +5,8 @@
    -w -30-49
    -w -32
    -w -11
+   -w -33
+   -w -27
    -warn-error
    -a+33+39+27+8
    -strict-sequence)))

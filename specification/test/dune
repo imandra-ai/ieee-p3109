@@ -11,3 +11,9 @@
  (libraries math specification unix bignum theorems)
  (preprocess
   (pps ppx_subliner ppx_deriving.std)))
+
+(executable
+ (name enumerations)
+ (modules Enumerations)
+ (modes byte native)
+ (libraries math specification unix theorems containers bignum))

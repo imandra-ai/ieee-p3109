@@ -3,8 +3,11 @@
 [@@@import Sqrt, "sqrt.iml"]
 [@@@import Theorems, "theorems.iml"]
 [@@@import Theorems_pow2, "theorems_pow2.iml"]
+[@@@import Theorems_sqrt_convergence, "theorems_sqrt_convergence.iml"]
+[@@@import Fsqrt, "fsqrt.iml"]
 
 open Specification
+open Theorems_sqrt_convergence
 
 let unroll_nonlin qt nqt steps = Tactic.unroll ~smt:"z3-full-nonlinear" ~query_timeout:qt ~no_asm_query_timeout:nqt steps [@@no_extract]
 
@@ -27,8 +30,6 @@ verify (Float.sqrt fmt fmt (SaturationMode.SatPropagate, RoundingMode.TowardZero
 verify (dec (Float.sqrt fmt fmt (SaturationMode.SatPropagate, RoundingMode.TowardZero) (enc 256.0)) = 16.0) [@@by ground_eval]
 verify (Float.sqrt fmt fmt (SaturationMode.SatPropagate, RoundingMode.TowardZero) (Float.nan f83) = Float.nan f83) [@@by ground_eval]
 
-(* Define two versions of floating-point sqrt based on over- and under-approximations *)
-
 let aug_sqrt_approx (x : AugReal.t) (over : bool) (n : int) : (AugReal.t, string) Result.t =
   let open AugReal in
   match x with
@@ -37,7 +38,9 @@ let aug_sqrt_approx (x : AugReal.t) (over : bool) (n : int) : (AugReal.t, string
   | R x when x <. 0.0 -> Ok NaN
   | PINF -> Ok PINF
   | R x ->
-    (match (if over then Sqrt.sqrt_over x n else Sqrt.sqrt_under x n) with
+    (match
+    (if over then Sqrt.sqrt_over x n else Sqrt.sqrt_under x n)
+  with
     | Ok r -> Ok (R r)
     | Error e -> Error e)
   | _ -> Error "undefined"
@@ -48,74 +51,92 @@ theorem aug_sqrt_approx_ok (x : AugReal.t) (over : bool) (n : int) =
   [@@disable Sqrt.sqrt_over, Sqrt.sqrt_under]
   [@@by auto]
 
-let fsqrt_over (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : Float.t) (n : int) : Float.t =
-  match aug_sqrt_approx (Float.decode f_x x) true n with
-  | Ok r -> (
-    match Float.project f_z pi r with
-    | Ok r -> r
-    | Error _ -> Float.nan f_z (* unreachable by project_ok *)
-  )
-  | Error _ -> Float.nan f_z (* unreachable by aug_sqrt_approx_ok*)
 
-let fsqrt_under (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : Float.t) (n : int) : Float.t =
-  match aug_sqrt_approx (Float.decode f_x x) false n with
-  | Ok r -> (
-    match Float.project f_z pi r with
-    | Ok r -> r
-    | Error _ -> Float.nan f_z (* unreachable by project_ok *)
-    )
-  | Error _ -> Float.nan f_z (* unreachable by aug_sqrt_approx_ok *)
+theorem fsqrt_aux_both_ok (prec : int) (bias : int) (rnd : RoundingMode.t) (start : real -> int -> (Sqrt.state * Sqrt.state)) (x : real) (p : int)=
+  x >=. 0.0 && Sqrt.inv (snd (start x p)) ==> Result.is_ok ((Fsqrt.fsqrt_aux_both prec bias rnd start x p) [@trigger])
+  [@@timeout 3600]
+  [@@disable Float.decode, Format.get_format_parameters, Sqrt.sqrt_both]
+  [@@by auto]
+  (* [@@fc] *)
 
-let sqrt_gt_0 (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : Float.t) : bool =
+theorem aug_fsqrt_ok (prec : int) (bias : int) (rnd : RoundingMode.t) (start : real -> int -> (Sqrt.state * Sqrt.state)) (x : AugReal.t) =
+  match x with
+  | NaN | PINF | NINF -> true
+  | R r when r <. 0.0 -> true
+  | R r ->
+    Sqrt.inv (snd (start r 1000)) ==>
+    Result.is_ok ((Fsqrt.aug_fsqrt prec bias rnd start x) [@trigger])
+  [@@timeout 3600]
+  [@@disable Float.decode, Format.get_format_parameters, Sqrt.sqrt_both]
+  [@@by auto]
+  [@@fc]
+
+theorem square_gt_0 (x : AugReal.t) =
   let open AugReal in
-  let frto = fsqrt_over f_x f_z pi x 12 in
-  let frtu = fsqrt_under f_x f_z pi x 12 in
-  match Float.decode f_z frto, Float.decode f_z frtu with
-  | R rto, R rtu -> rto = rtu
-  | R _, _ -> false
-  | _, R _-> false
-  | _ -> true (* special cases ok *)
+  match (x * x) [@trigger] with
+  | Ok sq -> sq >= zero
+  | _ -> true
+  [@@by auto]
+  [@@fc]
 
-let rec forall_in_range (p : 'a -> int -> bool) (args : 'a) (l : int) (u : int) =
-  if l > u then
-    true
-  else
-    p args l && forall_in_range p args (l + 1) u
-  [@@measure Ordinal.of_int (u - l)]
+theorem find_closest_sqrt_floats_aux_ok (f : Format.t) (x : AugReal.t) (l : Float.t) (u : Float.t) =
+  l >= 0 && u >= 0 && l < u ==>
+  Result.is_ok ((Fsqrt.find_closest_sqrt_floats_aux f x l u) [@trigger])
+  [@@timeout 120]
+  [@@disable Format.get_format_parameters, Float.decode]
+  [@@by auto]
+  [@@fc]
 
-theorem forall_elim (p: 'a -> int -> bool) (args : 'a) (l : int) (u : int) (x : int) =
-  forall_in_range p args l u ==> (l <= x && x <= u ==> p args x)
+theorem find_closest_sqrt_floats_ok (f : Format.t) (x : AugReal.t) =
+  Result.is_ok ((Fsqrt.find_closest_sqrt_floats f x) [@trigger])
+  [@@timeout 120]
+  [@@disable Format.get_format_parameters, Float.decode]
+  [@@by auto]
+  [@@fc]
+
+theorem fsqrt_start_satisfies_inv (f : Format.t) (x : real) (p : int) =
+  p > 0 && x >=. 0.0 ==>
+  ((Sqrt.inv (snd (Fsqrt.fsqrt_start f x p))) [@trigger])
+  [@@timeout 120]
+  [@@disable Format.get_format_parameters, Float.decode, Fsqrt.find_closest_sqrt_floats]
+  [@@by auto]
+  [@@fc]
+
+theorem fsqrt_i_ok (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : Float.t) =
+  Result.is_ok (fst ((Fsqrt.fsqrt_i f_x f_z pi x) [@trigger]))
+  [@@timeout 3600]
+  [@@disable Format.get_format_parameters, Float.decode, Float.project, Fsqrt.fsqrt_start, Fsqrt.aug_fsqrt]
+  [@@by auto]
+  [@@fc]
+
+theorem fsqrt_ok (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : Float.t) =
+  Result.is_ok (Fsqrt.fsqrt f_x f_z pi x)
+  [@@timeout 3600]
+  [@@disable Format.get_format_parameters, Float.decode, Float.project, Fsqrt.fsqrt_start, Fsqrt.aug_fsqrt]
   [@@by auto]
 
-let mk_sqrt_gt_0 (args : Format.t * Projection.t) (x : Float.t) : bool =
-  sqrt_gt_0 (fst args) (fst args) (snd args) x
-  [@@macro]
+let f83 = {Format.kp = Format.B8P3; s = Signedness.Signed; d = Domain.Extended}
+let f157 = {Format.kp = Format.B15P7; s = Signedness.Signed; d = Domain.Extended}
 
-theorem sqrt_gt0_below (f : Format.t) (pi : Projection.t) (x : Float.t) =
-  x < 0 ==> ((mk_sqrt_gt_0 (f, pi) x) [@trigger])
+theorem fsqrt_ok_below (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : Float.t) =
+  x < 0 ==> ((fsqrt_converges (f_x, f_z, pi) x) [@trigger])
   [@@timeout 60]
   [@@by unroll 100]
   [@@fc]
 
-theorem sqrt_gt0_above (f : Format.t) (pi : Projection.t) (x : Float.t) =
-  (x >= Util.ipow2 (Format.k f)) ==> ((mk_sqrt_gt_0 (f, pi) x) [@trigger])
-  [@@timeout 60]
-  [@@by unroll 100]
+theorem fsqrt_ok_above (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : Float.t) =
+  (x >= Util.ipow2 (Format.k f_z)) ==> ((fsqrt_converges (f_x, f_z, pi) x) [@trigger])
+  [@@timeout 3600]
+  [@@by unroll 1000]
   [@@fc]
 
-theorem sqrt_gt0_k8_mid (f : Format.t) (pi : Projection.t) =
-  Format.k f = 8 && Format.p f >= 3 && f.s = Signedness.Signed && snd pi = RoundingMode.NearestTiesToEven ==>
-  forall_in_range mk_sqrt_gt_0 (f, pi) 0 (Util.ipow2 8)
-  [@@timeout 86400]
-  [@@by enumerate ["f"; "pi"] @> ground_eval]
-
-theorem sqrt_gt0_k8 (f : Format.t) (pi : Projection.t) (x : Float.t) =
-  Format.k f = 8 && Format.p f >= 3 && f.s = Signedness.Signed && snd pi = RoundingMode.NearestTiesToEven ==>
-  sqrt_gt_0 f f pi x
-  [@@disable sqrt_gt_0]
+(* [fsqrt] always converges (within 100 iterations) for any input *)
+theorem fsqrt_always_converges (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : Float.t) =
+  fsqrt_converges (f_x, f_z, pi) x
+  [@@disable fsqrt_converges]
+  [@@timeout 120]
   [@@by
-    [%use sqrt_gt0_below f pi x] @>
-    [%use sqrt_gt0_above f pi x] @>
-    [%use sqrt_gt0_k8_mid f pi] @>
-    [%use forall_elim mk_sqrt_gt_0 (f, pi) 0 (Util.ipow2 8) x] @>
+    [%use fsqrt_ok_below f_x f_z pi x] @>
+    [%use fsqrt_ok_above f_x f_z pi x] @>
+    [%use Theorems_sqrt_convergence.fsqrt_converges_in_range f_x f_z pi] @>
     auto]

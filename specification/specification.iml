@@ -99,6 +99,11 @@ module Format = struct
     | 15 -> (match p with 1 -> Ok B15P1 | 2 -> Ok B15P2 | 3 -> Ok B15P3 | 4 -> Ok B15P4 | 5 -> Ok B15P5 | 6 -> Ok B15P6 | 7 -> Ok B15P7 | 8 -> Ok B15P8 | 9 -> Ok B15P9 | 10 -> Ok B15P10 | 11 -> Ok B15P11 | 12 -> Ok B15P12 | 13 -> Ok B15P13 | 14 -> Ok B15P14 | 15 -> Ok B15P15 | _ -> Error "invalid precision")
     | _ -> Error "invalid width"
 
+  let of_parts (k : int) (p : int) (s : Signedness.t) (d : Domain.t) : (t, string) Result.t =
+    match of_kp k p with
+    | Ok kp -> Ok { kp; s; d }
+    | Error e -> Error e
+
   let get_format_parameters (f : t) : int * int * int * real * real * Signedness.t * Domain.t =
     let open Util in
     let open Signedness in
@@ -129,6 +134,14 @@ module Format = struct
       in
     let m_lo = if f.s = Signed then -. m_hi else 0.0 in
     k, p, bias, m_lo, m_hi, f.s, f.d
+
+  (** String representation *)
+  let to_string (f : t) : string =
+    "binary" ^ (Int.to_string (k f)) ^ "p" ^
+    (Int.to_string (p f)) ^
+    (if f.s == Signed then "s" else "u") ^
+    (if f.d = Extended then "e" else "f")
+    [@@program]
 end
 
 module SaturationMode = struct
@@ -136,6 +149,14 @@ module SaturationMode = struct
     | SatFinite
     | SatPropagate
     | OvfInf
+
+  (** String representation *)
+  let to_string (x : t) : string =
+    match x with
+    | SatFinite -> "SatFinite"
+    | SatPropagate -> "SatPropagate"
+    | OvfInf -> "OvfInf"
+    [@@program]
 end
 
 (** Rounding mode definitions *)
@@ -147,11 +168,26 @@ module RoundingMode = struct
     | TowardPositive
     | NearestTiesToEven
     | NearestTiesToAway
+
+    (** String representation *)
+  let to_string (x : t) : string =
+    match x with
+    | TowardZero -> "TowardZero"
+    | TowardNegative -> "TowardNegative"
+    | TowardPositive -> "TowardPositive"
+    | NearestTiesToEven -> "NearestTiesToEven"
+    | NearestTiesToAway -> "NearestTiesToAway"
+    [@@program]
 end
 
 (* Projection specifications *)
 module Projection = struct
   type t = SaturationMode.t * RoundingMode.t
+
+  (** String representation *)
+  let to_string (x : t) : string =
+    SaturationMode.to_string (fst x) ^ ", " ^ RoundingMode.to_string (snd x)
+    [@@program]
 end
 
 let aug_real_is_within_range (f : Format.t) (x : AugReal.t) : bool =

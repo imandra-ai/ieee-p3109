@@ -4,8 +4,6 @@
 
 [@@@import AGM, "agm.iml"]
 
-(* [@@@import Theorems_format_ranges, "theorems_format_ranges.iml"] *)
-
 open Math
 open Specification
 
@@ -135,70 +133,3 @@ let _ =
       (AugReal.r2a (Q.of_ints 21 10))
   in
   Printf.printf "Rounded: %s\n%!" (AugReal.to_string x)
-
-(*
-let _ =
-  let open Format in
-  let formats =
-    [
-      B3P1;
-      B3P2;
-      B6P1;
-      B6P2;
-      B6P3;
-      B6P4;
-      B6P5;
-      B7P1;
-      B7P2;
-      B7P3;
-      B7P4;
-      B7P5;
-      B7P6;
-      B8P1;
-      B8P2;
-      B8P3;
-      B8P4;
-      B8P5;
-      B8P6;
-      B8P7;
-      B14P1;
-      B14P2;
-      B14P3;
-      B14P4;
-      B14P5;
-      B14P6;
-      B14P7;
-      B14P8;
-      B14P9;
-      B14P10;
-      B14P11;
-      B14P12;
-      B14P13;
-      B15P1;
-      B15P2;
-      B15P3;
-      B15P4;
-      B15P5;
-      B15P6;
-      B15P7;
-      B15P8;
-      B15P9;
-      B15P10;
-      B15P11;
-      B15P12;
-      B15P13;
-      B15P14;
-    ]
-  in
-  List.iter
-    (fun f ->
-      let k, p, _, _ = Format.get_format_parameters f in
-      Printf.printf "B%sP%s\n%!" (Z.to_string k) (Z.to_string p);
-      for i = 0 to 2 lsl Z.to_int k do
-        let q =
-          Theorems.Theorems_format_ranges.is_within_range f (Z.of_int i)
-        in
-        if not q then Printf.printf "%b\n" q
-      done)
-    formats
-*)
