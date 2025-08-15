@@ -324,7 +324,7 @@ let rounding_mode_of_i i =
   | _ -> NearestTiesToAway
 
 let forall_formats (fn : Format.t -> unit) : unit =
-  for k = 2 to 7 do
+  for k = 2 to 15 do
     for p = 1 to k do
       for sj = 0 to 1 do
         for dj = 0 to 1 do
@@ -361,7 +361,7 @@ let print_closest (f_z : Format.t) (di : AugReal.t) =
       | _ -> Printf.printf "Error\n%!")
     | Error e -> Printf.printf "Closest error: %s\n%!" e)
 
-let () =
+let run_sqrt () =
   let sep_line = String.make 80 '-' in
   let star_line = String.make 80 '*' in
   let open Signedness in
@@ -403,3 +403,17 @@ let () =
                   | Error e, _ -> Printf.printf "Error: %s" e);
                   Printf.printf "%0.2fs\n%!" (Unix.gettimeofday () -. start))
               done)))
+
+let () =
+  for isat = 0 to 2 do
+    for irnd = 0 to 4 do
+      let start = Unix.gettimeofday () in
+      let pi = saturation_mode_of_i isat, rounding_mode_of_i irnd in
+      Printf.printf "(%d,%d) ... %!" isat irnd;
+      let r =
+        Theorems_sqrt_convergence.forall_pairs_of_formats
+          Theorems_sqrt_convergence.fsqrt_converges pi
+      in
+      Printf.printf "%b %0.2fs\n%!" r (Unix.gettimeofday () -. start)
+    done
+  done
