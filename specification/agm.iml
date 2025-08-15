@@ -1,0 +1,63 @@
+[@@@import Util, "dune:math"]
+[@@@import Sqrt, "sqrt.iml"]
+
+let unroll_nonlin qt nqt steps = Tactic.unroll ~smt:"z3-full-nonlinear" ~query_timeout:qt ~no_asm_query_timeout:nqt steps [@@no_extract]
+
+(* AGM can supposedly also be defined for negative n, do we need that? *)
+
+let rec a (n : int) (a_0 : real) (b_0 : real) : (real, string) Result.t =
+  if n < 0 then Error "undefined"
+  else if n = 0 then Ok a_0 else
+  match a (n - 1) a_0 b_0, b (n - 1) a_0 b_0 with
+  | Ok a_n_1, Ok b_n_1 ->
+    Ok ((a_n_1 +. b_n_1) /. 2.0)
+  | Error e, _ | _, Error e -> Error e
+
+and b (n : int) (a_0 : real) (b_0 : real) : (real, string) Result.t =
+  if n < 0 then Error "undefined"
+  else if n = 0 then Ok b_0 else
+  match a (n - 1) a_0 b_0, b (n - 1) a_0 b_0 with
+  | Ok a_n_1, Ok b_n_1 ->
+    (* TODO: Figure out the necessary precision of sqrt. Do we need an approximation from above as well as below? *)
+    Sqrt.sqrt (a_n_1 *. b_n_1) 8
+  | Error e, _ | _, Error e -> Error e
+
+and c (n : int) (a_0 : real) (b_0 : real) : (real, string) Result.t =
+  match a (n - 1) a_0 b_0, b (n - 1) a_0 b_0 with
+  | Ok a_n_1, Ok b_n_1 -> Ok (0.5 *. (a_n_1 -. b_n_1))
+  | Error e, _ | _, Error e -> Error e
+
+(* Note: Sqrt.sqrt approximates from below and b is also below. *)
+
+let agm (n : int) (a_0 : real) (b_0 : real) : ((real * real), string) Result.t =
+  match a n a_0 b_0, b n a_0 b_0 with
+  | Ok an, Ok bn -> Ok (an, bn)
+  | Error e, _ | _, Error e -> Error e
+
+(* eval (a 0 24.0 6.0)
+eval (a 1 24.0 6.0)
+eval (a 2 24.0 6.0)
+
+eval (b 0 24.0 6.0)
+eval (b 1 24.0 6.0)
+eval (b 2 24.0 6.0) *)
+
+verify (a 0 24.0 6.0 = Ok 24.0)
+verify (b 0 24.0 6.0 = Ok 6.0)
+verify (a 1 24.0 6.0 = Ok 15.0)
+
+verify (agm 0 24.0 6.0 = Ok (24.0, 6.0))
+
+
+let chk r lb ub = match r with Ok r -> lb <=. r && r <. ub | _ -> true
+
+verify (let r = b 1 24.0 6.0 in chk r 12.0 12.00000000000000000000000001) [@@by ground_eval ()] [@@timeout 3600]
+verify (let r = a 2 24.0 6.0 in chk r 13.5 13.50000000000000000000000001) [@@by ground_eval ()]
+verify (let r = b 2 24.0 6.0 in chk r 13.41640786499 13.416407864999) [@@by ground_eval ()]
+
+theorem a_pos _ a_0 b_0 =
+  a_0 >=. 0.0 && b_0 >=. 0.0 ==>
+    match a 0 a_0 b_0 with
+    | Ok r -> r >=. 0.0
+    | _ -> true
+  [@@by auto]
