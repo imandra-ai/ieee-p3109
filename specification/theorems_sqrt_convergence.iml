@@ -20,7 +20,43 @@ let fsqrt_converges (args : Format.t * Format.t * Projection.t) (x : Float.t) : 
   | Ok _, i -> Int.(i < 100)
   | _ -> true
 
-theorem fsqrt_converges_2_2 (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) =
+let i2s (x : int) = match x with 0 -> Signedness.Signed | _ -> Signedness.Unsigned
+let i2d (x : int) = match x with 0 -> Domain.Extended | _ -> Domain.Finite
+
+let forall_floats f_x f_z pi i =
+  forall_in_range fsqrt_converges (f_x, f_z, pi) 0 (Util.ipow2 (Format.k f_x))
+
+let forall_pairs_of_formats p pi =
+  forall_in_range (fun _ kx ->
+    forall_in_range (fun _ px ->
+      forall_in_range (fun _ kz ->
+        forall_in_range (fun _ pz ->
+          forall_in_range (fun _ sx ->
+            forall_in_range (fun _ sy ->
+              forall_in_range (fun _ dx ->
+                forall_in_range (fun _ dy ->
+                  match
+                    Format.of_parts kx px (i2s sx) (i2d dx),
+                    Format.of_parts kz pz (i2s sy) (i2d dy) with
+                  | Ok f_x, Ok f_z ->
+                    forall_in_range p (f_x, f_z, pi) 0 (Util.ipow2 (Format.k f_x))
+                  | _ -> false
+                ) () 0 1
+              ) () 0 1
+            ) () 0 1
+          ) () 0 1
+        ) () 2 kz
+      ) () 2 4
+    ) () 2 kx
+  ) () 2 4
+
+theorem fsqrt_converges_2_2_special (pi : Projection.t) =
+  forall_pairs_of_formats fsqrt_converges pi
+  [@@timeout 86400]
+  [@@by enumerate ["pi"] @> ground_eval]
+  [@@fc]
+
+(* theorem fsqrt_converges_2_2 (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) =
   (Format.k f_x) = 2 && (Format.k f_z) = 2 ==>
   forall_in_range fsqrt_converges (f_x, f_z, pi) 0 (Util.ipow2 (Format.k f_x))
   [@@timeout 86400]
@@ -1396,4 +1432,10 @@ theorem fsqrt_converges_in_range (f_x : Format.t) (f_z : Format.t) (pi : Project
     [%use fsqrt_converges_15_13 f_x f_z pi] @>
     [%use fsqrt_converges_15_14 f_x f_z pi] @>
     [%use fsqrt_converges_15_15 f_x f_z pi] @>
-    auto]
+    auto] *)
+
+
+theorem fsqrt_converges_in_range (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) =
+  forall_in_range fsqrt_converges (f_x, f_z, pi) 0 (Util.ipow2 (Format.k f_x))
+  [@@timeout 10]
+  [@@by auto]
