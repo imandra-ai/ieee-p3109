@@ -241,7 +241,7 @@ theorem scaled_fma_aug_ex_eq (x : AugReal.t) (y : AugReal.t) (s : int) (a : AugR
     | Ok x -> ar2er ar = Ok x
     | Error _ -> ar = Ok NaN)
   | _ -> true
-  [@@timeout 60]
+  [@@timeout 360]
   [@@by auto]
 
 theorem minimum_aug_ex_eq (x : AugReal.t) (y : AugReal.t) =

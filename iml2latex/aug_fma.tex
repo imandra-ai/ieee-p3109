@@ -64,6 +64,11 @@
 
 
 
+
+
+
+
+
   \noindent\Case{\Cer\FMA(\NaN, \any, \any) \gives  \NaN}\\
   \Case{\Cer\FMA(\any, \NaN, \any) \gives  \NaN}\\
   \Case{\Cer\FMA(\any, \any, \NaN) \gives  \NaN}\\
@@ -86,23 +91,15 @@
   \Case{\Cer\FMA(+\infty, -\infty, \any) \gives  -\infty}\\
   \Case{\Cer\FMA(-\infty, +\infty, \any) \gives  -\infty}\\
   \Case{\Cer\FMA(\any, \any, -\infty) \gives  -\infty}\\
-  \Case{\Cer\FMA(X, -\infty, Z) ~\If X \geq \zero \And Z < \zero\gives  -\infty}\\
-  \Case{\Cer\FMA(X, -\infty, Z) ~\If X < \zero \And Z \geq \zero\gives  +\infty}\\
-  \Case{\Cer\FMA(X, -\infty, Z) ~\If X \geq \zero \And Z \geq \zero\gives  -\infty}\\
-  \Case{\Cer\FMA(X, -\infty, Z) ~\If X < \zero \And Z < \zero\gives  +\infty}\\
+  \Case{\Cer\FMA(X, -\infty, Z) ~\If X \geq \zero\gives  -\infty}\\
+  \Case{\Cer\FMA(X, -\infty, Z) ~\If X < \zero\gives  +\infty}\\
   \Case{\Cer\FMA(\any, \any, +\infty) \gives  +\infty}\\
-  \Case{\Cer\FMA(X, +\infty, Z) ~\If X \geq \zero \And Z < \zero\gives  +\infty}\\
-  \Case{\Cer\FMA(X, +\infty, Z) ~\If X < \zero \And Z \geq \zero\gives  -\infty}\\
-  \Case{\Cer\FMA(X, +\infty, Z) ~\If X \geq \zero \And Z \geq \zero\gives  +\infty}\\
-  \Case{\Cer\FMA(X, +\infty, Z) ~\If X < \zero \And Z < \zero\gives  -\infty}\\
-  \Case{\Cer\FMA(+\infty, Y, Z) ~\If Y \geq \zero \And Z \geq \zero\gives  +\infty}\\
-  \Case{\Cer\FMA(+\infty, Y, Z) ~\If Y \geq \zero \And Z < \zero\gives  +\infty}\\
-  \Case{\Cer\FMA(+\infty, Y, Z) ~\If Y < \zero \And Z \geq \zero\gives  -\infty}\\
-  \Case{\Cer\FMA(+\infty, Y, Z) ~\If Y < \zero \And Z < \zero\gives  -\infty}\\
-  \Case{\Cer\FMA(-\infty, Y, Z) ~\If Y \geq \zero \And Z \geq \zero\gives  -\infty}\\
-  \Case{\Cer\FMA(-\infty, Y, Z) ~\If Y \geq \zero \And Z < \zero\gives  -\infty}\\
-  \Case{\Cer\FMA(-\infty, Y, Z) ~\If Y < \zero \And Z \geq \zero\gives  +\infty}\\
-  \Case{\Cer\FMA(-\infty, Y, Z) ~\If Y < \zero \And Z < \zero\gives  +\infty}\\
+  \Case{\Cer\FMA(X, +\infty, Z) ~\If X \geq \zero\gives  +\infty}\\
+  \Case{\Cer\FMA(X, +\infty, Z) ~\If X < \zero\gives  -\infty}\\
+  \Case{\Cer\FMA(+\infty, Y, Z) ~\If Y \geq \zero\gives  +\infty}\\
+  \Case{\Cer\FMA(+\infty, Y, Z) ~\If Y < \zero\gives  -\infty}\\
+  \Case{\Cer\FMA(-\infty, Y, Z) ~\If Y \geq \zero\gives  -\infty}\\
+  \Case{\Cer\FMA(-\infty, Y, Z) ~\If Y < \zero\gives  +\infty}\\
   \Case{\Cer\FMA(X, Y, Z) \gives  X \times Y + Z}\\
 
 

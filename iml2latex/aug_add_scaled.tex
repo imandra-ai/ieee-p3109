@@ -94,16 +94,21 @@
 
 
 
-  \noindent\Case{\Cer\AddScaled(\NaN, \any) \gives  \NaN}\\
-  \Case{\Cer\AddScaled(\any, \NaN) \gives  \NaN}\\
-  \Case{\Cer\AddScaled(+\infty, -\infty) \gives  \NaN}\\
-  \Case{\Cer\AddScaled(-\infty, +\infty) \gives  \NaN}\\
-  \Case{\Cer\AddScaled(+\infty, \any) \gives  +\infty}\\
-  \Case{\Cer\AddScaled(-\infty, \any) \gives  -\infty}\\
-  \Case{\Cer\AddScaled(\any, +\infty) \gives  +\infty}\\
-  \Case{\Cer\AddScaled(\any, -\infty) \gives  -\infty}\\
-  \Case{\Cer\AddScaled(X, Y) \gives
-   X \times 2^{ {S_{X}}} + Y \times 2^{ {S_{Y}}}}\\
+
+
+
+
+
+  \noindent\Case{\Cer\AddScaled(\NaN, \any, \any, \any) \gives  \NaN}\\
+  \Case{\Cer\AddScaled(\any, \any, \NaN, \any) \gives  \NaN}\\
+  \Case{\Cer\AddScaled(+\infty, \any, -\infty, \any) \gives  \NaN}\\
+  \Case{\Cer\AddScaled(-\infty, \any, +\infty, \any) \gives  \NaN}\\
+  \Case{\Cer\AddScaled(+\infty, \any, \any, \any) \gives  +\infty}\\
+  \Case{\Cer\AddScaled(-\infty, \any, \any, \any) \gives  -\infty}\\
+  \Case{\Cer\AddScaled(\any, \any, +\infty, \any) \gives  +\infty}\\
+  \Case{\Cer\AddScaled(\any, \any, -\infty, \any) \gives  -\infty}\\
+  \Case{\Cer\AddScaled(X, \any, Y, \any) \gives
+   X \times 2^{ {s_{x}}} + Y \times 2^{ {s_{y}}}}\\
 
 
 

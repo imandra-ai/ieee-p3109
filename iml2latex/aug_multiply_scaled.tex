@@ -98,17 +98,28 @@
 
 
 
+
+
+
+
+
   \noindent\Case{\Cer\MultiplyScaled(\NaN, \any) \gives  \NaN}\\
   \Case{\Cer\MultiplyScaled(\any, \NaN) \gives  \NaN}\\
-  \Case{\Cer\MultiplyScaled(-\infty, Y | +\infty, Y) ~\If Y = \zero\gives  \NaN}\\
-  \Case{\Cer\MultiplyScaled(X, -\infty | X, +\infty) ~\If X = \zero\gives  \NaN}\\
-  \Case{\Cer\MultiplyScaled(-\infty, -\infty | +\infty, +\infty) \gives  +\infty}\\
-  \Case{\Cer\MultiplyScaled(-\infty, +\infty | +\infty, -\infty) \gives  -\infty}\\
-  \Case{\Cer\MultiplyScaled(+\infty, X | X, +\infty) ~\If X > \zero\gives  +\infty}\\
-  \Case{\Cer\MultiplyScaled(+\infty, X | X, +\infty) ~\If X < \zero\gives  -\infty}\\
-  \Case{\Cer\MultiplyScaled(-\infty, X | X, -\infty) ~\If X > \zero\gives  -\infty}\\
-  \Case{\Cer\MultiplyScaled(-\infty, X | X, -\infty) ~\If X < \zero\gives  +\infty}\\
-  \Case{\Cer\MultiplyScaled(X, Y) \gives  X \times Y \times 2^{ S}}\\
+  \Case{\Cer\MultiplyScaled(\pm\infty, Y) ~\If Y = \zero\gives  \NaN}\\
+  \Case{\Cer\MultiplyScaled(X, \pm\infty) ~\If X = \zero\gives  \NaN}\\
+  \Case{\Cer\MultiplyScaled(-\infty, -\infty) \gives  +\infty}\\
+  \Case{\Cer\MultiplyScaled(+\infty, +\infty) \gives  +\infty}\\
+  \Case{\Cer\MultiplyScaled(-\infty, +\infty) \gives  -\infty}\\
+  \Case{\Cer\MultiplyScaled(+\infty, -\infty) \gives  -\infty}\\
+  \Case{\Cer\MultiplyScaled(+\infty, X) ~\If X > \zero\gives  +\infty}\\
+  \Case{\Cer\MultiplyScaled(X, +\infty) ~\If X > \zero\gives  +\infty}\\
+  \Case{\Cer\MultiplyScaled(+\infty, X) ~\If X < \zero\gives  -\infty}\\
+  \Case{\Cer\MultiplyScaled(X, +\infty) ~\If X < \zero\gives  -\infty}\\
+  \Case{\Cer\MultiplyScaled(-\infty, X) ~\If X > \zero\gives  -\infty}\\
+  \Case{\Cer\MultiplyScaled(X, -\infty) ~\If X > \zero\gives  -\infty}\\
+  \Case{\Cer\MultiplyScaled(-\infty, X) ~\If X < \zero\gives  +\infty}\\
+  \Case{\Cer\MultiplyScaled(X, -\infty) ~\If X < \zero\gives  +\infty}\\
+  \Case{\Cer\MultiplyScaled(X, Y) \gives  X \times Y \times 2^{ s}}\\
 
 
 

@@ -108,6 +108,11 @@
 
 
 
+
+
+
+
+
   \noindent\Case{\Cer\Maximum(\NaN, \any) \gives  \NaN}\\
   \Case{\Cer\Maximum(\any, \NaN) \gives  \NaN}\\
   \Case{\Cer\Maximum(+\infty, +\infty) \gives  +\infty}\\
@@ -116,8 +121,8 @@
   \Case{\Cer\Maximum(-\infty, +\infty) \gives  +\infty}\\
   \Case{\Cer\Maximum(+\infty, \any) \gives  +\infty}\\
   \Case{\Cer\Maximum(\any, +\infty) \gives  +\infty}\\
-  \Case{\Cer\Maximum(-\infty, \any) \gives  y}\\
-  \Case{\Cer\Maximum(\any, -\infty) \gives  x}\\
+  \Case{\Cer\Maximum(-\infty, Y) \gives  Y}\\
+  \Case{\Cer\Maximum(X, -\infty) \gives  X}\\
   \Case{\Cer\Maximum(X, Y) \gives  \Max{( X,  Y)}}\\
 
 

@@ -571,7 +571,10 @@ function print_pattern_desc(node: AST, options: Options): Doc {
       return "\\any";
     case "Ppat_var":
       // | Ppat_var of string loc  (** A variable pattern such as [x] *)
-      if (options.hasOwnProperty("pattern_reals") && options.pattern_reals instanceof Array && options.pattern_reals.includes(args[0].txt))
+      if (args[0].txt[0] != 's' &&
+        options.hasOwnProperty("pattern_reals") &&
+        options.pattern_reals instanceof Array &&
+        options.pattern_reals.includes(args[0].txt))
         return [print_string_loc(args[0], options).toUpperCase()];
       else
         return print_string_loc(args[0], options);
@@ -980,9 +983,17 @@ function print_expression_desc(node: AST, options: Options): Doc {
       // | Pexp_ident of Longident.t loc
       //     (** Identifiers such as [x] and [M.x]
       //        *)
-      if ((options.hasOwnProperty("is_real") && options.is_real) ||
-        (options.hasOwnProperty("pattern_reals") && options.pattern_reals instanceof Array && options.pattern_reals.includes(args[0].txt[1])))
-        return [print_longident_loc(args[0], options)[0].toUpperCase()];
+      if (
+        (options.hasOwnProperty("is_real") && options.is_real) ||
+        (options.hasOwnProperty("pattern_reals") &&
+          options.pattern_reals instanceof Array &&
+          options.pattern_reals.includes(args[0].txt[1]))) {
+        let n = print_longident_loc(args[0], options)[0];
+        if (n.startsWith('s') || n.startsWith('{s')) // 's.*' are scaling factors
+          return n;
+        else
+          return n.toUpperCase()
+      }
       else
         return print_longident_loc(args[0], options);
     case "Pexp_constant":

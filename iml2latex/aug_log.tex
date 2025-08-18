@@ -87,9 +87,13 @@
 
 
 
+
+
+
+
+
   \noindent\Case{\Cer\Log(\NaN) \gives  \NaN}\\
-  \Case{\Cer\Log(-\infty) \gives  \NaN}\\
-  \Case{\Cer\Log(+\infty) \gives  \NaN}\\
+  \Case{\Cer\Log(\pm\infty) \gives  \NaN}\\
   \Case{\Cer\Log(X) ~\If X < \zero\gives  \NaN}\\
   \Case{\Cer\Log(X) ~\If X = \zero\gives  -\infty}\\
   \Case{\Cer\Log(X) \gives log_e{( X)}}\\
