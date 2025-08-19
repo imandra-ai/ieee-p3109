@@ -791,6 +791,25 @@ module Float = struct
 
   (** 4.8.5 Unary mathematical operations *)
 
+  let aug_recip (x : AugReal.t) : (AugReal.t, string) Result.t =
+    let open AugReal in
+    match x with
+    | NaN -> Ok NaN
+    | R x when x = 0.0 -> Ok NaN
+    | (PINF | NINF) -> Ok (R 0.0)
+    | R x -> Ok (R (1.0 /. x))
+    | _ -> Error "undefined"
+
+  let internal_recip  (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) : (t, string) Result.t =
+    match aug_recip (decode f_x x) with
+    | Ok r -> project f_z pi r
+    | Error e -> Error e
+
+  let recip (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) : t =
+    match internal_recip f_x f_z pi x with
+    | Ok x -> x
+    | Error _ -> (nan f_z) (* unreachable by theorem internal_recip_ok *)
+
   let aug_sqrt (x : AugReal.t) : (AugReal.t, string) Result.t =
     let open AugReal in
     match x with
@@ -1249,15 +1268,19 @@ module Float = struct
     | _, NaN, _ -> Ok NaN
     | _, _, NaN -> Ok NaN
 
-    | _, lo, NINF when lo <> NINF -> Ok NaN
-    | _, PINF, hi when hi <> PINF -> Ok NaN
     | _, R lo, R hi when lo >. hi -> Ok NaN
 
     | _, PINF, PINF -> Ok PINF
-    | _, _, NINF -> Ok NINF
-    | PINF, _, _ -> Ok hi
-    | NINF, _, _ -> Ok lo
-    | _, NINF, PINF -> Ok x
+    | _, NINF, NINF -> Ok NINF
+    | _, _, NINF -> Ok NaN
+    | _, PINF, _ -> Ok NaN
+
+    | PINF, _, PINF -> Ok PINF
+    | PINF, _, R hi -> Ok (R hi)
+    | NINF, NINF, _ -> Ok NINF
+    | NINF, R lo, _ -> Ok (R lo)
+    | R x, NINF, PINF -> Ok (R x)
+
     | R x, NINF, R hi when x <=. hi -> Ok (R x)
     | R x, NINF, R hi when x >. hi -> Ok (R hi)
     | R x, R lo, PINF when x <=. lo -> Ok (R lo)

@@ -561,6 +561,10 @@ function print_label(node: AST, options: Options): Doc {
   return node;
 }
 
+function capitalize_first(string) {
+  return string.replace(/^./, string[0].toUpperCase())
+}
+
 
 function print_pattern_desc(node: AST, options: Options): Doc {
   const constructor = node[0];
@@ -575,7 +579,7 @@ function print_pattern_desc(node: AST, options: Options): Doc {
         options.hasOwnProperty("pattern_reals") &&
         options.pattern_reals instanceof Array &&
         options.pattern_reals.includes(args[0].txt))
-        return [print_string_loc(args[0], options).toUpperCase()];
+        return [capitalize_first(print_string_loc(args[0], options))];
       else
         return print_string_loc(args[0], options);
     case "Ppat_alias":
@@ -992,7 +996,7 @@ function print_expression_desc(node: AST, options: Options): Doc {
         if (n.startsWith('s') || n.startsWith('{s')) // 's.*' are scaling factors
           return n;
         else
-          return n.toUpperCase()
+          return capitalize_first(n)
       }
       else
         return print_longident_loc(args[0], options);
@@ -1127,9 +1131,12 @@ function print_expression_desc(node: AST, options: Options): Doc {
             opname = "2^";
           else if (opname == "Log.ln")
             opname = "log_e";
-          if (opname == "log_e" || opname == "log_2")
-            want_par = true;
-          return f([opname, "{", par_if(r.length > 1 || want_par, [indent([line, ...r])]), "}"]);
+          let want_space = false;
+          if (opname == "log_e" || opname == "log_2") {
+            want_par = false;
+            want_space = true;
+          }
+          return f([opname, (want_space ? "\\ " : ""), "{", par_if(r.length > 1 || want_par, [indent([line, ...r])]), "}"]);
         }
         case Notation.Outfix: {
           const r: Doc[] = join(line, op_args.map(arg => {

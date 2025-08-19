@@ -323,6 +323,13 @@ theorem internal_faa_ok (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (f_r 
 
 (** 4.8.5 Unary mathematical operations *)
 
+(** [internal_recip] never returns an error *)
+theorem internal_recip_ok (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : Float.t) =
+  Result.is_ok (Float.internal_recip f_x f_z pi x)
+  [@@timeout 60]
+  [@@disable Float.project, Float.decode, Float.decode_aux, Float.round_to_precision, Float.saturate, Util.pow2, Util.ipow2, Format.get_format_parameters, Sqrt.sqrt]
+  [@@by auto]
+
 (** [internal_sqrt] never returns an error *)
 theorem internal_sqrt_ok (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : Float.t) =
   Result.is_ok (Float.internal_sqrt f_x f_z pi x)

@@ -3,7 +3,7 @@ TEXS=$(patsubst %,%.tex,$(FUNS))
 
 all: spec.pdf
 
-spec.pdf: node_modules $(TEXS)
+spec.pdf: node_modules spec.tex $(TEXS)
 	pdflatex spec
 
 %.tex: ../specification/specification.iml node_modules *.ts *.js

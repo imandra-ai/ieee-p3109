@@ -149,6 +149,11 @@ theorem faa_aug_ex_eq (x : AugReal.t) (y : AugReal.t) (z : AugReal.t) =
   t_aug_eq3r x y z Float.aug_faa (fun xe ye ze -> xe +. ye +. ze)
   [@@by auto]
 
+theorem recip_aug_ex_eq (x : AugReal.t) =
+  let open ExReal.Infix in
+  t_aug_eq1 x Float.aug_recip (fun xe -> ExReal.one /. xe)
+  [@@by auto]
+
 theorem sqrt_aug_ex_eq (x : AugReal.t) =
   let open ExReal.ResultInfix in
   t_aug_eq1 x Float.aug_sqrt (fun xe -> ExReal.sqrt xe 8)
