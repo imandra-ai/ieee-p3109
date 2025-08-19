@@ -5,8 +5,6 @@ const { group, indent, dedent, join, ifBreak, breakParent, line, hardline, softl
 
 const iml2json = require('./iml2json.bc').iml2json;
 import { assert } from 'node:console';
-import { convertCompilerOptionsFromJson, isJsxFragment } from "typescript";
-import { SHARE_ENV } from "node:worker_threads";
 
 var PREFIX = "Cer";
 var function_names: string[] | undefined = undefined;
@@ -432,8 +430,7 @@ function print_module_expr_desc(node: AST, options: Options): Doc {
       // return f([indent(["struct", hardline,
       //   join([hardline, hardline], print_structure(args[0], options))]), hardline,
       //   "end"]);
-      return f([indent([
-        join([hardline], print_structure(args[0], options))])]);
+      return f(print_structure(args[0], options));
     case "Pmod_functor":
     case "Pmod_apply":
     case "Pmod_apply_unit":
@@ -1750,6 +1747,47 @@ function trim(str: string, ch: string[]) {
   return (start > 0 || end < str.length) ? str.substring(start, end) : str;
 }
 
+function is_empty(d: Doc): boolean {
+  if (d instanceof Array)
+    return d.every(is_empty);
+  else if (d instanceof Object && d.hasOwnProperty("type")) {
+    switch (d.type) {
+      case "group":
+        return is_empty(d.contents);
+      case "fill":
+        return is_empty(d.parts);
+      default:
+        return false;
+    }
+  }
+  return false;
+}
+
+function trim_empty(ds: Doc): Doc[] {
+  if (ds instanceof Array) {
+    return ds.reduce<Doc[]>((acc, d) => {
+      let d2 = trim_empty(d);
+      if (is_empty(d2))
+        return acc;
+      else
+        return acc.concat(d2);
+    }, []);
+  }
+  else if (ds instanceof Object && ds.hasOwnProperty("type")) {
+    switch (ds.type) {
+      case "group":
+        return [g(trim_empty(ds.contents))];
+      case "fill":
+        return [f(trim_empty(ds.parts))];
+      default:
+        return [ds];
+    }
+  }
+  else if (is_empty(ds)) return []; else {
+    return [ds];
+  }
+}
+
 function print_structure_item(node: AST, options: Options): Doc {
   return g([print_structure_item_desc(node.pstr_desc, options)]);
 }
@@ -1794,5 +1832,6 @@ function print_toplevel_phrase(node: AST, options: Options): Doc {
 
 function print(path: AstPath<Tree>, options: Options, _print: (path: AstPath<any>) => Doc): Doc {
   options.pattern_reals = [];
-  return [path.node.top_defs.map(n => print_toplevel_phrase(n, options))];
+  let r = trim_empty([path.node.top_defs.map(n => print_toplevel_phrase(n, options))]);
+  return r;
 }
