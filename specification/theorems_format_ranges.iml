@@ -37,8 +37,7 @@ theorem wfr_neg (kp : Format.kpt) (x : Float.t) =
 
 theorem wfr_above (kp : Format.kpt) (x : Float.t) =
   let k = Format.k_of_kp kp in
-  (x > ipow2 k) ==> is_within kp x [@trigger]
-  [@@timeout 480]
+  (x >= ipow2 k) ==> is_within kp x [@trigger]
   [@@by enumerate ["kp"] @> auto]
   [@@fc]
 
