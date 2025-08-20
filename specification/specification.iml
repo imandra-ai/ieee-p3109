@@ -998,29 +998,29 @@ module Float = struct
   (** 4.8.7 Scaled multiplication *)
 
   let aug_multiply_scaled (x : AugReal.t) (y : AugReal.t) (s : int) : (AugReal.t, string) Result.t =
-    match x, y with
-    | NaN, _ -> Ok NaN
-    | _, NaN -> Ok NaN
+    match x, y, s with
+    | NaN, _, _ -> Ok NaN
+    | _, NaN, _ -> Ok NaN
 
-    | (PINF | NINF), R y when y = 0.0 -> Ok NaN
-    | R x, (PINF | NINF) when x = 0.0 -> Ok NaN
+    | (PINF | NINF), R y, _ when y = 0.0 -> Ok NaN
+    | R x, (PINF | NINF), _ when x = 0.0 -> Ok NaN
 
-    | NINF, NINF -> Ok PINF
-    | PINF, PINF -> Ok PINF
-    | NINF, PINF -> Ok NINF
-    | PINF, NINF -> Ok NINF
+    | NINF, NINF, _ -> Ok PINF
+    | PINF, PINF, _ -> Ok PINF
+    | NINF, PINF, _ -> Ok NINF
+    | PINF, NINF, _ -> Ok NINF
 
-    | PINF, R x when x >. 0.0 -> Ok PINF
-    | R x, PINF when x >. 0.0 -> Ok PINF
-    | PINF, R x when x <. 0.0 -> Ok NINF
-    | R x, PINF when x <. 0.0 -> Ok NINF
+    | PINF, R x, _ when x >. 0.0 -> Ok PINF
+    | R x, PINF, _ when x >. 0.0 -> Ok PINF
+    | PINF, R x, _ when x <. 0.0 -> Ok NINF
+    | R x, PINF, _ when x <. 0.0 -> Ok NINF
 
-    | NINF, R x when x >. 0.0 -> Ok NINF
-    | R x, NINF when x >. 0.0 -> Ok NINF
-    | NINF, R x when x <. 0.0 -> Ok PINF
-    | R x, NINF when x <. 0.0 -> Ok PINF
+    | NINF, R x, _ when x >. 0.0 -> Ok NINF
+    | R x, NINF, _ when x >. 0.0 -> Ok NINF
+    | NINF, R x, _ when x <. 0.0 -> Ok PINF
+    | R x, NINF, _ when x <. 0.0 -> Ok PINF
 
-    | R x, R y -> Ok (R (x *. y *. (Util.pow2 s)))
+    | R x, R y, _ -> Ok (R (x *. y *. (Util.pow2 s)))
     | _ -> Error "undefined"
 
   let internal_multiply_scaled (f_x : Format.t) (f_y : Format.t) (f_z : Format.t)  (pi : Projection.t)
