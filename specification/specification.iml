@@ -975,7 +975,7 @@ module Float = struct
     | NINF, _ , _, _  -> Ok NINF
     | _, _ , PINF, _  -> Ok PINF
     | _, _ , NINF, _  -> Ok NINF
-    | R x, _ , R y, _  -> Ok (R (x *. (Util.pow2 s_x) +. y *. (Util.pow2 s_y)))
+    | R x, s_x , R y, s_y  -> Ok (R (x *. (Util.pow2 s_x) +. y *. (Util.pow2 s_y)))
     | _ -> Error "undefined"
 
   let internal_add_scaled (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (pi : Projection.t)
@@ -1020,7 +1020,7 @@ module Float = struct
     | NINF, R x, _ when x <. 0.0 -> Ok PINF
     | R x, NINF, _ when x <. 0.0 -> Ok PINF
 
-    | R x, R y, _ -> Ok (R (x *. y *. (Util.pow2 s)))
+    | R x, R y, s -> Ok (R (x *. y *. (Util.pow2 s)))
     | _ -> Error "undefined"
 
   let internal_multiply_scaled (f_x : Format.t) (f_y : Format.t) (f_z : Format.t)  (pi : Projection.t)
