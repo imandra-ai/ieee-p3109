@@ -280,13 +280,13 @@ module Float = struct
 
     | x ->
       let t = Real.of_int (x mod (ipow2 (p - 1))) in
-      let e = Int.((Util.machine_idiv x (ipow2 (p - 1))) - b) in
+      let e = Int.(Util.machine_idiv x (ipow2 (p - 1))) in
 
       let r = (
-        if e = Int.(- b) then
-          (0. +. t *. (pow2 (1 - p))) *. (pow2 (e + 1))
+        if e = 0 then
+          (0. +. t *. (pow2 (1 - p))) *. (pow2 (1 - b))
         else
-          (1. +. t *. (pow2 (1 - p))) *. (pow2 e)) in
+          (1. +. t *. (pow2 (1 - p))) *. (pow2 (e - b))) in
       Ok AugReal.(R r)
     [@@timeout 3600]
     [@@measure Ordinal.of_int x]
