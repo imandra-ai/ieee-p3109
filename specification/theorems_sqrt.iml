@@ -19,16 +19,16 @@ let enc (r : real) = match Float.encode fmt (AugReal.R r) with | Ok e -> e | _ -
 let dec (x : Float.t) = match Float.decode fmt x with | AugReal.R e -> e | _ -> 0.0
 
 (* Just some checks; the important theorems are all in sqrt.iml *)
-verify (Float.sqrt fmt fmt (SaturationMode.SatPropagate, RoundingMode.TowardZero) (enc 0.0) = (enc 0.0)) [@@by ground_eval]
-verify (Float.sqrt fmt fmt (SaturationMode.SatPropagate, RoundingMode.TowardZero) (enc 1.0) = (enc 1.0)) [@@by ground_eval]
-verify (dec (Float.sqrt fmt fmt (SaturationMode.SatPropagate, RoundingMode.TowardZero) (enc 1.0)) = 1.0) [@@by ground_eval]
-verify (Float.sqrt fmt fmt (SaturationMode.SatPropagate, RoundingMode.TowardZero) (enc 4.0) = (enc 2.0)) [@@by ground_eval]
-verify (dec(Float.sqrt fmt fmt (SaturationMode.SatPropagate, RoundingMode.TowardZero) (enc 4.0)) = 2.0) [@@by ground_eval]
-verify (Float.sqrt fmt fmt (SaturationMode.SatPropagate, RoundingMode.TowardZero) (enc 16.0) = (enc 4.0)) [@@by ground_eval]
-verify (Float.sqrt fmt fmt (SaturationMode.SatPropagate, RoundingMode.TowardZero) (enc 64.0) = (enc 8.0)) [@@by ground_eval]
-verify (Float.sqrt fmt fmt (SaturationMode.SatPropagate, RoundingMode.TowardZero) (enc 256.0) = (enc 16.0)) [@@by ground_eval]
-verify (dec (Float.sqrt fmt fmt (SaturationMode.SatPropagate, RoundingMode.TowardZero) (enc 256.0)) = 16.0) [@@by ground_eval]
-verify (Float.sqrt fmt fmt (SaturationMode.SatPropagate, RoundingMode.TowardZero) (Float.nan f83) = Float.nan f83) [@@by ground_eval]
+verify (Float.sqrt fmt fmt (SaturationMode.SatPropagate, RoundingMode.TowardZero) (enc 0.0) = (enc 0.0)) [@@by ground_eval ()]
+verify (Float.sqrt fmt fmt (SaturationMode.SatPropagate, RoundingMode.TowardZero) (enc 1.0) = (enc 1.0)) [@@by ground_eval ()]
+verify (dec (Float.sqrt fmt fmt (SaturationMode.SatPropagate, RoundingMode.TowardZero) (enc 1.0)) = 1.0) [@@by ground_eval ()]
+verify (Float.sqrt fmt fmt (SaturationMode.SatPropagate, RoundingMode.TowardZero) (enc 4.0) = (enc 2.0)) [@@by ground_eval ()]
+verify (dec(Float.sqrt fmt fmt (SaturationMode.SatPropagate, RoundingMode.TowardZero) (enc 4.0)) = 2.0) [@@by ground_eval ()]
+verify (Float.sqrt fmt fmt (SaturationMode.SatPropagate, RoundingMode.TowardZero) (enc 16.0) = (enc 4.0)) [@@by ground_eval ()]
+verify (Float.sqrt fmt fmt (SaturationMode.SatPropagate, RoundingMode.TowardZero) (enc 64.0) = (enc 8.0)) [@@by ground_eval ()]
+verify (Float.sqrt fmt fmt (SaturationMode.SatPropagate, RoundingMode.TowardZero) (enc 256.0) = (enc 16.0)) [@@by ground_eval ()]
+verify (dec (Float.sqrt fmt fmt (SaturationMode.SatPropagate, RoundingMode.TowardZero) (enc 256.0)) = 16.0) [@@by ground_eval ()]
+verify (Float.sqrt fmt fmt (SaturationMode.SatPropagate, RoundingMode.TowardZero) (Float.nan f83) = Float.nan f83) [@@by ground_eval ()]
 
 let aug_sqrt_approx (x : AugReal.t) (over : bool) (n : int) : (AugReal.t, string) Result.t =
   let open AugReal in

@@ -42,21 +42,21 @@ theorem wfr_above (kp : Format.kpt) (x : Float.t) =
   [@@by enumerate ["kp"] @> auto]
   [@@fc]
 
-theorem wfr_15p1_mid = forall_in_range (is_within B15P1) 0 (ipow2 15) [@@by ground_eval] [@@timeout 240]
-theorem wfr_15p2_mid = forall_in_range (is_within B15P2) 0 (ipow2 15) [@@by ground_eval] [@@timeout 240]
-theorem wfr_15p3_mid = forall_in_range (is_within B15P3) 0 (ipow2 15) [@@by ground_eval] [@@timeout 240]
-theorem wfr_15p4_mid = forall_in_range (is_within B15P4) 0 (ipow2 15) [@@by ground_eval] [@@timeout 240]
-theorem wfr_15p5_mid = forall_in_range (is_within B15P5) 0 (ipow2 15) [@@by ground_eval] [@@timeout 240]
-theorem wfr_15p6_mid = forall_in_range (is_within B15P6) 0 (ipow2 15) [@@by ground_eval] [@@timeout 240]
-theorem wfr_15p7_mid = forall_in_range (is_within B15P7) 0 (ipow2 15) [@@by ground_eval] [@@timeout 240]
-theorem wfr_15p8_mid = forall_in_range (is_within B15P8) 0 (ipow2 15) [@@by ground_eval] [@@timeout 240]
-theorem wfr_15p9_mid = forall_in_range (is_within B15P9) 0 (ipow2 15) [@@by ground_eval] [@@timeout 240]
-theorem wfr_15p10_mid = forall_in_range (is_within B15P10) 0 (ipow2 15) [@@by ground_eval] [@@timeout 240]
-theorem wfr_15p11_mid = forall_in_range (is_within B15P11) 0 (ipow2 15) [@@by ground_eval] [@@timeout 240]
-theorem wfr_15p12_mid = forall_in_range (is_within B15P12) 0 (ipow2 15) [@@by ground_eval] [@@timeout 240]
-theorem wfr_15p13_mid = forall_in_range (is_within B15P13) 0 (ipow2 15) [@@by ground_eval] [@@timeout 240]
-theorem wfr_15p14_mid = forall_in_range (is_within B15P14) 0 (ipow2 15) [@@by ground_eval] [@@timeout 240]
-theorem wfr_15p15_mid = forall_in_range (is_within B15P15) 0 (ipow2 15) [@@by ground_eval] [@@timeout 240]
+theorem wfr_15p1_mid = forall_in_range (is_within B15P1) 0 (ipow2 15) [@@by ground_eval ()] [@@timeout 240]
+theorem wfr_15p2_mid = forall_in_range (is_within B15P2) 0 (ipow2 15) [@@by ground_eval ()] [@@timeout 240]
+theorem wfr_15p3_mid = forall_in_range (is_within B15P3) 0 (ipow2 15) [@@by ground_eval ()] [@@timeout 240]
+theorem wfr_15p4_mid = forall_in_range (is_within B15P4) 0 (ipow2 15) [@@by ground_eval ()] [@@timeout 240]
+theorem wfr_15p5_mid = forall_in_range (is_within B15P5) 0 (ipow2 15) [@@by ground_eval ()] [@@timeout 240]
+theorem wfr_15p6_mid = forall_in_range (is_within B15P6) 0 (ipow2 15) [@@by ground_eval ()] [@@timeout 240]
+theorem wfr_15p7_mid = forall_in_range (is_within B15P7) 0 (ipow2 15) [@@by ground_eval ()] [@@timeout 240]
+theorem wfr_15p8_mid = forall_in_range (is_within B15P8) 0 (ipow2 15) [@@by ground_eval ()] [@@timeout 240]
+theorem wfr_15p9_mid = forall_in_range (is_within B15P9) 0 (ipow2 15) [@@by ground_eval ()] [@@timeout 240]
+theorem wfr_15p10_mid = forall_in_range (is_within B15P10) 0 (ipow2 15) [@@by ground_eval ()] [@@timeout 240]
+theorem wfr_15p11_mid = forall_in_range (is_within B15P11) 0 (ipow2 15) [@@by ground_eval ()] [@@timeout 240]
+theorem wfr_15p12_mid = forall_in_range (is_within B15P12) 0 (ipow2 15) [@@by ground_eval ()] [@@timeout 240]
+theorem wfr_15p13_mid = forall_in_range (is_within B15P13) 0 (ipow2 15) [@@by ground_eval ()] [@@timeout 240]
+theorem wfr_15p14_mid = forall_in_range (is_within B15P14) 0 (ipow2 15) [@@by ground_eval ()] [@@timeout 240]
+theorem wfr_15p15_mid = forall_in_range (is_within B15P15) 0 (ipow2 15) [@@by ground_eval ()] [@@timeout 240]
 
 theorem wfr_15 (x : Float.t) =
   is_within B15P1 x &&
@@ -123,20 +123,20 @@ theorem wfr_15 (x : Float.t) =
     [%use forall_elim (is_within B15P15) 0 (ipow2 15) x] @>
     auto]
 
-theorem wfr_14p1_mid = forall_in_range (is_within B14P1) 0 (ipow2 14) [@@by ground_eval] [@@timeout 120]
-theorem wfr_14p2_mid = forall_in_range (is_within B14P2) 0 (ipow2 14) [@@by ground_eval] [@@timeout 120]
-theorem wfr_14p3_mid = forall_in_range (is_within B14P3) 0 (ipow2 14) [@@by ground_eval] [@@timeout 120]
-theorem wfr_14p4_mid = forall_in_range (is_within B14P4) 0 (ipow2 14) [@@by ground_eval] [@@timeout 120]
-theorem wfr_14p5_mid = forall_in_range (is_within B14P5) 0 (ipow2 14) [@@by ground_eval] [@@timeout 120]
-theorem wfr_14p6_mid = forall_in_range (is_within B14P6) 0 (ipow2 14) [@@by ground_eval] [@@timeout 120]
-theorem wfr_14p7_mid = forall_in_range (is_within B14P7) 0 (ipow2 14) [@@by ground_eval] [@@timeout 120]
-theorem wfr_14p8_mid = forall_in_range (is_within B14P8) 0 (ipow2 14) [@@by ground_eval] [@@timeout 120]
-theorem wfr_14p9_mid = forall_in_range (is_within B14P9) 0 (ipow2 14) [@@by ground_eval] [@@timeout 120]
-theorem wfr_14p10_mid = forall_in_range (is_within B14P10) 0 (ipow2 14) [@@by ground_eval] [@@timeout 120]
-theorem wfr_14p11_mid = forall_in_range (is_within B14P11) 0 (ipow2 14) [@@by ground_eval] [@@timeout 120]
-theorem wfr_14p12_mid = forall_in_range (is_within B14P12) 0 (ipow2 14) [@@by ground_eval] [@@timeout 120]
-theorem wfr_14p13_mid = forall_in_range (is_within B14P13) 0 (ipow2 14) [@@by ground_eval] [@@timeout 120]
-theorem wfr_14p14_mid = forall_in_range (is_within B14P14) 0 (ipow2 14) [@@by ground_eval] [@@timeout 120]
+theorem wfr_14p1_mid = forall_in_range (is_within B14P1) 0 (ipow2 14) [@@by ground_eval ()] [@@timeout 120]
+theorem wfr_14p2_mid = forall_in_range (is_within B14P2) 0 (ipow2 14) [@@by ground_eval ()] [@@timeout 120]
+theorem wfr_14p3_mid = forall_in_range (is_within B14P3) 0 (ipow2 14) [@@by ground_eval ()] [@@timeout 120]
+theorem wfr_14p4_mid = forall_in_range (is_within B14P4) 0 (ipow2 14) [@@by ground_eval ()] [@@timeout 120]
+theorem wfr_14p5_mid = forall_in_range (is_within B14P5) 0 (ipow2 14) [@@by ground_eval ()] [@@timeout 120]
+theorem wfr_14p6_mid = forall_in_range (is_within B14P6) 0 (ipow2 14) [@@by ground_eval ()] [@@timeout 120]
+theorem wfr_14p7_mid = forall_in_range (is_within B14P7) 0 (ipow2 14) [@@by ground_eval ()] [@@timeout 120]
+theorem wfr_14p8_mid = forall_in_range (is_within B14P8) 0 (ipow2 14) [@@by ground_eval ()] [@@timeout 120]
+theorem wfr_14p9_mid = forall_in_range (is_within B14P9) 0 (ipow2 14) [@@by ground_eval ()] [@@timeout 120]
+theorem wfr_14p10_mid = forall_in_range (is_within B14P10) 0 (ipow2 14) [@@by ground_eval ()] [@@timeout 120]
+theorem wfr_14p11_mid = forall_in_range (is_within B14P11) 0 (ipow2 14) [@@by ground_eval ()] [@@timeout 120]
+theorem wfr_14p12_mid = forall_in_range (is_within B14P12) 0 (ipow2 14) [@@by ground_eval ()] [@@timeout 120]
+theorem wfr_14p13_mid = forall_in_range (is_within B14P13) 0 (ipow2 14) [@@by ground_eval ()] [@@timeout 120]
+theorem wfr_14p14_mid = forall_in_range (is_within B14P14) 0 (ipow2 14) [@@by ground_eval ()] [@@timeout 120]
 
 theorem wfr_14 (x : Float.t) =
   is_within B14P1 x &&
@@ -200,19 +200,19 @@ theorem wfr_14 (x : Float.t) =
     auto]
 
 
-theorem wfr_13p1_mid = forall_in_range (is_within B13P1) 0 (ipow2 13) [@@by ground_eval] [@@timeout 60]
-theorem wfr_13p2_mid = forall_in_range (is_within B13P2) 0 (ipow2 13) [@@by ground_eval] [@@timeout 60]
-theorem wfr_13p3_mid = forall_in_range (is_within B13P3) 0 (ipow2 13) [@@by ground_eval] [@@timeout 60]
-theorem wfr_13p4_mid = forall_in_range (is_within B13P4) 0 (ipow2 13) [@@by ground_eval] [@@timeout 60]
-theorem wfr_13p5_mid = forall_in_range (is_within B13P5) 0 (ipow2 13) [@@by ground_eval] [@@timeout 60]
-theorem wfr_13p6_mid = forall_in_range (is_within B13P6) 0 (ipow2 13) [@@by ground_eval] [@@timeout 60]
-theorem wfr_13p7_mid = forall_in_range (is_within B13P7) 0 (ipow2 13) [@@by ground_eval] [@@timeout 60]
-theorem wfr_13p8_mid = forall_in_range (is_within B13P8) 0 (ipow2 13) [@@by ground_eval] [@@timeout 60]
-theorem wfr_13p9_mid = forall_in_range (is_within B13P9) 0 (ipow2 13) [@@by ground_eval] [@@timeout 60]
-theorem wfr_13p10_mid = forall_in_range (is_within B13P10) 0 (ipow2 13) [@@by ground_eval] [@@timeout 60]
-theorem wfr_13p11_mid = forall_in_range (is_within B13P11) 0 (ipow2 13) [@@by ground_eval] [@@timeout 60]
-theorem wfr_13p12_mid = forall_in_range (is_within B13P12) 0 (ipow2 13) [@@by ground_eval] [@@timeout 60]
-theorem wfr_13p13_mid = forall_in_range (is_within B13P13) 0 (ipow2 13) [@@by ground_eval] [@@timeout 60]
+theorem wfr_13p1_mid = forall_in_range (is_within B13P1) 0 (ipow2 13) [@@by ground_eval ()] [@@timeout 60]
+theorem wfr_13p2_mid = forall_in_range (is_within B13P2) 0 (ipow2 13) [@@by ground_eval ()] [@@timeout 60]
+theorem wfr_13p3_mid = forall_in_range (is_within B13P3) 0 (ipow2 13) [@@by ground_eval ()] [@@timeout 60]
+theorem wfr_13p4_mid = forall_in_range (is_within B13P4) 0 (ipow2 13) [@@by ground_eval ()] [@@timeout 60]
+theorem wfr_13p5_mid = forall_in_range (is_within B13P5) 0 (ipow2 13) [@@by ground_eval ()] [@@timeout 60]
+theorem wfr_13p6_mid = forall_in_range (is_within B13P6) 0 (ipow2 13) [@@by ground_eval ()] [@@timeout 60]
+theorem wfr_13p7_mid = forall_in_range (is_within B13P7) 0 (ipow2 13) [@@by ground_eval ()] [@@timeout 60]
+theorem wfr_13p8_mid = forall_in_range (is_within B13P8) 0 (ipow2 13) [@@by ground_eval ()] [@@timeout 60]
+theorem wfr_13p9_mid = forall_in_range (is_within B13P9) 0 (ipow2 13) [@@by ground_eval ()] [@@timeout 60]
+theorem wfr_13p10_mid = forall_in_range (is_within B13P10) 0 (ipow2 13) [@@by ground_eval ()] [@@timeout 60]
+theorem wfr_13p11_mid = forall_in_range (is_within B13P11) 0 (ipow2 13) [@@by ground_eval ()] [@@timeout 60]
+theorem wfr_13p12_mid = forall_in_range (is_within B13P12) 0 (ipow2 13) [@@by ground_eval ()] [@@timeout 60]
+theorem wfr_13p13_mid = forall_in_range (is_within B13P13) 0 (ipow2 13) [@@by ground_eval ()] [@@timeout 60]
 
 theorem wfr_13 (x : Float.t) =
   is_within B13P1 x &&
@@ -272,18 +272,18 @@ theorem wfr_13 (x : Float.t) =
     auto]
 
 
-theorem wfr_12p1_mid = forall_in_range (is_within B12P1) 0 (ipow2 12) [@@by ground_eval] [@@timeout 60]
-theorem wfr_12p2_mid = forall_in_range (is_within B12P2) 0 (ipow2 12) [@@by ground_eval] [@@timeout 60]
-theorem wfr_12p3_mid = forall_in_range (is_within B12P3) 0 (ipow2 12) [@@by ground_eval] [@@timeout 60]
-theorem wfr_12p4_mid = forall_in_range (is_within B12P4) 0 (ipow2 12) [@@by ground_eval] [@@timeout 60]
-theorem wfr_12p5_mid = forall_in_range (is_within B12P5) 0 (ipow2 12) [@@by ground_eval] [@@timeout 60]
-theorem wfr_12p6_mid = forall_in_range (is_within B12P6) 0 (ipow2 12) [@@by ground_eval] [@@timeout 60]
-theorem wfr_12p7_mid = forall_in_range (is_within B12P7) 0 (ipow2 12) [@@by ground_eval] [@@timeout 60]
-theorem wfr_12p8_mid = forall_in_range (is_within B12P8) 0 (ipow2 12) [@@by ground_eval] [@@timeout 60]
-theorem wfr_12p9_mid = forall_in_range (is_within B12P9) 0 (ipow2 12) [@@by ground_eval] [@@timeout 60]
-theorem wfr_12p10_mid = forall_in_range (is_within B12P10) 0 (ipow2 12) [@@by ground_eval] [@@timeout 60]
-theorem wfr_12p11_mid = forall_in_range (is_within B12P11) 0 (ipow2 12) [@@by ground_eval] [@@timeout 60]
-theorem wfr_12p12_mid = forall_in_range (is_within B12P12) 0 (ipow2 12) [@@by ground_eval] [@@timeout 60]
+theorem wfr_12p1_mid = forall_in_range (is_within B12P1) 0 (ipow2 12) [@@by ground_eval ()] [@@timeout 60]
+theorem wfr_12p2_mid = forall_in_range (is_within B12P2) 0 (ipow2 12) [@@by ground_eval ()] [@@timeout 60]
+theorem wfr_12p3_mid = forall_in_range (is_within B12P3) 0 (ipow2 12) [@@by ground_eval ()] [@@timeout 60]
+theorem wfr_12p4_mid = forall_in_range (is_within B12P4) 0 (ipow2 12) [@@by ground_eval ()] [@@timeout 60]
+theorem wfr_12p5_mid = forall_in_range (is_within B12P5) 0 (ipow2 12) [@@by ground_eval ()] [@@timeout 60]
+theorem wfr_12p6_mid = forall_in_range (is_within B12P6) 0 (ipow2 12) [@@by ground_eval ()] [@@timeout 60]
+theorem wfr_12p7_mid = forall_in_range (is_within B12P7) 0 (ipow2 12) [@@by ground_eval ()] [@@timeout 60]
+theorem wfr_12p8_mid = forall_in_range (is_within B12P8) 0 (ipow2 12) [@@by ground_eval ()] [@@timeout 60]
+theorem wfr_12p9_mid = forall_in_range (is_within B12P9) 0 (ipow2 12) [@@by ground_eval ()] [@@timeout 60]
+theorem wfr_12p10_mid = forall_in_range (is_within B12P10) 0 (ipow2 12) [@@by ground_eval ()] [@@timeout 60]
+theorem wfr_12p11_mid = forall_in_range (is_within B12P11) 0 (ipow2 12) [@@by ground_eval ()] [@@timeout 60]
+theorem wfr_12p12_mid = forall_in_range (is_within B12P12) 0 (ipow2 12) [@@by ground_eval ()] [@@timeout 60]
 
 theorem wfr_12 (x : Float.t) =
   is_within B12P1 x &&
@@ -339,17 +339,17 @@ theorem wfr_12 (x : Float.t) =
     auto]
 
 
-theorem wfr_11p1_mid = forall_in_range (is_within B11P1) 0 (ipow2 11) [@@by ground_eval] [@@timeout 60]
-theorem wfr_11p2_mid = forall_in_range (is_within B11P2) 0 (ipow2 11) [@@by ground_eval] [@@timeout 60]
-theorem wfr_11p3_mid = forall_in_range (is_within B11P3) 0 (ipow2 11) [@@by ground_eval] [@@timeout 60]
-theorem wfr_11p4_mid = forall_in_range (is_within B11P4) 0 (ipow2 11) [@@by ground_eval] [@@timeout 60]
-theorem wfr_11p5_mid = forall_in_range (is_within B11P5) 0 (ipow2 11) [@@by ground_eval] [@@timeout 60]
-theorem wfr_11p6_mid = forall_in_range (is_within B11P6) 0 (ipow2 11) [@@by ground_eval] [@@timeout 60]
-theorem wfr_11p7_mid = forall_in_range (is_within B11P7) 0 (ipow2 11) [@@by ground_eval] [@@timeout 60]
-theorem wfr_11p8_mid = forall_in_range (is_within B11P8) 0 (ipow2 11) [@@by ground_eval] [@@timeout 60]
-theorem wfr_11p9_mid = forall_in_range (is_within B11P9) 0 (ipow2 11) [@@by ground_eval] [@@timeout 60]
-theorem wfr_11p10_mid = forall_in_range (is_within B11P10) 0 (ipow2 11) [@@by ground_eval] [@@timeout 60]
-theorem wfr_11p11_mid = forall_in_range (is_within B11P11) 0 (ipow2 11) [@@by ground_eval] [@@timeout 60]
+theorem wfr_11p1_mid = forall_in_range (is_within B11P1) 0 (ipow2 11) [@@by ground_eval ()] [@@timeout 60]
+theorem wfr_11p2_mid = forall_in_range (is_within B11P2) 0 (ipow2 11) [@@by ground_eval ()] [@@timeout 60]
+theorem wfr_11p3_mid = forall_in_range (is_within B11P3) 0 (ipow2 11) [@@by ground_eval ()] [@@timeout 60]
+theorem wfr_11p4_mid = forall_in_range (is_within B11P4) 0 (ipow2 11) [@@by ground_eval ()] [@@timeout 60]
+theorem wfr_11p5_mid = forall_in_range (is_within B11P5) 0 (ipow2 11) [@@by ground_eval ()] [@@timeout 60]
+theorem wfr_11p6_mid = forall_in_range (is_within B11P6) 0 (ipow2 11) [@@by ground_eval ()] [@@timeout 60]
+theorem wfr_11p7_mid = forall_in_range (is_within B11P7) 0 (ipow2 11) [@@by ground_eval ()] [@@timeout 60]
+theorem wfr_11p8_mid = forall_in_range (is_within B11P8) 0 (ipow2 11) [@@by ground_eval ()] [@@timeout 60]
+theorem wfr_11p9_mid = forall_in_range (is_within B11P9) 0 (ipow2 11) [@@by ground_eval ()] [@@timeout 60]
+theorem wfr_11p10_mid = forall_in_range (is_within B11P10) 0 (ipow2 11) [@@by ground_eval ()] [@@timeout 60]
+theorem wfr_11p11_mid = forall_in_range (is_within B11P11) 0 (ipow2 11) [@@by ground_eval ()] [@@timeout 60]
 
 theorem wfr_11 (x : Float.t) =
   is_within B11P1 x &&
@@ -401,16 +401,16 @@ theorem wfr_11 (x : Float.t) =
     auto]
 
 
-theorem wfr_10p1_mid = forall_in_range (is_within B10P1) 0 (ipow2 10) [@@by ground_eval] [@@timeout 60]
-theorem wfr_10p2_mid = forall_in_range (is_within B10P2) 0 (ipow2 10) [@@by ground_eval] [@@timeout 60]
-theorem wfr_10p3_mid = forall_in_range (is_within B10P3) 0 (ipow2 10) [@@by ground_eval] [@@timeout 60]
-theorem wfr_10p4_mid = forall_in_range (is_within B10P4) 0 (ipow2 10) [@@by ground_eval] [@@timeout 60]
-theorem wfr_10p5_mid = forall_in_range (is_within B10P5) 0 (ipow2 10) [@@by ground_eval] [@@timeout 60]
-theorem wfr_10p6_mid = forall_in_range (is_within B10P6) 0 (ipow2 10) [@@by ground_eval] [@@timeout 60]
-theorem wfr_10p7_mid = forall_in_range (is_within B10P7) 0 (ipow2 10) [@@by ground_eval] [@@timeout 60]
-theorem wfr_10p8_mid = forall_in_range (is_within B10P8) 0 (ipow2 10) [@@by ground_eval] [@@timeout 60]
-theorem wfr_10p9_mid = forall_in_range (is_within B10P9) 0 (ipow2 10) [@@by ground_eval] [@@timeout 60]
-theorem wfr_10p10_mid = forall_in_range (is_within B10P10) 0 (ipow2 10) [@@by ground_eval] [@@timeout 60]
+theorem wfr_10p1_mid = forall_in_range (is_within B10P1) 0 (ipow2 10) [@@by ground_eval ()] [@@timeout 60]
+theorem wfr_10p2_mid = forall_in_range (is_within B10P2) 0 (ipow2 10) [@@by ground_eval ()] [@@timeout 60]
+theorem wfr_10p3_mid = forall_in_range (is_within B10P3) 0 (ipow2 10) [@@by ground_eval ()] [@@timeout 60]
+theorem wfr_10p4_mid = forall_in_range (is_within B10P4) 0 (ipow2 10) [@@by ground_eval ()] [@@timeout 60]
+theorem wfr_10p5_mid = forall_in_range (is_within B10P5) 0 (ipow2 10) [@@by ground_eval ()] [@@timeout 60]
+theorem wfr_10p6_mid = forall_in_range (is_within B10P6) 0 (ipow2 10) [@@by ground_eval ()] [@@timeout 60]
+theorem wfr_10p7_mid = forall_in_range (is_within B10P7) 0 (ipow2 10) [@@by ground_eval ()] [@@timeout 60]
+theorem wfr_10p8_mid = forall_in_range (is_within B10P8) 0 (ipow2 10) [@@by ground_eval ()] [@@timeout 60]
+theorem wfr_10p9_mid = forall_in_range (is_within B10P9) 0 (ipow2 10) [@@by ground_eval ()] [@@timeout 60]
+theorem wfr_10p10_mid = forall_in_range (is_within B10P10) 0 (ipow2 10) [@@by ground_eval ()] [@@timeout 60]
 
 theorem wfr_10 (x : Float.t) =
   is_within B10P1 x &&
@@ -458,15 +458,15 @@ theorem wfr_10 (x : Float.t) =
     auto]
 
 
-theorem wfr_9p1_mid = forall_in_range (is_within B9P1) 0 (ipow2 9) [@@by ground_eval] [@@timeout 60]
-theorem wfr_9p2_mid = forall_in_range (is_within B9P2) 0 (ipow2 9) [@@by ground_eval] [@@timeout 60]
-theorem wfr_9p3_mid = forall_in_range (is_within B9P3) 0 (ipow2 9) [@@by ground_eval] [@@timeout 60]
-theorem wfr_9p4_mid = forall_in_range (is_within B9P4) 0 (ipow2 9) [@@by ground_eval] [@@timeout 60]
-theorem wfr_9p5_mid = forall_in_range (is_within B9P5) 0 (ipow2 9) [@@by ground_eval] [@@timeout 60]
-theorem wfr_9p6_mid = forall_in_range (is_within B9P6) 0 (ipow2 9) [@@by ground_eval] [@@timeout 60]
-theorem wfr_9p7_mid = forall_in_range (is_within B9P7) 0 (ipow2 9) [@@by ground_eval] [@@timeout 60]
-theorem wfr_9p8_mid = forall_in_range (is_within B9P8) 0 (ipow2 9) [@@by ground_eval] [@@timeout 60]
-theorem wfr_9p9_mid = forall_in_range (is_within B9P9) 0 (ipow2 9) [@@by ground_eval] [@@timeout 60]
+theorem wfr_9p1_mid = forall_in_range (is_within B9P1) 0 (ipow2 9) [@@by ground_eval ()] [@@timeout 60]
+theorem wfr_9p2_mid = forall_in_range (is_within B9P2) 0 (ipow2 9) [@@by ground_eval ()] [@@timeout 60]
+theorem wfr_9p3_mid = forall_in_range (is_within B9P3) 0 (ipow2 9) [@@by ground_eval ()] [@@timeout 60]
+theorem wfr_9p4_mid = forall_in_range (is_within B9P4) 0 (ipow2 9) [@@by ground_eval ()] [@@timeout 60]
+theorem wfr_9p5_mid = forall_in_range (is_within B9P5) 0 (ipow2 9) [@@by ground_eval ()] [@@timeout 60]
+theorem wfr_9p6_mid = forall_in_range (is_within B9P6) 0 (ipow2 9) [@@by ground_eval ()] [@@timeout 60]
+theorem wfr_9p7_mid = forall_in_range (is_within B9P7) 0 (ipow2 9) [@@by ground_eval ()] [@@timeout 60]
+theorem wfr_9p8_mid = forall_in_range (is_within B9P8) 0 (ipow2 9) [@@by ground_eval ()] [@@timeout 60]
+theorem wfr_9p9_mid = forall_in_range (is_within B9P9) 0 (ipow2 9) [@@by ground_eval ()] [@@timeout 60]
 
 theorem wfr_9 (x : Float.t) =
   is_within B9P1 x &&
@@ -510,14 +510,14 @@ theorem wfr_9 (x : Float.t) =
     auto]
 
 
-theorem wfr_8p1_mid = forall_in_range (is_within B8P1) 0 (ipow2 8) [@@by ground_eval] [@@timeout 60]
-theorem wfr_8p2_mid = forall_in_range (is_within B8P2) 0 (ipow2 8) [@@by ground_eval] [@@timeout 60]
-theorem wfr_8p3_mid = forall_in_range (is_within B8P3) 0 (ipow2 8) [@@by ground_eval] [@@timeout 60]
-theorem wfr_8p4_mid = forall_in_range (is_within B8P4) 0 (ipow2 8) [@@by ground_eval] [@@timeout 60]
-theorem wfr_8p5_mid = forall_in_range (is_within B8P5) 0 (ipow2 8) [@@by ground_eval] [@@timeout 60]
-theorem wfr_8p6_mid = forall_in_range (is_within B8P6) 0 (ipow2 8) [@@by ground_eval] [@@timeout 60]
-theorem wfr_8p7_mid = forall_in_range (is_within B8P7) 0 (ipow2 8) [@@by ground_eval] [@@timeout 60]
-theorem wfr_8p8_mid = forall_in_range (is_within B8P8) 0 (ipow2 8) [@@by ground_eval] [@@timeout 60]
+theorem wfr_8p1_mid = forall_in_range (is_within B8P1) 0 (ipow2 8) [@@by ground_eval ()] [@@timeout 60]
+theorem wfr_8p2_mid = forall_in_range (is_within B8P2) 0 (ipow2 8) [@@by ground_eval ()] [@@timeout 60]
+theorem wfr_8p3_mid = forall_in_range (is_within B8P3) 0 (ipow2 8) [@@by ground_eval ()] [@@timeout 60]
+theorem wfr_8p4_mid = forall_in_range (is_within B8P4) 0 (ipow2 8) [@@by ground_eval ()] [@@timeout 60]
+theorem wfr_8p5_mid = forall_in_range (is_within B8P5) 0 (ipow2 8) [@@by ground_eval ()] [@@timeout 60]
+theorem wfr_8p6_mid = forall_in_range (is_within B8P6) 0 (ipow2 8) [@@by ground_eval ()] [@@timeout 60]
+theorem wfr_8p7_mid = forall_in_range (is_within B8P7) 0 (ipow2 8) [@@by ground_eval ()] [@@timeout 60]
+theorem wfr_8p8_mid = forall_in_range (is_within B8P8) 0 (ipow2 8) [@@by ground_eval ()] [@@timeout 60]
 
 theorem wfr_8 (x : Float.t) =
   is_within B8P1 x &&
@@ -557,13 +557,13 @@ theorem wfr_8 (x : Float.t) =
     auto]
 
 
-theorem wfr_7p1_mid = forall_in_range (is_within B7P1) 0 (ipow2 7) [@@by ground_eval] [@@timeout 60]
-theorem wfr_7p2_mid = forall_in_range (is_within B7P2) 0 (ipow2 7) [@@by ground_eval] [@@timeout 60]
-theorem wfr_7p3_mid = forall_in_range (is_within B7P3) 0 (ipow2 7) [@@by ground_eval] [@@timeout 60]
-theorem wfr_7p4_mid = forall_in_range (is_within B7P4) 0 (ipow2 7) [@@by ground_eval] [@@timeout 60]
-theorem wfr_7p5_mid = forall_in_range (is_within B7P5) 0 (ipow2 7) [@@by ground_eval] [@@timeout 60]
-theorem wfr_7p6_mid = forall_in_range (is_within B7P6) 0 (ipow2 7) [@@by ground_eval] [@@timeout 60]
-theorem wfr_7p7_mid = forall_in_range (is_within B7P7) 0 (ipow2 7) [@@by ground_eval] [@@timeout 60]
+theorem wfr_7p1_mid = forall_in_range (is_within B7P1) 0 (ipow2 7) [@@by ground_eval ()] [@@timeout 60]
+theorem wfr_7p2_mid = forall_in_range (is_within B7P2) 0 (ipow2 7) [@@by ground_eval ()] [@@timeout 60]
+theorem wfr_7p3_mid = forall_in_range (is_within B7P3) 0 (ipow2 7) [@@by ground_eval ()] [@@timeout 60]
+theorem wfr_7p4_mid = forall_in_range (is_within B7P4) 0 (ipow2 7) [@@by ground_eval ()] [@@timeout 60]
+theorem wfr_7p5_mid = forall_in_range (is_within B7P5) 0 (ipow2 7) [@@by ground_eval ()] [@@timeout 60]
+theorem wfr_7p6_mid = forall_in_range (is_within B7P6) 0 (ipow2 7) [@@by ground_eval ()] [@@timeout 60]
+theorem wfr_7p7_mid = forall_in_range (is_within B7P7) 0 (ipow2 7) [@@by ground_eval ()] [@@timeout 60]
 
 theorem wfr_7 (x : Float.t) =
   is_within B7P1 x &&
@@ -599,12 +599,12 @@ theorem wfr_7 (x : Float.t) =
     auto]
 
 
-theorem wfr_6p1_mid = forall_in_range (is_within B6P1) 0 (ipow2 6) [@@by ground_eval] [@@timeout 60]
-theorem wfr_6p2_mid = forall_in_range (is_within B6P2) 0 (ipow2 6) [@@by ground_eval] [@@timeout 60]
-theorem wfr_6p3_mid = forall_in_range (is_within B6P3) 0 (ipow2 6) [@@by ground_eval] [@@timeout 60]
-theorem wfr_6p4_mid = forall_in_range (is_within B6P4) 0 (ipow2 6) [@@by ground_eval] [@@timeout 60]
-theorem wfr_6p5_mid = forall_in_range (is_within B6P5) 0 (ipow2 6) [@@by ground_eval] [@@timeout 60]
-theorem wfr_6p6_mid = forall_in_range (is_within B6P6) 0 (ipow2 6) [@@by ground_eval] [@@timeout 60]
+theorem wfr_6p1_mid = forall_in_range (is_within B6P1) 0 (ipow2 6) [@@by ground_eval ()] [@@timeout 60]
+theorem wfr_6p2_mid = forall_in_range (is_within B6P2) 0 (ipow2 6) [@@by ground_eval ()] [@@timeout 60]
+theorem wfr_6p3_mid = forall_in_range (is_within B6P3) 0 (ipow2 6) [@@by ground_eval ()] [@@timeout 60]
+theorem wfr_6p4_mid = forall_in_range (is_within B6P4) 0 (ipow2 6) [@@by ground_eval ()] [@@timeout 60]
+theorem wfr_6p5_mid = forall_in_range (is_within B6P5) 0 (ipow2 6) [@@by ground_eval ()] [@@timeout 60]
+theorem wfr_6p6_mid = forall_in_range (is_within B6P6) 0 (ipow2 6) [@@by ground_eval ()] [@@timeout 60]
 
 theorem wfr_6 (x : Float.t) =
   is_within B6P1 x &&
@@ -636,11 +636,11 @@ theorem wfr_6 (x : Float.t) =
     auto]
 
 
-theorem wfr_5p1_mid = forall_in_range (is_within B5P1) 0 (ipow2 5) [@@by ground_eval] [@@timeout 50]
-theorem wfr_5p2_mid = forall_in_range (is_within B5P2) 0 (ipow2 5) [@@by ground_eval] [@@timeout 50]
-theorem wfr_5p3_mid = forall_in_range (is_within B5P3) 0 (ipow2 5) [@@by ground_eval] [@@timeout 50]
-theorem wfr_5p4_mid = forall_in_range (is_within B5P4) 0 (ipow2 5) [@@by ground_eval] [@@timeout 50]
-theorem wfr_5p5_mid = forall_in_range (is_within B5P5) 0 (ipow2 5) [@@by ground_eval] [@@timeout 50]
+theorem wfr_5p1_mid = forall_in_range (is_within B5P1) 0 (ipow2 5) [@@by ground_eval ()] [@@timeout 50]
+theorem wfr_5p2_mid = forall_in_range (is_within B5P2) 0 (ipow2 5) [@@by ground_eval ()] [@@timeout 50]
+theorem wfr_5p3_mid = forall_in_range (is_within B5P3) 0 (ipow2 5) [@@by ground_eval ()] [@@timeout 50]
+theorem wfr_5p4_mid = forall_in_range (is_within B5P4) 0 (ipow2 5) [@@by ground_eval ()] [@@timeout 50]
+theorem wfr_5p5_mid = forall_in_range (is_within B5P5) 0 (ipow2 5) [@@by ground_eval ()] [@@timeout 50]
 
 theorem wfr_5 (x : Float.t) =
   is_within B5P1 x &&
@@ -668,10 +668,10 @@ theorem wfr_5 (x : Float.t) =
     auto]
 
 
-theorem wfr_4p1_mid = forall_in_range (is_within B4P1) 0 (ipow2 4) [@@by ground_eval] [@@timeout 60]
-theorem wfr_4p2_mid = forall_in_range (is_within B4P2) 0 (ipow2 4) [@@by ground_eval] [@@timeout 60]
-theorem wfr_4p3_mid = forall_in_range (is_within B4P3) 0 (ipow2 4) [@@by ground_eval] [@@timeout 60]
-theorem wfr_4p4_mid = forall_in_range (is_within B4P4) 0 (ipow2 4) [@@by ground_eval] [@@timeout 60]
+theorem wfr_4p1_mid = forall_in_range (is_within B4P1) 0 (ipow2 4) [@@by ground_eval ()] [@@timeout 60]
+theorem wfr_4p2_mid = forall_in_range (is_within B4P2) 0 (ipow2 4) [@@by ground_eval ()] [@@timeout 60]
+theorem wfr_4p3_mid = forall_in_range (is_within B4P3) 0 (ipow2 4) [@@by ground_eval ()] [@@timeout 60]
+theorem wfr_4p4_mid = forall_in_range (is_within B4P4) 0 (ipow2 4) [@@by ground_eval ()] [@@timeout 60]
 
 theorem wfr_4 (x : Float.t) =
   is_within B4P1 x &&
@@ -695,9 +695,9 @@ theorem wfr_4 (x : Float.t) =
     auto]
 
 
-theorem wfr_3p1_mid = forall_in_range (is_within B3P1) 0 (ipow2 3) [@@by ground_eval] [@@timeout 60]
-theorem wfr_3p2_mid = forall_in_range (is_within B3P2) 0 (ipow2 3) [@@by ground_eval] [@@timeout 60]
-theorem wfr_3p3_mid = forall_in_range (is_within B3P3) 0 (ipow2 3) [@@by ground_eval] [@@timeout 60]
+theorem wfr_3p1_mid = forall_in_range (is_within B3P1) 0 (ipow2 3) [@@by ground_eval ()] [@@timeout 60]
+theorem wfr_3p2_mid = forall_in_range (is_within B3P2) 0 (ipow2 3) [@@by ground_eval ()] [@@timeout 60]
+theorem wfr_3p3_mid = forall_in_range (is_within B3P3) 0 (ipow2 3) [@@by ground_eval ()] [@@timeout 60]
 
 theorem wfr_3 (x : Float.t) =
   is_within B3P1 x &&
@@ -716,8 +716,8 @@ theorem wfr_3 (x : Float.t) =
     [%use forall_elim (is_within B3P3) 0 (ipow2 3) x] @>
     auto]
 
-theorem wfr_2p1_mid = forall_in_range (is_within B2P1) 0 (ipow2 2) [@@by ground_eval] [@@timeout 60]
-theorem wfr_2p2_mid = forall_in_range (is_within B2P2) 0 (ipow2 2) [@@by ground_eval] [@@timeout 60]
+theorem wfr_2p1_mid = forall_in_range (is_within B2P1) 0 (ipow2 2) [@@by ground_eval ()] [@@timeout 60]
+theorem wfr_2p2_mid = forall_in_range (is_within B2P2) 0 (ipow2 2) [@@by ground_eval ()] [@@timeout 60]
 
 theorem wfr_2 (x : Float.t) =
   is_within B2P1 x &&
