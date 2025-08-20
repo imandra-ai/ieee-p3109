@@ -1128,12 +1128,11 @@ function print_expression_desc(node: AST, options: Options): Doc {
             opname = "2^";
           else if (opname == "Log.ln")
             opname = "log_e";
-          let want_space = false;
           if (opname == "log_e" || opname == "log_2") {
+            opname = "\\" + opname;
             want_par = false;
-            want_space = true;
           }
-          return f([opname, (want_space ? "\\ " : ""), "{", par_if(r.length > 1 || want_par, [indent([line, ...r])]), "}"]);
+          return f([opname, "{", par_if(r.length > 1 || want_par, [indent([line, ...r])]), "}"]);
         }
         case Notation.Outfix: {
           const r: Doc[] = join(line, op_args.map(arg => {
