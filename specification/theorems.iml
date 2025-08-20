@@ -25,7 +25,7 @@ theorem m_hi_gt_0 (f : Format.t) =
   let _, _, _, m_lo, m_hi, _, _ = Format.get_format_parameters f in
   m_hi >. 0.0
   [@@timeout 20]
-  [@@by enumerate ["f"] @> ground_eval]
+  [@@by enumerate ["f"] @> ground_eval ()]
 
 theorem m_lo_lt_m_hi (f : Format.t) =
   let _, _, _, m_lo, m_hi, _, _ = Format.get_format_parameters f [@trigger] in
