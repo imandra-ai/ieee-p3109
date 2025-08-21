@@ -13,7 +13,7 @@ function fun_filter(name: string, options: Options) {
   if (globalThis.function_names)
     return globalThis.function_names.includes(name);
   else
-    return name.startsWith("aug_") && name != "aug_real_is_within_range";
+    return name.startsWith("aug_") && name != "aug_real_is_within_range" || name == "internal_saturate";
 };
 
 
@@ -66,6 +66,15 @@ function id2latex(id: string) {
   else if (id == "NINF") { return ["-\\infty"]; }
   else if (id == "true") { return ["\\True"]; }
   else if (id == "false") { return ["\\False"]; }
+  else if (
+    ["Extended", "Finite",
+      "Signed", "Unsigned",
+      "TowardZero",
+      "TowardPositive", "TowardNegative",
+      "NearestTiesToEven", "NearestTiesToAway"].includes(id)
+  ) {
+    return ["\\" + id];
+  }
   if (id.includes("_")) {
     id = id.replace("_", "_{");
     id = "{" + id + "}}";
@@ -311,7 +320,7 @@ function print_longident(node: AST, options: Options): Doc {
       return [id2latex(args[0])];
     case "Ldot":
       // | Ldot of t * string
-      return f([print_longident(args[0], options), ".", softline, args[1]]);
+      return [print_longident(args[0], options), ".", softline, args[1]];
     case "Lapply":
       // | Lapply of t * t
       niy();
@@ -558,8 +567,11 @@ function print_label(node: AST, options: Options): Doc {
   return node;
 }
 
-function capitalize_first(string) {
-  return string.replace(/^./, string[0].toUpperCase())
+function capitalize_first(s: string) {
+  if (s.startsWith("{"))
+    return s[0] + s[1].toUpperCase() + s.slice(2);
+  else
+    return s.replace(/^./, s[0].toUpperCase());
 }
 
 
@@ -570,15 +582,20 @@ function print_pattern_desc(node: AST, options: Options): Doc {
     case "Ppat_any":
       // | Ppat_any  (** The pattern [_]. *)
       return "\\any";
-    case "Ppat_var":
+    case "Ppat_var": {
       // | Ppat_var of string loc  (** A variable pattern such as [x] *)
-      if (args[0].txt[0] != 's' &&
+      let r;
+      if ((args[0].txt[0] != 's' &&
         options.hasOwnProperty("pattern_reals") &&
         options.pattern_reals instanceof Array &&
-        options.pattern_reals.includes(args[0].txt))
-        return [capitalize_first(print_string_loc(args[0], options))];
+        options.pattern_reals.includes(args[0].txt)))
+        r = capitalize_first(print_string_loc(args[0], options));
       else
-        return print_string_loc(args[0], options);
+        r = print_string_loc(args[0], options);
+      if (options.move_everything_up && r.includes("_"))
+        r = r.replace("_", "^");
+      return r;
+    }
     case "Ppat_alias":
       // | Ppat_alias of pattern * string loc
       //     (** An alias pattern such as [P as 'a] *)
@@ -641,6 +658,12 @@ function print_pattern_desc(node: AST, options: Options): Doc {
         }
       }
       else {
+        if (args[0].txt instanceof Array && args[0].txt.length == 2) {
+          if (args[0].txt[1] == "SatFinite" ||
+            args[0].txt[1] == "SatPropagate" ||
+            args[0].txt[1] == "OvfInf")
+            return "\\" + args[0].txt[1];
+        }
         return print_longident_loc(args[0], options);
       }
     case "Ppat_variant":
@@ -675,7 +698,7 @@ function print_pattern_desc(node: AST, options: Options): Doc {
       else if (is_mp_inf(args[0], args[1]))
         return "\\mp\\infty";
       else
-        return f([print_pattern(args[0], options), line, "|", line, print_pattern(args[1], options)]);
+        return f([print_pattern(args[0], options), line, "\\vee", line, print_pattern(args[1], options)]);
     case "Ppat_constraint":
       // | Ppat_constraint of pattern * core_type  (** Pattern [(P : T)] *)
       // return f(["(", print_pattern(args[0], options), line, ":", line, print_core_type(args[1], options), ")"]);
@@ -980,23 +1003,34 @@ function print_expression_desc(node: AST, options: Options): Doc {
   const args = node.slice(1);
 
   switch (constructor) {
-    case "Pexp_ident":
+    case "Pexp_ident": {
       // | Pexp_ident of Longident.t loc
       //     (** Identifiers such as [x] and [M.x]
       //        *)
+      let r;
+      if (args[0].txt instanceof Array && args[0].txt.length == 2) {
+        if (args[0].txt[1] == "sigma")
+          return "\\sigma";
+        if (args[0].txt[1] == "delta")
+          return "\\Delta";
+      }
       if (
         (options.hasOwnProperty("is_real") && options.is_real) ||
         (options.hasOwnProperty("pattern_reals") &&
           options.pattern_reals instanceof Array &&
-          options.pattern_reals.includes(args[0].txt[1]))) {
+          options.pattern_reals.includes(args[0].txt[1])) ||
+        options.move_everything_up) {
         let n = print_longident_loc(args[0], options)[0];
-        if (n.startsWith('s') || n.startsWith('{s')) // 's.*' are scaling factors
-          return n;
-        else
-          return capitalize_first(n)
+        r = [(n.startsWith('s') || n.startsWith('{s')) ? // 's.*' are scaling factors
+          n : capitalize_first(n)];
       }
       else
-        return print_longident_loc(args[0], options);
+        r = print_longident_loc(args[0], options);
+      if (options.move_everything_up && r[0].includes("_"))
+        return r[0].replace("_", "^");
+      else
+        return r;
+    }
     case "Pexp_constant":
       // | Pexp_constant of constant
       //     (** Expressions constant such as [1], ['a'], ["true"], [1.0], [1l],
@@ -1665,15 +1699,18 @@ function print_structure_item_desc(node: AST, options: Options): Doc {
           fname = fname.replace(/Fma/, "FMA");
           fname = fname.replace(/Faa/, "FAA");
           fname = fname.replace(/Rsqrt/, "RSqrt");
+          fname = fname.replace(/internal(.*)/, "\\$1");
+          fname = fname.replaceAll("_", "\_");
           const params = pvb.pvb_expr.pexp_desc[1];
           let fundef = pvb.pvb_expr.pexp_desc[3];
-          if (fundef[1].pexp_desc[0] == "Pexp_open") {
-            fundef = fundef[1].pexp_desc[2];
-          }
-          else
-            fundef = fundef[1];
+          fundef = fundef[1];
+          while (fundef.pexp_desc[0] == "Pexp_open")
+            fundef = fundef.pexp_desc[2];
 
           if (fundef.pexp_desc[0] == "Pexp_match") {
+            if (fname == "\\Saturate")
+              options.move_everything_up = true;
+
             let r = ["\\noindent" as Doc];
             for (let i = 0; i < fundef.pexp_desc[2].length; i++) {
               const arg = fundef.pexp_desc[2][i];
@@ -1692,19 +1729,22 @@ function print_structure_item_desc(node: AST, options: Options): Doc {
                 print_expression(rhs_expr, options), "}\\\\", hardline]));
               options.pattern_reals = [];
             }
+            if (fname == "\\Saturate")
+              options.move_everything_up = false;
             return f(r);
           }
           else
-            return [...r,
-            f([indent([
-              line,
-              ...par_if(is_infix_op_pattern(pvb.pvb_pat), print_pattern(pvb.pvb_pat, options)),
-              line,
-              ...join(line, params.map(x => print_function_param(x, options))),
-              ...(params && params.length > 0 ? [line] : []),
-              "="]),
-            f([indent([line, print_function_body(fundef, options)]),
-            ...ifnonempty(line, print_attributes(attrs, 2, options))])])];
+            // return [...r,
+            // f([indent([
+            //   line,
+            //   ...par_if(is_infix_op_pattern(pvb.pvb_pat), print_pattern(pvb.pvb_pat, options)),
+            //   line,
+            //   ...join(line, params.map(x => print_function_param(x, options))),
+            //   ...(params && params.length > 0 ? [line] : []),
+            //   "="]),
+            //   f([indent([line, print_expression(fundef, options)]),
+            // ...ifnonempty(line, print_attributes(attrs, 2, options))])])];
+            return print_expression(fundef, options);
         }
         else
           return [];
@@ -1831,6 +1871,7 @@ function print_toplevel_phrase(node: AST, options: Options): Doc {
 
 function print(path: AstPath<Tree>, options: Options, _print: (path: AstPath<any>) => Doc): Doc {
   options.pattern_reals = [];
+  options.move_everything_up = false;
   let r = trim_empty([path.node.top_defs.map(n => print_toplevel_phrase(n, options))]);
   return r;
 }

@@ -343,7 +343,7 @@ module Float = struct
   (** 4.6.4 Saturate *)
 
   let internal_saturate
-    (m_lo : real) (m_hi : real) (s : Signedness.t) (d : Domain.t)
+    (m_lo : real) (m_hi : real) (sigma : Signedness.t) (delta : Domain.t)
     (sat : SaturationMode.t) (rnd : RoundingMode.t)
     (x : AugReal.t)
     : (AugReal.t, string) Result.t =
@@ -361,17 +361,17 @@ module Float = struct
     | (SatFinite, _), R x when x <=. m_lo -> Ok (R m_lo)
     | (SatFinite, _), R x when x >=. m_hi -> Ok (R m_hi)
 
-    | (SatPropagate, _), PINF -> if d = Extended then Ok PINF else Ok (R m_hi)
-    | (SatPropagate, _), NINF -> if s = Signed && d = Extended then Ok NINF else Ok (R m_lo)
+    | (SatPropagate, _), PINF -> if delta = Extended then Ok PINF else Ok (R m_hi)
+    | (SatPropagate, _), NINF -> if sigma = Signed && delta = Extended then Ok NINF else Ok (R m_lo)
     | (SatPropagate, _), R x when x <=. m_lo -> Ok (R m_lo)
     | (SatPropagate, _), R x when x >=. m_hi -> Ok (R m_hi)
 
-    | (OvfInf, _), PINF -> if d = Extended then Ok PINF else Ok (R m_hi)
-    | (OvfInf, _), NINF -> if s = Signed && d = Extended then Ok NINF else Ok (R m_lo)
-    | (OvfInf, _), R x when (rnd = TowardZero || rnd = TowardPositive) && x <=. m_lo -> Ok (R m_lo)
-    | (OvfInf, _), R x when (rnd = TowardZero || rnd = TowardNegative) && x >=. m_hi -> Ok (R m_hi)
-    | (OvfInf, _), R x when x <=. m_lo -> if s = Signed && d = Extended then Ok NINF else Ok (R m_lo)
-    | (OvfInf, _), R x when x >=. m_hi -> if d = Extended then Ok PINF else Ok (R m_hi)
+    | (OvfInf, _), PINF -> if delta = Extended then Ok PINF else Ok (R m_hi)
+    | (OvfInf, _), NINF -> if sigma = Signed && delta = Extended then Ok NINF else Ok (R m_lo)
+    | (OvfInf, (TowardZero | TowardPositive)), R x when x <=. m_lo -> Ok (R m_lo)
+    | (OvfInf, (TowardZero | TowardNegative)), R x when x >=. m_hi -> Ok (R m_hi)
+    | (OvfInf, _), R x when x <=. m_lo -> if sigma = Signed && delta = Extended then Ok NINF else Ok (R m_lo)
+    | (OvfInf, _), R x when x >=. m_hi -> if delta = Extended then Ok PINF else Ok (R m_hi)
 
     | _ -> Error "unreachable"
 

@@ -1,0 +1,25 @@
+\noindent\Case{\Saturate(\any, \NaN) \gives  \NaN}\\
+\Case{\Saturate(\any, \any, X) ~\If {M^{lo}} \leq X \And X \leq {M^{hi}}\gives  X}\\
+\Case{\Saturate(\SatFinite, \any, +\infty) \gives  {M^{hi}}}\\
+\Case{\Saturate(\SatFinite, \any, -\infty) \gives  {M^{lo}}}\\
+\Case{\Saturate(\SatFinite, \any, X) ~\If X \leq {M^{lo}}\gives  {M^{lo}}}\\
+\Case{\Saturate(\SatFinite, \any, X) ~\If X \geq {M^{hi}}\gives  {M^{hi}}}\\
+\Case{\Saturate(\SatPropagate, \any, +\infty) \gives
+\If \Delta = \Extended \Then  +\infty \Else  {M^{hi}}}\\
+\Case{\Saturate(\SatPropagate, \any, -\infty) \gives
+\If \sigma = \Signed \And \Delta = \Extended \Then  -\infty \Else  {M^{lo}}}\\
+\Case{\Saturate(\SatPropagate, \any, X) ~\If X \leq {M^{lo}}\gives  {M^{lo}}}\\
+\Case{\Saturate(\SatPropagate, \any, X) ~\If X \geq {M^{hi}}\gives  {M^{hi}}}\\
+\Case{\Saturate(\OvfInf, \any, +\infty) \gives
+\If \Delta = \Extended \Then  +\infty \Else  {M^{hi}}}\\
+\Case{\Saturate(\OvfInf, \any, -\infty) \gives
+\If \sigma = \Signed \And \Delta = \Extended \Then  -\infty \Else  {M^{lo}}}\\
+\Case{\Saturate(\OvfInf, \TowardZero \vee \TowardPositive, X) ~\If
+X \leq {M^{lo}}\gives  {M^{lo}}}\\
+\Case{\Saturate(\OvfInf, \TowardZero \vee \TowardNegative, X) ~\If
+X \geq {M^{hi}}\gives  {M^{hi}}}\\
+\Case{\Saturate(\OvfInf, \any, X) ~\If X \leq {M^{lo}}\gives \If \sigma =
+  \Signed
+  \And \Delta = \Extended \Then  -\infty \Else  {M^{lo}}}\\
+\Case{\Saturate(\OvfInf, \any, X) ~\If X \geq {M^{hi}}\gives \If \Delta =
+  \Extended \Then  +\infty \Else  {M^{hi}}}\\

@@ -1,4 +1,4 @@
-FUNS=$(shell grep "let aug_" ../specification/specification.iml | grep -v is_within | cut -d " " -f 4)
+FUNS=$(shell grep "let aug_" ../specification/specification.iml | grep -v is_within | cut -d " " -f 4) internal_saturate
 TEXS=$(patsubst %,%.tex,$(FUNS))
 
 all: spec.pdf
