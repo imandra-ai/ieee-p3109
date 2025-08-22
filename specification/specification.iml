@@ -351,27 +351,27 @@ module Float = struct
     let open SaturationMode in
     let open Signedness in
     let open Domain in
-    match (sat, rnd), x with
-    | _, NaN -> Ok NaN
+    match sat, rnd, x with
+    | _, _, NaN -> Ok NaN
 
-    | (_, _), R x when m_lo <=. x && x <=. m_hi -> Ok (R x)
+    | _, _, R x when m_lo <=. x && x <=. m_hi -> Ok (R x)
 
-    | (SatFinite, _), PINF -> Ok (R m_hi)
-    | (SatFinite, _), NINF -> Ok (R m_lo)
-    | (SatFinite, _), R x when x <=. m_lo -> Ok (R m_lo)
-    | (SatFinite, _), R x when x >=. m_hi -> Ok (R m_hi)
+    | SatFinite, _, PINF -> Ok (R m_hi)
+    | SatFinite, _, NINF -> Ok (R m_lo)
+    | SatFinite, _, R x when x <=. m_lo -> Ok (R m_lo)
+    | SatFinite, _, R x when x >=. m_hi -> Ok (R m_hi)
 
-    | (SatPropagate, _), PINF -> if delta = Extended then Ok PINF else Ok (R m_hi)
-    | (SatPropagate, _), NINF -> if sigma = Signed && delta = Extended then Ok NINF else Ok (R m_lo)
-    | (SatPropagate, _), R x when x <=. m_lo -> Ok (R m_lo)
-    | (SatPropagate, _), R x when x >=. m_hi -> Ok (R m_hi)
+    | SatPropagate, _, PINF -> if delta = Extended then Ok PINF else Ok (R m_hi)
+    | SatPropagate, _, NINF -> if sigma = Signed && delta = Extended then Ok NINF else Ok (R m_lo)
+    | SatPropagate, _, R x when x <=. m_lo -> Ok (R m_lo)
+    | SatPropagate, _, R x when x >=. m_hi -> Ok (R m_hi)
 
-    | (OvfInf, _), PINF -> if delta = Extended then Ok PINF else Ok (R m_hi)
-    | (OvfInf, _), NINF -> if sigma = Signed && delta = Extended then Ok NINF else Ok (R m_lo)
-    | (OvfInf, (TowardZero | TowardPositive)), R x when x <=. m_lo -> Ok (R m_lo)
-    | (OvfInf, (TowardZero | TowardNegative)), R x when x >=. m_hi -> Ok (R m_hi)
-    | (OvfInf, _), R x when x <=. m_lo -> if sigma = Signed && delta = Extended then Ok NINF else Ok (R m_lo)
-    | (OvfInf, _), R x when x >=. m_hi -> if delta = Extended then Ok PINF else Ok (R m_hi)
+    | OvfInf, _, PINF -> if delta = Extended then Ok PINF else Ok (R m_hi)
+    | OvfInf, _, NINF -> if sigma = Signed && delta = Extended then Ok NINF else Ok (R m_lo)
+    | OvfInf, (TowardZero | TowardPositive), R x when x <=. m_lo -> Ok (R m_lo)
+    | OvfInf, (TowardZero | TowardNegative), R x when x >=. m_hi -> Ok (R m_hi)
+    | OvfInf, _, R x when x <=. m_lo -> if sigma = Signed && delta = Extended then Ok NINF else Ok (R m_lo)
+    | OvfInf, _, R x when x >=. m_hi -> if delta = Extended then Ok PINF else Ok (R m_hi)
 
     | _ -> Error "unreachable"
 
