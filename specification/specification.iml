@@ -1193,6 +1193,22 @@ module Float = struct
     | _, _ when is_nan f y -> y
     | _, _ -> maximum f x y
 
+  let aug_maximum_finite (x : AugReal.t) (y : AugReal.t) : (AugReal.t, string) Result.t =
+    let open AugReal in
+    match x, y with
+    | NaN, NaN -> Ok NaN
+    | NaN, y -> Ok y
+    | x, NaN -> Ok x
+    | PINF, PINF -> Ok PINF
+    | NINF, NINF -> Ok NINF
+    | PINF, NINF -> Ok PINF
+    | NINF, PINF -> Ok PINF
+    | PINF, R y -> Ok (R y)
+    | R x, PINF -> Ok (R x)
+    | NINF, R y -> Ok (R y)
+    | R x, NINF -> Ok (R x)
+    | R x, R y -> Ok (R (Real.max x y))
+    | _ -> Error "undefined"
 
   (** 4.xx MinimumMagnitude, MaximumMagnitude, and 'Number' variants *)
 
