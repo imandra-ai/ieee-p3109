@@ -1108,6 +1108,10 @@ function print_expression_desc(node: AST, options: Options): Doc {
       op_info.name = op_info.name.replace("||", "\\Or");
       op_info.name = op_info.name.replace("*.", "\\times");
 
+      if (op_info.name.startsWith("aug_")) {
+        op_info.name = "\\" + PREFIX + "\\" + capitalize_first(op_info.name.substring(4));
+      }
+
       switch (op_info.notation) {
         case Notation.Infix: {
           assert(op_info.name !== undefined && op_args.length <= 2);
@@ -1693,7 +1697,6 @@ function print_structure_item_desc(node: AST, options: Options): Doc {
       else if (args[1].length > 0 && pvb.pvb_expr.pexp_desc[0] == "Pexp_function") {
         let fname = pvb.pvb_pat.ppat_desc[1].txt;
         if (fun_filter(fname, options)) {
-          // fname = fname.replaceAll("_", "\\_");
           fname = camelize(fname);
           fname = fname.replace(/aug/, "\\" + PREFIX + "\\");
           fname = fname.replace(/Fma/, "FMA");
