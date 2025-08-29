@@ -1229,8 +1229,8 @@ module Float = struct
     let open AugReal in
     match x, y with
     | NaN, NaN -> Ok NaN
-    | NaN, _ -> Ok NaN
-    | _, NaN -> Ok NaN
+    | x, NaN -> Ok x
+    | NaN, y -> Ok y
     | x, y -> aug_minimum x y
     | _ -> Error "undefined"
 
@@ -1248,8 +1248,8 @@ module Float = struct
     let open AugReal in
     match x, y with
     | NaN, NaN -> Ok NaN
-    | NaN, _ -> Ok NaN
-    | _, NaN -> Ok NaN
+    | x, NaN -> Ok x
+    | NaN, y -> Ok y
     | x, y -> aug_maximum x y
     | _ -> Error "undefined"
 

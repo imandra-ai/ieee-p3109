@@ -1714,7 +1714,7 @@ function print_structure_item_desc(node: AST, options: Options): Doc {
           while (fundef.pexp_desc[0] == "Pexp_open")
             fundef = fundef.pexp_desc[2];
 
-          if (fname == "\\Saturate" || fname == "\\SaturateAlt")
+          if (fname == "\\Saturate" || fname == "\\SaturateAlt" || fname == "\\Cer\\MaximumNumber" || fname == "\\Cer\\MinimumNumber")
             options.move_everything_up = true;
 
           while (fundef.pexp_desc[0] == "Pexp_let") {
