@@ -351,6 +351,9 @@ module Float = struct
     let open SaturationMode in
     let open Signedness in
     let open Domain in
+    let open AugReal in
+    let h1 = if delta = Extended then Ok PINF else Ok (R m_hi) in
+    let h2 = if sigma = Signed && delta = Extended then Ok NINF else Ok (R m_lo) in
     match sat, rnd, x with
     | _, _, NaN -> Ok NaN
 
@@ -361,17 +364,56 @@ module Float = struct
     | SatFinite, _, R x when x <=. m_lo -> Ok (R m_lo)
     | SatFinite, _, R x when x >=. m_hi -> Ok (R m_hi)
 
-    | SatPropagate, _, PINF -> if delta = Extended then Ok PINF else Ok (R m_hi)
-    | SatPropagate, _, NINF -> if sigma = Signed && delta = Extended then Ok NINF else Ok (R m_lo)
+    | SatPropagate, _, PINF -> h1
+    | SatPropagate, _, NINF -> h2
     | SatPropagate, _, R x when x <=. m_lo -> Ok (R m_lo)
     | SatPropagate, _, R x when x >=. m_hi -> Ok (R m_hi)
 
-    | OvfInf, _, PINF -> if delta = Extended then Ok PINF else Ok (R m_hi)
-    | OvfInf, _, NINF -> if sigma = Signed && delta = Extended then Ok NINF else Ok (R m_lo)
+    | OvfInf, _, PINF -> h1
+    | OvfInf, _, NINF -> h2
     | OvfInf, (TowardZero | TowardPositive), R x when x <=. m_lo -> Ok (R m_lo)
     | OvfInf, (TowardZero | TowardNegative), R x when x >=. m_hi -> Ok (R m_hi)
-    | OvfInf, _, R x when x <=. m_lo -> if sigma = Signed && delta = Extended then Ok NINF else Ok (R m_lo)
-    | OvfInf, _, R x when x >=. m_hi -> if delta = Extended then Ok PINF else Ok (R m_hi)
+    | OvfInf, _, R x when x <=. m_lo -> h2
+    | OvfInf, _, R x when x >=. m_hi -> h1
+
+    | _ -> Error "unreachable"
+
+  let internal_saturate_alt
+    (m_lo : real) (m_hi : real) (sigma : Signedness.t) (delta : Domain.t)
+    (sat : SaturationMode.t) (rnd : RoundingMode.t)
+    (x : AugReal.t)
+    : (AugReal.t, string) Result.t =
+    let open RoundingMode in
+    let open SaturationMode in
+    let open Signedness in
+    let open Domain in
+    match sat, rnd, x, sigma, delta with
+    | _, _, NaN, _, _ -> Ok NaN
+
+    | _, _, R x, _, _ when m_lo <=. x && x <=. m_hi -> Ok (R x)
+
+    | SatFinite, _, PINF, _, _ -> Ok (R m_hi)
+    | SatFinite, _, NINF, _, _ -> Ok (R m_lo)
+    | SatFinite, _, R x, _, _ when x <=. m_lo -> Ok (R m_lo)
+    | SatFinite, _, R x, _, _ when x >=. m_hi -> Ok (R m_hi)
+
+    | SatPropagate, _, PINF, _, Extended -> Ok PINF
+    | SatPropagate, _, PINF, _, _ -> Ok (R m_hi)
+    | SatPropagate, _, NINF, Signed, Extended -> Ok NINF
+    | SatPropagate, _, NINF, _, _ -> Ok (R m_lo)
+    | SatPropagate, _, R x, _, _ when x <=. m_lo -> Ok (R m_lo)
+    | SatPropagate, _, R x, _, _ when x >=. m_hi -> Ok (R m_hi)
+
+    | OvfInf, _, PINF, _, Extended -> Ok PINF
+    | OvfInf, _, PINF, _, _ -> Ok (R m_hi)
+    | OvfInf, _, NINF, Signed, Extended -> Ok NINF
+    | OvfInf, _, NINF, _, _ -> Ok (R m_lo)
+    | OvfInf, (TowardZero | TowardPositive), R x, _, _ when x <=. m_lo -> Ok (R m_lo)
+    | OvfInf, (TowardZero | TowardNegative), R x, _, _ when x >=. m_hi -> Ok (R m_hi)
+    | OvfInf, _, R x, Signed, Extended when x <=. m_lo -> Ok NINF
+    | OvfInf, _, R x, _, _ when x <=. m_lo -> Ok (R m_lo)
+    | OvfInf, _, R x, _, Extended when x >=. m_hi -> Ok PINF
+    | OvfInf, _, R x, _, _ when x >=. m_hi -> Ok (R m_hi)
 
     | _ -> Error "unreachable"
 

@@ -585,10 +585,11 @@ function print_pattern_desc(node: AST, options: Options): Doc {
     case "Ppat_var": {
       // | Ppat_var of string loc  (** A variable pattern such as [x] *)
       let r;
-      if ((args[0].txt[0] != 's' &&
+      if (((args[0].txt[0] != 's' &&
         options.hasOwnProperty("pattern_reals") &&
         options.pattern_reals instanceof Array &&
         options.pattern_reals.includes(args[0].txt)))
+        || options.move_everything_up)
         r = capitalize_first(print_string_loc(args[0], options));
       else
         r = print_string_loc(args[0], options);
@@ -1047,17 +1048,18 @@ function print_expression_desc(node: AST, options: Options): Doc {
       const rec_flag = args[0];
       const value_bindings = args[1];
       const expr = args[2];
-      const r: Doc[] = ["let"];
+      const r: Doc[] = [];
       if (rec_flag instanceof Array && rec_flag[0] == "Recursive") {
         r.push(" rec");
       }
       return f(
         [...r, line,
+
         join([hardline, "and"], value_bindings.map(vb =>
-          print_value_binding(vb, options)
+          ["\\ensuremath{", print_value_binding(vb, options), "}"]
         )),
-          line, "in", hardline,
-        ...print_expression(expr, options)
+          line, hardline,
+          ...print_expression(expr, options),
         ]);
     }
     case "Pexp_function":
@@ -1697,6 +1699,8 @@ function print_structure_item_desc(node: AST, options: Options): Doc {
       else if (args[1].length > 0 && pvb.pvb_expr.pexp_desc[0] == "Pexp_function") {
         let fname = pvb.pvb_pat.ppat_desc[1].txt;
         if (fun_filter(fname, options)) {
+          let r = ["\\noindent" as Doc];
+
           fname = camelize(fname);
           fname = fname.replace(/aug/, "\\" + PREFIX + "\\");
           fname = fname.replace(/Fma/, "FMA");
@@ -1710,11 +1714,18 @@ function print_structure_item_desc(node: AST, options: Options): Doc {
           while (fundef.pexp_desc[0] == "Pexp_open")
             fundef = fundef.pexp_desc[2];
 
-          if (fundef.pexp_desc[0] == "Pexp_match") {
-            if (fname == "\\Saturate")
-              options.move_everything_up = true;
+          if (fname == "\\Saturate" || fname == "\\SaturateAlt")
+            options.move_everything_up = true;
 
-            let r = ["\\noindent" as Doc];
+          while (fundef.pexp_desc[0] == "Pexp_let") {
+            r = r.concat(join([hardline], fundef.pexp_desc[2].map(vb =>
+              ["\\Case{", print_value_binding(vb, options), "}", "\\\\"]
+            )));
+            r.push(hardline);
+            fundef = fundef.pexp_desc[3];
+          }
+
+          if (fundef.pexp_desc[0] == "Pexp_match") {
             for (let i = 0; i < fundef.pexp_desc[2].length; i++) {
               const arg = fundef.pexp_desc[2][i];
               if (arg.pc_lhs.ppat_desc[0] == "Ppat_any") {
@@ -1732,8 +1743,7 @@ function print_structure_item_desc(node: AST, options: Options): Doc {
                 print_expression(rhs_expr, options), "}\\\\", hardline]));
               options.pattern_reals = [];
             }
-            if (fname == "\\Saturate")
-              options.move_everything_up = false;
+            options.move_everything_up = false;
             return f(r);
           }
           else
