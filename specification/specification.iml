@@ -1,5 +1,5 @@
 [@@@import Util, "dune:math"]
-[@@@import AugReal, "dune:math"]
+[@@@import CER, "dune:math"]
 [@@@import Sqrt, "dune:math"]
 [@@@import Exp, "dune:math"]
 [@@@import Log, "dune:math"]
@@ -191,7 +191,7 @@ module Projection = struct
     [@@program]
 end
 
-let aug_real_is_within_range (f : Format.t) (x : AugReal.t) : bool =
+let aug_real_is_within_range (f : Format.t) (x : CER.t) : bool =
   match x with
   | NaN -> true
   | NINF -> f.s = Signedness.Signed && f.d = Domain.Extended
@@ -260,7 +260,7 @@ module Float = struct
   let is_inf f x = is_ninf f x || is_pinf f x
 
   (** 4.6.1 Decode *)
-  let rec decode_aux (k : int) (p : int) (b : int) (s: Signedness.t) (d : Domain.t) (x : t) : (AugReal.t, string) Result.t =
+  let rec decode_aux (k : int) (p : int) (b : int) (s: Signedness.t) (d : Domain.t) (x : t) : (CER.t, string) Result.t =
     let open Util in
     let open Signedness in
     let open Domain in
@@ -276,7 +276,7 @@ module Float = struct
     | x when ipow2 (k - 1) < x && x < ipow2 k && s = Signed ->
 
       (match decode_aux k p b s d (of_int_repr_k k s (x - ipow2 (k - 1))) with
-      | Ok r -> Ok AugReal.(~- r)
+      | Ok r -> Ok CER.(~- r)
       | Error e -> Error e)
 
     | x ->
@@ -288,12 +288,12 @@ module Float = struct
           (0. +. t *. (pow2 (1 - p))) *. (pow2 (1 - b))
         else
           (1. +. t *. (pow2 (1 - p))) *. (pow2 (e - b))) in
-      Ok AugReal.(R r)
+      Ok CER.(R r)
     [@@timeout 3600]
     [@@measure Ordinal.of_int x]
     [@@by auto]
 
-  let decode (f : Format.t) (x : t) : AugReal.t =
+  let decode (f : Format.t) (x : t) : CER.t =
     let k, p, b, _, _, s, d = Format.get_format_parameters f in
     match decode_aux k p b s d x with
     | Ok r -> r
@@ -301,14 +301,14 @@ module Float = struct
 
   (* 4.6.3 RoundToPrecision *)
 
-  let internal_round_to_precision (p : int) (b : int) (rnd : RoundingMode.t) (x : AugReal.t) : (AugReal.t, string) Result.t =
+  let internal_round_to_precision (p : int) (b : int) (rnd : RoundingMode.t) (x : CER.t) : (CER.t, string) Result.t =
     let open Util in
     let open RoundingMode in
     let rsign (x : real) : real = if x <. 0.0 then -1.0 else 1.0 [@@macro] in
     let ifb1 (b : bool) : int = if b then 1 else 0 [@@macro] in
     let is_even (x : int) : bool = x mod 2 = 0 [@@macro] in
     match x with
-    | AugReal.NaN -> Ok NaN
+    | CER.NaN -> Ok NaN
     | NINF
     | PINF -> Ok x
     | R 0.0 -> Ok x
@@ -330,13 +330,13 @@ module Float = struct
         | TowardZero -> false)
       in
       let i : real = i2r (ifloor s + ifb1 (round_away delta code_is_even rnd x)) in
-      let z = AugReal.R (rsign x *. i *. (2 ^ e)) in
+      let z = CER.R (rsign x *. i *. (2 ^ e)) in
       Ok z
 
   (** Convert extended real value [x] to a new extended real that is representable
       with a given precision [p]. The exponent is bounded below by [2 - p - b] and
       unbounded above. *)
-  let round_to_precision (p : int) (b : int) (rnd : RoundingMode.t) (x : AugReal.t) : AugReal.t =
+  let round_to_precision (p : int) (b : int) (rnd : RoundingMode.t) (x : CER.t) : CER.t =
     match internal_round_to_precision p b rnd x with
     | Ok r -> r
     | Error _ -> R 0.0 (* unreachable by internal_round_to_precision_ok *)
@@ -345,8 +345,8 @@ module Float = struct
 
   let internal_saturate
     (m_lo : real) (m_hi : real) (sat : SaturationMode.t) (rnd : RoundingMode.t)
-    (x : AugReal.t) (sigma : Signedness.t) (delta : Domain.t)
-    : (AugReal.t, string) Result.t =
+    (x : CER.t) (sigma : Signedness.t) (delta : Domain.t)
+    : (CER.t, string) Result.t =
     let open RoundingMode in
     let open SaturationMode in
     let open Signedness in
@@ -382,7 +382,7 @@ module Float = struct
     | _ -> Error "unreachable"
 
   (** Saturate extended real [x] to +-INF, or to maximum value [m], according to projection specification [pi]. *)
-  let saturate (m_lo : real) (m_hi : real) (sat : SaturationMode.t) (rnd : RoundingMode.t) (x : AugReal.t) (s : Signedness.t) (d : Domain.t) : AugReal.t =
+  let saturate (m_lo : real) (m_hi : real) (sat : SaturationMode.t) (rnd : RoundingMode.t) (x : CER.t) (s : Signedness.t) (d : Domain.t) : CER.t =
     match internal_saturate m_lo m_hi sat rnd x s d with
     | Ok x -> x
     | Error _ -> R 0.0 (* unreachable by theorem internal_saturate_ok *)
@@ -390,7 +390,7 @@ module Float = struct
 
   (** 4.6.5 Encode *)
 
-  let rec encode (f : Format.t) (x : AugReal.t) : (t, string) Result.t =
+  let rec encode (f : Format.t) (x : CER.t) : (t, string) Result.t =
     let open Util in
     let k, p, b, _, _, _, _ = Format.get_format_parameters f in
     if not (aug_real_is_within_range f x)  then
@@ -414,7 +414,7 @@ module Float = struct
 
       | R x when x <. 0.0 ->
 
-        (match encode f AugReal.(R (-. x)) with
+        (match encode f CER.(R (-. x)) with
         | Ok v -> Ok (of_int_repr f ((to_int_repr f v) + (ipow2 (k - 1))))
         | Error e -> Error e)
 
@@ -439,25 +439,25 @@ module Float = struct
   (* 4.6.2 Project *)
 
   (** Project extended real value [x] to P3109 format [f]. *)
-  let project (f : Format.t) (pi : Projection.t) (x : AugReal.t) : (t, string) Result.t =
+  let project (f : Format.t) (pi : Projection.t) (x : CER.t) : (t, string) Result.t =
     let _, p, b, m_lo, m_hi, _, _ = Format.get_format_parameters f in
     let sat, rnd = pi in
-    let r : AugReal.t = round_to_precision p b rnd x in
-    let s : AugReal.t = saturate m_lo m_hi sat rnd r f.s f.d in
+    let r : CER.t = round_to_precision p b rnd x in
+    let s : CER.t = saturate m_lo m_hi sat rnd r f.s f.d in
     encode f s
 
 
   (** 4.7.1 Specification of IEEE Std 754 formats *)
   (* See also IEEE754.ml *)
 
-  let encode754 (phi : IEEE754.Format.t) (x : AugReal.t) : IEEE754.t =
+  let encode754 (phi : IEEE754.Format.t) (x : CER.t) : IEEE754.t =
     IEEE754.round x phi IEEE754.RoundingMode.TowardZero
 
 
   (** 4.7.2 Conversion from IEEE Std 754 formats to P3109 *)
 
   let internal_convert_to_p3109 (phi: IEEE754.Format.t) (f : Format.t) (pi : Projection.t) (x : IEEE754.t) : (t, string) Result.t =
-    let open AugReal in
+    let open CER in
     match IEEE754.as_aug_real phi x with
     | Ok NaN -> Ok (nan f)
     | Ok r -> project f pi r
@@ -473,7 +473,7 @@ module Float = struct
 
   (* Convert [x] (in [f_x]) to IEEE−754 binary interchange format Binary{[k]} under IEEE−754 rounding mode [rnd754] *)
   let convert_to_ieee_754 (f : Format.t) (pi : Projection.t) (phi : IEEE754.Format.t) (x : t) : IEEE754.t =
-    let open AugReal in
+    let open CER in
     if is_nan f x then (* canonical if defined else quiet *)
       IEEE754.canonical_nan phi
     else (
@@ -496,8 +496,8 @@ module Float = struct
 
   (** 4.8.1 Unary sign operations *)
 
-  let aug_abs (x : AugReal.t) : (AugReal.t, string) Result.t =
-    let open AugReal in
+  let aug_abs (x : CER.t) : (CER.t, string) Result.t =
+    let open CER in
     match x with
     | NaN -> Ok NaN
     | NINF -> Ok PINF
@@ -521,8 +521,8 @@ module Float = struct
     | Error _ -> nan f (* unreachable by theorem internal_abs_ok *)
 
 
-  let aug_negate (x : AugReal.t) : (AugReal.t, string) Result.t =
-    let open AugReal in
+  let aug_negate (x : CER.t) : (CER.t, string) Result.t =
+    let open CER in
     match x with
     | NaN -> Ok NaN
     | NINF -> Ok PINF
@@ -548,7 +548,7 @@ module Float = struct
 
   (** 4.8.2 Binary sign operations *)
 
-  let aug_copy_sign (x : AugReal.t) (y : AugReal.t) : (AugReal.t, string) Result.t =
+  let aug_copy_sign (x : CER.t) (y : CER.t) : (CER.t, string) Result.t =
     match x, y with
     | NaN, _ -> Ok NaN
     | _, NaN -> Ok NaN
@@ -575,8 +575,8 @@ module Float = struct
 
   (** 4.8.3 Binary arithmetic operations *)
 
-  let aug_add (x : AugReal.t) (y : AugReal.t) : (AugReal.t, string) Result.t =
-    let open AugReal in
+  let aug_add (x : CER.t) (y : CER.t) : (CER.t, string) Result.t =
+    let open CER in
     match x, y with
     | NaN, _ -> Ok NaN
     | _, NaN -> Ok NaN
@@ -600,8 +600,8 @@ module Float = struct
     | Ok z -> z
     | Error _ -> nan f_z (* unreachable by theorem internal_add_ok *)
 
-  let aug_subtract (x : AugReal.t) (y : AugReal.t) : (AugReal.t, string) Result.t =
-    let open AugReal in
+  let aug_subtract (x : CER.t) (y : CER.t) : (CER.t, string) Result.t =
+    let open CER in
     match x, y with
     | NaN, _ -> Ok NaN
     | _, NaN -> Ok NaN
@@ -628,8 +628,8 @@ module Float = struct
     | Ok x -> x
     | Error _ -> nan f_z (* unreachable by theorem internal_subtract_ok *)
 
-  let aug_multiply (x : AugReal.t) (y : AugReal.t) : (AugReal.t, string) Result.t =
-    let open AugReal in
+  let aug_multiply (x : CER.t) (y : CER.t) : (CER.t, string) Result.t =
+    let open CER in
     match x, y with
     | NaN, _ -> Ok NaN
     | _, NaN -> Ok NaN
@@ -664,8 +664,8 @@ module Float = struct
     | Ok x -> x
     | Error _ -> nan f_z (* unreachable by theorem internal_multiply_ok *)
 
-  let aug_divide (x : AugReal.t) (y : AugReal.t) : (AugReal.t, string) Result.t =
-    let open AugReal in
+  let aug_divide (x : CER.t) (y : CER.t) : (CER.t, string) Result.t =
+    let open CER in
     match x, y with
     | NaN, _ -> Ok NaN
     | _, NaN -> Ok NaN
@@ -694,8 +694,8 @@ module Float = struct
 
   (** 4.8.4 Fused Multiply Add *)
 
-  let aug_fma (x : AugReal.t) (y : AugReal.t) (z : AugReal.t) : (AugReal.t, string) Result.t =
-    let open AugReal in
+  let aug_fma (x : CER.t) (y : CER.t) (z : CER.t) : (CER.t, string) Result.t =
+    let open CER in
     match x, y, z with
     | NaN, _ , _ -> Ok NaN
     | _ , NaN, _ -> Ok NaN
@@ -755,8 +755,8 @@ module Float = struct
 
   (** 4.8.xx Fused Add Add *)
 
-  let aug_faa (x : AugReal.t) (y : AugReal.t) (z : AugReal.t) : (AugReal.t, string) Result.t =
-    let open AugReal in
+  let aug_faa (x : CER.t) (y : CER.t) (z : CER.t) : (CER.t, string) Result.t =
+    let open CER in
     match x, y, z with
     | NaN, _ , _ -> Ok NaN
     | _ , NaN, _ -> Ok NaN
@@ -797,8 +797,8 @@ module Float = struct
 
   (** 4.8.5 Unary mathematical operations *)
 
-  let aug_recip (x : AugReal.t) : (AugReal.t, string) Result.t =
-    let open AugReal in
+  let aug_recip (x : CER.t) : (CER.t, string) Result.t =
+    let open CER in
     match x with
     | NaN -> Ok NaN
     | R x when x = 0.0 -> Ok NaN
@@ -816,8 +816,8 @@ module Float = struct
     | Ok x -> x
     | Error _ -> (nan f_z) (* unreachable by theorem internal_recip_ok *)
 
-  let aug_sqrt (x : AugReal.t) : (AugReal.t, string) Result.t =
-    let open AugReal in
+  let aug_sqrt (x : CER.t) : (CER.t, string) Result.t =
+    let open CER in
     match x with
     | NaN -> Ok NaN
     | NINF -> Ok NaN
@@ -839,8 +839,8 @@ module Float = struct
     | Ok x -> x
     | Error _ -> (nan f_z) (* unreachable by theorem internal_sqrt_ok *)
 
-  let aug_rsqrt (x : AugReal.t) : (AugReal.t, string) Result.t =
-    let open AugReal in
+  let aug_rsqrt (x : CER.t) : (CER.t, string) Result.t =
+    let open CER in
     match x with
     | NaN -> Ok NaN
     | NINF -> Ok NaN
@@ -862,8 +862,8 @@ module Float = struct
   | Ok x -> x
   | Error _ -> (nan f_z) (* unreachable by theorem internal_rsqrt_ok *)
 
-  let aug_hypot (x : AugReal.t) (y : AugReal.t) : (AugReal.t, string) Result.t =
-    let open AugReal in
+  let aug_hypot (x : CER.t) (y : CER.t) : (CER.t, string) Result.t =
+    let open CER in
     match x, y with
     | NaN, _ -> Ok NaN
     | _, NaN -> Ok NaN
@@ -885,7 +885,7 @@ module Float = struct
     | Ok r -> r
     | Error _ -> nan f_z (* unreachable by theorem internal_hypot_ok *)
 
-  let aug_exp (x : AugReal.t) : (AugReal.t, string) Result.t =
+  let aug_exp (x : CER.t) : (CER.t, string) Result.t =
     match x with
     | NaN -> Ok NaN
     | PINF -> Ok PINF
@@ -903,7 +903,7 @@ module Float = struct
     | Ok x -> x
     | Error _ -> (nan f_z) (* unreachable by theorem internal_exp_ok *)
 
-  let aug_exp2 (x : AugReal.t) : (AugReal.t, string) Result.t =
+  let aug_exp2 (x : CER.t) : (CER.t, string) Result.t =
     match x with
     | NaN -> Ok NaN
     | PINF -> Ok PINF
@@ -924,7 +924,7 @@ module Float = struct
     | Ok x -> x
     | Error _ -> nan f_z (* unreachable by theorem internal_exp2_ok *)
 
-  let aug_log (x : AugReal.t) : (AugReal.t, string) Result.t =
+  let aug_log (x : CER.t) : (CER.t, string) Result.t =
     match x with
     | NaN -> Ok NaN
     | (PINF | NINF) -> Ok NaN
@@ -946,7 +946,7 @@ module Float = struct
     | Ok x -> x
     | Error _ -> nan f_z (* unreachable by theorem internal_log_ok *)
 
-  let aug_log2 (x : AugReal.t) : (AugReal.t, string) Result.t =
+  let aug_log2 (x : CER.t) : (CER.t, string) Result.t =
     match x with
     | NaN -> Ok NaN
     | (PINF | NINF) -> Ok NaN
@@ -971,7 +971,7 @@ module Float = struct
 
   (** 4.8.6 Scaled addition *)
 
-  let aug_add_scaled (x : AugReal.t) (s_x : int) (y : AugReal.t) (s_y : int) : (AugReal.t, string) Result.t =
+  let aug_add_scaled (x : CER.t) (s_x : int) (y : CER.t) (s_y : int) : (CER.t, string) Result.t =
     match x, s_x, y, s_y with
     | NaN, _ , _, _  -> Ok NaN
     | _, _ , NaN, _  -> Ok NaN
@@ -1003,7 +1003,7 @@ module Float = struct
 
   (** 4.8.7 Scaled multiplication *)
 
-  let aug_multiply_scaled (x : AugReal.t) (y : AugReal.t) (s : int) : (AugReal.t, string) Result.t =
+  let aug_multiply_scaled (x : CER.t) (y : CER.t) (s : int) : (CER.t, string) Result.t =
     match x, y, s with
     | NaN, _, _ -> Ok NaN
     | _, NaN, _ -> Ok NaN
@@ -1047,8 +1047,8 @@ module Float = struct
 
 
   (** 4.9 Mixed IEEE Std 754 and P3109 operations *)
-  let aug_scaled_fma (x : AugReal.t) (y : AugReal.t) (s : int) (a : AugReal.t) (s_a : int) : (AugReal.t, string) Result.t =
-    let open AugReal in
+  let aug_scaled_fma (x : CER.t) (y : CER.t) (s : int) (a : CER.t) (s_a : int) : (CER.t, string) Result.t =
+    let open CER in
     match x, y, s, a, s_a with
     | NaN, _, _,  _ , _ -> Ok NaN
     | _, NaN, _,  _ , _ -> Ok NaN
@@ -1107,7 +1107,7 @@ module Float = struct
 
   let internal_scaled_fma (phi : IEEE754.Format.t) (f_x : Format.t) (f_y : Format.t) (pi : Projection.t)
     (x : t) (y : t) (s : int) (a : IEEE754.t) (s_a : int) : (IEEE754.t, string) Result.t =
-    let open AugReal in
+    let open CER in
     let open Signedness in
     let nan754 = IEEE754.quiet_nan phi in
     let _, p, _, b, _, _, _, m = IEEE754.Format.get_format_parameters phi in
@@ -1135,8 +1135,8 @@ module Float = struct
 
   (** 4.10.1 Minimum and Maximum *)
 
-  let aug_minimum (x : AugReal.t) (y : AugReal.t) : (AugReal.t, string) Result.t =
-    let open AugReal in
+  let aug_minimum (x : CER.t) (y : CER.t) : (CER.t, string) Result.t =
+    let open CER in
     match x, y with
     | NaN, _ -> Ok NaN
     | _, NaN -> Ok NaN
@@ -1161,8 +1161,8 @@ module Float = struct
     | Ok r -> r
     | Error _ -> nan f (* unreachable by theorem internal_minimum_ok *)
 
-  let aug_maximum (x : AugReal.t) (y : AugReal.t) : (AugReal.t, string) Result.t =
-    let open AugReal in
+  let aug_maximum (x : CER.t) (y : CER.t) : (CER.t, string) Result.t =
+    let open CER in
     match x, y with
     | NaN, _ -> Ok NaN
     | _, NaN -> Ok NaN
@@ -1189,8 +1189,8 @@ module Float = struct
 
   (** 4.xx Minimum, Maximum, and 'Number' variants *)
 
-  let aug_minimum_number (x : AugReal.t) (y : AugReal.t) : (AugReal.t, string) Result.t =
-    let open AugReal in
+  let aug_minimum_number (x : CER.t) (y : CER.t) : (CER.t, string) Result.t =
+    let open CER in
     match x, y with
     | NaN, NaN -> Ok NaN
     | x, NaN -> Ok x
@@ -1208,8 +1208,8 @@ module Float = struct
     | Ok r -> r
     | Error _ -> nan f (* unreachable by theorem internal_minimum_number_ok *)
 
-  let aug_maximum_number (x : AugReal.t) (y : AugReal.t) : (AugReal.t, string) Result.t =
-    let open AugReal in
+  let aug_maximum_number (x : CER.t) (y : CER.t) : (CER.t, string) Result.t =
+    let open CER in
     match x, y with
     | NaN, NaN -> Ok NaN
     | x, NaN -> Ok x
@@ -1229,8 +1229,8 @@ module Float = struct
 
   (** 4.xx MinimumMagnitude, MaximumMagnitude, and 'Number' variants *)
 
-  let aug_minimum_magnitude (x : AugReal.t) (y : AugReal.t) : (AugReal.t, string) Result.t =
-    let open AugReal in
+  let aug_minimum_magnitude (x : CER.t) (y : CER.t) : (CER.t, string) Result.t =
+    let open CER in
     match x, y with
     | NaN, _ -> Ok NaN
     | _, NaN -> Ok NaN
@@ -1255,8 +1255,8 @@ module Float = struct
     | Ok r -> r
     | Error _ -> nan f (* unreachable by theorem internal_minimum_magnitude_ok *)
 
-  let aug_maximum_magnitude (x : AugReal.t) (y : AugReal.t) : (AugReal.t, string) Result.t =
-    let open AugReal in
+  let aug_maximum_magnitude (x : CER.t) (y : CER.t) : (CER.t, string) Result.t =
+    let open CER in
     match x, y with
     | NaN, _ -> Ok NaN
     | _, NaN -> Ok NaN
@@ -1294,8 +1294,8 @@ module Float = struct
 
   (**  4.9.3 Clamp *)
 
-  let aug_clamp (x : AugReal.t) (lo : AugReal.t) (hi : AugReal.t) : (AugReal.t, string) Result.t =
-    let open AugReal in
+  let aug_clamp (x : CER.t) (lo : CER.t) (hi : CER.t) : (CER.t, string) Result.t =
+    let open CER in
     match x, lo, hi with
     | NaN, _, _ -> Ok NaN
     | _, NaN, _ -> Ok NaN
@@ -1338,8 +1338,8 @@ module Float = struct
 
   (** 4.10.2 Comparisons *)
 
-  let aug_compare_less (x : AugReal.t) (y : AugReal.t) : (bool, string) Result.t =
-    let open AugReal in
+  let aug_compare_less (x : CER.t) (y : CER.t) : (bool, string) Result.t =
+    let open CER in
     match x, y with
     | NaN, _ -> Ok false
     | _, NaN -> Ok false
@@ -1360,8 +1360,8 @@ module Float = struct
     | Error _ -> false (* unreachable by theorem internal_compare_less_ok *)
 
 
-  let aug_compare_less_equal (x : AugReal.t) (y : AugReal.t) : (bool, string) Result.t =
-    let open AugReal in
+  let aug_compare_less_equal (x : CER.t) (y : CER.t) : (bool, string) Result.t =
+    let open CER in
     match x, y with
     | NaN, _ -> Ok false
     | _, NaN -> Ok false
@@ -1381,8 +1381,8 @@ module Float = struct
     | Error _ -> false (* unreachable by theorem internal_compare_less_equal_ok *)
 
 
-  let aug_compare_equal (x : AugReal.t) (y : AugReal.t) : (bool, string) Result.t =
-    let open AugReal in
+  let aug_compare_equal (x : CER.t) (y : CER.t) : (bool, string) Result.t =
+    let open CER in
     match x, y with
     | NaN, _ -> Ok false
     | _, NaN -> Ok false
@@ -1404,8 +1404,8 @@ module Float = struct
     | Error _ -> false (* unreachable by theorem internal_compare_equal_ok *)
 
 
-  let aug_compare_greater (x : AugReal.t) (y : AugReal.t) : (bool, string) Result.t =
-    let open AugReal in
+  let aug_compare_greater (x : CER.t) (y : CER.t) : (bool, string) Result.t =
+    let open CER in
     match x, y with
     | NaN, _ -> Ok false
     | _, NaN -> Ok false
@@ -1426,8 +1426,8 @@ module Float = struct
     | Error _ -> false (* unreachable by theorem internal_compare_greater_ok *)
 
 
-  let aug_compare_greater_equal (x : AugReal.t) (y : AugReal.t) : (bool, string) Result.t =
-    let open AugReal in
+  let aug_compare_greater_equal (x : CER.t) (y : CER.t) : (bool, string) Result.t =
+    let open CER in
     match x, y with
     | NaN, _ -> Ok false
     | _, NaN -> Ok false
@@ -1450,7 +1450,7 @@ module Float = struct
 
   (** 4.10.3 Predicates and classification *)
 
-  let aug_is_zero (x : AugReal.t) : (bool, string) Result.t =
+  let aug_is_zero (x : CER.t) : (bool, string) Result.t =
     match x with
     | NaN -> Ok false
     | (PINF | NINF) -> Ok false
@@ -1466,7 +1466,7 @@ module Float = struct
     | _ -> false (* unreachable by theorem internal_is_zero_ok *)
 
 
-  let aug_is_one (x : AugReal.t) : (bool, string) Result.t =
+  let aug_is_one (x : CER.t) : (bool, string) Result.t =
     match x with
     | NaN -> Ok false
     | (PINF | NINF) -> Ok false
@@ -1483,7 +1483,7 @@ module Float = struct
 
   let is_nan (f : Format.t) (x : t) : bool = is_nan f x [@@macro]
 
-  let aug_is_sign_minus (x : AugReal.t) : (bool, string) Result.t =
+  let aug_is_sign_minus (x : CER.t) : (bool, string) Result.t =
     match x with
     | NaN -> Ok false
     | PINF -> Ok false
@@ -1591,7 +1591,7 @@ module Float = struct
 
   (** Convert [x] to a string *)
   let to_string (f : Format.t) (x : t) : string =
-    AugReal.to_string (decode f x)
+    CER.to_string (decode f x)
   [@@program]
 end
 
@@ -1609,7 +1609,7 @@ module Block = struct
       f x1 x2
     | _ -> Error "invalid fold"
 
-  let decode_block (f_s : Format.t) (f_x : Format.t) (b : int) ((s, x) : int * Float.t list) : (AugReal.t list, string) Result.t =
+  let decode_block (f_s : Format.t) (f_x : Format.t) (b : int) ((s, x) : int * Float.t list) : (CER.t list, string) Result.t =
     let open Float in
     let open ErrorPropagation in
     if b < 0 || b <> List.length x then
@@ -1618,8 +1618,8 @@ module Block = struct
       let@ cz = List.map (fun x_i -> aug_multiply (decode f_s s) (decode f_x x_i)) x in
       Ok cz
 
-  let aug_maximum_finite (x : AugReal.t) (y : AugReal.t) : (AugReal.t, string) Result.t =
-    let open AugReal in
+  let aug_maximum_finite (x : CER.t) (y : CER.t) : (CER.t, string) Result.t =
+    let open CER in
     match x, y with
     | NaN, NaN -> Ok NaN
     | NaN, y -> Ok y
@@ -1648,7 +1648,7 @@ module Block = struct
     let* cs = fold aug_maximum_finite m in
     let* s = project f_s pi_s cs in
     let s' = decode f_s s in
-    let@ cz = List.map (fun cx_i -> if s' = AugReal.zero then Ok AugReal.zero else aug_divide cx_i s') cx in
+    let@ cz = List.map (fun cx_i -> if s' = CER.zero then Ok CER.zero else aug_divide cx_i s') cx in
     let@ z = List.map (fun cz_i -> project f_z pi_z cz_i) cz in
     Ok (s, z)
 

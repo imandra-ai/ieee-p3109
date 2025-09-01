@@ -1,6 +1,6 @@
 [@@@import Util, "dune:math"]
 [@@@import ExReal, "dune:math"]
-[@@@import AugReal, "dune:math"]
+[@@@import CER, "dune:math"]
 [@@@import Sqrt, "dune:math"]
 [@@@import Exp, "dune:math"]
 [@@@import Log, "dune:math"]
@@ -14,12 +14,12 @@ open Theorems_pow2
 
 (* A number of equivalence proofs between augmented-real definitions and their corresponding extended-real definitions. *)
 
-(* First, some templates to check equivalence between AugReal and ExReal functions. *)
+(* First, some templates to check equivalence between CER and ExReal functions. *)
 
-let t_aug_eq1 (x : AugReal.t)
-  (aug_f : AugReal.t -> (AugReal.t, string) Result.t)
+let t_aug_eq1 (x : CER.t)
+  (aug_f : CER.t -> (CER.t, string) Result.t)
   (ex_f : ExReal.t -> (ExReal.t, string) Result.t) =
-  let open AugReal in
+  let open CER in
   match a2e x with
   | Ok xe ->
     let ar = aug_f x in
@@ -28,18 +28,18 @@ let t_aug_eq1 (x : AugReal.t)
     | Error _ -> ar = Ok NaN)
   | _ -> true
 
-let t_aug_eq1b (x : AugReal.t)
-  (aug_f : AugReal.t -> (bool, string) Result.t)
+let t_aug_eq1b (x : CER.t)
+  (aug_f : CER.t -> (bool, string) Result.t)
   (ex_f : ExReal.t -> (bool, string) Result.t) =
-  let open AugReal in
+  let open CER in
   match a2e x with
   | Ok xe -> aug_f x = ex_f xe
   | _ -> true
 
-let t_aug_eq2 (x : AugReal.t) (y : AugReal.t)
-  (aug_f : AugReal.t -> AugReal.t -> (AugReal.t, string) Result.t)
+let t_aug_eq2 (x : CER.t) (y : CER.t)
+  (aug_f : CER.t -> CER.t -> (CER.t, string) Result.t)
   (ex_f : ExReal.t -> ExReal.t -> (ExReal.t, string) Result.t) =
-  let open AugReal in
+  let open CER in
   match a2e x, a2e y with
   | Ok xe, Ok ye ->
     let ar = aug_f x y in
@@ -48,10 +48,10 @@ let t_aug_eq2 (x : AugReal.t) (y : AugReal.t)
     | Error _ -> ar = Ok NaN)
   | _ -> true
 
-let t_aug_eq2r (x : AugReal.t) (y : AugReal.t)
-  (aug_f : AugReal.t -> AugReal.t -> (AugReal.t, string) Result.t)
+let t_aug_eq2r (x : CER.t) (y : CER.t)
+  (aug_f : CER.t -> CER.t -> (CER.t, string) Result.t)
   (ex_f : (ExReal.t, string) Result.t -> (ExReal.t, string) Result.t -> (ExReal.t, string) Result.t) =
-  let open AugReal in
+  let open CER in
   match a2e x, a2e y with
   | Ok xe, Ok ye ->
     let ar = aug_f x y in
@@ -60,18 +60,18 @@ let t_aug_eq2r (x : AugReal.t) (y : AugReal.t)
     | Error _ -> ar = Ok NaN)
   | _ -> true
 
-let t_aug_eq2b (x : AugReal.t) (y : AugReal.t)
-  (aug_f : AugReal.t -> AugReal.t -> (bool, string) Result.t)
+let t_aug_eq2b (x : CER.t) (y : CER.t)
+  (aug_f : CER.t -> CER.t -> (bool, string) Result.t)
   (ex_f : ExReal.t -> ExReal.t -> (bool, string) Result.t) =
-  let open AugReal in
+  let open CER in
   match a2e x, a2e y with
   | Ok xe, Ok ye -> aug_f x y = ex_f xe ye
   | _ -> true
 
-let t_aug_eq3 (x : AugReal.t) (y : AugReal.t) (z : AugReal.t)
-  (aug_f : AugReal.t -> AugReal.t -> AugReal.t -> (AugReal.t, string) Result.t)
+let t_aug_eq3 (x : CER.t) (y : CER.t) (z : CER.t)
+  (aug_f : CER.t -> CER.t -> CER.t -> (CER.t, string) Result.t)
   (ex_f : ExReal.t -> ExReal.t -> ExReal.t -> (ExReal.t, string) Result.t) =
-  let open AugReal in
+  let open CER in
   match a2e x, a2e y, a2e z with
   | Ok xe, Ok ye, Ok ze ->
     let ar = aug_f x y z in
@@ -80,10 +80,10 @@ let t_aug_eq3 (x : AugReal.t) (y : AugReal.t) (z : AugReal.t)
     | Error _ -> ar = Ok NaN)
   | _ -> true
 
-let t_aug_eq3r (x : AugReal.t) (y : AugReal.t) (z : AugReal.t)
-  (aug_f : AugReal.t -> AugReal.t -> AugReal.t -> (AugReal.t, string) Result.t)
+let t_aug_eq3r (x : CER.t) (y : CER.t) (z : CER.t)
+  (aug_f : CER.t -> CER.t -> CER.t -> (CER.t, string) Result.t)
   (ex_f : (ExReal.t, string) Result.t -> (ExReal.t, string) Result.t -> (ExReal.t, string) Result.t -> (ExReal.t, string) Result.t) =
-  let open AugReal in
+  let open CER in
   match a2e x, a2e y, a2e z with
   | Ok xe, Ok ye, Ok ze ->
     let ar = aug_f x y z in
@@ -98,17 +98,17 @@ let t_aug_eq3r (x : AugReal.t) (y : AugReal.t) (z : AugReal.t)
 
 
 
-theorem abs_aug_ex_eq (x : AugReal.t) =
+theorem abs_aug_ex_eq (x : CER.t) =
   let open ExReal.ResultInfix in
   t_aug_eq1 x Float.aug_abs (fun xe -> Ok (ExReal.abs xe))
   [@@by auto]
 
-theorem negate_aug_ex_eq (x : AugReal.t) =
+theorem negate_aug_ex_eq (x : CER.t) =
   let open ExReal.ResultInfix in
   t_aug_eq1 x Float.aug_negate (fun xe -> Ok (ExReal.neg xe))
   [@@by auto]
 
-theorem copy_sign_aug_ex_eq (x : AugReal.t) (y : AugReal.t) =
+theorem copy_sign_aug_ex_eq (x : CER.t) (y : CER.t) =
   t_aug_eq2 x y Float.aug_copy_sign
   (fun xe ye ->
     let open ExReal.Infix in
@@ -119,47 +119,47 @@ theorem copy_sign_aug_ex_eq (x : AugReal.t) (y : AugReal.t) =
   )
   [@@by auto]
 
-theorem add_aug_ex_eq (x : AugReal.t) (y : AugReal.t) =
+theorem add_aug_ex_eq (x : CER.t) (y : CER.t) =
   let open ExReal.ResultInfix in
   t_aug_eq2r x y Float.aug_add (fun xe ye -> xe +. ye)
   [@@by auto]
 
-theorem subtract_aug_ex_eq (x : AugReal.t) (y : AugReal.t) =
+theorem subtract_aug_ex_eq (x : CER.t) (y : CER.t) =
   let open ExReal.ResultInfix in
   t_aug_eq2r x y Float.aug_subtract (fun xe ye -> xe -. ye)
   [@@by auto]
 
-theorem multiply_aug_ex_eq (x : AugReal.t) (y : AugReal.t) =
+theorem multiply_aug_ex_eq (x : CER.t) (y : CER.t) =
   let open ExReal.ResultInfix in
   t_aug_eq2r x y Float.aug_multiply (fun xe ye -> xe *. ye)
   [@@by auto]
 
-theorem divide_aug_ex_eq (x : AugReal.t) (y : AugReal.t) =
+theorem divide_aug_ex_eq (x : CER.t) (y : CER.t) =
   let open ExReal.ResultInfix in
   t_aug_eq2r x y Float.aug_divide (fun xe ye -> xe /. ye)
   [@@by auto]
 
-theorem fma_aug_ex_eq (x : AugReal.t) (y : AugReal.t) (z : AugReal.t) =
+theorem fma_aug_ex_eq (x : CER.t) (y : CER.t) (z : CER.t) =
   let open ExReal.ResultInfix in
   t_aug_eq3r x y z Float.aug_fma (fun xe ye ze -> (xe *. ye) +. ze)
   [@@by auto]
 
-theorem faa_aug_ex_eq (x : AugReal.t) (y : AugReal.t) (z : AugReal.t) =
+theorem faa_aug_ex_eq (x : CER.t) (y : CER.t) (z : CER.t) =
   let open ExReal.ResultInfix in
   t_aug_eq3r x y z Float.aug_faa (fun xe ye ze -> xe +. ye +. ze)
   [@@by auto]
 
-theorem recip_aug_ex_eq (x : AugReal.t) =
+theorem recip_aug_ex_eq (x : CER.t) =
   let open ExReal.Infix in
   t_aug_eq1 x Float.aug_recip (fun xe -> ExReal.one /. xe)
   [@@by auto]
 
-theorem sqrt_aug_ex_eq (x : AugReal.t) =
+theorem sqrt_aug_ex_eq (x : CER.t) =
   let open ExReal.ResultInfix in
   t_aug_eq1 x Float.aug_sqrt (fun xe -> ExReal.sqrt xe 8)
   [@@by auto]
 
-theorem rsqrt_aug_ex_eq (x : AugReal.t) =
+theorem rsqrt_aug_ex_eq (x : CER.t) =
   t_aug_eq1 x Float.aug_rsqrt (fun xe ->
     let open ExReal in
     match xe with
@@ -177,7 +177,7 @@ theorem hypot_helper x =
   [@@by auto]
   [@@fc]
 
-theorem hypot_aug_ex_eq (x : AugReal.t) (y : AugReal.t) =
+theorem hypot_aug_ex_eq (x : CER.t) (y : CER.t) =
   t_aug_eq2 x y Float.aug_hypot (fun xe ye ->
     let open ExReal.Infix in
     let open ExReal.ResultInfix in
@@ -187,28 +187,28 @@ theorem hypot_aug_ex_eq (x : AugReal.t) (y : AugReal.t) =
   [@@disable Sqrt.sqrt, Util.ripow, Real.abs]
   [@@by auto]
 
-theorem exp_aug_ex_eq (x : AugReal.t) =
+theorem exp_aug_ex_eq (x : CER.t) =
   t_aug_eq1 x Float.aug_exp (fun xe -> ExReal.exp xe 9)
   [@@by auto]
 
-theorem exp2_aug_ex_eq (x : AugReal.t) =
+theorem exp2_aug_ex_eq (x : CER.t) =
   t_aug_eq1 x Float.aug_exp2 (fun xe -> ExReal.exp2 xe 9)
   [@@by auto]
 
-theorem log_aug_ex_eq (x : AugReal.t) =
+theorem log_aug_ex_eq (x : CER.t) =
   t_aug_eq1 x Float.aug_log (fun xe -> ExReal.ln xe 9)
   [@@by unroll_nonlin 10 10 100]
 
-theorem log2_aug_ex_eq (x : AugReal.t) =
+theorem log2_aug_ex_eq (x : CER.t) =
   t_aug_eq1 x Float.aug_log2 (fun xe -> ExReal.log2 xe 9)
   [@@by unroll_nonlin 10 10 100]
 
-theorem add_scaled_aug_ex_eq (x : AugReal.t) (s_x : int) (y : AugReal.t) (s_y : int) =
+theorem add_scaled_aug_ex_eq (x : CER.t) (s_x : int) (y : CER.t) (s_y : int) =
   let ex_f (ex : (ExReal.t, string) Result.t) (s_x : int) (ey : (ExReal.t, string) Result.t) (s_y : int) : (ExReal.t, string) Result.t=
     let open ExReal.ResultInfix in
     ex *. (2 ^. s_x) +. ey *. (2 ^. s_y)
   in
-  let open AugReal in
+  let open CER in
   match a2e x, a2e y with
   | Ok xe, Ok ye ->
     let ar = Float.aug_add_scaled x s_x y s_y in
@@ -218,12 +218,12 @@ theorem add_scaled_aug_ex_eq (x : AugReal.t) (s_x : int) (y : AugReal.t) (s_y : 
   | _ -> true
   [@@by auto]
 
-theorem multiply_scaled_aug_ex_eq (x : AugReal.t) (y : AugReal.t) (s : int) =
+theorem multiply_scaled_aug_ex_eq (x : CER.t) (y : CER.t) (s : int) =
   let ex_f (x : (ExReal.t, string) Result.t) (y : (ExReal.t, string) Result.t) (s : int) : (ExReal.t, string) Result.t =
     let open ExReal.ResultInfix in
     x *. y *. (2 ^. s)
   in
-  let open AugReal in
+  let open CER in
   match a2e x, a2e y with
   | Ok xe, Ok ye ->
     let ar = Float.aug_multiply_scaled x y s in
@@ -233,12 +233,12 @@ theorem multiply_scaled_aug_ex_eq (x : AugReal.t) (y : AugReal.t) (s : int) =
   | _ -> true
   [@@by auto]
 
-theorem scaled_fma_aug_ex_eq (x : AugReal.t) (y : AugReal.t) (s : int) (a : AugReal.t) (s_a : int) =
+theorem scaled_fma_aug_ex_eq (x : CER.t) (y : CER.t) (s : int) (a : CER.t) (s_a : int) =
   let ex_f (x : (ExReal.t, string) Result.t) (y : (ExReal.t, string) Result.t) (s : int) (a : (ExReal.t, string) Result.t) (s_a : int) : (ExReal.t, string) Result.t =
     let open ExReal.ResultInfix in
     a *. (2 ^. s_a) +. x *. y *. (2 ^. s)
   in
-  let open AugReal in
+  let open CER in
   match a2e a, a2e x, a2e y with
   | Ok ae, Ok xe, Ok ye ->
     let ar = Float.aug_scaled_fma x y s a s_a in
@@ -249,15 +249,15 @@ theorem scaled_fma_aug_ex_eq (x : AugReal.t) (y : AugReal.t) (s : int) (a : AugR
   [@@timeout 360]
   [@@by auto]
 
-theorem minimum_aug_ex_eq (x : AugReal.t) (y : AugReal.t) =
+theorem minimum_aug_ex_eq (x : CER.t) (y : CER.t) =
   t_aug_eq2 x y Float.aug_minimum (fun xe ye -> Ok (ExReal.min xe ye))
   [@@by auto]
 
-theorem maximum_aug_ex_eq (x : AugReal.t) (y : AugReal.t) =
+theorem maximum_aug_ex_eq (x : CER.t) (y : CER.t) =
   t_aug_eq2 x y Float.aug_maximum (fun xe ye -> Ok (ExReal.max xe ye))
   [@@by auto]
 
-theorem minimum_magnitude_aug_ex_eq (x : AugReal.t) (y : AugReal.t) =
+theorem minimum_magnitude_aug_ex_eq (x : CER.t) (y : CER.t) =
   t_aug_eq2 x y Float.aug_minimum_magnitude (fun x y ->
     let open ExReal.Infix in
     match x, y with
@@ -268,7 +268,7 @@ theorem minimum_magnitude_aug_ex_eq (x : AugReal.t) (y : AugReal.t) =
     )
   [@@by auto]
 
-theorem maximum_magnitude_aug_ex_eq (x : AugReal.t) (y : AugReal.t) =
+theorem maximum_magnitude_aug_ex_eq (x : CER.t) (y : CER.t) =
   t_aug_eq2 x y Float.aug_maximum_magnitude (fun x y ->
     let open ExReal.Infix in
     match x, y with
@@ -279,7 +279,7 @@ theorem maximum_magnitude_aug_ex_eq (x : AugReal.t) (y : AugReal.t) =
     )
   [@@by auto]
 
-theorem clamp_aug_ex_eq (x : AugReal.t) (lo : AugReal.t) (hi : AugReal.t) =
+theorem clamp_aug_ex_eq (x : CER.t) (lo : CER.t) (hi : CER.t) =
   let open ExReal.ResultInfix in
   t_aug_eq3 x lo hi Float.aug_clamp (fun x lo hi ->
     let open ExReal.Infix in
@@ -289,37 +289,37 @@ theorem clamp_aug_ex_eq (x : AugReal.t) (lo : AugReal.t) (hi : AugReal.t) =
     else Ok x)
   [@@by auto]
 
-theorem compare_less_aug_ex_eq (x : AugReal.t) (y : AugReal.t) =
+theorem compare_less_aug_ex_eq (x : CER.t) (y : CER.t) =
   t_aug_eq2b x y Float.aug_compare_less (fun x y -> Ok ExReal.Infix.(x <. y))
   [@@by auto]
 
-theorem compare_less_equal_aug_ex_eq (x : AugReal.t) (y : AugReal.t) =
+theorem compare_less_equal_aug_ex_eq (x : CER.t) (y : CER.t) =
   t_aug_eq2b x y Float.aug_compare_less_equal (fun x y -> Ok ExReal.Infix.(x <=. y))
   [@@by auto]
 
-theorem compare_equal_aug_ex_eq (x : AugReal.t) (y : AugReal.t) =
+theorem compare_equal_aug_ex_eq (x : CER.t) (y : CER.t) =
   t_aug_eq2b x y Float.aug_compare_equal (fun x y -> Ok ExReal.Infix.(x = y))
   [@@by auto]
 
-theorem compare_greater_aug_ex_eq (x : AugReal.t) (y : AugReal.t) =
+theorem compare_greater_aug_ex_eq (x : CER.t) (y : CER.t) =
   t_aug_eq2b x y Float.aug_compare_greater (fun x y -> Ok ExReal.Infix.(x >. y))
   [@@by auto]
 
-theorem compare_greater_equal_aug_ex_eq (x : AugReal.t) (y : AugReal.t) =
+theorem compare_greater_equal_aug_ex_eq (x : CER.t) (y : CER.t) =
   t_aug_eq2b x y Float.aug_compare_greater_equal (fun x y -> Ok ExReal.Infix.(x >=. y))
   [@@by auto]
 
-theorem is_zero_aug_ex_eq (x : AugReal.t) =
+theorem is_zero_aug_ex_eq (x : CER.t) =
   let open ExReal.ResultInfix in
   t_aug_eq1b x Float.aug_is_zero (fun x -> Ok (x = ExReal.zero))
   [@@by auto]
 
-theorem is_one_aug_ex_eq (x : AugReal.t) =
+theorem is_one_aug_ex_eq (x : CER.t) =
   let open ExReal.ResultInfix in
   t_aug_eq1b x Float.aug_is_one (fun x -> Ok (x = ExReal.one))
   [@@by auto]
 
-theorem is_sign_minus_aug_ex_eq (x : AugReal.t) =
+theorem is_sign_minus_aug_ex_eq (x : CER.t) =
   let open ExReal.ResultInfix in
   t_aug_eq1b x Float.aug_is_sign_minus (fun x ->
     let open ExReal.Infix in
@@ -351,9 +351,9 @@ let old_internal_saturate (m_lo : ExReal.t) (m_hi : ExReal.t) (s : Signedness.t)
 
   | _ -> Error "unreachable"
 
-theorem saturate_aug_ex_eq (m_lo : real) (m_hi : real) (s : Signedness.t) (d : Domain.t) (sat : SaturationMode.t) (rnd : RoundingMode.t) (x : AugReal.t) =
+theorem saturate_aug_ex_eq (m_lo : real) (m_hi : real) (s : Signedness.t) (d : Domain.t) (sat : SaturationMode.t) (rnd : RoundingMode.t) (x : CER.t) =
   let open ExReal.ResultInfix in
-  not (x = AugReal.NINF && s = Signedness.Unsigned) &&
+  not (x = CER.NINF && s = Signedness.Unsigned) &&
   not (d = Domain.Finite && sat <> SaturationMode.SatFinite) ==>
   t_aug_eq1 x
     (fun x -> Float.internal_saturate m_lo m_hi sat rnd x s d)

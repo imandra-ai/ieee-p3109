@@ -62,12 +62,12 @@ let result_to_string (x : ('a, string) Result.t) ~(f : 'a -> string) : string =
   | Error e -> Printf.sprintf "Error: %s" e
   | Ok x -> Printf.sprintf "Ok %s" (f x)
 
-let augreal_to_string (x : AugReal.t) =
-  AugReal.to_string x
+let cer_to_string (x : CER.t) =
+  CER.to_string x
 
 let _ =
   Printf.printf "(P1) 0xBB = %s\n"
-    (augreal_to_string
+    (cer_to_string
        (Float.decode (fse Format.B8P1)
           (Float.of_int_repr (fse Format.B8P1) (Z.of_int 0xBB))))
 
@@ -89,7 +89,7 @@ let print_decode x =
   let f = f in
   let fx = Float.of_int_repr f (Z.of_int x) in
   let dx = Float.decode f fx in
-  Printf.printf "decode(%s) = %s\n" (Float.to_string f fx) (augreal_to_string dx)
+  Printf.printf "decode(%s) = %s\n" (Float.to_string f fx) (cer_to_string dx)
 
 let _ =
   print_decode 0x00;
@@ -99,10 +99,10 @@ let _ =
 
 let _ =
   let f = f in
-  let x = AugReal.i2a (Z.of_int (-1)) in
+  let x = CER.i2a (Z.of_int (-1)) in
   let ex = Float.encode f x in
   Printf.printf "encode(%s) = %s\n"
-    (augreal_to_string x)
+    (cer_to_string x)
     (result_to_string ~f:(Float.to_string f) ex)
 
 let _ =
@@ -130,6 +130,6 @@ let _ =
   let x =
     Float.round_to_precision (Z.of_int 3) (Z.of_int 16)
       RoundingMode.TowardPositive
-      (AugReal.r2a (Q.of_ints 21 10))
+      (CER.r2a (Q.of_ints 21 10))
   in
-  Printf.printf "Rounded: %s\n%!" (AugReal.to_string x)
+  Printf.printf "Rounded: %s\n%!" (CER.to_string x)

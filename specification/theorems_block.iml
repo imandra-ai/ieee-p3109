@@ -12,7 +12,7 @@ open Specification
 let unroll_nonlin qt nqt steps = Tactic.unroll ~smt:"z3-full-nonlinear" ~query_timeout:qt ~no_asm_query_timeout:nqt steps
 
 (** [aug_maximum_finite] never returns an error *)
-theorem aug_maximum_finite_ok (x : AugReal.t) (y : AugReal.t) =
+theorem aug_maximum_finite_ok (x : CER.t) (y : CER.t) =
   Result.is_ok (Block.aug_maximum_finite x y)
   [@@by auto]
 
@@ -69,7 +69,7 @@ theorem convert_block_note
   (f_s : Format.t) (f_x : Format.t) (f_z : Format.t)
   (pi_s : Projection.t) (pi_z : Projection.t)
   (x : Float.t list) =
-  let open AugReal in
+  let open CER in
   b = List.length x && List.for_all (Float.is_nan f_x) x ==>
   match Block.convert_block b f_s f_x f_z pi_s pi_z x with
   | Ok (s, z) -> Float.is_nan f_s s && List.for_all (Float.is_nan f_z) z

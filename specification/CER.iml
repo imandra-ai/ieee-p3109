@@ -1,4 +1,4 @@
-(** Augmented Reals *)
+(** Closed Extended Reals *)
 
 [@@@import Util, "util.iml"]
 [@@@import Sqrt, "sqrt.iml"]

@@ -172,13 +172,13 @@ let () =
 
 let sprefix (s : string) (i : int) = String.sub s 0 (min i (String.length s))
 
-let augreal_dec (x : AugReal.t) : string =
+let cer_dec (x : CER.t) : string =
   match x with
-  | NaN | PINF | NINF -> AugReal.to_string x
+  | NaN | PINF | NINF -> CER.to_string x
   | R r -> rat_to_string_dec r
 
-let r_of_aug (x : AugReal.t) =
-  let open AugReal in
+let r_of_aug (x : CER.t) =
+  let open CER in
   match x with
   | R r -> Ok r
   | _ -> Error "unreachable"
@@ -189,16 +189,16 @@ let r_of_aug (x : AugReal.t) =
     Printf.printf "p=%s: [%s,%s] " (Z.to_string p)
       (sprefix (rat_to_string_dec u) 32)
       (sprefix (rat_to_string_dec o) 32);
-    let ornded = Float.round_to_precision prec bias rnd (AugReal.of_real o) in
-    let urnded = Float.round_to_precision prec bias rnd (AugReal.of_real u) in
-    Printf.printf "[%s,%s]\n%!" (augreal_dec urnded) (augreal_dec ornded);
+    let ornded = Float.round_to_precision prec bias rnd (CER.of_real o) in
+    let urnded = Float.round_to_precision prec bias rnd (CER.of_real u) in
+    Printf.printf "[%s,%s]\n%!" (cer_dec urnded) (cer_dec ornded);
     if ornded = urnded then
       (* Printf.printf "Match\n%!"; *)
       r_of_aug ornded
-    else if AugReal.( * ) ornded ornded = Ok (AugReal.R x) then (
+    else if CER.( * ) ornded ornded = Ok (CER.R x) then (
       Printf.printf "Exact RO\n%!";
       r_of_aug ornded)
-    else if AugReal.( * ) urnded urnded = Ok (AugReal.R x) then (
+    else if CER.( * ) urnded urnded = Ok (CER.R x) then (
       Printf.printf "Exact RU\n%!";
       r_of_aug urnded)
     else if Q.mul o o = x then (
@@ -218,11 +218,11 @@ let fsqrt_aux_both prec bias f rnd
     Printf.printf "i=%s: [%s,%s] " (Z.to_string o.i)
       (sprefix (rat_to_string_dec u.g) 24)
       (sprefix (rat_to_string_dec o.g) 24);
-    let urnded = Float.round_to_precision prec bias rnd (AugReal.R u.g) in
-    let ornded = Float.round_to_precision prec bias rnd (AugReal.R o.g) in
+    let urnded = Float.round_to_precision prec bias rnd (CER.R u.g) in
+    let ornded = Float.round_to_precision prec bias rnd (CER.R o.g) in
     Printf.printf "[%s,%s] [%02x,%02x]\n%!"
-      (sprefix (augreal_dec urnded) 24)
-      (sprefix (augreal_dec ornded) 24)
+      (sprefix (cer_dec urnded) 24)
+      (sprefix (cer_dec ornded) 24)
       (match Float.encode f urnded with
       | Ok urf -> Z.to_int (Float.to_int_repr f urf)
       | _ -> 0xFF)
@@ -233,11 +233,11 @@ let fsqrt_aux_both prec bias f rnd
       (* Printf.printf "Match\n%!"; *)
       (* r_of_aug ornded *)
       true
-    else if AugReal.ResultInfix.( * ) ornded ornded = Ok (AugReal.R x) then (
+    else if CER.ResultInfix.( * ) ornded ornded = Ok (CER.R x) then (
       Printf.printf "Exact RO\n%!";
       (* r_of_aug ornded) *)
       true
-      (* else if AugReal.( * ) urnded urnded = Ok (AugReal.R x) then (
+      (* else if CER.( * ) urnded urnded = Ok (CER.R x) then (
       Printf.printf "Exact RU\n%!";
       (* r_of_aug urnded *)
       true) *))
@@ -253,7 +253,7 @@ let fsqrt_aux_both prec bias f rnd
   in
   Sqrt.sqrt_both start early_exit x p
 
-let rec find_closest_floats_aux_ml (f : Format.t) (x : AugReal.t) (l : Float.t)
+let rec find_closest_floats_aux_ml (f : Format.t) (x : CER.t) (l : Float.t)
     (u : Float.t) : (Float.t * Float.t, string) Result.t =
   (* Printf.printf "[%02x,%02x]\n%!" (Z.to_int l) (Z.to_int u); *)
   if Z.lt l Z.zero || Z.lt u Z.zero then Error "invalid negative"
@@ -262,12 +262,12 @@ let rec find_closest_floats_aux_ml (f : Format.t) (x : AugReal.t) (l : Float.t)
   else (
     let m = Z.div (Z.add l u) (Z.of_int 2) in
     let dm = Float.decode f m in
-    match AugReal.ResultInfix.(dm * dm) with
-    | Ok dmsq when AugReal.(dmsq >= x) -> find_closest_floats_aux_ml f x l m
+    match CER.ResultInfix.(dm * dm) with
+    | Ok dmsq when CER.(dmsq >= x) -> find_closest_floats_aux_ml f x l m
     | Ok _ -> find_closest_floats_aux_ml f x m u
     | Error e -> Error e)
 
-let find_closest_floats_ml (f : Format.t) (x : AugReal.t) =
+let find_closest_floats_ml (f : Format.t) (x : CER.t) =
   let k, p, bias, m_lo, m_hi, _, _ = Format.get_format_parameters f in
   find_closest_floats_aux_ml f x Z.zero
     (if f.s = Signedness.Signed then
@@ -290,7 +290,7 @@ let find_closest_floats_ml (f : Format.t) (x : AugReal.t) =
     let di = Float.decode f (Float.of_int_repr f (Z.of_int i)) in
     match find_closest_floats_ml f di with
     | Ok (l, u) ->
-      Printf.printf "sqrt(%s) in [%02x,%02x]\n%!" (augreal_dec di) (Z.to_int l)
+      Printf.printf "sqrt(%s) in [%02x,%02x]\n%!" (cer_dec di) (Z.to_int l)
         (Z.to_int u)
     | Error e -> Printf.printf "Error: %s\n%!" e
   done *)
@@ -346,8 +346,8 @@ let forall_projections (fn : Projection.t -> unit) : unit =
     done
   done
 
-let print_closest (f_z : Format.t) (di : AugReal.t) =
-  let open AugReal in
+let print_closest (f_z : Format.t) (di : CER.t) =
+  let open CER in
   match di with
   | NaN | NINF | PINF -> ()
   | R s when Q.lt s Q.zero -> ()
@@ -384,17 +384,17 @@ let run_sqrt () =
                 let start = Unix.gettimeofday () in
                 let fi = Float.of_int_repr f_x (Z.of_int i) in
                 let di = Float.decode f_x fi in
-                if AugReal.(di >= zero) then (
+                if CER.(di >= zero) then (
                   if false then (
                     Printf.printf "%s\n" sep_line;
                     Printf.printf "0x%02x = %s = %s\n%!" i
-                      (AugReal.to_string di) (augreal_dec di);
+                      (CER.to_string di) (cer_dec di);
                     print_closest f_z di)
-                  else Printf.printf "0x%02x = %s; " i (AugReal.to_string di);
+                  else Printf.printf "0x%02x = %s; " i (CER.to_string di);
                   (match Fsqrt.fsqrt_i f_x f_z pi fi with
                   | Ok fo, n ->
                     Printf.printf "sqrt(%s) = %s (0x%02x), %s it, "
-                      (augreal_dec di) (Float.to_string f_z fo)
+                      (cer_dec di) (Float.to_string f_z fo)
                       (Z.to_int (Float.to_int_repr f_z fo))
                       (Z.to_string n);
                     if Z.gt n (Z.of_int 2) then (

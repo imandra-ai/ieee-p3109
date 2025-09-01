@@ -34,8 +34,8 @@ let domain_to_char (d : Domain.t) =
   | Finite -> "f"
   | Extended -> "e"
 
-let augreal_to_string (x : AugReal.t) : string =
-  let open AugReal in
+let cer_to_string (x : CER.t) : string =
+  let open CER in
   match x with
   | NaN -> "NaN"
   | PINF -> "+oo"
@@ -49,15 +49,15 @@ let rat_to_string_dec (x : Q.t) : string =
      / of_bigint (Bigint.of_zarith_bigint (Q.den x))
     |> to_string_hum ~decimals:32768)
 
-let augreal_to_string_dec (x : AugReal.t) : string =
+let cer_to_string_dec (x : CER.t) : string =
   match x with
   | NaN -> "NaN"
   | PINF -> "+oo"
   | NINF -> "-oo"
   | R r -> Printf.sprintf "%s" (rat_to_string_dec r)
 
-let print_augreal_dec (x : AugReal.t) =
-  Printf.printf "%s," (augreal_to_string_dec x)
+let print_cer_dec (x : CER.t) =
+  Printf.printf "%s," (cer_to_string_dec x)
 
 let print_real (x : Q.t) = Printf.printf "%s," (rat_to_string_dec x)
 
@@ -80,7 +80,7 @@ let mk_fn_tbl (fn : Q.t -> int -> (bool * Q.t, string) Result.t)
     let fp = Float.of_int_repr f (Z.of_int i) in
     (match Float.decode f fp with
     | decoded ->
-      print_augreal_dec decoded;
+      print_cer_dec decoded;
       (match decoded with
       | dec_xr ->
         (match dec_xr with
@@ -106,11 +106,11 @@ let mk_fn_tbl (fn : Q.t -> int -> (bool * Q.t, string) Result.t)
                 (Z.format "x" (Float.to_int_repr f projected))
                 (Z.format "08b" (Float.to_int_repr f projected));
               (match Float.decode f projected with
-              | out_dec -> print_augreal_dec out_dec)
+              | out_dec -> print_cer_dec out_dec)
             | Error e -> Printf.printf "%s," e)
           | Error e -> Printf.printf "%s" e)
-        | _ -> Printf.printf "%s" (augreal_to_string decoded))
-      | _ -> Printf.printf "%s" (augreal_to_string decoded)));
+        | _ -> Printf.printf "%s" (cer_to_string decoded))
+      | _ -> Printf.printf "%s" (cer_to_string decoded)));
     Printf.printf "\n%!"
   done
 
@@ -198,8 +198,8 @@ let mk_f_tbl (k : int) (p : int) (s : bool) (e : bool) =
   for i = 0 to (1 lsl k) - 1 do
     let iz = Float.to_int_repr f (Z.of_int i) in
     let d = Float.decode f iz in
-    let rats = augreal_to_string d in
-    let ds = augreal_to_string_dec d in
+    let rats = cer_to_string d in
+    let ds = cer_to_string_dec d in
     Printf.printf "%02x | %s | %s | %s\n" i (int2bin_str i k) ds rats
   done
 
@@ -225,8 +225,8 @@ let mk_f_csv_tbl (dir : string) (k : int) (p : int) (s : bool) (e : bool) =
   for i = 0 to (1 lsl k) - 1 do
     let iz = Float.to_int_repr f (Z.of_int i) in
     let d = Float.decode f iz in
-    let rats = augreal_to_string d in
-    let ds = augreal_to_string_dec d in
+    let rats = cer_to_string d in
+    let ds = cer_to_string_dec d in
     Printf.fprintf oc "%02x,%s,%s\n" i ds rats
   done;
   close_out oc

@@ -1,4 +1,4 @@
-[@@@import AugReal, "dune:math"]
+[@@@import CER, "dune:math"]
 [@@@import Util, "dune:math"]
 
 (** IEEE 754 definitions for conversion functions *)
@@ -93,10 +93,10 @@ let to_binary (x : int) (digits : int) =
   else
     r
 
-let round_internal (x : AugReal.t) (fmt : Format.t) (rnd : RoundingMode.t) : (t,  string) Result.t =
+let round_internal (x : CER.t) (fmt : Format.t) (rnd : RoundingMode.t) : (t,  string) Result.t =
   let open RoundingMode in
-  let open AugReal in
-  let open AugReal.ResultInfix in
+  let open CER in
+  let open CER.ResultInfix in
   let _, _, emax, bias, _, w, t, _ = Format.get_format_parameters fmt in
   match x with
   | NaN -> Ok (nan fmt)
@@ -136,10 +136,10 @@ let round_internal (x : AugReal.t) (fmt : Format.t) (rnd : RoundingMode.t) : (t,
         Ok (sign @ to_binary biased_exp w @ List.tl fsig)
     | _ -> Error "invalid")
 
-theorem round_internal_ok (x : AugReal.t) (fmt : Format.t) (rnd : RoundingMode.t) =
+theorem round_internal_ok (x : CER.t) (fmt : Format.t) (rnd : RoundingMode.t) =
   Result.is_ok (round_internal x fmt rnd)
 
-let round (x : AugReal.t) (fmt : Format.t) (rnd : RoundingMode.t) : t =
+let round (x : CER.t) (fmt : Format.t) (rnd : RoundingMode.t) : t =
   match round_internal x fmt rnd with
   | Ok r -> r
   | Error _ -> nan fmt (* unreachable by theorem round_internal_ok *)
@@ -150,7 +150,7 @@ let rec from_binary (x : bool list) : int =
   | x :: xs ->
     (if x then Util.ipow2 (List.length xs) else 0) + (from_binary xs)
 
-let as_aug_real (phi : Format.t) (x : t) : (AugReal.t, string) Result.t =
+let as_aug_real (phi : Format.t) (x : t) : (CER.t, string) Result.t =
   if is_nan x phi then
     Ok NaN
   else if is_pinf x phi then
@@ -176,14 +176,14 @@ let as_aug_real (phi : Format.t) (x : t) : (AugReal.t, string) Result.t =
         from_binary biased_exp - bias
     in
 
-    let open AugReal in
+    let open CER in
     if biased_exp_is_all_ones then
       if not sig_all_zero then
         Error "cannot convert NaN to extended reals"
       else
         (if sgn = 1.0 then Ok PINF else Ok NINF)
     else
-      let open AugReal.ResultInfix in
+      let open CER.ResultInfix in
       ((r2a sgn) * (2 ^ exp)) ** ((i2a sigd) / (2 ^ t))
 
 let bd acc b = acc ^ if b then "1" else "0"

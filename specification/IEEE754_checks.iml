@@ -1,7 +1,7 @@
 [@@@import IEEE754, "IEEE754.iml"]
 
 open IEEE754
-open AugReal
+open CER
 
 let smallest_nz_b32 = Util.pow2 (-149)
 let largest_subnormal_b32 = Util.pow2 (-148)
@@ -27,21 +27,21 @@ eval pp (round (R (largest_normal_b32 *. 2.0)) Format.Binary32 RoundingMode.Towa
 *)
 
 verify (List.length (round (R 2.0) Format.Binary32 RoundingMode.TowardZero) = 32) [@@by auto]
-verify (as_aug_real Format.Binary32 (round (R 0.0) Format.Binary32 RoundingMode.TowardZero) = Ok (AugReal.R 0.0)) [@@by auto]
-verify (as_aug_real Format.Binary32 (round (R (- 1.0)) Format.Binary32 RoundingMode.TowardNegative) = Ok (AugReal.R (- 1.0))) [@@by auto]
-verify (as_aug_real Format.Binary32 (round (R 21.0) Format.Binary32 RoundingMode.TowardZero) = Ok (AugReal.R 21.0)) [@@by auto]
-verify (as_aug_real Format.Binary32 (round (R 0.125) Format.Binary32 RoundingMode.TowardZero) = Ok (AugReal.R (1.0 /. 8.0))) [@@by auto]
+verify (as_aug_real Format.Binary32 (round (R 0.0) Format.Binary32 RoundingMode.TowardZero) = Ok (CER.R 0.0)) [@@by auto]
+verify (as_aug_real Format.Binary32 (round (R (- 1.0)) Format.Binary32 RoundingMode.TowardNegative) = Ok (CER.R (- 1.0))) [@@by auto]
+verify (as_aug_real Format.Binary32 (round (R 21.0) Format.Binary32 RoundingMode.TowardZero) = Ok (CER.R 21.0)) [@@by auto]
+verify (as_aug_real Format.Binary32 (round (R 0.125) Format.Binary32 RoundingMode.TowardZero) = Ok (CER.R (1.0 /. 8.0))) [@@by auto]
 verify (as_aug_real Format.Binary32 (round (R smallest_nz_b32) Format.Binary32 RoundingMode.TowardZero) =
-        Ok (AugReal.R (1.0 /. 713623846352979940529142984724747568191373312.0))) [@@by auto]
+        Ok (CER.R (1.0 /. 713623846352979940529142984724747568191373312.0))) [@@by auto]
 verify (as_aug_real Format.Binary32 (round (R largest_subnormal_b32) Format.Binary32 RoundingMode.TowardZero) =
-        Ok (AugReal.R (1.0 /. 356811923176489970264571492362373784095686656.0))) [@@by auto]
+        Ok (CER.R (1.0 /. 356811923176489970264571492362373784095686656.0))) [@@by auto]
 verify (as_aug_real Format.Binary32 (round (R smallest_normal_b32) Format.Binary32 RoundingMode.TowardZero) =
-        Ok (AugReal.R (1.0 /. 85070591730234615865843651857942052864.0))) [@@by auto]
+        Ok (CER.R (1.0 /. 85070591730234615865843651857942052864.0))) [@@by auto]
 verify (as_aug_real Format.Binary32 (round (R largest_normal_b32) Format.Binary32 RoundingMode.TowardZero) =
-        Ok (AugReal.R 340282346638528859811704183484516925440.0)) [@@by auto]
+        Ok (CER.R 340282346638528859811704183484516925440.0)) [@@by auto]
 verify (as_aug_real Format.Binary32 (pinf Format.Binary32) = Ok PINF) [@@by auto]
 verify (as_aug_real Format.Binary32 (round (R (largest_normal_b32 +. 1.0)) Format.Binary32 RoundingMode.TowardZero) =
-        Ok (AugReal.R 340282346638528859811704183484516925440.0)) [@@by auto]
+        Ok (CER.R 340282346638528859811704183484516925440.0)) [@@by auto]
 
 let roundtrip32 (x : t) : (t, string) Result.t =
   (* convert extended real to IEEE754 single and back again *)

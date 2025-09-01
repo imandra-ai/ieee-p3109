@@ -15,8 +15,8 @@ let f81 = {Format.kp = Format.B8P1; s = Signedness.Signed; d = Domain.Extended}
 let f83 = {Format.kp = Format.B8P3; s = Signedness.Signed; d = Domain.Extended}
 
 let fmt = f83 [@@macro]
-let enc (r : real) = match Float.encode fmt (AugReal.R r) with | Ok e -> e | _ -> Float.nan f83
-let dec (x : Float.t) = match Float.decode fmt x with | AugReal.R e -> e | _ -> 0.0
+let enc (r : real) = match Float.encode fmt (CER.R r) with | Ok e -> e | _ -> Float.nan f83
+let dec (x : Float.t) = match Float.decode fmt x with | CER.R e -> e | _ -> 0.0
 
 (* Just some checks; the important theorems are all in sqrt.iml *)
 verify (Float.sqrt fmt fmt (SaturationMode.SatPropagate, RoundingMode.TowardZero) (enc 0.0) = (enc 0.0)) [@@by ground_eval ()]
@@ -30,8 +30,8 @@ verify (Float.sqrt fmt fmt (SaturationMode.SatPropagate, RoundingMode.TowardZero
 verify (dec (Float.sqrt fmt fmt (SaturationMode.SatPropagate, RoundingMode.TowardZero) (enc 256.0)) = 16.0) [@@by ground_eval ()]
 verify (Float.sqrt fmt fmt (SaturationMode.SatPropagate, RoundingMode.TowardZero) (Float.nan f83) = Float.nan f83) [@@by ground_eval ()]
 
-let aug_sqrt_approx (x : AugReal.t) (over : bool) (n : int) : (AugReal.t, string) Result.t =
-  let open AugReal in
+let aug_sqrt_approx (x : CER.t) (over : bool) (n : int) : (CER.t, string) Result.t =
+  let open CER in
   match x with
   | NaN -> Ok NaN
   | NINF -> Ok NaN
@@ -45,7 +45,7 @@ let aug_sqrt_approx (x : AugReal.t) (over : bool) (n : int) : (AugReal.t, string
     | Error e -> Error e)
   | _ -> Error "undefined"
 
-theorem aug_sqrt_approx_ok (x : AugReal.t) (over : bool) (n : int) =
+theorem aug_sqrt_approx_ok (x : CER.t) (over : bool) (n : int) =
   Result.is_ok (aug_sqrt_approx x over n)
   [@@timeout 60]
   [@@disable Sqrt.sqrt_over, Sqrt.sqrt_under]
@@ -59,7 +59,7 @@ theorem fsqrt_aux_both_ok (prec : int) (bias : int) (rnd : RoundingMode.t) (star
   [@@by auto]
   (* [@@fc] *)
 
-theorem aug_fsqrt_ok (prec : int) (bias : int) (rnd : RoundingMode.t) (start : real -> int -> (Sqrt.state * Sqrt.state)) (x : AugReal.t) =
+theorem aug_fsqrt_ok (prec : int) (bias : int) (rnd : RoundingMode.t) (start : real -> int -> (Sqrt.state * Sqrt.state)) (x : CER.t) =
   match x with
   | NaN | PINF | NINF -> true
   | R r when r <. 0.0 -> true
@@ -71,16 +71,16 @@ theorem aug_fsqrt_ok (prec : int) (bias : int) (rnd : RoundingMode.t) (start : r
   [@@by auto]
   [@@fc]
 
-theorem square_gt_0 (x : AugReal.t) =
-  let open AugReal in
-  let open AugReal.ResultInfix in
+theorem square_gt_0 (x : CER.t) =
+  let open CER in
+  let open CER.ResultInfix in
   match (x * x) [@trigger] with
   | Ok sq -> sq >= zero
   | _ -> true
   [@@by auto]
   [@@fc]
 
-theorem find_closest_sqrt_floats_aux_ok (f : Format.t) (x : AugReal.t) (l : Float.t) (u : Float.t) =
+theorem find_closest_sqrt_floats_aux_ok (f : Format.t) (x : CER.t) (l : Float.t) (u : Float.t) =
   l >= 0 && u >= 0 && l < u ==>
   Result.is_ok ((Fsqrt.find_closest_sqrt_floats_aux f x l u) [@trigger])
   [@@timeout 120]
@@ -88,7 +88,7 @@ theorem find_closest_sqrt_floats_aux_ok (f : Format.t) (x : AugReal.t) (l : Floa
   [@@by auto]
   [@@fc]
 
-theorem find_closest_sqrt_floats_ok (f : Format.t) (x : AugReal.t) =
+theorem find_closest_sqrt_floats_ok (f : Format.t) (x : CER.t) =
   Result.is_ok ((Fsqrt.find_closest_sqrt_floats f x) [@trigger])
   [@@timeout 120]
   [@@disable Format.get_format_parameters, Float.decode]

@@ -36,12 +36,12 @@ theorem m_lo_lt_m_hi (f : Format.t) =
 
 (** 4.6 Functions *)
 
-theorem internal_saturate_ok (m_lo : real) (m_hi : real) (sat : SaturationMode.t) (rnd : RoundingMode.t) (x : AugReal.t)  (s : Signedness.t) (d : Domain.t) =
+theorem internal_saturate_ok (m_lo : real) (m_hi : real) (sat : SaturationMode.t) (rnd : RoundingMode.t) (x : CER.t)  (s : Signedness.t) (d : Domain.t) =
   Result.is_ok (Float.internal_saturate m_lo m_hi sat rnd x s d  [@trigger])
   [@@by auto]
   [@@fc]
 
-theorem internal_round_to_precision_ok (p : int) (b : int) (rnd : RoundingMode.t) (x : AugReal.t) =
+theorem internal_round_to_precision_ok (p : int) (b : int) (rnd : RoundingMode.t) (x : CER.t) =
   Result.is_ok (Float.internal_round_to_precision p b rnd x)
 
 (* [decode_aux] never throws an error *)
@@ -60,7 +60,7 @@ theorem decode_within_range (f : Format.t) (x : Float.t) =
   [@@fc]
 
 (* [encode] is ok if the input is within the format range *)
-theorem encode_ok_within_range (f : Format.t) (x : AugReal.t) =
+theorem encode_ok_within_range (f : Format.t) (x : CER.t) =
   let _, _, _, m_lo, m_hi, s, _ = Format.get_format_parameters f in
   let encoded = Float.encode f x [@@trigger] in
   if aug_real_is_within_range f x then
@@ -80,7 +80,7 @@ theorem decode_encode_ok (f : Format.t)  (x : Float.t) =
   [@@fc]
 
 (* [saturate] always produces a number within the format range *)
-theorem saturate_is_within_range (f : Format.t) (x : AugReal.t) (sat : SaturationMode.t) (rnd : RoundingMode.t) =
+theorem saturate_is_within_range (f : Format.t) (x : CER.t) (sat : SaturationMode.t) (rnd : RoundingMode.t) =
   let _, _, _, m_lo, m_hi, _, _ = Format.get_format_parameters f in
   let s = (Float.saturate m_lo m_hi sat rnd x f.s f.d [@trigger]) in
   aug_real_is_within_range f s
@@ -90,7 +90,7 @@ theorem saturate_is_within_range (f : Format.t) (x : AugReal.t) (sat : Saturatio
   [@@fc]
 
 (* Encoding after saturation is always ok *)
-theorem saturate_encode_ok (f : Format.t) (x : AugReal.t) (sat : SaturationMode.t) (rnd : RoundingMode.t) =
+theorem saturate_encode_ok (f : Format.t) (x : CER.t) (sat : SaturationMode.t) (rnd : RoundingMode.t) =
   let _, _, _, m_lo, m_hi, _, _ = Format.get_format_parameters f in
   Result.is_ok (Float.encode f (Float.saturate m_lo m_hi sat rnd x f.s f.d) [@trigger])
   [@@disable Float.encode, Float.saturate, Format.get_format_parameters]
@@ -102,7 +102,7 @@ let rounded f rnd x =
   Float.round_to_precision p b rnd x
 
 (** [project] never returns an error *)
-theorem project_ok (f : Format.t) (pi : Projection.t) (x : AugReal.t) =
+theorem project_ok (f : Format.t) (pi : Projection.t) (x : CER.t) =
   Result.is_ok ((Float.project f pi x) [@trigger])
   [@@timeout 30]
   [@@by
@@ -114,21 +114,21 @@ theorem project_ok (f : Format.t) (pi : Projection.t) (x : AugReal.t) =
 (** Some helpers *)
 
 theorem pinf_decodes_to_pinf (f : Format.t) (x : Float.t) =
-  let open AugReal in
+  let open CER in
   Float.is_pinf f x <==> ((Float.decode f x = PINF) [@trigger])
   [@@timeout 360]
   [@@by unroll_nonlin 10 10 100]
   [@@fc]
 
 theorem ninf_decodes_to_ninf (f : Format.t) (x : Float.t) =
-  let open AugReal in
+  let open CER in
   Float.is_ninf f x <==> ((Float.decode f x = NINF) [@trigger])
   [@@timeout 360]
   [@@by unroll_nonlin 10 10 100]
   [@@fc]
 
 theorem inf_decodes_to_inf (f : Format.t) (x : Float.t) =
-  let open AugReal in
+  let open CER in
   ((Float.is_inf f x) [@trigger]) <==> (Float.decode f x = NINF || Float.decode f x = PINF)
   [@@by
     [%use pinf_decodes_to_pinf f x] @>
@@ -137,14 +137,14 @@ theorem inf_decodes_to_inf (f : Format.t) (x : Float.t) =
   [@@fc]
 
 theorem nan_decodes_to_nan (f : Format.t) (x : Float.t) =
-  let open AugReal in
+  let open CER in
   Float.is_nan f x <==> ((Float.decode f x = NaN) [@trigger])
   [@@timeout 120]
   [@@by unroll 50]
   [@@fc]
 
 theorem zero_decodes_to_zero (f : Format.t) (x : Float.t) =
-  let open AugReal in
+  let open CER in
   Float.is_zero f x <==> (Float.decode f x = R 0.0) [@trigger]
   [@@timeout 60]
   [@@by unroll 25]
@@ -157,14 +157,14 @@ theorem ipow2_gt_0 (n:int) =
   [@@fc]
 
 theorem decode_0_is_0 (f : Format.t)  =
-  let open AugReal in
+  let open CER in
   (Float.decode f 0) [@trigger] = R 0.0
   [@@timeout 60]
   [@@by enumerate ["f"] @> ground_eval ()]
   [@@fc]
 
 theorem zero_means_is_zero (f : Format.t) (x : Float.t) =
-  let open AugReal in
+  let open CER in
   x = 0 ==> ((Float.is_zero f x) [@trigger])
   [@@timeout 3600]
   [@@disable Util.ipow2, Util.pow2]
@@ -172,13 +172,13 @@ theorem zero_means_is_zero (f : Format.t) (x : Float.t) =
   [@@fc]
 
 (* theorem zero_is_zero_fwd (f : Format.t) (x : Float.t) =
-  let open AugReal in
+  let open CER in
   x = 0 ==> ((Float.decode f x = R 0.0) [@trigger])
   [@@timeout 360]
   [@@by enumerate ["f"] @> auto]
 
 theorem zero_is_zero_bwd (f : Format.t) (x : Float.t) =
-  let open AugReal in
+  let open CER in
   x = 0 <== ((Float.decode f x = R 0.0) [@trigger])
   [@@timeout 1200]
   (* [@@by enumerate ["f"] @> auto] *)
@@ -186,7 +186,7 @@ theorem zero_is_zero_bwd (f : Format.t) (x : Float.t) =
 
 
 theorem zero_is_zero (f : Format.t) (x : Float.t) =
-  let open AugReal in
+  let open CER in
   x = 0 <==> ((Float.decode f x = R 0.0) [@trigger])
   [@@timeout 60]
   [@@disable Float.decode, Float.decode_aux]
@@ -197,7 +197,7 @@ theorem zero_is_zero (f : Format.t) (x : Float.t) =
   [@@fc] *)
 
 (* theorem decode_specials (f : Format.t) (x : Float.t) =
-  let open AugReal in
+  let open CER in
   ((Float.is_pinf f x) <==> (Float.decode f x = PINF)) &&
   ((Float.is_ninf f x) <==> (Float.decode f x = NINF)) &&
   ((Float.is_nan f x) <==> (Float.decode f x = NaN)) &&
@@ -263,8 +263,8 @@ theorem internal_copy_sign_ok (f : Format.t) (x : Float.t) (y : Float.t) =
     [%use decode_within_range f x] @>
     [%use decode_within_range f y] @>
     [%use encode_ok_within_range f (Float.decode f x)] @>
-    [%use encode_ok_within_range f AugReal.(~- (Float.decode f x))] @>
-    [%use encode_ok_within_range f AugReal.NaN] @>
+    [%use encode_ok_within_range f CER.(~- (Float.decode f x))] @>
+    [%use encode_ok_within_range f CER.NaN] @>
     auto]
 
 
@@ -391,7 +391,7 @@ theorem h2 (x : real) (y : real) =
   [@@fc]
 
 (** [aug_hypot] never returns an error *)
-theorem aug_hypot_ok (x : AugReal.t) (y : AugReal.t) =
+theorem aug_hypot_ok (x : CER.t) (y : CER.t) =
   Result.is_ok ((Float.aug_hypot x y) [@trigger])
   [@@timeout 60]
   [@@disable Sqrt.sqrt]

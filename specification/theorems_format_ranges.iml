@@ -1,5 +1,5 @@
 [@@@import Util, "dune:math"]
-[@@@import AugReal, "dune:math"]
+[@@@import CER, "dune:math"]
 [@@@import Specification, "specification.iml"]
 
 open Specification
