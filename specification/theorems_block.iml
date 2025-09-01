@@ -1,0 +1,78 @@
+[@@@import Util, "dune:math"]
+[@@@import Log, "dune:math"]
+[@@@import Exp, "dune:math"]
+[@@@import Specification, "specification.iml"]
+[@@@import Theorems, "theorems.iml"]
+[@@@import Theorems_pow2, "theorems_pow2.iml"]
+[@@@import Theorems_format_ranges, "theorems_format_ranges.iml"]
+[@@@import Theorems_IEEE754, "theorems_ieee754.iml"]
+
+open Specification
+
+let unroll_nonlin qt nqt steps = Tactic.unroll ~smt:"z3-full-nonlinear" ~query_timeout:qt ~no_asm_query_timeout:nqt steps
+
+(** [aug_maximum_finite] never returns an error *)
+theorem aug_maximum_finite_ok (x : AugReal.t) (y : AugReal.t) =
+  Result.is_ok (Float.aug_maximum_finite x y)
+  [@@by auto]
+
+theorem decode_block_ok (f_s : Format.t) (f_x : Format.t) (b : int) ((s, x) : int * Float.t list) =
+  b = List.length x ==>
+  Result.is_ok ((Block.decode_block f_s f_x b (s, x)) [@trigger])
+  [@@timeout 3600]
+  [@@disable Float.decode, Util.pow2, Util.ipow2]
+  [@@by induct ~do_not:["gen"; "fert"] ()]
+  [@@fc] (* TODO *)
+
+theorem convert_block_ok
+  (b : int)
+  (f_s : Format.t) (f_x : Format.t) (f_z : Format.t)
+  (pi_s : Projection.t) (pi_z : Projection.t)
+  (x : Float.t list) =
+  b = List.length x ==>
+  Result.is_ok (Block.convert_block b f_s f_x f_z pi_s pi_z x)
+  [@@timeout 3600]
+  [@@by auto] (* TODO *)
+
+theorem dot_block_ok
+  (b : int)
+  (f_sx : Format.t) (f_x : Format.t)
+  (f_sy : Format.t) (f_y : Format.t)
+  (f_z : Format.t)
+  (pi_z : Projection.t)
+  (s_x, x : Float.t * Float.t list)
+  (s_y, y : Float.t * Float.t list) =
+  b = List.length x && b = List.length y ==>
+  Result.is_ok (Block.dot_block b f_sx f_x f_sy f_y f_z pi_z (s_x, x) (s_y, y))
+  [@@timeout 3600]
+  [@@by auto] (* TODO *)
+
+theorem add_block_ok
+  (b : int)
+  (f_sx : Format.t) (f_x : Format.t)
+  (f_sy : Format.t) (f_y : Format.t)
+  (f_s : Format.t)
+  (f_z : Format.t)
+  (pi_s : Projection.t)
+  (pi_z : Projection.t)
+  (s_x, x : Float.t * Float.t list)
+  (s_y, y : Float.t * Float.t list)
+  (s_z : Float.t) =
+  b = List.length x && b = List.length y ==>
+  Result.is_ok (Block.add_block b f_sx f_x f_sy f_y f_s f_z pi_s pi_z (s_x, x) (s_y, y) s_z)
+  [@@timeout 3600]
+  [@@by auto] (* TODO *)
+
+(* If all x_i are NaN, the output scale and elements will be NaN. *)
+theorem convert_block_note
+  (b : int)
+  (f_s : Format.t) (f_x : Format.t) (f_z : Format.t)
+  (pi_s : Projection.t) (pi_z : Projection.t)
+  (x : Float.t list) =
+  let open AugReal in
+  b = List.length x && List.for_all (Float.is_nan f_x) x ==>
+  match Block.convert_block b f_s f_x f_z pi_s pi_z x with
+  | Ok (s, z) -> Float.is_nan f_s s && List.for_all (Float.is_nan f_z) z
+  | Error _ -> true
+  [@@timeout 60]
+  [@@by auto] (* TODO *)

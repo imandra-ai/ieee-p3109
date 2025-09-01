@@ -233,7 +233,7 @@ let fsqrt_aux_both prec bias f rnd
       (* Printf.printf "Match\n%!"; *)
       (* r_of_aug ornded *)
       true
-    else if AugReal.( * ) ornded ornded = Ok (AugReal.R x) then (
+    else if AugReal.ResultInfix.( * ) ornded ornded = Ok (AugReal.R x) then (
       Printf.printf "Exact RO\n%!";
       (* r_of_aug ornded) *)
       true
@@ -262,7 +262,7 @@ let rec find_closest_floats_aux_ml (f : Format.t) (x : AugReal.t) (l : Float.t)
   else (
     let m = Z.div (Z.add l u) (Z.of_int 2) in
     let dm = Float.decode f m in
-    match AugReal.(dm * dm) with
+    match AugReal.ResultInfix.(dm * dm) with
     | Ok dmsq when AugReal.(dmsq >= x) -> find_closest_floats_aux_ml f x l m
     | Ok _ -> find_closest_floats_aux_ml f x m u
     | Error e -> Error e)

@@ -1,0 +1,33 @@
+(** An attempt at making error propagation less prominent *)
+
+let ( let* ) (x : ('a, 'e) Result.t) (f : ('a -> ('b, 'e) Result.t)) : ('b, 'e) Result.t =
+  match x with
+  | Ok x ->
+    (match f x with
+    | Ok y -> Ok y
+    | Error e -> Error e)
+  | Error e -> Error e
+  [@@macro]
+
+let rec extract_error (xs : ('a, 'e) Result.t list) : ('b, 'e) Result.t =
+  match xs with
+  | [] -> Ok []
+  | x :: xs ->
+    (match x with
+    | Ok x ->
+      (match extract_error xs with
+      | Ok ys -> Ok (x :: ys)
+      | Error e -> Error e
+      )
+    | Error e -> Error e)
+
+let ( let@ ) (xs : ('a, 'e) Result.t list) (f : 'a list -> ('b, 'e) Result.t) : ('b, 'e) Result.t =
+  match extract_error xs with
+  | Ok ys -> f ys
+  | Error e -> Error e
+  [@@macro]
+
+let (let*@) (x : (('a, 'e) Result.t list, 'e) Result.t) (f : 'a list -> ('b, 'e) Result.t) =
+  let* t = x in
+  let@ r = t in
+  f r

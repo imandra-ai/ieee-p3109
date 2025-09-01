@@ -9,7 +9,7 @@ let fsqrt_aux_both prec bias rnd start (x : real) (p : int) : ((real * int), str
     let urnded = Float.round_to_precision prec bias rnd (AugReal.R u.g) in
     let ornded = Float.round_to_precision prec bias rnd (AugReal.R o.g) in
     if ornded = urnded then true
-    else if AugReal.(ornded * ornded) = Ok (AugReal.R x) then true
+    else if AugReal.ResultInfix.(ornded * ornded) = Ok (AugReal.R x) then true
     else if o.g *. o.g = x then true
     else false
   in
@@ -34,8 +34,8 @@ let rec find_closest_sqrt_floats_aux (f : Format.t) (x : AugReal.t) (l : Float.t
   else (
     let m = (l + u) / 2 in
     let dm = Float.decode f m in
-    match AugReal.(dm * dm) with
-    | Ok dmsq when AugReal.(dmsq >= x) -> find_closest_sqrt_floats_aux f x l m
+    match AugReal.ResultInfix.(dm * dm) with
+    | Ok dmsq when AugReal.ResultInfix.(dmsq >= x) -> find_closest_sqrt_floats_aux f x l m
     | Ok _ -> find_closest_sqrt_floats_aux f x m u
     | Error e -> Error e)
   [@@measure Ordinal.of_int (u - l)]

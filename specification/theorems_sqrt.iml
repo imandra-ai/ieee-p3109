@@ -73,6 +73,7 @@ theorem aug_fsqrt_ok (prec : int) (bias : int) (rnd : RoundingMode.t) (start : r
 
 theorem square_gt_0 (x : AugReal.t) =
   let open AugReal in
+  let open AugReal.ResultInfix in
   match (x * x) [@trigger] with
   | Ok sq -> sq >= zero
   | _ -> true

@@ -96,6 +96,7 @@ let to_binary (x : int) (digits : int) =
 let round_internal (x : AugReal.t) (fmt : Format.t) (rnd : RoundingMode.t) : (t,  string) Result.t =
   let open RoundingMode in
   let open AugReal in
+  let open AugReal.ResultInfix in
   let _, _, emax, bias, _, w, t, _ = Format.get_format_parameters fmt in
   match x with
   | NaN -> Ok (nan fmt)
@@ -182,6 +183,7 @@ let as_aug_real (phi : Format.t) (x : t) : (AugReal.t, string) Result.t =
       else
         (if sgn = 1.0 then Ok PINF else Ok NINF)
     else
+      let open AugReal.ResultInfix in
       ((r2a sgn) * (2 ^ exp)) ** ((i2a sigd) / (2 ^ t))
 
 let bd acc b = acc ^ if b then "1" else "0"

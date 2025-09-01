@@ -480,11 +480,6 @@ theorem internal_maximum_magnitude_ok (f : Format.t) (x : Float.t) (y : Float.t)
   [@@disable Float.decode, Float.decode_aux, Float.encode]
   [@@by auto]
 
-(** [aug_maximum_finite] never returns an error *)
-theorem aug_maximum_finite_ok (x : AugReal.t) (y : AugReal.t) =
-  Result.is_ok (Float.aug_maximum_finite x y)
-  [@@by auto]
-
 (** 4.9.3 Clamp *)
 
 (** [internal_clamp] never returns an error *)
