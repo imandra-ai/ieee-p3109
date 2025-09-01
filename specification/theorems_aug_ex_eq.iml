@@ -353,13 +353,10 @@ let old_internal_saturate (m_lo : ExReal.t) (m_hi : ExReal.t) (s : Signedness.t)
 
 theorem saturate_aug_ex_eq (m_lo : real) (m_hi : real) (s : Signedness.t) (d : Domain.t) (sat : SaturationMode.t) (rnd : RoundingMode.t) (x : AugReal.t) =
   let open ExReal.ResultInfix in
-  x <> AugReal.NINF
-  ==>
+  not (x = AugReal.NINF && s = Signedness.Unsigned) &&
+  not (d = Domain.Finite && sat <> SaturationMode.SatFinite) ==>
   t_aug_eq1 x
-    (Float.internal_saturate m_lo m_hi s Domain.Extended sat rnd)
+    (fun x -> Float.internal_saturate m_lo m_hi sat rnd x s d)
     (old_internal_saturate (ExReal.R m_lo) (ExReal.R m_hi) s sat rnd)
-  [@@by auto]
-
-theorem saturate_alt_aug_ex_eq (m_lo : real) (m_hi : real) (s : Signedness.t) (d : Domain.t) (sat : SaturationMode.t) (rnd : RoundingMode.t) (x : AugReal.t) =
-  Float.internal_saturate m_lo m_hi s d sat rnd x = Float.internal_saturate_alt m_lo m_hi s d sat rnd x
-  [@@by auto]
+  (* [@@by auto] *)
+  [@@by unroll 100]

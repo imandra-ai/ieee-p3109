@@ -37,123 +37,220 @@ let ( ~- ) (x : t): t =
   | PINF -> NINF
   | R x -> (R (-. x))
 
-let ( + ) (x : t) (y : t) : (t, string) Result.t =
-  match x, y with
-  | NaN, _ | _, NaN -> Ok NaN
-  | (PINF | NINF), R _ -> Ok x
-  | R _, (PINF | NINF) -> Ok y
-  | R x, R y -> Ok (R (x +. y))
-  | _ -> Error "undefined"
-
-let ( - ) (x : t) (y : t) : (t, string) Result.t =
-  match x, y with
-  | NaN, _ | _, NaN -> Ok NaN
-  | NINF, _ | _, PINF -> Ok NINF
-  | PINF, _ | _, NINF -> Ok PINF
-  | R x, R y -> Ok (R (x -. y))
-  | _ -> Error "undefined"
-
-let ( * ) (x : t) (y : t) : (t, string) Result.t =
-  match x, y with
-  | NaN, _ | _, NaN -> Ok NaN
-
-  | NINF, NINF | PINF, PINF -> Ok PINF
-  | NINF, PINF | PINF, NINF  -> Ok NINF
-
-  | PINF, R x | R x, PINF when x >. 0.0 -> Ok PINF
-  | PINF, R x | R x, PINF when x <. 0.0 -> Ok NINF
-
-  | NINF, R x | R x, NINF when x >. 0.0 -> Ok NINF
-  | NINF, R x | R x, NINF when x <. 0.0 -> Ok PINF
-
-  | R x, R y -> Ok (R (x *. y))
-
-  | _ -> Error "undefined"
-
-let ( / ) (x : t) (y : t) : (t, string) Result.t =
-  match x, y with
-  | NaN, _ | _, NaN -> Ok NaN
-
-  | NINF, NINF | PINF, PINF -> Error "undefined"
-  | NINF, PINF | PINF, NINF  -> Error "undefined"
-  | _, R y when y = 0.0 -> Error "undefined"
-
-  | R _, PINF | R _, NINF -> Ok (R 0.0)
-
-  | PINF, R y when y >. 0.0 -> Ok PINF
-  | PINF, R y when y <. 0.0 -> Ok NINF
-  | NINF, R y when y >. 0.0 -> Ok NINF
-  | NINF, R y when y <. 0.0 -> Ok PINF
-
-  | R x, R y -> Ok (R (x /. y))
-
-  | _ -> Error "undefined"
-
-let ( < ) (x : t) (y : t) : bool =
-  match x, y with
-  | NaN, _ | _, NaN -> false
-  | NINF, NINF | PINF, PINF | PINF, NINF -> false
-  | NINF, PINF -> true
-  | NINF, R _ | R _, PINF -> true
-  | PINF, R _ | R _, NINF -> false
-  | R rx, R ry -> rx <. ry
-
-let ( <= ) (x : t) (y : t) : bool = x < y || x = y [@@macro]
-let ( > ) (x : t) (y : t) : bool = not (x <= y) [@@macro]
-let ( >= ) (x : t) (y : t) : bool = x > y || x = y [@@macro]
-
-let ( ^ ) (x : int) (y : int) : t = R (Util.pow x y) [@@macro]
-
-let abs (x: t) : t =
-  match x with
-  | NaN -> NaN
-  | NINF | PINF -> PINF
-  | R x -> R (Real.abs x)
-
-let sqrt (x : t) (p : int) : (t, string) Result.t =
-  match x with
-  | NINF -> Error "undefined"
-  | R r when r <. 0.0 -> Error "undefined"
-  | NaN -> Ok NaN
-  | PINF -> Ok PINF
-  | R r -> (
-    match Sqrt.sqrt r p with
-    | Ok r -> Ok (R r)
-    | Error e -> Error e)
-
 let pow2 (x : int) : t = R (Util.pow2 x) [@@macro]
 
-type res = (t, string) Result.t
+module Infix = struct
+  let ( + ) (x : t) (y : t) : t =
+    match x, y with
+    | NaN, _ -> NaN
+    | _, NaN -> NaN
+    | PINF, NINF -> NaN
+    | NINF, PINF -> NaN
+    | PINF, _ -> PINF
+    | _, PINF -> PINF
+    | NINF, _ -> NINF
+    |  _, NINF -> NINF
+    | R x, R y -> R (x +. y)
 
-let ( ++ ) (x : res) (y : res) : res =
-  match x, y with
-  | Error e, _ | _, Error e -> Error e
-  | Ok x, Ok y -> x + y
+  let ( - ) (x : t) (y : t) : t =
+    match x, y with
+     | NaN, _ -> NaN
+    | _, NaN -> NaN
+    | PINF, PINF -> NaN
+    | NINF, NINF -> NaN
+    | _, PINF -> NINF
+    | PINF, _ -> PINF
+    | _, NINF -> PINF
+    | NINF, _ -> NINF
+    | R x, R y -> R (x -. y)
 
-let ( -- ) (x : res) (y : res) : res =
-  match x, y with
-  | Error e, _ | _, Error e -> Error e
-  | Ok x, Ok y -> x - y
+  let ( * ) (x : t) (y : t) : t =
+    match x, y with
+    | NaN, _ -> NaN
+    | _, NaN -> NaN
+    | PINF, PINF -> PINF
+    | NINF, NINF -> PINF
+    | NINF, PINF -> NINF
+    | PINF, NINF -> NINF
+    | PINF, R y when y >. 0.0 -> PINF
+    | PINF, R y when y = 0.0 -> NaN
+    | PINF, R y when y <. 0.0 -> NINF
+    | R x, PINF when x >. 0.0 -> PINF
+    | R x, PINF when x = 0.0 -> NaN
+    | R x, PINF when x <. 0.0 -> NINF
+    | NINF, R y when y >. 0.0 -> NINF
+    | NINF, R y when y = 0.0 -> NaN
+    | NINF, R y when y <. 0.0 -> PINF
+    | R x, NINF when x >. 0.0 -> NINF
+    | R x, NINF when x = 0.0 -> NaN
+    | R x, NINF when x <. 0.0 -> PINF
+    | R x, R y -> R (x *. y)
+    | _ -> NaN
 
-let ( ** ) (x : res) (y : res) : res =
-  match x, y with
-  | Error e, _ | _, Error e -> Error e
-  | Ok x, Ok y -> x * y
+  let ( / ) (x : t) (y : t) : t =
+    match x, y with
+    | NaN, _ -> NaN
+    | _, NaN -> NaN
+    | (PINF | NINF), (PINF | NINF) -> NaN
+    | _, R y when y = 0.0 -> NaN
+    | PINF, R y when y >. 0.0 -> PINF
+    | PINF, R y when y <. 0.0 -> NINF
+    | NINF, R y when y >. 0.0 -> NINF
+    | NINF, R y when y <. 0.0 -> PINF
+    | _, (PINF | NINF) -> R 0.0
+    | R x, R y -> R (x /. y)
+    | _ -> NaN
 
-let ( // ) (x : res) (y : res) : res =
-  match x, y with
-  | Error e, _ | _, Error e -> Error e
-  | Ok x, Ok y -> x / y
+  let ( < ) (x : t) (y : t) : bool =
+    match x, y with
+    | NaN, _ | _, NaN -> false
+    | NINF, NINF | PINF, PINF | PINF, NINF -> false
+    | NINF, PINF -> true
+    | NINF, R _ | R _, PINF -> true
+    | PINF, R _ | R _, NINF -> false
+    | R rx, R ry -> rx <. ry
 
-let ( ^^ ) (x : (int, string) Result.t) (y : (int, string) Result.t) : res =
-  match x, y with
-  | Error e, _ | _, Error e -> Error e
-  | Ok x, Ok y -> Ok (x ^ y)
+  let ( <= ) (x : t) (y : t) : bool = x < y || x = y [@@macro]
+  let ( > ) (x : t) (y : t) : bool = not (x <= y) [@@macro]
+  let ( >= ) (x : t) (y : t) : bool = x > y || x = y [@@macro]
 
-let absr (x : res) : res =
-  match x with
-  | Ok x -> Ok (abs x)
-  | Error e -> Error e
+  let ( ^ ) (x : int) (y : int) : t = R (Util.pow x y) [@@macro]
+
+  let abs (x: t) : t =
+    match x with
+    | NaN -> NaN
+    | NINF | PINF -> PINF
+    | R x -> R (Real.abs x)
+
+  let sqrt (x : t) (p : int) : t =
+    match x with
+    | NINF -> NaN
+    | R r when r <. 0.0 -> NaN
+    | NaN -> NaN
+    | PINF -> PINF
+    | R r -> (
+      match Sqrt.sqrt r p with
+      | Ok r -> R r
+      | Error e -> NaN)
+end
+
+module ResultInfix = struct
+  let ( + ) (x : t) (y : t) : (t, string) Result.t =
+    match x, y with
+    | NaN, _ | _, NaN -> Ok NaN
+    | (PINF | NINF), R _ -> Ok x
+    | R _, (PINF | NINF) -> Ok y
+    | R x, R y -> Ok (R (x +. y))
+    | _ -> Error "undefined"
+
+  let ( - ) (x : t) (y : t) : (t, string) Result.t =
+    match x, y with
+    | NaN, _ | _, NaN -> Ok NaN
+    | NINF, _ | _, PINF -> Ok NINF
+    | PINF, _ | _, NINF -> Ok PINF
+    | R x, R y -> Ok (R (x -. y))
+    | _ -> Error "undefined"
+
+  let ( * ) (x : t) (y : t) : (t, string) Result.t =
+    match x, y with
+    | NaN, _ | _, NaN -> Ok NaN
+
+    | NINF, NINF | PINF, PINF -> Ok PINF
+    | NINF, PINF | PINF, NINF  -> Ok NINF
+
+    | PINF, R x | R x, PINF when x >. 0.0 -> Ok PINF
+    | PINF, R x | R x, PINF when x <. 0.0 -> Ok NINF
+
+    | NINF, R x | R x, NINF when x >. 0.0 -> Ok NINF
+    | NINF, R x | R x, NINF when x <. 0.0 -> Ok PINF
+
+    | R x, R y -> Ok (R (x *. y))
+
+    | _ -> Error "undefined"
+
+  let ( / ) (x : t) (y : t) : (t, string) Result.t =
+    match x, y with
+    | NaN, _ | _, NaN -> Ok NaN
+
+    | NINF, NINF | PINF, PINF -> Error "undefined"
+    | NINF, PINF | PINF, NINF  -> Error "undefined"
+    | _, R y when y = 0.0 -> Error "undefined"
+
+    | R _, PINF | R _, NINF -> Ok (R 0.0)
+
+    | PINF, R y when y >. 0.0 -> Ok PINF
+    | PINF, R y when y <. 0.0 -> Ok NINF
+    | NINF, R y when y >. 0.0 -> Ok NINF
+    | NINF, R y when y <. 0.0 -> Ok PINF
+
+    | R x, R y -> Ok (R (x /. y))
+
+    | _ -> Error "undefined"
+
+  let ( < ) (x : t) (y : t) : bool =
+    match x, y with
+    | NaN, _ | _, NaN -> false
+    | NINF, NINF | PINF, PINF | PINF, NINF -> false
+    | NINF, PINF -> true
+    | NINF, R _ | R _, PINF -> true
+    | PINF, R _ | R _, NINF -> false
+    | R rx, R ry -> rx <. ry
+
+  let ( <= ) (x : t) (y : t) : bool = x < y || x = y [@@macro]
+  let ( > ) (x : t) (y : t) : bool = not (x <= y) [@@macro]
+  let ( >= ) (x : t) (y : t) : bool = x > y || x = y [@@macro]
+
+  let ( ^ ) (x : int) (y : int) : t = R (Util.pow x y) [@@macro]
+
+  let abs (x: t) : t =
+    match x with
+    | NaN -> NaN
+    | NINF | PINF -> PINF
+    | R x -> R (Real.abs x)
+
+  let sqrt (x : t) (p : int) : (t, string) Result.t =
+    match x with
+    | NINF -> Error "undefined"
+    | R r when r <. 0.0 -> Error "undefined"
+    | NaN -> Ok NaN
+    | PINF -> Ok PINF
+    | R r -> (
+      match Sqrt.sqrt r p with
+      | Ok r -> Ok (R r)
+      | Error e -> Error e)
+
+  type res = (t, string) Result.t
+
+  let ( ++ ) (x : res) (y : res) : res =
+    match x, y with
+    | Error e, _ | _, Error e -> Error e
+    | Ok x, Ok y -> x + y
+
+  let ( -- ) (x : res) (y : res) : res =
+    match x, y with
+    | Error e, _ | _, Error e -> Error e
+    | Ok x, Ok y -> x - y
+
+  let ( ** ) (x : res) (y : res) : res =
+    match x, y with
+    | Error e, _ | _, Error e -> Error e
+    | Ok x, Ok y -> x * y
+
+  let ( // ) (x : res) (y : res) : res =
+    match x, y with
+    | Error e, _ | _, Error e -> Error e
+    | Ok x, Ok y -> x / y
+
+  let ( ^^ ) (x : (int, string) Result.t) (y : (int, string) Result.t) : res =
+    match x, y with
+    | Error e, _ | _, Error e -> Error e
+    | Ok x, Ok y -> Ok (x ^ y)
+
+  let absr (x : res) : res =
+    match x with
+    | Ok x -> Ok (abs x)
+    | Error e -> Error e
+end
 
 let to_string : t -> string =
   fun x ->
