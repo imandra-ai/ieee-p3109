@@ -13,7 +13,7 @@ let unroll_nonlin qt nqt steps = Tactic.unroll ~smt:"z3-full-nonlinear" ~query_t
 
 (** [aug_maximum_finite] never returns an error *)
 theorem aug_maximum_finite_ok (x : AugReal.t) (y : AugReal.t) =
-  Result.is_ok (Float.aug_maximum_finite x y)
+  Result.is_ok (Block.aug_maximum_finite x y)
   [@@by auto]
 
 theorem decode_block_ok (f_s : Format.t) (f_x : Format.t) (b : int) ((s, x) : int * Float.t list) =
