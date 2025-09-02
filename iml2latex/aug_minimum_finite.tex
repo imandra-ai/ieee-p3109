@@ -1,0 +1,12 @@
+\noindent\Case{\Cer\MinimumFinite(\NaN, \NaN) \gives  \NaN}\\
+\Case{\Cer\MinimumFinite(\NaN, y) \gives  y}\\
+\Case{\Cer\MinimumFinite(x, \NaN) \gives  x}\\
+\Case{\Cer\MinimumFinite(+\infty, +\infty) \gives  +\infty}\\
+\Case{\Cer\MinimumFinite(-\infty, -\infty) \gives  -\infty}\\
+\Case{\Cer\MinimumFinite(+\infty, -\infty) \gives  -\infty}\\
+\Case{\Cer\MinimumFinite(-\infty, +\infty) \gives  -\infty}\\
+\Case{\Cer\MinimumFinite(+\infty, Y) \gives  Y}\\
+\Case{\Cer\MinimumFinite(X, +\infty) \gives  X}\\
+\Case{\Cer\MinimumFinite(-\infty, Y) \gives  Y}\\
+\Case{\Cer\MinimumFinite(X, -\infty) \gives  X}\\
+\Case{\Cer\MinimumFinite(X, Y) \gives  \Min{( X,  Y)}}\\

@@ -1292,6 +1292,62 @@ module Float = struct
     | _, _ -> maximum_magnitude f x y
 
 
+  (** 4.10.2 MinimumFinite, MaximumFinite *)
+
+  let aug_minimum_finite (x : CER.t) (y : CER.t) : (CER.t, string) Result.t =
+    let open CER in
+    match x, y with
+    | NaN, NaN -> Ok NaN
+    | NaN, y -> Ok y
+    | x, NaN -> Ok x
+    | PINF, PINF -> Ok PINF
+    | NINF, NINF -> Ok NINF
+    | PINF, NINF -> Ok NINF
+    | NINF, PINF -> Ok NINF
+    | PINF, R y -> Ok (R y)
+    | R x, PINF -> Ok (R x)
+    | NINF, R y -> Ok (R y)
+    | R x, NINF -> Ok (R x)
+    | R x, R y -> Ok (R (Real.min x y))
+    | _ -> Error "undefined"
+
+  let internal_minimum_finite (f : Format.t) (x : t) (y : t) : (t, string) Result.t =
+    match aug_minimum_finite (decode f x) (decode f y) with
+    | Ok r -> encode f r
+    | Error e -> Error e
+
+  let minimum_finite (f : Format.t) (x : t) (y : t) : t =
+    match internal_minimum_finite f x y  with
+    | Ok r -> r
+    | Error _ -> nan f (* unreachable by theorem internal_minimum_finite_ok *)
+
+  let aug_maximum_finite (x : CER.t) (y : CER.t) : (CER.t, string) Result.t =
+    let open CER in
+    match x, y with
+    | NaN, NaN -> Ok NaN
+    | NaN, y -> Ok y
+    | x, NaN -> Ok x
+    | PINF, PINF -> Ok PINF
+    | NINF, NINF -> Ok NINF
+    | PINF, NINF -> Ok PINF
+    | NINF, PINF -> Ok PINF
+    | PINF, R y -> Ok (R y)
+    | R x, PINF -> Ok (R x)
+    | NINF, R y -> Ok (R y)
+    | R x, NINF -> Ok (R x)
+    | R x, R y -> Ok (R (Real.max x y))
+    | _ -> Error "undefined"
+
+  let internal_maximum_finite (f : Format.t) (x : t) (y : t) : (t, string) Result.t =
+    match aug_maximum_finite (decode f x) (decode f y) with
+    | Ok r -> encode f r
+    | Error e -> Error e
+
+  let maximum_finite (f : Format.t) (x : t) (y : t) : t =
+    match internal_maximum_finite f x y  with
+    | Ok r -> r
+    | Error _ -> nan f (* unreachable by theorem internal_maximum_finite_ok *)
+
   (**  4.9.3 Clamp *)
 
   let aug_clamp (x : CER.t) (lo : CER.t) (hi : CER.t) : (CER.t, string) Result.t =
