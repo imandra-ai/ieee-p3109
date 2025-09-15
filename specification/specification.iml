@@ -1076,8 +1076,6 @@ module Float = struct
     | NINF, R y, _, PINF, _ when y >. 0.0 -> Ok NaN
     | R x, NINF, _, PINF, _ when x >. 0.0 -> Ok NaN
 
-    | (PINF | NINF), _, _, PINF, _ -> Ok PINF
-    | (PINF | NINF), _, _, NINF, _ -> Ok NINF
     | PINF, PINF, _, _, _ -> Ok PINF
     | _, PINF, _, PINF, _ -> Ok PINF
     | NINF, PINF, _, _, _ -> Ok NINF
