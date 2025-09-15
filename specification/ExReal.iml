@@ -93,8 +93,8 @@ let sqrt (x : t) (p : int) : (t, string) Result.t =
 
 let ln (x : t) (p : int) : (t, string) Result.t =
   match x with
-  | NINF
-  | PINF -> Error "invalid"
+  | NINF -> Error "invalid"
+  | PINF -> Ok PINF
   | R r when r <. 0.0 -> Error "invalid"
   | R r when r = 0.0 -> Ok NINF
   | R r ->
@@ -104,8 +104,8 @@ let ln (x : t) (p : int) : (t, string) Result.t =
 
 let log2 (x : t) (p : int) : (t, string) Result.t =
   match x with
-  | NINF
-  | PINF -> Error "invalid"
+  | NINF -> Error "invalid"
+  | PINF -> Ok PINF
   | R r when r <. 0.0 -> Error "invalid"
   | R r when r = 0.0 -> Ok NINF
   | R r ->

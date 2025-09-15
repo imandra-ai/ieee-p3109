@@ -927,7 +927,8 @@ module Float = struct
   let aug_log (x : CER.t) : (CER.t, string) Result.t =
     match x with
     | NaN -> Ok NaN
-    | (PINF | NINF) -> Ok NaN
+    | NINF -> Ok NaN
+    | PINF -> Ok PINF
     | R x when x <. 0.0 -> Ok NaN
     | R x when x = 0.0 -> Ok NINF
     | R x -> (
@@ -949,7 +950,8 @@ module Float = struct
   let aug_log2 (x : CER.t) : (CER.t, string) Result.t =
     match x with
     | NaN -> Ok NaN
-    | (PINF | NINF) -> Ok NaN
+    | NINF -> Ok NaN
+    | PINF -> Ok PINF
     | R x when x <. 0.0 -> Ok NaN
     | R x when x = 0.0 -> Ok NINF
     | R x -> (
