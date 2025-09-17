@@ -305,7 +305,6 @@ module Float = struct
     let open Util in
     let open RoundingMode in
     let rsign (x : real) : real = if x <. 0.0 then -1.0 else 1.0 [@@macro] in
-    let ifb1 (b : bool) : int = if b then 1 else 0 [@@macro] in
     let is_even (x : int) : bool = x mod 2 = 0 [@@macro] in
     match x with
     | CER.NaN -> Ok NaN
@@ -321,7 +320,7 @@ module Float = struct
           is_even (Real.to_int s)
         else
           floor s = 0.0 || is_even (e + b) in
-      let round_away (delta : real) (code_is_even : bool) (rnd : RoundingMode.t) (x : real): bool =
+      let round_away (rnd : RoundingMode.t) : bool =
         (match rnd with
         | NearestTiesToEven -> delta >. 0.5 || (delta = 0.5 && not code_is_even)
         | NearestTiesToAway -> delta >=. 0.5
@@ -329,7 +328,8 @@ module Float = struct
         | TowardNegative -> delta >. 0.0 && x <. 0.0
         | TowardZero -> false)
       in
-      let i : real = i2r (ifloor s + ifb1 (round_away delta code_is_even rnd x)) in
+      let i = if round_away rnd then (floor s) +. 1.0
+              else floor s in
       let z = CER.R (rsign x *. i *. (2 ^ e)) in
       Ok z
 
