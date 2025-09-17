@@ -1148,7 +1148,7 @@ module Float = struct
     | R x, PINF -> Ok (R x)
     | NINF, _ -> Ok NINF
     | _, NINF -> Ok NINF
-    | R x, R y -> Ok (R (Real.min x y))
+    | R x, R y -> Ok (if x <. y then (R x) else (R y))
     | _ -> Error "undefined"
 
   let internal_minimum (f : Format.t) (x : t) (y : t) : (t, string) Result.t =
@@ -1174,7 +1174,7 @@ module Float = struct
     | _, PINF -> Ok PINF
     | NINF, R y -> Ok (R y)
     | R x, NINF -> Ok (R x)
-    | R x, R y -> Ok (R (Real.max x y))
+    | R x, R y -> Ok (if x <. y then (R y) else (R x))
     | _ -> Error "undefined"
 
   let internal_maximum (f : Format.t) (x : t) (y : t) : (t, string) Result.t =
@@ -1242,7 +1242,7 @@ module Float = struct
     | R x, (PINF | NINF)  -> Ok (R x)
     | R x, R y when Real.abs x <. Real.abs y -> Ok (R x)
     | R x, R y when Real.abs x >. Real.abs y -> Ok (R y)
-    | R x, R y when Real.abs x = Real.abs y -> Ok (R (Real.min x y))
+    | R x, R y when Real.abs x = Real.abs y -> Ok (if x <. y then (R x) else (R y))
     | _ -> Error "undefined"
 
   let internal_minimum_magnitude (f : Format.t) (x : t) (y : t) : (t, string) Result.t =
@@ -1266,7 +1266,7 @@ module Float = struct
     | _, NINF  -> Ok NINF
     | R x, R y when Real.abs x >. Real.abs y -> Ok (R x)
     | R x, R y when Real.abs x <. Real.abs y -> Ok (R y)
-    | R x, R y when Real.abs x = Real.abs y -> Ok (R (Real.max x y))
+    | R x, R y when Real.abs x = Real.abs y -> Ok (if x <. y then (R y) else (R x))
     | _ -> Error "undefined"
 
   let internal_maximum_magnitude (f : Format.t) (x : t) (y : t) : (t, string) Result.t =
@@ -1308,7 +1308,7 @@ module Float = struct
     | R x, PINF -> Ok (R x)
     | NINF, R y -> Ok (R y)
     | R x, NINF -> Ok (R x)
-    | R x, R y -> Ok (R (Real.min x y))
+    | R x, R y -> Ok (if x <. y then (R x) else (R y))
     | _ -> Error "undefined"
 
   let internal_minimum_finite (f : Format.t) (x : t) (y : t) : (t, string) Result.t =
@@ -1335,7 +1335,7 @@ module Float = struct
     | R x, PINF -> Ok (R x)
     | NINF, R y -> Ok (R y)
     | R x, NINF -> Ok (R x)
-    | R x, R y -> Ok (R (Real.max x y))
+    | R x, R y -> Ok (if x <. y then (R y) else (R x))
     | _ -> Error "undefined"
 
   let internal_maximum_finite (f : Format.t) (x : t) (y : t) : (t, string) Result.t =
