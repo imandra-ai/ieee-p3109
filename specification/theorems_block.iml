@@ -8,31 +8,207 @@
 [@@@import Theorems_IEEE754, "theorems_ieee754.iml"]
 
 open Specification
+open Float
+open ErrorPropagation
+open Theorems
 
 let unroll_nonlin qt nqt steps = Tactic.unroll ~smt:"z3-full-nonlinear" ~query_timeout:qt ~no_asm_query_timeout:nqt steps
 
+theorem list_map_preserves_length (f : 'a -> 'b) (xs : 'a list) =
+  List.length ((List.map f xs) [@trigger]) = List.length xs
+  [@@by auto]
+  [@@fc]
+
+(** [aug_multiply] never returns an error *)
+theorem aug_multiply_ok (x : CER.t) (y : CER.t) =
+  Result.is_ok ((Float.aug_multiply x y) [@trigger])
+  [@@by auto]
+  [@@fc]
+
+(** [aug_divide] never returns an error *)
+theorem aug_divide_ok (x : CER.t) (y : CER.t) =
+  Result.is_ok ((Float.aug_divide x y) [@trigger])
+  [@@by auto]
+  [@@fc]
+
 (** [aug_maximum_finite] never returns an error *)
 theorem aug_maximum_finite_ok (x : CER.t) (y : CER.t) =
-  Result.is_ok (Block.aug_maximum_finite x y)
+  Result.is_ok ((Float.aug_maximum_finite x y) [@trigger])
+  [@@by auto]
+  [@@fc]
+
+(** 6.0.1 DecodeBlock *)
+
+theorem map_aug_multiply_ok (f_s : Format.t) (f_x : Format.t) (s, x : Float.t * Float.t list) =
+  Result.is_ok ((extract_error ((Float.map_aug_multiply f_s f_x s x) [@trigger])))
+  [@@disable Float.decode, Float.aug_multiply, List.map]
+  [@@by auto]
+  [@@fc]
+
+theorem map_aug_multiply_preserves_length (f_s : Format.t) (f_x : Format.t) (s, x : Float.t * Float.t list) =
+  List.length ((Float.map_aug_multiply f_s f_x s x) [@trigger]) = List.length x
+  [@@disable Float.decode, Float.aug_multiply, List.map]
+  [@@by auto]
+  [@@fc]
+
+theorem decode_block_ok (f_s : Format.t) (f_x : Format.t) (b : int) (s : Float.t) (x : Float.t list) =
+  b = List.length x && b >= 2 ==>
+  Result.is_ok ((Float.decode_block f_s f_x b (s, x)) [@trigger])
+  [@@timeout 10]
+  [@@disable Float.decode, Float.aug_multiply, List.map]
+  [@@by
+    [%use map_aug_multiply_ok f_s f_x (s, x)] @>
+    [%expand "Specification.Float.decode_block"] @>
+    simplify ()]
+  [@@fc]
+
+theorem decode_block_preserves_length (f_s : Format.t) (f_x : Format.t) (b : int) (s : Float.t) (x : Float.t list) =
+  b = List.length x && b >= 2 ==>
+  match (Float.decode_block f_s f_x b (s, x)) [@trigger] with
+  | Ok r -> List.length r = b
+  | _ -> false
+  [@@timeout 10]
+  [@@disable Float.decode, Float.aug_multiply, Float.map_aug_multiply, List.map]
+  [@@by
+    [%use map_aug_multiply_ok f_s f_x (s, x)] @>
+    induct ~do_not:["gen"; "fert"; "delim"] ()
+  ]
+  [@@fc]
+
+(** 6.0.2 EncodeBlock *)
+
+theorem map_aug_divide_ok_cer (f_s : Format.t) (f_x : Format.t) (s, x : CER.t * CER.t list) =
+  Result.is_ok (extract_error (List.map (fun x_i -> Float.aug_divide x_i s) x))
+  [@@disable Float.decode, Float.aug_divide, List.map]
   [@@by auto]
 
-theorem decode_block_ok (f_s : Format.t) (f_x : Format.t) (b : int) ((s, x) : int * Float.t list) =
-  b = List.length x ==>
-  Result.is_ok ((Block.decode_block f_s f_x b (s, x)) [@trigger])
-  [@@timeout 3600]
-  [@@disable Float.decode, Util.pow2, Util.ipow2]
-  [@@by induct ~do_not:["gen"; "fert"] ()]
-  [@@fc] (* TODO *)
+theorem encode_block_map_ok (cs : CER.t) (x : CER.t list) =
+  Result.is_ok (extract_error (List.map
+        (fun x_i ->
+          match cs with
+          | CER.NaN
+          | _ when x_i = CER.NaN -> Ok CER.NaN
+          | R 0.0 -> Ok (R 0.0)
+          | (PINF | NINF) -> Ok (R 1.0)
+          | _ -> aug_divide x_i cs)
+        x))
+  [@@disable Float.decode, Float.aug_divide, List.map]
+  [@@by auto]
 
-theorem convert_block_ok
+theorem map_project_ok f pi x =
+  Result.is_ok (extract_error ((Float.map_project f pi x) [@trigger]))
+  [@@disable Float.project]
+  [@@by induct ~do_not:["gen"; "fert"; "delim"] ()]
+  [@@fc]
+
+theorem encode_block_map_cz_ok cs x =
+  Result.is_ok (extract_error ((encode_block_map_cz cs x) [@trigger]))
+  [@@by auto]
+  [@@fc]
+
+theorem encode_block_ok (b : int) (f_s : Format.t) (f_z : Format.t) (pi_z : Projection.t) (s : t) (x : CER.t list) =
+  b = List.length x ==>
+  Result.is_ok ((Float.encode_block b f_s f_z pi_z (s, x)) [@trigger])
+  [@@timeout 60]
+  [@@disable Float.decode, Float.aug_divide, Float.project, List.map, Float.map_project]
+  [@@by induct ~do_not:["gen"; "fert"; "delim"] ()]
+  [@@fc]
+
+(** 6.0.3 ConvertFromBlock *)
+
+theorem convert_from_block_ok
   (b : int)
   (f_s : Format.t) (f_x : Format.t) (f_z : Format.t)
   (pi_s : Projection.t) (pi_z : Projection.t)
-  (x : Float.t list) =
+  (s, x : t * t list) =
+  b = List.length x && b >= 2 ==>
+  Result.is_ok (Float.convert_from_block b f_s f_x f_z pi_s pi_z (s, x))
+  [@@timeout 10]
+  [@@disable Float.decode, Float.map_project, Float.decode_block]
+  [@@by auto]
+
+(** 6.0.4 ConvertToBlock *)
+
+theorem convert_to_block_ok
+  (b : int)
+  (f_s : Format.t) (f_x : Format.t) (f_z : Format.t) (pi_z : Projection.t)
+  (x, s : t list * t) =
   b = List.length x ==>
-  Result.is_ok (Block.convert_block b f_s f_x f_z pi_s pi_z x)
+  Result.is_ok (Float.convert_to_block b f_s f_x f_z pi_z (x, s))
+  [@@disable Float.decode, Float.map_project, Float.map_decode, Float.encode_block]
+  [@@by auto]
+
+(** 6.0.5 ConvertToBlockMaxAbsFinite *)
+
+theorem map_aug_abs_ok (xs : CER.t list) =
+  Result.is_ok ((extract_error (map_aug_abs xs)) [@trigger])
+  [@@disable Float.decode, Float.aug_abs, List.map]
+  [@@by auto]
+  [@@fc]
+
+theorem fold_aug_maximum_finite_ok (xs : CER.t list) =
+  List.length xs >= 2 ==>
+  Result.is_ok ((Float.fold_aug_maximum_finite xs) [@trigger])
+  [@@disable Float.fold, Float.aug_maximum_finite]
+  [@@by auto]
+  [@@fc]
+
+theorem map_convert_maf_ok s' (x : CER.t list) =
+  Result.is_ok (extract_error ((Float.map_convert_maf s' x) [@trigger]))
+  [@@disable Float.aug_divide, List.map]
+  [@@by auto]
+  [@@fc]
+
+theorem convert_to_block_max_abs_finite_ok
+  (b : int)
+  (f_s : Format.t) (f_x : Format.t) (f_z : Format.t)
+  (pi_s : Projection.t) (pi_z : Projection.t)
+  (x : t list) =
+  b >= 2 && b = List.length x ==>
+  Result.is_ok (convert_to_block_max_abs_finite b f_s f_x f_z pi_s pi_z x)
   [@@timeout 3600]
-  [@@by auto] (* TODO *)
+  [@@disable Float.fold, Float.aug_maximum_finite, Float.aug_divide, Float.project, Float.decode, Float.map_aug_abs, Float.map_decode, Float.map_project, Float.fold_aug_maximum_finite, Float.map_convert_maf, List.length, Format.get_format_parameters]
+  [@@by induct ~do_not:["gen"; "fert"; "delim"] ()]
+
+(** 6.0.3 DotBlock *)
+
+theorem fold_aug_maximum_finite_extract_ok (xs : (CER.t, 'e) Result.t list) =
+  List.length xs >= 2 ==>
+  let r = (
+    let* ys = extract_error xs in
+    Float.fold Float.aug_maximum_finite ys)in
+  Result.is_ok (extract_error xs) [@trigger] ==> Result.is_ok r
+  [@@disable Float.fold, Float.aug_maximum_finite, List.map]
+  [@@by auto]
+  [@@fc]
+
+theorem map2_aug_multiply_elems_ok cx cy =
+  List.length cx = List.length cy ==>
+  match (Float.map2_aug_multiply cx cy) [@trigger] with
+  | Ok q -> Result.is_ok (extract_error q)
+  | _ -> false
+  [@@disable Float.aug_multiply, List.map2]
+  [@@by induct ~do_not:["gen"; "fert"; "delim"] ()]
+  [@@fc]
+
+theorem map2_aug_multiply_preserves_length cx cy =
+  List.length cx = List.length cy ==>
+  match (Float.map2_aug_multiply cx cy) [@trigger] with
+  | Ok q -> (
+    match extract_error q with
+    | Ok r -> List.length r = List.length cx
+    | _ -> false)
+  | _ -> false
+  [@@disable Float.aug_multiply, List.map2]
+  [@@by induct ~do_not:["gen"; "fert"; "delim"] ()]
+  [@@fc]
+
+theorem fold_aug_add_ok cp =
+  List.length cp >= 2 ==>
+  Result.is_ok ((Float.fold_aug_add cp) [@trigger])
+  [@@disable Float.fold, Float.aug_add]
+  [@@by auto]
+  [@@fc]
 
 theorem dot_block_ok
   (b : int)
@@ -42,10 +218,48 @@ theorem dot_block_ok
   (pi_z : Projection.t)
   (s_x, x : Float.t * Float.t list)
   (s_y, y : Float.t * Float.t list) =
-  b = List.length x && b = List.length y ==>
-  Result.is_ok (Block.dot_block b f_sx f_x f_sy f_y f_z pi_z (s_x, x) (s_y, y))
+  b = List.length x && b = List.length y && b >= 2 ==>
+  Result.is_ok (Float.dot_block b f_sx f_x f_sy f_y f_z pi_z (s_x, x) (s_y, y))
   [@@timeout 3600]
-  [@@by auto] (* TODO *)
+  [@@disable Float.fold, Float.aug_add, Float.map2_aug_multiply, Float.fold_aug_add, Float.decode_block, Float.project, Format.get_format_parameters]
+  [@@by simplify()]
+
+(** 6.0.4 AddBlock *)
+
+theorem map2_aug_add_ok cx cy =
+  List.length cx = List.length cy ==>
+  Result.is_ok ((Float.map2_aug_add cx cy) [@trigger])
+  [@@disable Float.fold, Float.aug_add]
+  [@@by auto]
+  [@@fc]
+
+theorem map2_aug_add_elems_ok cx cy =
+  List.length cx = List.length cy ==>
+  match (Float.map2_aug_add cx cy) [@trigger] with
+  | Ok q -> Result.is_ok (extract_error q)
+  | _ -> false
+  [@@disable Float.aug_add, List.map2]
+  [@@by induct ~do_not:["gen"; "fert"; "delim"] ()]
+  [@@fc]
+
+theorem map2_aug_add_preserves_length cx cy =
+  List.length cx = List.length cy ==>
+  match (Float.map2_aug_add cx cy) [@trigger] with
+  | Ok q -> (
+    match extract_error q with
+    | Ok r -> List.length r = List.length cx
+    | _ -> false)
+  | _ -> false
+  [@@timeout 60]
+  [@@disable Float.aug_add, List.map2]
+  [@@by induct ~do_not:["gen"; "fert"; "delim"] ()]
+  [@@fc]
+
+theorem map_add_block_ok f_z pi_z cs cz =
+  Result.is_ok (extract_error ((Float.map_add_block f_z pi_z cs cz) [@trigger]))
+  [@@disable Float.aug_divide, Float.project]
+  [@@by auto]
+  [@@fc]
 
 theorem add_block_ok
   (b : int)
@@ -58,10 +272,12 @@ theorem add_block_ok
   (s_x, x : Float.t * Float.t list)
   (s_y, y : Float.t * Float.t list)
   (s_z : Float.t) =
-  b = List.length x && b = List.length y ==>
-  Result.is_ok (Block.add_block b f_sx f_x f_sy f_y f_s f_z pi_s pi_z (s_x, x) (s_y, y) s_z)
+  b = List.length x && b = List.length y && b >= 2 ==>
+  Result.is_ok (Float.add_block b f_sx f_x f_sy f_y f_s f_z pi_s pi_z (s_x, x) (s_y, y) s_z)
   [@@timeout 3600]
-  [@@by auto] (* TODO *)
+  [@@disable Float.map2_aug_add, Float.map_add_block, Float.fold, Float.aug_add, Float.map2_aug_multiply, Float.fold_aug_add, Float.decode_block, Float.project, Format.get_format_parameters]
+  [@@by simplify ()]
+
 
 (* If all x_i are NaN, the output scale and elements will be NaN. *)
 theorem convert_block_note

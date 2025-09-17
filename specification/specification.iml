@@ -1649,64 +1649,127 @@ module Float = struct
   let to_string (f : Format.t) (x : t) : string =
     CER.to_string (decode f x)
   [@@program]
-end
 
 
-(** 6 Block operations *)
+  (** 6 Block operations *)
 
-module Block = struct
+  open ErrorPropagation
 
   let rec fold (f : 'a -> 'a -> ('a, string) Result.t) (x: 'a list) : ('a, string) Result.t =
-    let open ErrorPropagation in
     match x with
+    | [] -> Error "invalid fold"
+    | [x1] -> Error "invalid fold"
     | [x1; x2] -> f x1 x2
-    | x1 :: rest when List.length x > 2 ->
+    | x1 :: rest ->
       let* x2 = fold f rest in
       f x1 x2
     | _ -> Error "invalid fold"
 
-  let decode_block (f_s : Format.t) (f_x : Format.t) (b : int) ((s, x) : int * Float.t list) : (CER.t list, string) Result.t =
-    let open Float in
-    let open ErrorPropagation in
+
+  (** 6.0.1 DecodeBlock *)
+
+  let map_aug_multiply (f_s : Format.t) (f_x : Format.t) (s : t) (x : t list) : (CER.t, string) Result.t list =
+    List.map (fun x_i -> aug_multiply (decode f_s s) (decode f_x x_i)) x
+
+  let decode_block (f_s : Format.t) (f_x : Format.t) (b : int) (s, x : t * t list) : (CER.t list, string) Result.t =
+    if b < 2 || b <> List.length x then
+      Error "invalid block size"
+    else
+      let@ cz = map_aug_multiply f_s f_x s x in
+      Ok cz
+
+  (** 6.0.2 EncodeBlock *)
+
+  let map_project (f : Format.t) (pi : Projection.t) (x : CER.t list) : (t, string) Result.t list =
+    List.map (project f pi) x
+
+  let encode_block_map_cz cs x =
+    List.map
+      (fun x_i ->
+        match cs with
+        | CER.NaN | _ when x_i = CER.NaN -> Ok CER.NaN
+        | R 0.0 -> Ok (R 0.0)
+        | (PINF | NINF) -> Ok (R 1.0)
+        | _ -> aug_divide x_i cs)
+      x
+
+  let encode_block
+    (b : int)
+    (f_s : Format.t) (f_z : Format.t) (pi_z : Projection.t)
+    (s, x : t * CER.t list) :
+    (t list, string) Result.t =
     if b < 0 || b <> List.length x then
       Error "invalid block size"
     else
-      let@ cz = List.map (fun x_i -> aug_multiply (decode f_s s) (decode f_x x_i)) x in
-      Ok cz
+      let open CER in
+      let cs = decode f_s s in
+      let@ cz = encode_block_map_cz cs x in
+      let@ z = map_project f_z pi_z cz in
+      Ok z
 
-  let aug_maximum_finite (x : CER.t) (y : CER.t) : (CER.t, string) Result.t =
-    let open CER in
-    match x, y with
-    | NaN, NaN -> Ok NaN
-    | NaN, y -> Ok y
-    | x, NaN -> Ok x
-    | PINF, PINF -> Ok PINF
-    | NINF, NINF -> Ok NINF
-    | PINF, NINF -> Ok PINF
-    | NINF, PINF -> Ok PINF
-    | PINF, R y -> Ok (R y)
-    | R x, PINF -> Ok (R x)
-    | NINF, R y -> Ok (R y)
-    | R x, NINF -> Ok (R x)
-    | R x, R y -> Ok (R (Real.max x y))
-    | _ -> Error "undefined"
+  (** 6.0.3 ConvertFromBlock *)
 
-  let convert_block
+  let convert_from_block
     (b : int)
     (f_s : Format.t) (f_x : Format.t) (f_z : Format.t)
     (pi_s : Projection.t) (pi_z : Projection.t)
-    (x : Float.t list) :
-    (Float.t * Float.t list, string) Result.t =
-    let open Float in
-    let open ErrorPropagation in
-    let cx = List.map (decode f_x) x in
-    let@ m = List.map aug_abs cx in
-    let* cs = fold aug_maximum_finite m in
-    let* s = project f_s pi_s cs in
-    let s' = decode f_s s in
-    let@ cz = List.map (fun cx_i -> if s' = CER.zero then Ok CER.zero else aug_divide cx_i s') cx in
-    let@ z = List.map (fun cz_i -> project f_z pi_z cz_i) cz in
+    (s, x : t * t list) :
+    (t list, string) Result.t =
+    if b < 0 || b <> List.length x then
+      Error "invalid block size"
+    else
+      let* cz = decode_block f_s f_x b (s, x) in
+      let@ z = map_project f_z pi_z cz in
+      Ok z
+
+  (** 6.0.4 ConvertToBlock *)
+
+  let map_decode f_x x = List.map (decode f_x) x
+
+  let convert_to_block
+    (b : int)
+    (f_s : Format.t) (f_x : Format.t) (f_z : Format.t) (pi_z : Projection.t)
+    (x, s : t list * t) :
+    (t * t list, string) Result.t =
+    let cx = map_decode f_x x in
+    let* z = encode_block b f_s f_z pi_z (s, cx) in
     Ok (s, z)
+
+  (** 6.0.5 ConvertToBlockMaxAbsFinite *)
+
+  let map_aug_abs (x : CER.t list) : (CER.t, string) Result.t list = List.map aug_abs x
+
+  let fold_aug_maximum_finite (x : CER.t list) : (CER.t, string) Result.t = fold aug_maximum_finite x
+
+  let map_convert_maf s' cx =
+    List.map (fun cx_i -> if s' = CER.zero then Ok CER.zero else aug_divide cx_i s') cx
+
+  let convert_to_block_max_abs_finite
+    (b : int)
+    (f_s : Format.t) (f_x : Format.t) (f_z : Format.t)
+    (pi_s : Projection.t) (pi_z : Projection.t)
+    (x : t list) :
+    (t * t list, string) Result.t =
+    if (b < 2 || b <> List.length x) then
+      Error "invalid block size"
+    else
+      let cx = map_decode f_x x in
+      let@ m = map_aug_abs cx in
+      let* cs = fold_aug_maximum_finite m in
+      let* s = project f_s pi_s cs in
+      let s' = decode f_s s in
+      let@ cz = map_convert_maf s' cx in
+      let@ z = map_project f_z pi_z cz in
+      Ok (s, z)
+
+
+  (** 6.0.3 DotBlock *)
+
+  let map2_aug_multiply (cx : CER.t list) (cy : CER.t list) : ((CER.t, string) Result.t list, string) Result.t =
+    List.map2 aug_multiply cx cy
+
+  let fold_aug_add (cp : CER.t list) : (CER.t, string) Result.t =
+    fold aug_add cp
 
   let dot_block
     (b : int)
@@ -1714,17 +1777,22 @@ module Block = struct
     (f_sy : Format.t) (f_y : Format.t)
     (f_z : Format.t)
     (pi_z : Projection.t)
-    (s_x, x : Float.t * Float.t list)
-    (s_y, y : Float.t * Float.t list) :
-    (Float.t, string) Result.t =
-    let open Float in
-    let open ErrorPropagation in
+    (s_x, x : t * t list)
+    (s_y, y : t * t list) :
+    (t, string) Result.t =
     let* cx = decode_block f_sx f_x b (s_x, x) in
     let* cy = decode_block f_sy f_y b (s_y, y) in
-    let*@ cp = List.map2 aug_multiply cx cy in
-    let* cz = fold aug_add cp in
+    let*@ cp = map2_aug_multiply cx cy in
+    let* cz = fold_aug_add cp in
     let* z = project f_z pi_z cz in
     Ok z
+
+
+  (** 6.0.4 AddBlock *)
+
+  let map2_aug_add cx cy = List.map2 aug_add cx cy
+
+  let map_add_block f_z pi_z cs cz = List.map (fun cz_i -> let* d = aug_divide cz_i cs in project f_z pi_z d) cz
 
   let add_block
     (b : int)
@@ -1734,17 +1802,15 @@ module Block = struct
     (f_z : Format.t)
     (pi_s : Projection.t)
     (pi_z : Projection.t)
-    (s_x, x : Float.t * Float.t list)
-    (s_y, y : Float.t * Float.t list)
-    (s_z : Float.t) :
-    (Float.t list, string) Result.t =
-    let open Float in
-    let open ErrorPropagation in
+    (s_x, x : t * t list)
+    (s_y, y : t * t list)
+    (s_z : t) :
+    (t list, string) Result.t =
     let* cx = decode_block f_sx f_x b (s_x, x) in
     let* cy = decode_block f_sy f_y b (s_y, y) in
-    let*@ cz = List.map2 aug_add cx cy in
+    let*@ cz = map2_aug_add cx cy in
     let cs = decode f_s s_z in
-    let@ z = List.map (fun cz_i -> let* d = aug_divide cz_i cs in project f_z pi_z d) cz in
+    let@ z = map_add_block f_z pi_z cs cz in
     Ok z
 
 end
