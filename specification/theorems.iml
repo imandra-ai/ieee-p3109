@@ -407,10 +407,10 @@ theorem internal_hypot_ok (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (pi
 
 (** 4.8.6 Scaled addition *)
 
-(** [internal_add_scaled] never returns an error *)
-theorem internal_add_scaled_ok (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (pi : Projection.t)
+(** [internal_scaled_add] never returns an error *)
+theorem internal_scaled_add_ok (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (pi : Projection.t)
   (x : Float.t) (s_x : int) (y : Float.t) (s_y : int) =
-  Result.is_ok (Float.internal_add_scaled f_x f_y f_z pi x s_x y s_y)
+  Result.is_ok (Float.internal_scaled_add f_x f_y f_z pi x s_x y s_y)
   [@@timeout 60]
   [@@disable Float.project, Float.decode, Float.decode_aux, Util.pow2, Util.ipow2, Format.get_format_parameters]
   [@@by auto]
@@ -418,10 +418,10 @@ theorem internal_add_scaled_ok (f_x : Format.t) (f_y : Format.t) (f_z : Format.t
 
 (** 4.8.7 Scaled multiplication *)
 
-(** [internal_multiply_scaled] never returns an error *)
-theorem internal_multiply_scaled_ok (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (pi : Projection.t)
+(** [internal_scaled_multiply] never returns an error *)
+theorem internal__scaledmultiply_ok (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (pi : Projection.t)
   (x : Float.t) (y : Float.t) (s : int) =
-  Result.is_ok (Float.internal_multiply_scaled f_x f_y f_z pi x y s)
+  Result.is_ok (Float.internal_scaled_multiply f_x f_y f_z pi x y s)
   [@@disable Float.project, Float.decode, Float.decode_aux, Util.pow2, Util.ipow2, Format.get_format_parameters]
   [@@by auto]
 

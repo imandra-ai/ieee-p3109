@@ -71,16 +71,16 @@ let _ =
        (Float.decode (fse Format.B8P1)
           (Float.of_int_repr (fse Format.B8P1) (Z.of_int 0xBB))))
 
-let chk_add_scaled x y s_x s_y f =
+let chk_scaled_add x y s_x s_y f =
   Printf.printf "(%s * 2^%s + %s * 2^%s) = %s\n" (Float.to_string f x)
     (Z.to_string s_x) (Float.to_string f y) (Z.to_string s_y)
     (Float.to_string f
-       (Float.add_scaled f f f
+       (Float.scaled_add f f f
           (SaturationMode.SatPropagate, RoundingMode.TowardPositive)
           x s_x y s_y))
 
 let _ =
-  chk_add_scaled
+  chk_scaled_add
     (Result.get_ok (Float.pinf (fse Format.B8P1)))
     (Result.get_ok (Float.pinf (fse Format.B8P1)))
     Z.zero Z.zero (fse Format.B8P1)

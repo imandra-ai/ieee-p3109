@@ -973,7 +973,7 @@ module Float = struct
 
   (** 4.8.6 Scaled addition *)
 
-  let aug_add_scaled (x : CER.t) (s_x : int) (y : CER.t) (s_y : int) : (CER.t, string) Result.t =
+  let aug_scaled_add (x : CER.t) (s_x : int) (y : CER.t) (s_y : int) : (CER.t, string) Result.t =
     match x, s_x, y, s_y with
     | NaN, _ , _, _  -> Ok NaN
     | _, _ , NaN, _  -> Ok NaN
@@ -986,26 +986,26 @@ module Float = struct
     | R x, s_x , R y, s_y  -> Ok (R (x *. (Util.pow2 s_x) +. y *. (Util.pow2 s_y)))
     | _ -> Error "undefined"
 
-  let internal_add_scaled (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (pi : Projection.t)
+  let internal_scaled_add (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (pi : Projection.t)
       (x : t) (s_x : int) (y : t) (s_y : int)
       : (t, string) Result.t =
-    match aug_add_scaled (decode f_x x) s_x (decode f_y y) s_y with
+    match aug_scaled_add (decode f_x x) s_x (decode f_y y) s_y with
     | Ok z -> project f_z pi z
     | Error e -> Error e
 
   (** For [x] (in [f_x]), [y] (in [f_y]), [xscale], [yscale],
       compute [x] * 2^[xscale] + [y] * 2^[yscale] and return in [f_z],
       with projection [pi] *)
-  let add_scaled (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (pi : Projection.t)
+  let scaled_add (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (pi : Projection.t)
       (x : t) (s_x : int) (y : t) (s_y : int)  : t =
-    match internal_add_scaled f_x f_y f_z pi x s_x y s_y with
+    match internal_scaled_add f_x f_y f_z pi x s_x y s_y with
     | Ok x -> x
-    | Error _ -> nan f_z (* unreachable by theorem internal_add_scaled_ok *)
+    | Error _ -> nan f_z (* unreachable by theorem internal_scaled_add_ok *)
 
 
   (** 4.8.7 Scaled multiplication *)
 
-  let aug_multiply_scaled (x : CER.t) (y : CER.t) (s : int) : (CER.t, string) Result.t =
+  let aug_scaled_multiply (x : CER.t) (y : CER.t) (s : int) : (CER.t, string) Result.t =
     match x, y, s with
     | NaN, _, _ -> Ok NaN
     | _, NaN, _ -> Ok NaN
@@ -1031,9 +1031,9 @@ module Float = struct
     | R x, R y, s -> Ok (R (x *. y *. (Util.pow2 s)))
     | _ -> Error "undefined"
 
-  let internal_multiply_scaled (f_x : Format.t) (f_y : Format.t) (f_z : Format.t)  (pi : Projection.t)
+  let internal_scaled_multiply (f_x : Format.t) (f_y : Format.t) (f_z : Format.t)  (pi : Projection.t)
       (x : t) (y : t) (s : int) : (t, string) Result.t =
-    match aug_multiply_scaled (decode f_x x) (decode f_y y) s with
+    match aug_scaled_multiply (decode f_x x) (decode f_y y) s with
     | Ok z -> project f_z pi z
     | Error e -> Error e
 
@@ -1041,11 +1041,11 @@ module Float = struct
   (** For [x] (in [f_x]), [y] (in [f_y]), [scale], compute
       [x] * [y] * 2^[scale] and return in [f_z],
       with rounding mode [rnd] and saturation mode [ovf] *)
-  let multiply_scaled (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (pi : Projection.t)
+  let scaled_multiply (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (pi : Projection.t)
       (x : t) (y : t) (s : int)  : t =
-    match internal_multiply_scaled f_x f_y f_z pi x y s with
+    match internal_scaled_multiply f_x f_y f_z pi x y s with
     | Ok x -> x
-    | Error _ -> nan f_z (* unreachable by theorem internal_multiply_scaled_ok *)
+    | Error _ -> nan f_z (* unreachable by theorem internal_scaled_multiply_ok *)
 
 
   (** 4.9 Mixed IEEE Std 754 and P3109 operations *)

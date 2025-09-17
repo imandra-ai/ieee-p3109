@@ -1,0 +1,17 @@
+\noindent\Case{\Cer\ScaledMultiply(\NaN, \any, \any) \gives  \NaN}\\
+\Case{\Cer\ScaledMultiply(\any, \NaN, \any) \gives  \NaN}\\
+\Case{\Cer\ScaledMultiply(\pm\infty, Y, \any) ~\If Y = \zero\gives  \NaN}\\
+\Case{\Cer\ScaledMultiply(X, \pm\infty, \any) ~\If X = \zero\gives  \NaN}\\
+\Case{\Cer\ScaledMultiply(-\infty, -\infty, \any) \gives  +\infty}\\
+\Case{\Cer\ScaledMultiply(+\infty, +\infty, \any) \gives  +\infty}\\
+\Case{\Cer\ScaledMultiply(-\infty, +\infty, \any) \gives  -\infty}\\
+\Case{\Cer\ScaledMultiply(+\infty, -\infty, \any) \gives  -\infty}\\
+\Case{\Cer\ScaledMultiply(+\infty, X, \any) ~\If X > \zero\gives  +\infty}\\
+\Case{\Cer\ScaledMultiply(X, +\infty, \any) ~\If X > \zero\gives  +\infty}\\
+\Case{\Cer\ScaledMultiply(+\infty, X, \any) ~\If X < \zero\gives  -\infty}\\
+\Case{\Cer\ScaledMultiply(X, +\infty, \any) ~\If X < \zero\gives  -\infty}\\
+\Case{\Cer\ScaledMultiply(-\infty, X, \any) ~\If X > \zero\gives  -\infty}\\
+\Case{\Cer\ScaledMultiply(X, -\infty, \any) ~\If X > \zero\gives  -\infty}\\
+\Case{\Cer\ScaledMultiply(-\infty, X, \any) ~\If X < \zero\gives  +\infty}\\
+\Case{\Cer\ScaledMultiply(X, -\infty, \any) ~\If X < \zero\gives  +\infty}\\
+\Case{\Cer\ScaledMultiply(X, Y, s) \gives  X \times Y \times 2^{ s}}\\

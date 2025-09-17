@@ -211,14 +211,14 @@ theorem add_scaled_aug_ex_eq (x : CER.t) (s_x : int) (y : CER.t) (s_y : int) =
   let open CER in
   match a2e x, a2e y with
   | Ok xe, Ok ye ->
-    let ar = Float.aug_add_scaled x s_x y s_y in
+    let ar = Float.aug_scaled_add x s_x y s_y in
     (match ex_f (Ok xe) s_x (Ok ye) s_y with
     | Ok x -> ar2er ar = Ok x
     | Error _ -> ar = Ok NaN)
   | _ -> true
   [@@by auto]
 
-theorem multiply_scaled_aug_ex_eq (x : CER.t) (y : CER.t) (s : int) =
+theorem scaled_multiply_aug_ex_eq (x : CER.t) (y : CER.t) (s : int) =
   let ex_f (x : (ExReal.t, string) Result.t) (y : (ExReal.t, string) Result.t) (s : int) : (ExReal.t, string) Result.t =
     let open ExReal.ResultInfix in
     x *. y *. (2 ^. s)
@@ -226,7 +226,7 @@ theorem multiply_scaled_aug_ex_eq (x : CER.t) (y : CER.t) (s : int) =
   let open CER in
   match a2e x, a2e y with
   | Ok xe, Ok ye ->
-    let ar = Float.aug_multiply_scaled x y s in
+    let ar = Float.aug_scaled_multiply x y s in
     (match ex_f (Ok xe) (Ok ye) s with
     | Ok x -> ar2er ar = Ok x
     | Error _ -> ar = Ok NaN)
