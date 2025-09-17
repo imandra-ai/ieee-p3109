@@ -429,13 +429,15 @@ theorem internal__scaledmultiply_ok (f_x : Format.t) (f_y : Format.t) (f_z : For
 (** 4.9 Mixed IEEE Std 754 and P3109 operations *)
 
 (** [internal_scaled_fma] never returns an error *)
-theorem internal_scaled_fma_ok (phi : IEEE754.Format.t) (f_x : Format.t) (f_y : Format.t) (pi : Projection.t)
-    (a : IEEE754.t) (s_a : int) (x : Float.t) (y : Float.t) (s : int) =
-  Result.is_ok (Float.internal_scaled_fma phi f_x f_y pi x y s a s_a )
+theorem internal_scaled_fma_ok
+  (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (f_r : Format.t)
+  (pi : Projection.t)
+  (x : Float.t) (y : Float.t) (s_xy : int) (z : Float.t) (s_z : int) =
+  Result.is_ok (Float.internal_scaled_fma f_x f_y f_z f_r pi x y s_xy z s_z)
   [@@timeout 3600]
-  [@@disable Float.project, Float.decode, Float.decode_aux, Float.encode754, Float.round_to_precision, Float.saturate,
-             Util.pow2, Util.ipow2, IEEE754.as_aug_real, IEEE754.is_nan, Format.parameters]
-  [@@by [%use Theorems_IEEE754.as_aug_real_ok phi a] @> auto]
+  [@@disable Float.project, Float.decode, Float.decode_aux, Float.round_to_precision, Float.saturate,
+             Util.pow2, Util.ipow2, Format.parameters]
+  [@@by auto]
 
 
 (** 4.10.1 Minimum and Maximum *)

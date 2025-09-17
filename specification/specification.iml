@@ -1049,9 +1049,9 @@ module Float = struct
 
 
   (** 4.9 Mixed IEEE Std 754 and P3109 operations *)
-  let aug_scaled_fma (x : CER.t) (y : CER.t) (s : int) (a : CER.t) (s_a : int) : (CER.t, string) Result.t =
+  let aug_scaled_fma (x : CER.t) (y : CER.t) (s_xy : int) (z : CER.t) (s_z : int) : (CER.t, string) Result.t =
     let open CER in
-    match x, y, s, a, s_a with
+    match x, y, s_xy, z, s_z with
     | NaN, _, _,  _ , _ -> Ok NaN
     | _, NaN, _,  _ , _ -> Ok NaN
     | _, _, _ , NaN, _ -> Ok NaN
@@ -1099,38 +1099,33 @@ module Float = struct
     | R x, NINF, _, _, _ when x >=. 0.0 -> Ok NINF
     | R x, NINF, _, _, _ when x <. 0.0 -> Ok PINF
 
-    | R x, R y, s, R a, s_a ->
+    | R x, R y, s_xy, R z, s_z ->
       let open Util in
-      Ok (R (x *. y *. (2 ^. s) +. a *. (2 ^. s_a)))
+      Ok (R (x *. y *. (2 ^. s_xy) +. z *. (2 ^. s_z)))
 
     | _ -> Error "undefined"
 
-  let internal_scaled_fma (phi : IEEE754.Format.t) (f_x : Format.t) (f_y : Format.t) (pi : Projection.t)
-    (x : t) (y : t) (s : int) (a : IEEE754.t) (s_a : int) : (IEEE754.t, string) Result.t =
+  let internal_scaled_fma
+    (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (f_r : Format.t)
+    (pi : Projection.t)
+    (x : t) (y : t) (s_xy : int) (z : t) (s_z : int) :
+    (t, string) Result.t =
     let open CER in
     let open Signedness in
-    let nan754 = IEEE754.quiet_nan phi in
-    let _, p, _, b, _, _, _, m = IEEE754.Format.parameters phi in
-    match IEEE754.as_aug_real phi a with
-    | Ok NaN -> Ok nan754
-    | Ok a_ -> (
-      match aug_scaled_fma (decode f_x x) (decode f_y y) s a_ s_a with
-      | Ok NaN -> Ok nan754
-      | Ok PINF -> Ok (IEEE754.pinf phi)
-      | Ok NINF -> Ok (IEEE754.ninf phi)
-      | Ok z_ ->
-        let z_' = round_to_precision p b (snd pi) z_ in
-        let z_'' = saturate (-. m) m (fst pi) (snd pi) z_' Signed Domain.Extended in
-        let z = encode754 phi z_'' in
-        Ok z
-      | Error e -> Error e)
+    let cx = decode f_x x in
+    let cy = decode f_y y in
+    let cz = decode f_z z in
+    match aug_scaled_fma cx cy s_xy cz s_z with
+    | Ok r -> project f_r pi r
     | Error e -> Error e
 
-  let scaled_fma (phi : IEEE754.Format.t) (f_x : Format.t) (f_y : Format.t) (pi : Projection.t)
-    (x : t) (y : t) (s : int) (a : IEEE754.t) (s_a : int) : IEEE754.t =
-    match internal_scaled_fma phi f_x f_y pi x y s a s_a  with
+  let scaled_fma
+    (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (f_r : Format.t)
+    (pi : Projection.t)
+    (x : t) (y : t) (s_xy : int) (z : t) (s_z : int) : t =
+    match internal_scaled_fma f_x f_y f_z f_r pi x y s_xy z s_z  with
     | Ok r -> r
-    | _ -> IEEE754.quiet_nan phi (* unreachable by theorem internal_scaled_fma_ok *)
+    | _ -> nan f_r (* unreachable by theorem internal_scaled_fma_ok *)
 
 
   (** 4.10.1 Minimum and Maximum *)
