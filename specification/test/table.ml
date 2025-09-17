@@ -67,7 +67,7 @@ let mk_fn_tbl (fn : Q.t -> int -> (bool * Q.t, string) Result.t)
     (inv_fn : Q.t -> int -> (Q.t, string) Result.t) (f : Format.t) (p : int) :
     unit =
   let pi = SaturationMode.SatPropagate, RoundingMode.NearestTiesToEven in
-  let k, _, _, _, _, _, _ = Format.get_format_parameters f in
+  let k, _, _, _, _, _, _ = Format.parameters f in
   Printf.printf
     "\"in int\",\"in dec\",\"out \
      real*\",\"precise?\",\"rev*\",\"diff*\",\"ulp\",\"within?\",\"out \
@@ -191,7 +191,7 @@ let mk_f_tbl (k : int) (p : int) (s : bool) (e : bool) =
       }
     | Error e -> raise (InvalidFormat e)
   in
-  let kf, pf, bias, _, m_hi, s, d = Format.get_format_parameters f in
+  let kf, pf, bias, _, m_hi, s, d = Format.parameters f in
   Printf.printf "B%sP%s%s%s: bias = %s, m_hi = %s\n\n" (Z.to_string kf)
     (Z.to_string pf) (domain_to_char d) (signedness_to_char s)
     (Z.to_string bias) (rat_to_string_dec m_hi);
@@ -215,7 +215,7 @@ let mk_f_csv_tbl (dir : string) (k : int) (p : int) (s : bool) (e : bool) =
       }
     | Error e -> raise (InvalidFormat e)
   in
-  let kf, pf, bias, _, m_hi, s, d = Format.get_format_parameters f in
+  let kf, pf, bias, _, m_hi, s, d = Format.parameters f in
   let fn =
     Printf.sprintf "%s/binary%sp%s%s%s.csv" dir (Z.to_string kf) (Z.to_string pf)
     (if s = Signedness.Signed then "s" else "u")

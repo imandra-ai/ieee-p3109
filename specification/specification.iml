@@ -105,7 +105,7 @@ module Format = struct
     | Ok kp -> Ok { kp; s; d }
     | Error e -> Error e
 
-  let get_format_parameters (f : t) : int * int * int * real * real * Signedness.t * Domain.t =
+  let parameters (f : t) : int * int * int * real * real * Signedness.t * Domain.t =
     let open Util in
     let open Signedness in
     let open Domain in
@@ -197,7 +197,7 @@ let aug_real_is_within_range (f : Format.t) (x : CER.t) : bool =
   | NINF -> f.s = Signedness.Signed && f.d = Domain.Extended
   | PINF -> f.d = Domain.Extended
   | R r ->
-    let _, _, _, m_lo, m_hi, _, _ = Format.get_format_parameters f in
+    let _, _, _, m_lo, m_hi, _, _ = Format.parameters f in
     m_lo <=. r && r <=. m_hi
 
 (** Floating-point numeral definitions *)
@@ -215,13 +215,13 @@ module Float = struct
     | Unsigned -> Util.ipow2 k - 1
 
   let nan (f : Format.t): t =
-    let k, _, _, _, _, s, _ = Format.get_format_parameters f in
+    let k, _, _, _, _, s, _ = Format.parameters f in
     nan_ks k s
 
   let ninf (f : Format.t) : (t, string) Result.t =
     let open Signedness in
     let open Domain in
-    let k, _, _, _, _, s, d = Format.get_format_parameters f in
+    let k, _, _, _, _, s, d = Format.parameters f in
     match s, d with
     | Unsigned, _
     | _, Finite -> Error "invalid"
@@ -230,7 +230,7 @@ module Float = struct
   let pinf (f : Format.t) : (t, string) Result.t =
     let open Signedness in
     let open Domain in
-    let k, _, _, _, _, s, d = Format.get_format_parameters f in
+    let k, _, _, _, _, s, d = Format.parameters f in
     match s, d with
     | Signed, Extended -> Ok (Util.ipow2 (k - 1) - 1)
     | Unsigned, Extended -> Ok (Util.ipow2 k - 2)
@@ -241,14 +241,14 @@ module Float = struct
   (* Internal helpers *)
 
   let to_int_repr (f : Format.t) (i : t) : int =
-    let k, _, _, _, _, _, _ = Format.get_format_parameters f in
+    let k, _, _, _, _, _, _ = Format.parameters f in
     if i < 0 || i >= Util.ipow2 k then nan f else i
 
   let to_int_repr_k (k : int) (i : t) (s : Signedness.t): int =
     if i < 0 || i >= Util.ipow2 k then (nan_ks k s) else i
 
   let of_int_repr (f : Format.t) (i : int) : t =
-    let k, _, _, _, _, _, _ = Format.get_format_parameters f in
+    let k, _, _, _, _, _, _ = Format.parameters f in
     if i < 0 || i >= Util.ipow2 k then nan f else i
 
   let of_int_repr_k (k : int) (s : Signedness.t) (i : int) : t =
@@ -294,7 +294,7 @@ module Float = struct
     [@@by auto]
 
   let decode (f : Format.t) (x : t) : CER.t =
-    let k, p, b, _, _, s, d = Format.get_format_parameters f in
+    let k, p, b, _, _, s, d = Format.parameters f in
     match decode_aux k p b s d x with
     | Ok r -> r
     | Error _ -> NaN (* unreachable by theorem_decode_ok *)
@@ -392,7 +392,7 @@ module Float = struct
 
   let rec encode (f : Format.t) (x : CER.t) : (t, string) Result.t =
     let open Util in
-    let k, p, b, _, _, _, _ = Format.get_format_parameters f in
+    let k, p, b, _, _, _, _ = Format.parameters f in
     if not (aug_real_is_within_range f x)  then
         Error "precondition violation"
     else
@@ -440,7 +440,7 @@ module Float = struct
 
   (** Project extended real value [x] to P3109 format [f]. *)
   let project (f : Format.t) (pi : Projection.t) (x : CER.t) : (t, string) Result.t =
-    let _, p, b, m_lo, m_hi, _, _ = Format.get_format_parameters f in
+    let _, p, b, m_lo, m_hi, _, _ = Format.parameters f in
     let sat, rnd = pi in
     let r : CER.t = round_to_precision p b rnd x in
     let s : CER.t = saturate m_lo m_hi sat rnd r f.s f.d in
@@ -482,7 +482,7 @@ module Float = struct
       | PINF -> IEEE754.pinf phi
       | NINF -> IEEE754.ninf phi
       | R y ->
-        let _, _, _, _, _, p, b, m = IEEE754.Format.get_format_parameters phi in
+        let _, _, _, _, _, p, b, m = IEEE754.Format.parameters phi in
         let r = round_to_precision p b (snd pi) (r2a y) in
         let x = saturate (-. m) m (fst pi) (snd pi) r f.s f.d in
         encode754 phi x)
@@ -1110,7 +1110,7 @@ module Float = struct
     let open CER in
     let open Signedness in
     let nan754 = IEEE754.quiet_nan phi in
-    let _, p, _, b, _, _, _, m = IEEE754.Format.get_format_parameters phi in
+    let _, p, _, b, _, _, _, m = IEEE754.Format.parameters phi in
     match IEEE754.as_aug_real phi a with
     | Ok NaN -> Ok nan754
     | Ok a_ -> (
@@ -1557,7 +1557,7 @@ module Float = struct
 
   let is_normal (f : Format.t) (x : t) : bool =
     let open Signedness in
-    let k, p, _, _, _, _, _ = Format.get_format_parameters f in
+    let k, p, _, _, _, _, _ = Format.parameters f in
     match x with
     | _ when is_zero f x || is_ninf f x || is_pinf f x || is_nan f x -> false
     | _ ->

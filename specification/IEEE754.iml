@@ -10,7 +10,7 @@ end
 module Format = struct
   type t = Binary16 | Binary32 | Binary64 | Binary128
 
-  let get_format_parameters (phi : t) : int * int * int * int * int * int * int * real =
+  let parameters (phi : t) : int * int * int * int * int * int * int * real =
     (* Table 3.5 IEEE 754-2008 *)
     (* k, p, emax, bias, sign bit, w, t, max_finite *)
     let max_finite w emax = (2.0 -. Util.pow2 (- w)) *. Util.pow2 emax in
@@ -29,7 +29,7 @@ let rec nlist n e =
   | _ -> [e] @ nlist (n-1) e
 
 let nan (fmt : Format.t) : t =
-  let _, _, _, _, _, w, t, _ = Format.get_format_parameters fmt in
+  let _, _, _, _, _, w, t, _ = Format.parameters fmt in
   [false] @ nlist w true @ nlist (t - 1) false @ [true]
 
 let quiet_nan (fmt : Format.t) : t = nan fmt
@@ -37,7 +37,7 @@ let quiet_nan (fmt : Format.t) : t = nan fmt
 let canonical_nan (fmt : Format.t) : t = nan fmt
 
 let inf (fmt : Format.t) (neg : bool) =
-  let _, _, _, _, _, w, t, _ = Format.get_format_parameters fmt in
+  let _, _, _, _, _, w, t, _ = Format.parameters fmt in
   if neg then [true] else [false] @
   nlist w true @ nlist t false
 
@@ -46,11 +46,11 @@ let pinf (fmt : Format.t) = inf fmt false
 let ninf (fmt : Format.t) = inf fmt true
 
 let zero (fmt : Format.t) =
-  let k, _, _, _, _, _, _, _ = Format.get_format_parameters fmt in
+  let k, _, _, _, _, _, _, _ = Format.parameters fmt in
   nlist k false
 
 let is_nan (x : t) (fmt : Format.t) : bool =
-  let _, _, _, _, _, w, _, _ = Format.get_format_parameters fmt in
+  let _, _, _, _, _, w, _, _ = Format.parameters fmt in
   let tail = List.tl x in
   let biased_exp = List.take w tail in
   let biased_exp_is_all_ones = not (List.mem false biased_exp) in
@@ -97,7 +97,7 @@ let round_internal (x : CER.t) (fmt : Format.t) (rnd : RoundingMode.t) : (t,  st
   let open RoundingMode in
   let open CER in
   let open CER.ResultInfix in
-  let _, _, emax, bias, _, w, t, _ = Format.get_format_parameters fmt in
+  let _, _, emax, bias, _, w, t, _ = Format.parameters fmt in
   match x with
   | NaN -> Ok (nan fmt)
   | PINF -> Ok (pinf fmt)
@@ -158,7 +158,7 @@ let as_aug_real (phi : Format.t) (x : t) : (CER.t, string) Result.t =
   else if is_ninf x phi then
     Ok NINF
   else
-    let _, _, _, bias, _, w, t, _ = Format.get_format_parameters phi in
+    let _, _, _, bias, _, w, t, _ = Format.parameters phi in
     let sgn = if List.hd x = false then 1.0 else -1.0 in
     let tail = List.tl x in
     let biased_exp = List.take w tail in

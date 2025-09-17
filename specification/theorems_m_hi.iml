@@ -9,7 +9,7 @@ open Util
 let unroll_nonlin qt nqt steps = Tactic.unroll ~smt:"z3-full-nonlinear" ~query_timeout:qt ~no_asm_query_timeout:nqt steps [@@no_extract]
 
 let m_hi_codepoint (f : Format.t) : int =
-  let k, _, _, _, _, _, _ = Format.get_format_parameters f in
+  let k, _, _, _, _, _, _ = Format.parameters f in
   match f.s, f.d with
   | Signed, Extended ->   ipow2 (k - 1) - 2
   | Signed, Finite ->     ipow2 (k - 1) - 1
@@ -18,7 +18,7 @@ let m_hi_codepoint (f : Format.t) : int =
   [@@macro]
 
 theorem m_hi_codepoint_decodes_to_m_hi (f : Format.t) =
-  let _, _, _, _, m_hi, _, _ = Format.get_format_parameters f in
+  let _, _, _, _, m_hi, _, _ = Format.parameters f in
   match Float.decode f (m_hi_codepoint f) with
   | R r -> r = m_hi
   | _ -> false

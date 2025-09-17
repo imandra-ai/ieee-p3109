@@ -41,7 +41,7 @@ let rec find_closest_sqrt_floats_aux (f : Format.t) (x : CER.t) (l : Float.t) (u
   [@@measure Ordinal.of_int (u - l)]
 
 let find_closest_sqrt_floats (f : Format.t) (x : CER.t) : (Float.t * Float.t, string) Result.t =
-  let k, p, bias, m_lo, m_hi, _, _ = Format.get_format_parameters f in
+  let k, p, bias, m_lo, m_hi, _, _ = Format.parameters f in
   find_closest_sqrt_floats_aux f x 0x00
     (if f.s = Signedness.Signed then (Util.ipow2 (k - 1) - 2) else (Util.ipow2 k - 1))
 
@@ -76,7 +76,7 @@ let fsqrt_start (f : Format.t) (x : real) (p : int) : (Sqrt.state * Sqrt.state) 
 let fsqrt_i (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : Float.t) : (Float.t, string) Result.t * int =
   let dx = Float.decode f_x x in
   let start = fsqrt_start f_x in
-  let _, p, bias, _, _, _, _ = Format.get_format_parameters f_z in
+  let _, p, bias, _, _, _, _ = Format.parameters f_z in
   match (cer_fsqrt p bias (snd pi) start dx) with
   | Ok (r, i) -> Float.project f_z pi r, i
   | Error e -> Error e, 0

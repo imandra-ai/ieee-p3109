@@ -167,7 +167,7 @@ theorem convert_to_block_max_abs_finite_ok
   b >= 2 && b = List.length x ==>
   Result.is_ok (convert_to_block_max_abs_finite b f_s f_x f_z pi_s pi_z x)
   [@@timeout 3600]
-  [@@disable Float.fold, Float.aug_maximum_finite, Float.aug_divide, Float.project, Float.decode, Float.map_aug_abs, Float.map_decode, Float.map_project, Float.fold_aug_maximum_finite, Float.map_convert_maf, List.length, Format.get_format_parameters]
+  [@@disable Float.fold, Float.aug_maximum_finite, Float.aug_divide, Float.project, Float.decode, Float.map_aug_abs, Float.map_decode, Float.map_project, Float.fold_aug_maximum_finite, Float.map_convert_maf, List.length, Format.parameters]
   [@@by induct ~do_not:["gen"; "fert"; "delim"] ()]
 
 (** 6.0.3 DotBlock *)
@@ -221,7 +221,7 @@ theorem dot_block_ok
   b = List.length x && b = List.length y && b >= 2 ==>
   Result.is_ok (Float.dot_block b f_sx f_x f_sy f_y f_z pi_z (s_x, x) (s_y, y))
   [@@timeout 3600]
-  [@@disable Float.fold, Float.aug_add, Float.map2_aug_multiply, Float.fold_aug_add, Float.decode_block, Float.project, Format.get_format_parameters]
+  [@@disable Float.fold, Float.aug_add, Float.map2_aug_multiply, Float.fold_aug_add, Float.decode_block, Float.project, Format.parameters]
   [@@by simplify()]
 
 (** 6.0.4 AddBlock *)
@@ -275,7 +275,7 @@ theorem add_block_ok
   b = List.length x && b = List.length y && b >= 2 ==>
   Result.is_ok (Float.add_block b f_sx f_x f_sy f_y f_s f_z pi_s pi_z (s_x, x) (s_y, y) s_z)
   [@@timeout 3600]
-  [@@disable Float.map2_aug_add, Float.map_add_block, Float.fold, Float.aug_add, Float.map2_aug_multiply, Float.fold_aug_add, Float.decode_block, Float.project, Format.get_format_parameters]
+  [@@disable Float.map2_aug_add, Float.map_add_block, Float.fold, Float.aug_add, Float.map2_aug_multiply, Float.fold_aug_add, Float.decode_block, Float.project, Format.parameters]
   [@@by simplify ()]
 
 

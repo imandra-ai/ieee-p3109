@@ -122,7 +122,7 @@ theorem log2_refine_converges (i : int) (p : int) (acc : real) (x : real) =
 (* Show that for any real-numbered Float.t, the iterative refinement is precise enough after some refinement steps. *)
 (* theorem log2_refine_precise (f : Format.t) (x : Float.t) =
   x = one ==>
-  let k, _, _, _ = Format.get_format_parameters f in
+  let k, _, _, _ = Format.parameters f in
   match Float.decode f x with
   | Ok (Float.NaNOrExReal.XR (ExReal.R 0.0)) -> true
   | Ok (Float.NaNOrExReal.XR (ExReal.R r)) ->

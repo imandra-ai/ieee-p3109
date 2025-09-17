@@ -13,7 +13,7 @@ let unroll_nonlin qt nqt steps = Tactic.unroll ~smt:"z3-full-nonlinear" ~query_t
 (** Formats *)
 
 theorem format_parameter_limits (f : Format.t) =
-  let k, p, b, _, _, s, d = (Format.get_format_parameters f [@trigger]) in
+  let k, p, b, _, _, s, d = (Format.parameters f [@trigger]) in
   0 < k && k <= 15 &&
   0 < p && p <= 15 &&
   b <= Util.ipow2 (k - p)
@@ -22,15 +22,15 @@ theorem format_parameter_limits (f : Format.t) =
   [@@fc]
 
 theorem m_hi_gt_0 (f : Format.t) =
-  let _, _, _, m_lo, m_hi, _, _ = Format.get_format_parameters f in
+  let _, _, _, m_lo, m_hi, _, _ = Format.parameters f in
   m_hi >. 0.0
   [@@timeout 20]
   [@@by enumerate ["f"] @> ground_eval ()]
 
 theorem m_lo_lt_m_hi (f : Format.t) =
-  let _, _, _, m_lo, m_hi, _, _ = Format.get_format_parameters f [@trigger] in
+  let _, _, _, m_lo, m_hi, _, _ = Format.parameters f [@trigger] in
   m_lo <. m_hi
-  [@@disable Format.get_format_parameters, Util.ipow2, Util.pow2]
+  [@@disable Format.parameters, Util.ipow2, Util.pow2]
   [@@by [%use m_hi_gt_0 f] @> auto]
   [@@fc]
 
@@ -55,13 +55,13 @@ theorem decode_aux_ok (k : int) (p : int) (b : int) (s: Signedness.t) (d : Domai
 theorem decode_within_range (f : Format.t) (x : Float.t) =
   aug_real_is_within_range f ((Float.decode f x) [@trigger])
   [@@timeout 600]
-  [@@disable Float.decode, Float.decode_aux, Format.get_format_parameters]
+  [@@disable Float.decode, Float.decode_aux, Format.parameters]
   [@@by [%use Theorems_format_ranges.within_format_range f x] @> auto]
   [@@fc]
 
 (* [encode] is ok if the input is within the format range *)
 theorem encode_ok_within_range (f : Format.t) (x : CER.t) =
-  let _, _, _, m_lo, m_hi, s, _ = Format.get_format_parameters f in
+  let _, _, _, m_lo, m_hi, s, _ = Format.parameters f in
   let encoded = Float.encode f x [@@trigger] in
   if aug_real_is_within_range f x then
     Result.is_ok encoded
@@ -81,24 +81,24 @@ theorem decode_encode_ok (f : Format.t)  (x : Float.t) =
 
 (* [saturate] always produces a number within the format range *)
 theorem saturate_is_within_range (f : Format.t) (x : CER.t) (sat : SaturationMode.t) (rnd : RoundingMode.t) =
-  let _, _, _, m_lo, m_hi, _, _ = Format.get_format_parameters f in
+  let _, _, _, m_lo, m_hi, _, _ = Format.parameters f in
   let s = (Float.saturate m_lo m_hi sat rnd x f.s f.d [@trigger]) in
   aug_real_is_within_range f s
   [@@timeout 3600]
-  [@@disable Format.get_format_parameters, Util.ipow2, Util.pow2]
+  [@@disable Format.parameters, Util.ipow2, Util.pow2]
   [@@by auto]
   [@@fc]
 
 (* Encoding after saturation is always ok *)
 theorem saturate_encode_ok (f : Format.t) (x : CER.t) (sat : SaturationMode.t) (rnd : RoundingMode.t) =
-  let _, _, _, m_lo, m_hi, _, _ = Format.get_format_parameters f in
+  let _, _, _, m_lo, m_hi, _, _ = Format.parameters f in
   Result.is_ok (Float.encode f (Float.saturate m_lo m_hi sat rnd x f.s f.d) [@trigger])
-  [@@disable Float.encode, Float.saturate, Format.get_format_parameters]
+  [@@disable Float.encode, Float.saturate, Format.parameters]
   [@@by [%use saturate_is_within_range f x sat rnd] @> auto]
   [@@fc]
 
 let rounded f rnd x =
-  let _, p, b, _, _, _, _ = Format.get_format_parameters f in
+  let _, p, b, _, _, _, _ = Format.parameters f in
   Float.round_to_precision p b rnd x
 
 (** [project] never returns an error *)
@@ -225,7 +225,7 @@ theorem zero_is_zero (f : Format.t) (x : Float.t) =
 (** [internal_convert_to_p3109] never returns an error *)
 theorem internal_convert_to_p3109_ok (phi: IEEE754.Format.t) (f : Format.t) (pi : Projection.t) (x : IEEE754.t) =
   Result.is_ok (Float.internal_convert_to_p3109 phi f pi x)
-  [@@disable Float.project, Float.round_to_precision, Float.saturate, Util.pow2, Util.ipow2, Format.get_format_parameters]
+  [@@disable Float.project, Float.round_to_precision, Float.saturate, Util.pow2, Util.ipow2, Format.parameters]
   [@@by auto]
 
 
@@ -257,7 +257,7 @@ theorem internal_negate_ok (f : Format.t) (x : Float.t) =
 (** [internal_copy_sign] never returns an error *)
 theorem internal_copy_sign_ok (f : Format.t) (x : Float.t) (y : Float.t) =
   Result.is_ok (Float.internal_copy_sign f x y)
-  [@@disable Float.encode, Float.decode_aux, Util.pow2, Util.ipow2, Format.get_format_parameters]
+  [@@disable Float.encode, Float.decode_aux, Util.pow2, Util.ipow2, Format.parameters]
   [@@timeout 120]
   [@@by
     [%use decode_within_range f x] @>
@@ -274,7 +274,7 @@ theorem internal_copy_sign_ok (f : Format.t) (x : Float.t) (y : Float.t) =
 theorem internal_add_ok (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (pi : Projection.t)
   (x : Float.t) (y : Float.t) =
   Result.is_ok (Float.internal_add f_x f_y f_z pi x y)
-  [@@disable Specification.Float.project, Float.decode_aux, Util.pow2, Util.ipow2, Format.get_format_parameters]
+  [@@disable Specification.Float.project, Float.decode_aux, Util.pow2, Util.ipow2, Format.parameters]
   [@@timeout 60]
   [@@by auto]
 
@@ -282,21 +282,21 @@ theorem internal_add_ok (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (pi :
 theorem internal_subtract_ok (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (pi : Projection.t)
   (x : Float.t) (y : Float.t) =
   Result.is_ok (Float.internal_subtract f_x f_y f_z pi x y)
-  [@@disable Specification.Float.project, Float.decode_aux, Util.pow2, Util.ipow2, Format.get_format_parameters]
+  [@@disable Specification.Float.project, Float.decode_aux, Util.pow2, Util.ipow2, Format.parameters]
   [@@timeout 3600]
   [@@by auto]
 
 (** [internal_multiply] never returns an error *)
 theorem internal_multiply_ok (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (pi : Projection.t) (x : Float.t) (y : Float.t)  =
   Result.is_ok (Float.internal_multiply f_x f_y f_z pi x y)
-  [@@disable Specification.Float.project, Float.decode_aux, Util.pow2, Util.ipow2, Format.get_format_parameters]
+  [@@disable Specification.Float.project, Float.decode_aux, Util.pow2, Util.ipow2, Format.parameters]
   [@@timeout 60]
   [@@by auto]
 
 (** [internal_divide] never returns an error *)
 theorem internal_divide_ok (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (pi : Projection.t) (x : Float.t) (y : Float.t)  =
   Result.is_ok (Float.internal_divide f_x f_y f_z pi x y)
-  [@@disable Specification.Float.project, Specification.Float.decode, Float.decode_aux, Util.pow2, Util.ipow2, Format.get_format_parameters]
+  [@@disable Specification.Float.project, Specification.Float.decode, Float.decode_aux, Util.pow2, Util.ipow2, Format.parameters]
   [@@timeout 60]
   [@@by auto]
 
@@ -308,7 +308,7 @@ theorem internal_fma_ok (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (f_r 
   (x : Float.t) (y : Float.t) (z : Float.t) =
   Result.is_ok (Float.internal_fma f_x f_y f_z f_r pi x y z)
   [@@disable Float.project, Float.decode, Float.round_to_precision, Float.saturate, Util.pow2, Util.ipow2,
-    Format.get_format_parameters, Float.internal_fma]
+    Format.parameters, Float.internal_fma]
   [@@by auto]
 
 
@@ -318,7 +318,7 @@ theorem internal_fma_ok (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (f_r 
 theorem internal_faa_ok (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (f_r : Format.t) (pi : Projection.t)
   (x : Float.t) (y : Float.t) (z : Float.t) =
   Result.is_ok (Float.internal_faa f_x f_y f_z f_r pi x y z)
-  [@@disable Float.project, Float.decode, Float.decode_aux, Float.round_to_precision, Float.saturate, Util.pow2, Util.ipow2, Format.get_format_parameters]
+  [@@disable Float.project, Float.decode, Float.decode_aux, Float.round_to_precision, Float.saturate, Util.pow2, Util.ipow2, Format.parameters]
   [@@by auto]
 
 (** 4.8.5 Unary mathematical operations *)
@@ -327,45 +327,45 @@ theorem internal_faa_ok (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (f_r 
 theorem internal_recip_ok (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : Float.t) =
   Result.is_ok (Float.internal_recip f_x f_z pi x)
   [@@timeout 60]
-  [@@disable Float.project, Float.decode, Float.decode_aux, Float.round_to_precision, Float.saturate, Util.pow2, Util.ipow2, Format.get_format_parameters, Sqrt.sqrt]
+  [@@disable Float.project, Float.decode, Float.decode_aux, Float.round_to_precision, Float.saturate, Util.pow2, Util.ipow2, Format.parameters, Sqrt.sqrt]
   [@@by auto]
 
 (** [internal_sqrt] never returns an error *)
 theorem internal_sqrt_ok (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : Float.t) =
   Result.is_ok (Float.internal_sqrt f_x f_z pi x)
   [@@timeout 60]
-  [@@disable Float.project, Float.decode, Float.decode_aux, Float.round_to_precision, Float.saturate, Util.pow2, Util.ipow2, Format.get_format_parameters, Sqrt.sqrt]
+  [@@disable Float.project, Float.decode, Float.decode_aux, Float.round_to_precision, Float.saturate, Util.pow2, Util.ipow2, Format.parameters, Sqrt.sqrt]
   [@@by auto]
 
 (** [internal_rsqrt] never returns an error *)
 theorem internal_rsqrt_ok (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : Float.t) =
   Result.is_ok (Float.internal_rsqrt f_x f_z pi x)
   [@@timeout 3600]
-  [@@disable Float.project, Float.decode, Float.decode_aux, Float.round_to_precision, Float.saturate, Util.pow2, Util.ipow2, Format.get_format_parameters, Sqrt.sqrt]
+  [@@disable Float.project, Float.decode, Float.decode_aux, Float.round_to_precision, Float.saturate, Util.pow2, Util.ipow2, Format.parameters, Sqrt.sqrt]
   [@@by auto]
 
 (** [internal_exp] never returns an error *)
 theorem internal_exp_ok (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : Float.t) =
   Result.is_ok (Float.internal_exp f_x f_z pi x)
-  [@@disable Specification.Float.project, Specification.Float.decode, Float.decode_aux, Format.get_format_parameters]
+  [@@disable Specification.Float.project, Specification.Float.decode, Float.decode_aux, Format.parameters]
   [@@by auto]
 
 (** [internal_exp2] never returns an error *)
 theorem internal_exp2_ok (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : Float.t) =
   Result.is_ok (Float.internal_exp2 f_x f_z pi x)
-  [@@disable Float.project, Float.decode, Float.decode_aux, Float.round_to_precision, Float.saturate, Exp.exp2, Format.get_format_parameters]
+  [@@disable Float.project, Float.decode, Float.decode_aux, Float.round_to_precision, Float.saturate, Exp.exp2, Format.parameters]
   [@@by auto]
 
 (** [internal_log] never returns an error *)
 theorem internal_log_ok (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : Float.t) =
   Result.is_ok (Float.internal_log f_x f_z pi x)
-  [@@disable Float.project, Float.decode, Float.decode_aux, Log.log, Log.ln, Format.get_format_parameters]
+  [@@disable Float.project, Float.decode, Float.decode_aux, Log.log, Log.ln, Format.parameters]
   [@@by auto]
 
 (** [internal_log2] never returns an error *)
 theorem internal_log2_ok (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : Float.t) =
   Result.is_ok (Float.internal_log2 f_x f_z pi x)
-  [@@disable Float.project, Float.decode, Float.decode_aux, Log.log2, Log.log, Log.ln, Format.get_format_parameters]
+  [@@disable Float.project, Float.decode, Float.decode_aux, Log.log2, Log.log, Log.ln, Format.parameters]
   [@@by auto]
 
 
@@ -401,7 +401,7 @@ theorem aug_hypot_ok (x : CER.t) (y : CER.t) =
 theorem internal_hypot_ok (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (pi : Projection.t) (x : Float.t) (y : Float.t) =
   Result.is_ok (Float.internal_hypot f_x f_y f_z pi x y)
   [@@timeout 60]
-  [@@disable Float.project, Float.decode, Float.decode_aux, Float.round_to_precision, Float.saturate, Util.pow2, Util.ipow2, Format.get_format_parameters]
+  [@@disable Float.project, Float.decode, Float.decode_aux, Float.round_to_precision, Float.saturate, Util.pow2, Util.ipow2, Format.parameters]
   [@@by [%use aug_hypot_ok (Float.decode f_x x) (Float.decode f_y y)] @> auto]
 
 
@@ -412,7 +412,7 @@ theorem internal_scaled_add_ok (f_x : Format.t) (f_y : Format.t) (f_z : Format.t
   (x : Float.t) (s_x : int) (y : Float.t) (s_y : int) =
   Result.is_ok (Float.internal_scaled_add f_x f_y f_z pi x s_x y s_y)
   [@@timeout 60]
-  [@@disable Float.project, Float.decode, Float.decode_aux, Util.pow2, Util.ipow2, Format.get_format_parameters]
+  [@@disable Float.project, Float.decode, Float.decode_aux, Util.pow2, Util.ipow2, Format.parameters]
   [@@by auto]
 
 
@@ -422,7 +422,7 @@ theorem internal_scaled_add_ok (f_x : Format.t) (f_y : Format.t) (f_z : Format.t
 theorem internal__scaledmultiply_ok (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (pi : Projection.t)
   (x : Float.t) (y : Float.t) (s : int) =
   Result.is_ok (Float.internal_scaled_multiply f_x f_y f_z pi x y s)
-  [@@disable Float.project, Float.decode, Float.decode_aux, Util.pow2, Util.ipow2, Format.get_format_parameters]
+  [@@disable Float.project, Float.decode, Float.decode_aux, Util.pow2, Util.ipow2, Format.parameters]
   [@@by auto]
 
 
@@ -434,7 +434,7 @@ theorem internal_scaled_fma_ok (phi : IEEE754.Format.t) (f_x : Format.t) (f_y : 
   Result.is_ok (Float.internal_scaled_fma phi f_x f_y pi x y s a s_a )
   [@@timeout 3600]
   [@@disable Float.project, Float.decode, Float.decode_aux, Float.encode754, Float.round_to_precision, Float.saturate,
-             Util.pow2, Util.ipow2, IEEE754.as_aug_real, IEEE754.is_nan, Format.get_format_parameters]
+             Util.pow2, Util.ipow2, IEEE754.as_aug_real, IEEE754.is_nan, Format.parameters]
   [@@by [%use Theorems_IEEE754.as_aug_real_ok phi a] @> auto]
 
 
