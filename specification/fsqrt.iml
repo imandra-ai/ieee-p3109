@@ -6,17 +6,17 @@ open Specification
 
 let fsqrt_aux_both prec bias rnd start (x : real) (p : int) : ((real * int), string) Result.t =
   let early_exit (u : Sqrt.state) (o : Sqrt.state) =
-    let urnded = Float.round_to_precision prec bias rnd (AugReal.R u.g) in
-    let ornded = Float.round_to_precision prec bias rnd (AugReal.R o.g) in
+    let urnded = Float.round_to_precision prec bias rnd (CER.R u.g) in
+    let ornded = Float.round_to_precision prec bias rnd (CER.R o.g) in
     if ornded = urnded then true
-    else if AugReal.ResultInfix.(ornded * ornded) = Ok (AugReal.R x) then true
+    else if CER.ResultInfix.(ornded * ornded) = Ok (CER.R x) then true
     else if o.g *. o.g = x then true
     else false
   in
   Sqrt.sqrt_both start early_exit x p
 
-let aug_fsqrt (prec : int) (bias : int) (rnd : RoundingMode.t) start (x : AugReal.t) : ((AugReal.t * int), string) Result.t =
-  let open AugReal in
+let cer_fsqrt (prec : int) (bias : int) (rnd : RoundingMode.t) start (x : CER.t) : ((CER.t * int), string) Result.t =
+  let open CER in
   match x with
   | NaN | PINF -> Ok (x, 0)
   | NINF -> Ok (NaN, 0)
@@ -27,32 +27,32 @@ let aug_fsqrt (prec : int) (bias : int) (rnd : RoundingMode.t) start (x : AugRea
     | Error e -> Error e
     )
 
-let rec find_closest_sqrt_floats_aux (f : Format.t) (x : AugReal.t) (l : Float.t) (u : Float.t) : (Float.t * Float.t, string) Result.t =
+let rec find_closest_sqrt_floats_aux (f : Format.t) (x : CER.t) (l : Float.t) (u : Float.t) : (Float.t * Float.t, string) Result.t =
   if l < 0 || u < 0 then Error "invalid negative"
   else if l > u then Error "invalid interval"
   else if u - l <= 1 then Ok (l, u)
   else (
     let m = (l + u) / 2 in
     let dm = Float.decode f m in
-    match AugReal.ResultInfix.(dm * dm) with
-    | Ok dmsq when AugReal.ResultInfix.(dmsq >= x) -> find_closest_sqrt_floats_aux f x l m
+    match CER.ResultInfix.(dm * dm) with
+    | Ok dmsq when CER.ResultInfix.(dmsq >= x) -> find_closest_sqrt_floats_aux f x l m
     | Ok _ -> find_closest_sqrt_floats_aux f x m u
     | Error e -> Error e)
   [@@measure Ordinal.of_int (u - l)]
 
-let find_closest_sqrt_floats (f : Format.t) (x : AugReal.t) : (Float.t * Float.t, string) Result.t =
+let find_closest_sqrt_floats (f : Format.t) (x : CER.t) : (Float.t * Float.t, string) Result.t =
   let k, p, bias, m_lo, m_hi, _, _ = Format.get_format_parameters f in
   find_closest_sqrt_floats_aux f x 0x00
     (if f.s = Signedness.Signed then (Util.ipow2 (k - 1) - 2) else (Util.ipow2 k - 1))
 
-let r_of_aug (x : AugReal.t) =
-  let open AugReal in
+let r_of_aug (x : CER.t) =
+  let open CER in
   match x with
   | R r -> Ok r
   | _ -> Error "unreachable"
 
 let fsqrt_start (f : Format.t) (x : real) (p : int) : (Sqrt.state * Sqrt.state) =
-  match find_closest_sqrt_floats f (AugReal.R x) with
+  match find_closest_sqrt_floats f (CER.R x) with
   | Ok (au, ao) ->
     (match
       r_of_aug (Float.decode f au), r_of_aug (Float.decode f ao)
@@ -77,7 +77,7 @@ let fsqrt_i (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : Float.t) 
   let dx = Float.decode f_x x in
   let start = fsqrt_start f_x in
   let _, p, bias, _, _, _, _ = Format.get_format_parameters f_z in
-  match (aug_fsqrt p bias (snd pi) start dx) with
+  match (cer_fsqrt p bias (snd pi) start dx) with
   | Ok (r, i) -> Float.project f_z pi r, i
   | Error e -> Error e, 0
 

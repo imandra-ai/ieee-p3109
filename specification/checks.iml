@@ -40,7 +40,7 @@ lemma fmt_params_p1 (f : Format.t) =
   [@@by auto]
 
 (** Sanity check of bitwise int conversion *)
-lemma bitwise_int_21 = of_int_repr f83 21 = 0x15 [@@by unroll 30]
+lemma bitwise_int_21 = of_int_repr f83 21 = 0x15 [@@by unroll 50]
 
 let is_r (x : CER.t) (r : CER.t) = x = r [@@macro]
 

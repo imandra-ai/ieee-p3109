@@ -30,7 +30,7 @@ verify (Float.sqrt fmt fmt (SaturationMode.SatPropagate, RoundingMode.TowardZero
 verify (dec (Float.sqrt fmt fmt (SaturationMode.SatPropagate, RoundingMode.TowardZero) (enc 256.0)) = 16.0) [@@by ground_eval ()]
 verify (Float.sqrt fmt fmt (SaturationMode.SatPropagate, RoundingMode.TowardZero) (Float.nan f83) = Float.nan f83) [@@by ground_eval ()]
 
-let aug_sqrt_approx (x : CER.t) (over : bool) (n : int) : (CER.t, string) Result.t =
+let cer_sqrt_approx (x : CER.t) (over : bool) (n : int) : (CER.t, string) Result.t =
   let open CER in
   match x with
   | NaN -> Ok NaN
@@ -45,8 +45,8 @@ let aug_sqrt_approx (x : CER.t) (over : bool) (n : int) : (CER.t, string) Result
     | Error e -> Error e)
   | _ -> Error "undefined"
 
-theorem aug_sqrt_approx_ok (x : CER.t) (over : bool) (n : int) =
-  Result.is_ok (aug_sqrt_approx x over n)
+theorem cer_sqrt_approx_ok (x : CER.t) (over : bool) (n : int) =
+  Result.is_ok (cer_sqrt_approx x over n)
   [@@timeout 60]
   [@@disable Sqrt.sqrt_over, Sqrt.sqrt_under]
   [@@by auto]
@@ -59,13 +59,13 @@ theorem fsqrt_aux_both_ok (prec : int) (bias : int) (rnd : RoundingMode.t) (star
   [@@by auto]
   (* [@@fc] *)
 
-theorem aug_fsqrt_ok (prec : int) (bias : int) (rnd : RoundingMode.t) (start : real -> int -> (Sqrt.state * Sqrt.state)) (x : CER.t) =
+theorem cer_fsqrt_ok (prec : int) (bias : int) (rnd : RoundingMode.t) (start : real -> int -> (Sqrt.state * Sqrt.state)) (x : CER.t) =
   match x with
   | NaN | PINF | NINF -> true
   | R r when r <. 0.0 -> true
   | R r ->
     Sqrt.inv (snd (start r 1000)) ==>
-    Result.is_ok ((Fsqrt.aug_fsqrt prec bias rnd start x) [@trigger])
+    Result.is_ok ((Fsqrt.cer_fsqrt prec bias rnd start x) [@trigger])
   [@@timeout 3600]
   [@@disable Float.decode, Format.get_format_parameters, Sqrt.sqrt_both]
   [@@by auto]
@@ -106,14 +106,14 @@ theorem fsqrt_start_satisfies_inv (f : Format.t) (x : real) (p : int) =
 theorem fsqrt_i_ok (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : Float.t) =
   Result.is_ok (fst ((Fsqrt.fsqrt_i f_x f_z pi x) [@trigger]))
   [@@timeout 3600]
-  [@@disable Format.get_format_parameters, Float.decode, Float.project, Fsqrt.fsqrt_start, Fsqrt.aug_fsqrt]
+  [@@disable Format.get_format_parameters, Float.decode, Float.project, Fsqrt.fsqrt_start, Fsqrt.cer_fsqrt]
   [@@by auto]
   [@@fc]
 
 theorem fsqrt_ok (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : Float.t) =
   Result.is_ok (Fsqrt.fsqrt f_x f_z pi x)
   [@@timeout 3600]
-  [@@disable Format.get_format_parameters, Float.decode, Float.project, Fsqrt.fsqrt_start, Fsqrt.aug_fsqrt]
+  [@@disable Format.get_format_parameters, Float.decode, Float.project, Fsqrt.fsqrt_start, Fsqrt.cer_fsqrt]
   [@@by auto]
 
 let f83 = {Format.kp = Format.B8P3; s = Signedness.Signed; d = Domain.Extended}
