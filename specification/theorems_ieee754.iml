@@ -1,4 +1,3 @@
-[@@@import ExReal, "dune:math"]
 [@@@import Util, "dune:math"]
 [@@@import IEEE754, "IEEE754.iml"]
 
