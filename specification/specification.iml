@@ -169,6 +169,10 @@ module RoundingMode = struct
     | TowardPositive
     | NearestTiesToEven
     | NearestTiesToAway
+    | ToOdd
+    | Stochastic of int
+    | StochasticBiased1 of int
+    | StochasticBiased2 of int
 
     (** String representation *)
   let to_string (x : t) : string =
@@ -178,6 +182,10 @@ module RoundingMode = struct
     | TowardPositive -> "TowardPositive"
     | NearestTiesToEven -> "NearestTiesToEven"
     | NearestTiesToAway -> "NearestTiesToAway"
+    | ToOdd -> "ToOdd"
+    | Stochastic r -> "Stochastic (" ^ Int.to_string r ^ ")"
+    | StochasticBiased1 r -> "StochasticBiased1 (" ^ Int.to_string r ^ ")"
+    | StochasticBiased2 r -> "StochasticBiased2 (" ^ Int.to_string r ^ ")"
     [@@program]
 end
 
@@ -320,13 +328,27 @@ module Float = struct
           is_even (Real.to_int s)
         else
           floor s = 0.0 || is_even (e + b) in
+      let rnite x =
+          if (x <. (floor x) +. 0.5) || (x = (floor x) +. 0.5 && is_even (ifloor x)) then
+            floor x
+          else
+            (floor x) +. 1.0
+      in
+      let rnte n x = rnite (x *. pow2 n) *. pow2 (- n) in
       let round_away (rnd : RoundingMode.t) : bool =
-        (match rnd with
+        match rnd with
         | NearestTiesToEven -> delta >. 0.5 || (delta = 0.5 && not code_is_even)
         | NearestTiesToAway -> delta >=. 0.5
         | TowardPositive -> delta >. 0.0 && x >. 0.0
         | TowardNegative -> delta >. 0.0 && x <. 0.0
-        | TowardZero -> false)
+        | TowardZero -> false
+        | ToOdd -> delta >. 0.0 && code_is_even
+        | Stochastic r -> (
+          let delta' = rnte (num_bits r) s -. floor s in
+          delta' >=. i2r r *. (2 ^. (- (num_bits r)))
+          )
+        | StochasticBiased1 r -> delta >. i2r r *. (2 ^. (- (num_bits r)))
+        | StochasticBiased2 r -> delta >. (i2r r +. 0.5) *. (2 ^. (- (num_bits r)))
       in
       let i = if round_away rnd then (floor s) +. 1.0
               else floor s in
