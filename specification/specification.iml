@@ -1325,7 +1325,7 @@ module Float = struct
     | R x, PINF -> Ok (R x)
     | NINF, R y -> Ok (R y)
     | R x, NINF -> Ok (R x)
-    | R x, R y -> Ok (if x <. y then (R x) else (R y))
+    | R x, R y -> Ok (if x <. y then (R x) else (R y)) [@ocaml.text "breakindent"]
     | _ -> Error "undefined"
 
   let internal_minimum_finite (f : Format.t) (x : t) (y : t) : (t, string) Result.t =
@@ -1352,7 +1352,7 @@ module Float = struct
     | R x, PINF -> Ok (R x)
     | NINF, R y -> Ok (R y)
     | R x, NINF -> Ok (R x)
-    | R x, R y -> Ok (if x <. y then (R y) else (R x))
+    | R x, R y -> Ok (if x <. y then (R y) else (R x)) [@ocaml.text "breakindent"]
     | _ -> Error "undefined"
 
   let internal_maximum_finite (f : Format.t) (x : t) (y : t) : (t, string) Result.t =

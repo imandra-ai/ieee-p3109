@@ -459,7 +459,8 @@ function print_string_loc(node: AST, options: Options): string {
 const attribute_filter = [
   "iml.semisemi",
   "imandra_verify", "imandra_instance", "imandra_theorem",
-  "imandra_eval", "imandra_axiom", "imandra_rule_spec"
+  "imandra_eval", "imandra_axiom", "imandra_rule_spec",
+  "ocaml.text"
 ];
 
 function filter_attributes(attrs: AST[]): AST[] {
@@ -473,6 +474,15 @@ function print_attributes(attrs: AST[], level: number, options: Options): Doc[] 
 
 function has_attribute(attrs, x): boolean {
   return attrs.find(a => a.attr_name.txt == x);
+}
+
+function has_attribute_with_payload(attrs, x, payload): boolean {
+  return attrs.find(a =>
+    a.attr_name.txt == x &&
+    a.attr_payload[0] == "PStr" &&
+    a.attr_payload[1][0].pstr_desc[0] == "Pstr_eval" &&
+    a.attr_payload[1][0].pstr_desc[1].pexp_desc[0] == "Pexp_constant" &&
+    a.attr_payload[1][0].pstr_desc[1].pexp_desc[1].pconst_desc[1] == payload);
 }
 
 function print_arg_label(node: AST, options: Options, with_tilde = true): Doc[] {
@@ -593,8 +603,12 @@ function print_pattern_desc(node: AST, options: Options): Doc {
         r = capitalize_first(print_string_loc(args[0], options));
       else
         r = print_string_loc(args[0], options);
-      if (options.move_everything_up && r.includes("_"))
-        r = r.replace("_", "^");
+      if (r.includes("_")) {
+        if (options.move_everything_up)
+          r = r.replace("_", "^");
+        else
+          r = r.replace("_", "_{") + "}";
+      }
       return r;
     }
     case "Ppat_alias":
@@ -1733,13 +1747,17 @@ function print_structure_item_desc(node: AST, options: Options): Doc {
               }
               let rhs_expr = arg.pc_rhs;
               rhs_expr = strip_error_handling(rhs_expr);
-              r = r.concat(f([
-                "\\Case{", fname, "(",
+              let pat = [fname, "(",
                 print_pattern(arg.pc_lhs, options),
                 ")", line,
                 ...(arg.pc_guard ?
-                  ["~\\If", line, print_expression(arg.pc_guard, options)] : []),
+                  ["~\\If", line, print_expression(arg.pc_guard, options)] : []),];
+              r = r.concat(f([
+                "\\Case{",
+                pat,
                 "\\gives", line,
+                (has_attribute_with_payload(rhs_expr.pexp_attributes, "ocaml.text", "breakindent") ?
+                  ["\\\\\\phantom{\\qquad", pat, "}"] : []),
                 print_expression(rhs_expr, options), "}\\\\", hardline]));
               options.pattern_reals = [];
             }
