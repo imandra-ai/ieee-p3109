@@ -1750,11 +1750,12 @@ function print_structure_item_desc(node: AST, options: Options): Doc {
               let pat = [fname, "(",
                 print_pattern(arg.pc_lhs, options),
                 ")", line,
-                ...(arg.pc_guard ?
-                  ["~\\If", line, print_expression(arg.pc_guard, options)] : []),];
+              ];
               r = r.concat(f([
                 "\\Case{",
                 pat,
+                ...(arg.pc_guard ?
+                  ["~\\If", line, print_expression(arg.pc_guard, options)] : []),
                 "\\gives", line,
                 (has_attribute_with_payload(rhs_expr.pexp_attributes, "ocaml.text", "breakindent") ?
                   ["\\\\\\phantom{\\qquad", pat, "}"] : []),
