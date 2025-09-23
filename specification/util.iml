@@ -85,3 +85,12 @@ let reciprocal (x : (real, string) Result.t) : (real, string) Result.t =
   | Ok r when r = 0.0 -> Error "division by zero"
   | Ok r -> Ok (1.0 /. r)
   | Error e -> Error e
+
+let rec num_bits (x : int) : int =
+  if x = 0 then
+    0
+  else if x < 0 then
+    1 + num_bits ((- x) / 2)
+  else
+    1 + num_bits (x / 2)
+  [@@measure Ordinal.of_int (abs x)]
