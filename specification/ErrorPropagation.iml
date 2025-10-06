@@ -32,15 +32,15 @@ let (let*@) (x : (('a, 'e) Result.t list, 'e) Result.t) (f : 'a list -> ('b, 'e)
   let@ r = t in
   f r
 
-theorem exists_error_err xs =
+theorem exists_error_err (xs : ('a, 'b) Result.t list) =
   List.exists (fun x -> Result.is_error x) xs ==> Result.is_error (extract_error xs)
   [@@by auto]
 
-theorem exists_error_ok xs =
+theorem exists_error_ok (xs : ('a, 'b) Result.t list) =
   not (List.exists (fun x -> Result.is_error x) xs) ==> Result.is_ok (extract_error xs)
   [@@by auto]
 
-theorem extract_error_preserves_length xs =
+theorem extract_error_preserves_length (xs : ('a, 'b) Result.t list) =
   match (extract_error xs) [@trigger] with
   | Ok r -> List.length r = List.length xs
   | _ -> true

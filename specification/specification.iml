@@ -325,7 +325,7 @@ module Float = struct
       let delta : real = Real.(s - floor s) in
       let code_is_even : bool =
         if p > 1 then
-          is_even (Real.to_int s)
+          is_even (ifloor s)
         else
           floor s = 0.0 || is_even (e + b) in
       let rnite x =
@@ -1668,34 +1668,31 @@ module Float = struct
   [@@program]
 
 
-  (** 6 Block operations *)
+  (** 5 Block operations *)
 
   open ErrorPropagation
 
-  let rec fold (f : 'a -> 'a -> ('a, string) Result.t) (x: 'a list) : ('a, string) Result.t =
+  let rec fold (f : 'a -> 'a -> ('a, string) Result.t) (init : 'a) (x: 'a list) : ('a, string) Result.t =
     match x with
-    | [] -> Error "invalid fold"
-    | [x1] -> Error "invalid fold"
-    | [x1; x2] -> f x1 x2
+    | [] -> Ok init
     | x1 :: rest ->
-      let* x2 = fold f rest in
+      let* x2 = fold f init rest in
       f x1 x2
-    | _ -> Error "invalid fold"
 
 
-  (** 6.0.1 DecodeBlock *)
+  (** 5.1.1 DecodeBlock *)
 
   let map_aug_multiply (f_s : Format.t) (f_x : Format.t) (s : t) (x : t list) : (CER.t, string) Result.t list =
     List.map (fun x_i -> aug_multiply (decode f_s s) (decode f_x x_i)) x
 
-  let decode_block (f_s : Format.t) (f_x : Format.t) (b : int) (s, x : t * t list) : (CER.t list, string) Result.t =
-    if b < 2 || b <> List.length x then
+  let decode_block (b : int) (f_s : Format.t) (f_x : Format.t) (s, x : t * t list) : (CER.t list, string) Result.t =
+    if b < 1 || b <> List.length x then
       Error "invalid block size"
     else
       let@ cz = map_aug_multiply f_s f_x s x in
       Ok cz
 
-  (** 6.0.2 EncodeBlock *)
+  (** 5.1.2 EncodeBlock *)
 
   let map_project (f : Format.t) (pi : Projection.t) (x : CER.t list) : (t, string) Result.t list =
     List.map (project f pi) x
@@ -1724,7 +1721,7 @@ module Float = struct
       let@ z = map_project f_z pi_z cz in
       Ok z
 
-  (** 6.0.3 ConvertFromBlock *)
+  (** 5.2.1 ConvertFromBlock *)
 
   let convert_from_block
     (b : int)
@@ -1735,11 +1732,11 @@ module Float = struct
     if b < 0 || b <> List.length x then
       Error "invalid block size"
     else
-      let* cz = decode_block f_s f_x b (s, x) in
+      let* cz = decode_block b f_s f_x (s, x) in
       let@ z = map_project f_z pi_z cz in
       Ok z
 
-  (** 6.0.4 ConvertToBlock *)
+  (** 5.2.2 ConvertToBlock *)
 
   let map_decode f_x x = List.map (decode f_x) x
 
@@ -1752,11 +1749,12 @@ module Float = struct
     let* z = encode_block b f_s f_z pi_z (s, cx) in
     Ok (s, z)
 
-  (** 6.0.5 ConvertToBlockMaxAbsFinite *)
+  (** 5.2.3 ConvertToBlockMaxAbsFinite *)
 
   let map_aug_abs (x : CER.t list) : (CER.t, string) Result.t list = List.map aug_abs x
 
-  let fold_aug_maximum_finite (x : CER.t list) : (CER.t, string) Result.t = fold aug_maximum_finite x
+  let fold_aug_maximum_finite (init : CER.t) (x : CER.t list) : (CER.t, string) Result.t =
+    fold aug_maximum_finite init x
 
   let map_convert_maf s' cx =
     List.map (fun cx_i -> if s' = CER.zero then Ok CER.zero else aug_divide cx_i s') cx
@@ -1767,12 +1765,12 @@ module Float = struct
     (pi_s : Projection.t) (pi_z : Projection.t)
     (x : t list) :
     (t * t list, string) Result.t =
-    if (b < 2 || b <> List.length x) then
+    if (b < 1 || b <> List.length x) then
       Error "invalid block size"
     else
       let cx = map_decode f_x x in
       let@ m = map_aug_abs cx in
-      let* cs = fold_aug_maximum_finite m in
+      let* cs = fold_aug_maximum_finite CER.zero m in (* init = NaN? *)
       let* s = project f_s pi_s cs in
       let s' = decode f_s s in
       let@ cz = map_convert_maf s' cx in
@@ -1780,15 +1778,15 @@ module Float = struct
       Ok (s, z)
 
 
-  (** 6.0.3 DotBlock *)
+  (** 5.3 Dot Product *)
 
   let map2_aug_multiply (cx : CER.t list) (cy : CER.t list) : ((CER.t, string) Result.t list, string) Result.t =
     List.map2 aug_multiply cx cy
 
-  let fold_aug_add (cp : CER.t list) : (CER.t, string) Result.t =
-    fold aug_add cp
+  let fold_aug_add (init : CER.t) (cp : CER.t list) : (CER.t, string) Result.t =
+    fold aug_add init cp
 
-  let dot_block
+  let block_dot_product
     (b : int)
     (f_sx : Format.t) (f_x : Format.t)
     (f_sy : Format.t) (f_y : Format.t)
@@ -1797,37 +1795,301 @@ module Float = struct
     (s_x, x : t * t list)
     (s_y, y : t * t list) :
     (t, string) Result.t =
-    let* cx = decode_block f_sx f_x b (s_x, x) in
-    let* cy = decode_block f_sy f_y b (s_y, y) in
+    let* cx = decode_block b f_sx f_x (s_x, x) in
+    let* cy = decode_block b f_sy f_y (s_y, y) in
     let*@ cp = map2_aug_multiply cx cy in
-    let* cz = fold_aug_add cp in
+    let* cz = fold_aug_add CER.zero cp in
     let* z = project f_z pi_z cz in
     Ok z
 
 
-  (** 6.0.4 AddBlock *)
+  (** 5.4 Elementwise *)
 
-  let map2_aug_add cx cy = List.map2 aug_add cx cy
+  type block_op_parameter = {
+    f_s : Format.t;
+    f_x : Format.t;
+  }
 
-  let map_add_block f_z pi_z cs cz = List.map (fun cz_i -> let* d = aug_divide cz_i cs in project f_z pi_z d) cz
+  type block_op_argument = {
+    s : t;
+    x : t list;
+  }
 
-  let add_block
+  let rec nth_r n = function
+    | [] -> Error "invalid index"
+    | y :: tail ->
+      if n = 0 then
+        Ok y
+      else
+        nth_r (n - 1) tail
+  [@@adm 1n]
+
+  (* Custom map2-like decoding of a list of blocks in params and args. *)
+  let rec block_op_map2_decode_block_aux b params args =
+    match params, args with
+    | [], [] -> []
+    | p :: params, a :: args ->
+      (decode_block b p.f_s p.f_x (a.s, a.x)) :: block_op_map2_decode_block_aux b params args
+    | _ -> []
+
+  let block_op_map2_decode_block b params args : ((CER.t list, string) Result.t list, string) Result.t =
+    if List.length params <> List.length args then
+      Error "invalid arguments"
+    else
+      Ok (block_op_map2_decode_block_aux b params args)
+
+  (* Alternative via List.map2, if we can make it work *)
+  (* let block_op_map2_decode_block b params args =
+    List.map2 (fun p a -> decode_block b p.f_s p.f_x (a.s, a.x)) params args *)
+
+  let block_op_map2_wop_unary wOp (xs : CER.t list) : ((CER.t, string) Result.t list, string) Result.t =
+    Ok (List.map (fun x_i -> wOp x_i) xs)
+
+  let block_op_map2_wop_binary wOp (xs : CER.t list) (ys : CER.t list) : ((CER.t, string) Result.t list, string) Result.t =
+    List.map2 (fun x_i y_i -> wOp x_i y_i) xs ys
+
+  let rec block_op_map2_wop_ternary wOp (xs : CER.t list) (ys : CER.t list) (zs : CER.t list) : ((CER.t, string) Result.t list, string) Result.t =
+    let open Result in
+    match xs, ys, zs with
+    | [], [], [] -> Ok []
+    | x :: xs, y :: ys, z :: zs ->
+      block_op_map2_wop_ternary wOp xs ys zs >|= List.cons (wOp x y z)
+    | _, _, _ -> Error "Lengths of xs, ys, zs don't match"
+
+  let block_op_unary
     (b : int)
-    (f_sx : Format.t) (f_x : Format.t)
-    (f_sy : Format.t) (f_y : Format.t)
+    (params : block_op_parameter list)
     (f_s : Format.t)
     (f_z : Format.t)
-    (pi_s : Projection.t)
+    (s_z : t)
     (pi_z : Projection.t)
-    (s_x, x : t * t list)
-    (s_y, y : t * t list)
-    (s_z : t) :
-    (t list, string) Result.t =
-    let* cx = decode_block f_sx f_x b (s_x, x) in
-    let* cy = decode_block f_sy f_y b (s_y, y) in
-    let*@ cz = map2_aug_add cx cy in
-    let cs = decode f_s s_z in
-    let@ z = map_add_block f_z pi_z cs cz in
-    Ok z
+    (args: block_op_argument list)
+    (wOp : CER.t -> (CER.t, string) Result.t)
+    :
+    (t * t list, string) Result.t =
+    if b < 1 ||
+      List.length params <> List.length args ||
+      List.length args <> 1 ||
+      not (List.for_all (fun a_i -> List.length a_i.x = b) args) then
+      Error "invalid arguments"
+    else (
+      let*@ cxs = block_op_map2_decode_block b params args in
+      let* x1 = nth_r 0 cxs in
+      let*@ cz = block_op_map2_wop_unary wOp x1 in
+      let* z = encode_block b f_s f_z pi_z (s_z, cz) in
+      Ok (s_z, z)
+    )
+    [@@macro]
 
+  let block_op_binary
+    (b : int)
+    (params : block_op_parameter list)
+    (f_s : Format.t)
+    (f_z : Format.t)
+    (s_z : t)
+    (pi_z : Projection.t)
+    (args: block_op_argument list)
+    (wOp : CER.t -> CER.t -> (CER.t, string) Result.t)
+    :
+    (t * t list, string) Result.t =
+    if b < 1 ||
+      List.length params <> List.length args ||
+      List.length args <> 2 ||
+      not (List.for_all (fun a_i -> List.length a_i.x = b) args) then
+      Error "invalid arguments"
+    else (
+      let*@ cxs = block_op_map2_decode_block b params args in
+      let* x1 = nth_r 0 cxs in
+      let* x2 = nth_r 1 cxs in
+      let*@ cz = block_op_map2_wop_binary wOp x1 x2 in
+      let* z = encode_block b f_s f_z pi_z (s_z, cz) in
+      Ok (s_z, z)
+    )
+    [@@macro]
+
+  let block_op_ternary
+    (b : int)
+    (params : block_op_parameter list)
+    (f_s : Format.t)
+    (f_z : Format.t)
+    (s_z : t)
+    (pi_z : Projection.t)
+    (args: block_op_argument list)
+    (wOp : CER.t -> CER.t -> CER.t -> (CER.t, string) Result.t)
+    :
+    (t * t list, string) Result.t =
+    if b < 1 ||
+      List.length params <> List.length args ||
+      List.length args <> 3 ||
+      not (List.for_all (fun a_i -> List.length a_i.x = b) args) then
+      Error "invalid arguments"
+    else (
+      let*@ cxs = block_op_map2_decode_block b params args in
+      let* x1 = nth_r 0 cxs in
+      let* x2 = nth_r 1 cxs in
+      let* x3 = nth_r 2 cxs in
+      let*@ cz = block_op_map2_wop_ternary wOp x1 x2 x3 in
+      let* z = encode_block b f_s f_z pi_z (s_z, cz) in
+      Ok (s_z, z)
+    )
+    [@@macro]
+
+  let block_exp b f_sx f_x f_s f_z pi_s pi_z (s_x, x) s_z =
+    block_op_unary b
+      [{f_s = f_sx; f_x}]
+      f_s f_z s_z pi_z
+      [{s = s_x; x}]
+      aug_exp
+
+  let block_sqrt b f_sx f_x f_s f_z pi_s pi_z (s_x, x) s_z =
+    block_op_unary b
+      [{f_s = f_sx; f_x}]
+      f_s f_z s_z pi_z
+      [{s = s_x; x}]
+      aug_sqrt
+
+  let block_rsqrt b f_sx f_x f_s f_z pi_s pi_z (s_x, x) s_z =
+    block_op_unary b
+      [{f_s = f_sx; f_x}]
+      f_s f_z s_z pi_z
+      [{s = s_x; x}]
+      aug_rsqrt
+
+  let block_exp2 b f_sx f_x f_s f_z pi_s pi_z (s_x, x) s_z =
+    block_op_unary b
+      [{f_s = f_sx; f_x}]
+      f_s f_z s_z pi_z
+      [{s = s_x; x}]
+      aug_exp2
+
+  let block_log2 b f_sx f_x f_s f_z pi_s pi_z (s_x, x) s_z =
+    block_op_unary b
+      [{f_s = f_sx; f_x}]
+      f_s f_z s_z pi_z
+      [{s = s_x; x}]
+      aug_log2
+
+  let block_log b f_sx f_x f_s f_z pi_s pi_z (s_x, x) s_z =
+    block_op_unary b
+      [{f_s = f_sx; f_x}]
+      f_s f_z s_z pi_z
+      [{s = s_x; x}]
+      aug_log
+
+  let block_recip b f_sx f_x f_s f_z pi_s pi_z (s_x, x) s_z =
+    block_op_unary b
+      [{f_s = f_sx; f_x}]
+      f_s f_z s_z pi_z
+      [{s = s_x; x}]
+      aug_recip
+
+
+  let block_add b f_sx1 f_x1 f_sx2 f_x2 f_s f_z pi_s pi_z (s_x1, x1) (s_x2, x2) s_z =
+    block_op_binary b
+      [{f_s = f_sx1; f_x = f_x1}; {f_s = f_sx2; f_x = f_x2}]
+      f_s f_z s_z pi_z
+      [{s=s_x1; x = x1}; {s=s_x2; x = x2}]
+      aug_add
+
+  let block_subtract b f_sx1 f_x1 f_sx2 f_x2 f_s f_z pi_s pi_z (s_x1, x1) (s_x2, x2) s_z =
+    block_op_binary b
+      [{f_s = f_sx1; f_x = f_x1}; {f_s = f_sx2; f_x = f_x2}]
+      f_s f_z s_z pi_z
+      [{s=s_x1; x = x1}; {s=s_x2; x = x2}]
+      aug_subtract
+
+  let block_multiply b f_sx1 f_x1 f_sx2 f_x2 f_s f_z pi_s pi_z (s_x1, x1) (s_x2, x2) s_z =
+    block_op_binary b
+      [{f_s = f_sx1; f_x = f_x1}; {f_s = f_sx2; f_x = f_x2}]
+      f_s f_z s_z pi_z
+      [{s=s_x1; x = x1}; {s=s_x2; x = x2}]
+      aug_multiply
+
+  let block_divide b f_sx1 f_x1 f_sx2 f_x2 f_s f_z pi_s pi_z (s_x1, x1) (s_x2, x2) s_z =
+    block_op_binary b
+      [{f_s = f_sx1; f_x = f_x1}; {f_s = f_sx2; f_x = f_x2}]
+      f_s f_z s_z pi_z
+      [{s=s_x1; x = x1}; {s=s_x2; x = x2}]
+      aug_divide
+
+  let block_hypot b f_sx1 f_x1 f_sx2 f_x2 f_s f_z pi_s pi_z (s_x1, x1) (s_x2, x2) s_z =
+    block_op_binary b
+      [{f_s = f_sx1; f_x = f_x1}; {f_s = f_sx2; f_x = f_x2}]
+      f_s f_z s_z pi_z
+      [{s=s_x1; x = x1}; {s=s_x2; x = x2}]
+      aug_hypot
+
+  let block_minimum b f_sx1 f_x1 f_sx2 f_x2 f_s f_z pi_s pi_z (s_x1, x1) (s_x2, x2) s_z =
+    block_op_binary b
+      [{f_s = f_sx1; f_x = f_x1}; {f_s = f_sx2; f_x = f_x2}]
+      f_s f_z s_z pi_z
+      [{s=s_x1; x = x1}; {s=s_x2; x = x2}]
+      aug_minimum
+
+  let block_minimum_number b f_sx1 f_x1 f_sx2 f_x2 f_s f_z pi_s pi_z (s_x1, x1) (s_x2, x2) s_z =
+    block_op_binary b
+      [{f_s = f_sx1; f_x = f_x1}; {f_s = f_sx2; f_x = f_x2}]
+      f_s f_z s_z pi_z
+      [{s=s_x1; x = x1}; {s=s_x2; x = x2}]
+      aug_minimum_number
+
+  let block_minimum_magnitude b f_sx1 f_x1 f_sx2 f_x2 f_s f_z pi_s pi_z (s_x1, x1) (s_x2, x2) s_z =
+    block_op_binary b
+      [{f_s = f_sx1; f_x = f_x1}; {f_s = f_sx2; f_x = f_x2}]
+      f_s f_z s_z pi_z
+      [{s=s_x1; x = x1}; {s=s_x2; x = x2}]
+      aug_minimum_magnitude
+
+  (* No aug_* for this
+
+    let block_minimum_magnitude_number b f_sx1 f_x1 f_sx2 f_x2 f_s f_z pi_s pi_z (s_x1, x1) (s_x2, x2) s_z =
+      block_op b
+        [{f_s = f_sx1; f_x = f_x1}; {f_s = f_sx2; f_x = f_x2}]
+        f_s f_z s_z pi_z
+        [{s=s_x1; x = x1}; {s=s_x2; x = x2}]
+        aug_minimum_magnitude_number *)
+
+  let block_maximum b f_sx1 f_x1 f_sx2 f_x2 f_s f_z pi_s pi_z (s_x1, x1) (s_x2, x2) s_z =
+    block_op_binary b
+      [{f_s = f_sx1; f_x = f_x1}; {f_s = f_sx2; f_x = f_x2}]
+      f_s f_z s_z pi_z
+      [{s=s_x1; x = x1}; {s=s_x2; x = x2}]
+      aug_maximum
+
+  let block_maximum_number b f_sx1 f_x1 f_sx2 f_x2 f_s f_z pi_s pi_z (s_x1, x1) (s_x2, x2) s_z =
+    block_op_binary b
+      [{f_s = f_sx1; f_x = f_x1}; {f_s = f_sx2; f_x = f_x2}]
+      f_s f_z s_z pi_z
+      [{s=s_x1; x = x1}; {s=s_x2; x = x2}]
+      aug_maximum_number
+
+  let block_maximum_magnitude b f_sx1 f_x1 f_sx2 f_x2 f_s f_z pi_s pi_z (s_x1, x1) (s_x2, x2) s_z =
+    block_op_binary b
+      [{f_s = f_sx1; f_x = f_x1}; {f_s = f_sx2; f_x = f_x2}]
+      f_s f_z s_z pi_z
+      [{s=s_x1; x = x1}; {s=s_x2; x = x2}]
+      aug_maximum_magnitude
+
+  (* No aug_* for this
+
+    let block_maximum_magnitude_number b f_sx f_x f_sy f_y f_s f_z pi_s pi_z (s_x, x) (s_y, y) s_z =
+      block_op b
+        [{f_s = f_sx; f_x}; {f_s = f_sy; f_x = f_y}]
+        f_s f_z s_z pi_z
+        [{s=s_x1; x=x1}; {s=s_x2; x=x2}]
+        aug_maximum_magnitude_number *)
+
+  let block_fma b f_sx1 f_x1 f_sx2 f_x2 f_sx3 f_x3 f_s f_z pi_s pi_z (s_x1, x1) (s_x2, x2) (s_x3, x3) s_z =
+    block_op_ternary b
+      [{f_s = f_sx1; f_x = f_x1}; {f_s = f_sx2; f_x = f_x2}; {f_s = f_sx3; f_x = f_x3}]
+      f_s f_z s_z pi_z
+      [{s = s_x1; x = x1}; {s = s_x2; x = x2}; {s = s_x3; x = x3}]
+      aug_fma
+
+  let block_faa b f_sx1 f_x1 f_sx2 f_x2 f_sx3 f_x3 f_s f_z pi_s pi_z (s_x1, x1) (s_x2, x2) (s_x3, x3) s_z =
+    block_op_ternary b
+      [{f_s = f_sx1; f_x = f_x1}; {f_s = f_sx2; f_x = f_x2}; {f_s = f_sx3; f_x = f_x3}]
+      f_s f_z s_z pi_z
+      [{s = s_x1; x = x1}; {s = s_x2; x = x2}; {s = s_x3; x = x3}]
+      aug_faa
 end

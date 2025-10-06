@@ -129,3 +129,12 @@ lemma faa_two =
   (Float.internal_faa f83 f83 f83 f83 (SaturationMode.SatPropagate, RoundingMode.NearestTiesToEven) one zero one)
   =
   Ok two [@@by auto]
+
+let four : Float.t = 0x48 [@@macro]
+
+lemma block_add_12 =
+  let pi = SaturationMode.SatPropagate, RoundingMode.NearestTiesToEven in
+  (Float.block_add 2 f83 f83 f83 f83 f83 f83 pi pi (one, [one; two]) (one, [one; two]) one)
+  =
+  Ok (one, [two; four])
+  [@@by ground_eval ()]
