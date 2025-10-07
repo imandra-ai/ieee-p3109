@@ -1296,17 +1296,39 @@ module Float = struct
     | Ok r -> r
     | Error _ -> nan f (* unreachable by theorem internal_maximum_magnitude_ok *)
 
-  let minimum_magnitude_number (f : Format.t) (x : t) (y : t) : t =
+  let aug_minimum_magnitude_number (x : CER.t) (y : CER.t) : (CER.t, string) Result.t =
+    let open CER in
     match x, y with
-    | _, _ when is_nan f x -> x
-    | _, _ when is_nan f y -> y
-    | _, _ -> minimum_magnitude f x y
+    | NaN, _ -> Ok x
+    | _, NaN -> Ok y
+    | _, _ -> aug_minimum_magnitude x y
+
+  let internal_minimum_magnitude_number (f : Format.t) (x : t) (y : t) : (t, string) Result.t =
+    match aug_minimum_magnitude_number (decode f x) (decode f y) with
+    | Ok r -> encode f r
+    | Error e -> Error e
+
+  let minimum_magnitude_number (f : Format.t) (x : t) (y : t) : t =
+    match internal_minimum_magnitude_number f x y  with
+    | Ok r -> r
+    | Error _ -> nan f (* unreachable by theorem internal_minimum_magnitude_number_ok *)
+
+  let aug_maximum_magnitude_number (x : CER.t) (y : CER.t) : (CER.t, string) Result.t =
+    let open CER in
+    match x, y with
+    | NaN, _ -> Ok x
+    | _, NaN -> Ok y
+    | _, _ -> aug_maximum_magnitude x y
+
+  let internal_maximum_magnitude_number (f : Format.t) (x : t) (y : t) : (t, string) Result.t =
+    match aug_maximum_magnitude_number (decode f x) (decode f y) with
+    | Ok r -> encode f r
+    | Error e -> Error e
 
   let maximum_magnitude_number (f : Format.t) (x : t) (y : t) : t =
-    match x, y with
-    | _, _ when is_nan f x -> x
-    | _, _ when is_nan f y -> y
-    | _, _ -> maximum_magnitude f x y
+    match internal_maximum_magnitude_number f x y  with
+    | Ok r -> r
+    | Error _ -> nan f (* unreachable by theorem internal_maximum_magnitude_number_ok *)
 
 
   (** 4.10.2 MinimumFinite, MaximumFinite *)

@@ -482,6 +482,18 @@ theorem internal_maximum_magnitude_ok (f : Format.t) (x : Float.t) (y : Float.t)
   [@@disable Float.decode, Float.decode_aux, Float.encode]
   [@@by auto]
 
+(** [internal_minimum_magnitude_number] never returns an error *)
+theorem internal_minimum_magnitude_number_ok (f : Format.t) (x : Float.t) (y : Float.t) =
+  Result.is_ok (Float.internal_minimum_magnitude_number f x y)
+  [@@disable Float.decode, Float.decode_aux, Float.encode]
+  [@@by auto]
+
+(** [internal_maximum_magnitude] never returns an error *)
+theorem internal_maximum_magnitude_number_ok (f : Format.t) (x : Float.t) (y : Float.t) =
+  Result.is_ok (Float.internal_maximum_magnitude_number f x y)
+  [@@disable Float.decode, Float.decode_aux, Float.encode]
+  [@@by auto]
+
 (** 4.xx MinimumFinite, MaximumFinite *)
 
 (** [internal_minimum_finite] never returns an error *)
