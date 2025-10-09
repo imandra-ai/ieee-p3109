@@ -27,7 +27,7 @@ let ( let@ ) (xs : ('a, 'e) Result.t list) (f : 'a list -> ('b, 'e) Result.t) : 
   | Error e -> Error e
   [@@macro]
 
-let (let*@) (x : (('a, 'e) Result.t list, 'e) Result.t) (f : 'a list -> ('b, 'e) Result.t) =
+let (let*@) (x : (('a, 'e) Result.t list, 'e) Result.t) (f : 'a list -> ('b, 'e) Result.t) : ('b, 'e) Result.t =
   let* t = x in
   let@ r = t in
   f r

@@ -32,6 +32,15 @@ theorem list_tl_shorter xs =
   [@@by auto]
   [@@fc]
 
+theorem match_list_lens xs ys =
+  match xs, ys with
+  | [p1], [a1] -> ((List.length xs = List.length ys) [@trigger])
+  | [p1; p2], [a1; a2] -> ((List.length xs = List.length ys) [@trigger])
+  | [p1; p2; p3], [a1; a2; a3] -> ((List.length xs = List.length ys) [@trigger])
+  | _ -> true
+  [@@by induct ~do_not:["gen"; "fert"; "delim"] ()]
+  [@@fc]
+
 theorem map2_ok f xs ys =
   List.length xs = List.length ys ==> Result.is_ok ((List.map2 f xs ys) [@trigger])
   [@@by auto]
@@ -94,11 +103,6 @@ theorem decode_block_preserves_length (b : int)  (f_s : Format.t) (f_x : Format.
   [@@fc]
 
 (** 6.0.2 EncodeBlock *)
-
-(* theorem map_aug_divide_ok_cer (f_s : Format.t) (f_x : Format.t) (s, x : CER.t * CER.t list) =
-  Result.is_ok (extract_error (List.map (fun x_i -> Float.aug_divide x_i s) x))
-  [@@disable Float.decode, Float.aug_divide, List.map]
-  [@@by auto] *)
 
 theorem encode_block_map_ok (cs : CER.t) (x : CER.t list) =
   Result.is_ok (extract_error (List.map
@@ -244,21 +248,15 @@ theorem listcons xs =
   (List.length xs) [@trigger] > 0 ==> (match xs with | _ :: _ -> true | _ -> false)
   [@@fc]
 
-theorem block_op_pre
-  (b : int)
-  (args : block_op_argument list)
-  (f_s : Format.t) (f_x : Format.t)
-  (s : Float.t) (x : Float.t list) =
-  b >= 1 &&
-  List.length args = b &&
-  List.for_all (fun a_i -> List.length a_i.x = b) args &&
-  (* List.exists (fun a_i -> a_i.s = s && a_i.x = x) args && *)
-  List.length x = b ==>
-  Result.is_ok (decode_block b f_s f_x (s, x))
-  [@@disable Float.decode_block, List.exists, List.for_all]
-  [@@by simplify ()]
-  [@@fc]
+let rec equal_block_sizes (b : int) (args : block_op_argument list) : bool =
+  match args with
+  | [] -> true
+  | a_i :: args -> b = List.length a_i.x && equal_block_sizes b args
 
+let rec equal_list_lengths (b : int) (xs : 'a list list) : bool =
+  match xs with
+  | [] -> true
+  | x :: xs -> List.length x = b && equal_list_lengths b xs
 
 let decode_lb b p a = decode_block b p.f_s p.f_x (a.s, a.x)
 
@@ -279,7 +277,7 @@ theorem decode_lb_ok b p a =
 theorem block_op_map2_decode_block_ok b params args =
   b >= 1 &&
   List.length params = List.length args &&
-  List.for_all (fun a_i -> List.length a_i.x = b) args
+  equal_block_sizes b args
   ==>
   Result.is_ok ((block_op_map2_decode_block b params args) [@trigger])
   [@@disable Float.decode_block, List.map2, List.exists, List.for_all, List.length]
@@ -289,7 +287,7 @@ theorem block_op_map2_decode_block_ok b params args =
 theorem block_op_map2_decode_block_elems_ok b params args =
   b >= 1 &&
   List.length params = List.length args &&
-  List.for_all (fun a_i -> List.length a_i.x = b) args
+  equal_block_sizes b args
   ==>
   match (block_op_map2_decode_block b params args) [@trigger] with
   | Ok q -> Result.is_ok (extract_error q)
@@ -306,14 +304,41 @@ theorem block_op_map2_decode_block_preserves_length b params args =
   match (block_op_map2_decode_block b params args) [@trigger] with
   | Ok r -> (
     match extract_error r with
-    | Ok q -> List.length q = List.length args
+    | Ok decoded -> List.length decoded = List.length args
     | Error _ -> true)
   | Error _ -> true
   [@@disable Float.decode_block]
   [@@by induct ~do_not:["gen"; "fert"; "delim"] ()]
   [@@fc]
 
-theorem nth_r_ok n xs =
+theorem block_op_map2_decode_block_preserves_block_size b params args =
+  List.length params = List.length args
+  ==>
+  match (block_op_map2_decode_block b params args) [@trigger] with
+  | Ok r -> (
+    match extract_error r with
+    | Ok decoded -> List.for_all (fun d_i -> List.length d_i = b) decoded
+    | Error _ -> true)
+  | Error _ -> true
+  [@@disable Float.decode_block]
+  [@@timeout 120]
+  [@@by induct ~do_not:["gen"; "fert"; "delim"] ()]
+  [@@fc]
+
+theorem block_op_map2_decode_block_preserves_elems_length b params args =
+  List.length params = List.length args
+  ==>
+  match (block_op_map2_decode_block b params args) [@trigger] with
+  | Ok r -> (
+    match extract_error r with
+    | Ok decoded -> equal_list_lengths b decoded
+    | Error _ -> true)
+  | Error _ -> true
+  [@@disable Float.decode_block]
+  [@@by induct ~do_not:["gen"; "fert"; "delim"] ()]
+  [@@fc]
+
+theorem nth_r_ok (n : int) (xs : 'a list) =
   0 <= n && n < List.length xs ==> Result.is_ok ((Float.nth_r n xs) [@trigger])
   [@@by auto]
   [@@fc]
@@ -452,6 +477,15 @@ theorem block_op_map2_minimum_magnitude_elems_ok x1 x2 =
   [@@by auto]
   [@@fc]
 
+theorem block_op_map2_minimum_magnitude_number_elems_ok x1 x2 =
+  List.length x1 = List.length x2 ==>
+  match (Float.block_op_map2_wop_binary Float.aug_minimum_magnitude_number x1 x2) [@trigger] with
+  | Ok r -> Result.is_ok (extract_error r)
+  | Error _ -> false
+  [@@disable Float.aug_minimum_magnitude_number]
+  [@@by auto]
+  [@@fc]
+
 theorem block_op_map2_minimum_number_elems_ok x1 x2 =
   List.length x1 = List.length x2 ==>
   match (Float.block_op_map2_wop_binary Float.aug_minimum_number x1 x2) [@trigger] with
@@ -479,6 +513,16 @@ theorem block_op_map2_maximum_magnitude_elems_ok x1 x2 =
   [@@by auto]
   [@@fc]
 
+theorem block_op_map2_maximum_magnitude_number_elems_ok x1 x2 =
+  List.length x1 = List.length x2 ==>
+  match (Float.block_op_map2_wop_binary Float.aug_maximum_magnitude_number x1 x2) [@trigger] with
+  | Ok r -> Result.is_ok (extract_error r)
+  | Error _ -> false
+  [@@disable Float.aug_maximum_magnitude_number]
+  [@@by auto]
+  [@@fc]
+
+
 theorem block_op_map2_maximum_number_elems_ok x1 x2 =
   List.length x1 = List.length x2 ==>
   match (Float.block_op_map2_wop_binary Float.aug_maximum_number x1 x2) [@trigger] with
@@ -489,7 +533,7 @@ theorem block_op_map2_maximum_number_elems_ok x1 x2 =
   [@@fc]
 
 theorem block_op_map2_fma_elems_ok x1 x2 x3 =
-  List.length x1 = List.length x2 &&
+  List.length x1 = List.length x3 &&
   List.length x2 = List.length x3 ==>
   match (Float.block_op_map2_wop_ternary Float.aug_fma x1 x2 x3) [@trigger] with
   | Ok r -> Result.is_ok (extract_error r)
@@ -539,7 +583,7 @@ let block_preconditions_unary b f_sx f_x f_s f_z pi_s pi_z (s_x, x) s_z =
   b >= 1 &&
   List.length params = List.length args &&
   List.length x = b &&
-  List.for_all (fun a_i -> List.length a_i.x = b) args
+  equal_block_sizes b args
   [@@macro]
 
 theorem block_exp_ok
@@ -673,8 +717,9 @@ let block_preconditions_binary b f_sx1 f_x1 f_sx2 f_x2 f_s f_z pi_s pi_z (s_x1, 
   let args = [{s = s_x1; x = x1}; {s = s_x2; x = x2}] in
   b >= 1 &&
   List.length params = List.length args &&
+  List.length args = 2 &&
   List.length x1 = b && List.length x2 = b &&
-  List.for_all (fun a_i -> List.length a_i.x = b) args
+  equal_block_sizes b args
   [@@macro]
 
 let block_preconditions_ternary b f_sx1 f_x1 f_sx2 f_x2 f_sx3 f_x3 f_s f_z pi_s pi_z (s_x1, x1) (s_x2, x2) (s_x3, x3) s_z =
@@ -682,8 +727,9 @@ let block_preconditions_ternary b f_sx1 f_x1 f_sx2 f_x2 f_sx3 f_x3 f_s f_z pi_s 
   let args = [{s = s_x1; x = x1}; {s = s_x2; x = x2}; {s = s_x3; x = x3}] in
   b >= 1 &&
   List.length params = List.length args &&
+  List.length args = 3 &&
   List.length x1 = b && List.length x2 = b && List.length x3 = b &&
-  List.for_all (fun a_i -> List.length a_i.x = b) args
+  equal_block_sizes b args
   [@@macro]
 
 theorem block_add_ok
@@ -847,6 +893,26 @@ theorem block_minimum_magnitude_ok
     Float.encode_block, Float.block_op_map2_wop_binary]
   [@@by induct ~do_not:["gen"; "fert"; "delim"] ()]
 
+theorem block_minimum_magnitude_number_ok
+  (b : int)
+  (f_sx1 : Format.t) (f_x1 : Format.t)
+  (f_sx2 : Format.t) (f_x2 : Format.t)
+  (f_s : Format.t)
+  (f_z : Format.t)
+  (pi_s : Projection.t)
+  (pi_z : Projection.t)
+  (s_x1, x1 : Float.t * Float.t list)
+  (s_x2, x2 : Float.t * Float.t list)
+  (s_z : Float.t) =
+  block_preconditions_binary b f_sx1 f_x1 f_sx2 f_x2 f_s f_z pi_s pi_z (s_x1, x1) (s_x2, x2) s_z ==>
+  Result.is_ok (Float.block_minimum_magnitude_number b f_sx1 f_x1 f_sx2 f_x2 f_s f_z pi_s pi_z (s_x1, x1) (s_x2, x2) s_z)
+  [@@timeout 3600]
+  [@@disable
+    Float.fold, Float.aug_minimum_magnitude_number, Float.map2_aug_multiply, Float.fold_aug_add,
+    Float.decode_block, Float.project, Format.parameters, List.map, List.map2,
+    Float.encode_block, Float.block_op_map2_wop_binary]
+  [@@by induct ~do_not:["gen"; "fert"; "delim"] ()]
+
 theorem block_maximum_ok
   (b : int)
   (f_sx1 : Format.t) (f_x1 : Format.t)
@@ -907,6 +973,143 @@ theorem block_maximum_magnitude_ok
     Float.encode_block, Float.block_op_map2_wop_binary]
   [@@by induct ~do_not:["gen"; "fert"; "delim"] ()]
 
+theorem block_maximum_magnitude_number_ok
+  (b : int)
+  (f_sx1 : Format.t) (f_x1 : Format.t)
+  (f_sx2 : Format.t) (f_x2 : Format.t)
+  (f_s : Format.t)
+  (f_z : Format.t)
+  (pi_s : Projection.t)
+  (pi_z : Projection.t)
+  (s_x1, x1 : Float.t * Float.t list)
+  (s_x2, x2 : Float.t * Float.t list)
+  (s_z : Float.t) =
+  block_preconditions_binary b f_sx1 f_x1 f_sx2 f_x2 f_s f_z pi_s pi_z (s_x1, x1) (s_x2, x2) s_z ==>
+  Result.is_ok (Float.block_maximum_magnitude_number b f_sx1 f_x1 f_sx2 f_x2 f_s f_z pi_s pi_z (s_x1, x1) (s_x2, x2) s_z)
+  [@@timeout 3600]
+  [@@disable
+    Float.fold, Float.aug_maximum_magnitude_number, Float.map2_aug_multiply, Float.fold_aug_add,
+    Float.decode_block, Float.project, Format.parameters, List.map, List.map2,
+    Float.encode_block, Float.block_op_map2_wop_binary]
+  [@@by induct ~do_not:["gen"; "fert"; "delim"] ()]
+
+theorem op_block_ternary_decoded_ok b params args =
+  b >= 1 &&
+  List.length params = List.length args &&
+  List.length args = 3 &&
+  equal_block_sizes b args
+  ==>
+  Result.is_ok (
+    let*@ cxs = block_op_map2_decode_block b params args in
+    Ok (true))
+  [@@disable extract_error, block_op_map2_decode_block]
+  [@@by
+    [%use block_op_map2_decode_block_ok b params args] @>
+    [%use block_op_map2_decode_block_elems_ok b params args] @>
+    [%use block_op_map2_decode_block_preserves_length b params args] @>
+    [%use block_op_map2_decode_block_preserves_block_size b params args] @>
+    simplify ()
+  ]
+
+theorem op_block_ternary_decoded_lengths_equal b params args =
+  b >= 1 &&
+  List.length params = List.length args &&
+  List.length args = 3 &&
+  equal_block_sizes b args
+  ==>
+  match
+    let*@ cxs = block_op_map2_decode_block b params args in
+    Ok (equal_list_lengths b cxs)
+  with
+  | Ok r -> r
+  | _ -> false
+  [@@disable extract_error, block_op_map2_decode_block]
+  [@@by
+    [%use op_block_ternary_decoded_ok b params args] @>
+    [%use block_op_map2_decode_block_ok b params args] @>
+    [%use block_op_map2_decode_block_elems_ok b params args] @>
+    [%use block_op_map2_decode_block_preserves_length b params args] @>
+    [%use block_op_map2_decode_block_preserves_block_size b params args] @>
+    simplify ()
+  ]
+
+theorem nth_r_preserves_block_size (b : int) (n : int) (xs : 'a list list) =
+  equal_list_lengths b xs && 0 <= n && n < List.length xs ==>
+  match nth_r n xs with
+  | Ok r -> List.length r = b
+  | _ -> false
+  [@@by auto]
+
+let decoded b params args =
+  match block_op_map2_decode_block b params args with
+  | Ok r -> (match extract_error r with Ok r -> r | _ -> [])
+  | _ -> []
+
+theorem op_block_ternary_decoded_lengths b params args =
+  b >= 1 &&
+  List.length params = List.length args &&
+  List.length args = 3 &&
+  equal_block_sizes b args
+  ==>
+  match
+    let*@ cxs = block_op_map2_decode_block b params args in
+    let* x1 = nth_r 0 cxs in
+    let* x2 = nth_r 1 cxs in
+    let* x3 = nth_r 2 cxs in
+    Ok (List.length x1 = b && List.length x2 = b && List.length x3 = b)
+  with
+  | Ok r -> r
+  | _ -> false
+  [@@disable extract_error, block_op_map2_decode_block, nth_r, List.length]
+  [@@by
+    [%use op_block_ternary_decoded_ok b params args] @>
+    [%use block_op_map2_decode_block_ok b params args] @>
+    [%use block_op_map2_decode_block_elems_ok b params args] @>
+    [%use block_op_map2_decode_block_preserves_length b params args] @>
+    [%use block_op_map2_decode_block_preserves_block_size b params args] @>
+    [%use op_block_ternary_decoded_lengths_equal b params args] @>
+    [%use nth_r_preserves_block_size b 0 (decoded b params args)] @>
+    [%use nth_r_preserves_block_size b 1 (decoded b params args)] @>
+    [%use nth_r_preserves_block_size b 2 (decoded b params args)] @>
+    simplify ()
+  ]
+
+theorem op_block_ternary_fma_encode_ok
+  (b : int)
+  (params : Specification.Float.block_op_parameter list)
+  (args : Specification.Float.block_op_argument list)
+  (f_s : Format.t) (f_z : Format.t)
+  (pi_z : Projection.t)
+  (s_z : Float.t) =
+  b >= 1 &&
+  List.length params = List.length args &&
+  List.length args = 3 &&
+  equal_block_sizes b args
+  ==>
+  Result.is_ok (
+    let*@ cxs = block_op_map2_decode_block b params args in
+    let* x1 = nth_r 0 cxs in
+    let* x2 = nth_r 1 cxs in
+    let* x3 = nth_r 2 cxs in
+    let*@ cz = block_op_map2_wop_ternary aug_fma x1 x2 x3 in
+    let* z = encode_block b f_s f_z pi_z (s_z, cz) in
+    Ok (s_z, z)
+  )
+  [@@disable extract_error, block_op_map2_decode_block, nth_r, List.length, block_op_map2_wop_ternary, encode_block]
+  [@@by
+    [%use op_block_ternary_decoded_ok b params args] @>
+    [%use block_op_map2_decode_block_ok b params args] @>
+    [%use block_op_map2_decode_block_elems_ok b params args] @>
+    [%use block_op_map2_decode_block_preserves_length b params args] @>
+    [%use block_op_map2_decode_block_preserves_block_size b params args] @>
+    [%use op_block_ternary_decoded_lengths_equal b params args] @>
+    [%use nth_r_preserves_block_size b 0 (decoded b params args)] @>
+    [%use nth_r_preserves_block_size b 1 (decoded b params args)] @>
+    [%use nth_r_preserves_block_size b 2 (decoded b params args)] @>
+    simplify ()
+  ]
+
+
 theorem block_fma_ok
   (b : int)
   (f_sx1 : Format.t) (f_x1 : Format.t)
@@ -916,18 +1119,57 @@ theorem block_fma_ok
   (f_z : Format.t)
   (pi_s : Projection.t)
   (pi_z : Projection.t)
-  (s_x1, x1 : Float.t * Float.t list)
-  (s_x2, x2 : Float.t * Float.t list)
-  (s_x3, x3 : Float.t * Float.t list)
+  s_x1 x1 (* : Float.t * Float.t list) *)
+  s_x2 x2 (* : Float.t * Float.t list) *)
+  s_x3 x3 (* : Float.t * Float.t list) *)
   (s_z : Float.t) =
   block_preconditions_ternary b f_sx1 f_x1 f_sx2 f_x2 f_sx3 f_x3 f_s f_z pi_s pi_z (s_x1, x1) (s_x2, x2) (s_x3, x3) s_z ==>
   Result.is_ok (Float.block_fma b f_sx1 f_x1 f_sx2 f_x2 f_sx3 f_x3 f_s f_z pi_s pi_z (s_x1, x1) (s_x2, x2) (s_x3, x3) s_z)
   [@@timeout 3600]
-  [@@disable
-    Float.fold, Float.aug_fma, Float.map2_aug_multiply, Float.fold_aug_add,
-    Float.decode_block, Float.project, Format.parameters, List.map, List.map2,
-    Float.encode_block, Float.block_op_map2_wop_ternary]
-  [@@by induct ~do_not:["gen"; "fert"; "delim"] ()]
+  [@@disable extract_error, block_op_map2_decode_block, nth_r, List.length, block_op_map2_wop_ternary, encode_block]
+  [@@by
+    [%use op_block_ternary_fma_encode_ok b
+      [{f_s = f_sx1; f_x = f_x1}; {f_s = f_sx2; f_x = f_x2}; {f_s = f_sx3; f_x = f_x3}]
+      [{s = s_x1; x = x1}; {s = s_x2; x = x2}; {s = s_x3; x = x3}]
+      f_s f_z pi_z s_z
+    ] @>
+    induct ~do_not:["gen"; "fert"; "delim"] ()
+  ]
+
+theorem op_block_ternary_faa_encode_ok
+  (b : int)
+  (params : Specification.Float.block_op_parameter list)
+  (args : Specification.Float.block_op_argument list)
+  (f_s : Format.t) (f_z : Format.t)
+  (pi_z : Projection.t)
+  (s_z : Float.t) =
+  b >= 1 &&
+  List.length params = List.length args &&
+  List.length args = 3 &&
+  equal_block_sizes b args
+  ==>
+  Result.is_ok (
+    let*@ cxs = block_op_map2_decode_block b params args in
+    let* x1 = nth_r 0 cxs in
+    let* x2 = nth_r 1 cxs in
+    let* x3 = nth_r 2 cxs in
+    let*@ cz = block_op_map2_wop_ternary aug_faa x1 x2 x3 in
+    let* z = encode_block b f_s f_z pi_z (s_z, cz) in
+    Ok (s_z, z)
+  )
+  [@@disable extract_error, block_op_map2_decode_block, nth_r, List.length, block_op_map2_wop_ternary, encode_block]
+  [@@by
+    [%use op_block_ternary_decoded_ok b params args] @>
+    [%use block_op_map2_decode_block_ok b params args] @>
+    [%use block_op_map2_decode_block_elems_ok b params args] @>
+    [%use block_op_map2_decode_block_preserves_length b params args] @>
+    [%use block_op_map2_decode_block_preserves_block_size b params args] @>
+    [%use op_block_ternary_decoded_lengths_equal b params args] @>
+    [%use nth_r_preserves_block_size b 0 (decoded b params args)] @>
+    [%use nth_r_preserves_block_size b 1 (decoded b params args)] @>
+    [%use nth_r_preserves_block_size b 2 (decoded b params args)] @>
+    simplify ()
+  ]
 
 theorem block_faa_ok
   (b : int)
@@ -938,37 +1180,19 @@ theorem block_faa_ok
   (f_z : Format.t)
   (pi_s : Projection.t)
   (pi_z : Projection.t)
-  (s_x1, x1 : Float.t * Float.t list)
-  (s_x2, x2 : Float.t * Float.t list)
-  (s_x3, x3 : Float.t * Float.t list)
+  s_x1 x1 (* : Float.t * Float.t list) *)
+  s_x2 x2 (* : Float.t * Float.t list) *)
+  s_x3 x3 (* : Float.t * Float.t list) *)
   (s_z : Float.t) =
   block_preconditions_ternary b f_sx1 f_x1 f_sx2 f_x2 f_sx3 f_x3 f_s f_z pi_s pi_z (s_x1, x1) (s_x2, x2) (s_x3, x3) s_z ==>
   Result.is_ok (Float.block_faa b f_sx1 f_x1 f_sx2 f_x2 f_sx3 f_x3 f_s f_z pi_s pi_z (s_x1, x1) (s_x2, x2) (s_x3, x3) s_z)
   [@@timeout 3600]
-  [@@disable
-    Float.fold, Float.aug_faa, Float.map2_aug_multiply, Float.fold_aug_add,
-    Float.decode_block, Float.project, Format.parameters, List.map, List.map2,
-    Float.encode_block, Float.block_op_map2_wop_ternary]
-  [@@by induct ~do_not:["gen"; "fert"; "delim"] ()]
-
-(** Extras *)
-
-(* If all x_i are NaN, the output scale and elements will be NaN. *)
-(* theorem convert_to_block_max_abs_finite_note
-  (b : int)
-  (f_s : Format.t) (f_x : Format.t) (f_z : Format.t)
-  (pi_s : Projection.t) (pi_z : Projection.t)
-  (x : Float.t list) =
-  let open CER in
-  b = List.length x && b >= 1 && List.for_all (Float.is_nan f_x) x ==>
-  match Float.convert_to_block_max_abs_finite b f_s f_x f_z pi_s pi_z x with
-  | Ok (s, z) -> Float.is_nan f_s s && List.for_all (Float.is_nan f_z) z
-  | Error _ -> true
-  [@@timeout 3600]
-  [@@disable Float.fold, Float.aug_maximum_finite, Float.aug_divide, Float.project, Float.decode, Float.map_aug_abs, Float.map_decode, Float.map_project, Float.fold_aug_maximum_finite, Float.map_convert_maf, List.length, Format.parameters]
+  [@@disable extract_error, block_op_map2_decode_block, nth_r, List.length, block_op_map2_wop_ternary, encode_block]
   [@@by
-    (* simplify () *)
-    (* auto *)
+    [%use op_block_ternary_faa_encode_ok b
+      [{f_s = f_sx1; f_x = f_x1}; {f_s = f_sx2; f_x = f_x2}; {f_s = f_sx3; f_x = f_x3}]
+      [{s = s_x1; x = x1}; {s = s_x2; x = x2}; {s = s_x3; x = x3}]
+      f_s f_z pi_z s_z
+    ] @>
     induct ~do_not:["gen"; "fert"; "delim"] ()
-  ] (* TODO *)
-*)
+  ]

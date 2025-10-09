@@ -1847,7 +1847,7 @@ module Float = struct
   [@@adm 1n]
 
   (* Custom map2-like decoding of a list of blocks in params and args. *)
-  let rec block_op_map2_decode_block_aux b params args =
+  let rec block_op_map2_decode_block_aux b params args : (CER.t list, string) Result.t list =
     match params, args with
     | [], [] -> []
     | p :: params, a :: args ->
@@ -2062,14 +2062,12 @@ module Float = struct
       [{s=s_x1; x = x1}; {s=s_x2; x = x2}]
       aug_minimum_magnitude
 
-  (* No aug_* for this
-
-    let block_minimum_magnitude_number b f_sx1 f_x1 f_sx2 f_x2 f_s f_z pi_s pi_z (s_x1, x1) (s_x2, x2) s_z =
-      block_op b
-        [{f_s = f_sx1; f_x = f_x1}; {f_s = f_sx2; f_x = f_x2}]
-        f_s f_z s_z pi_z
-        [{s=s_x1; x = x1}; {s=s_x2; x = x2}]
-        aug_minimum_magnitude_number *)
+  let block_minimum_magnitude_number b f_sx1 f_x1 f_sx2 f_x2 f_s f_z pi_s pi_z (s_x1, x1) (s_x2, x2) s_z =
+    block_op_binary b
+      [{f_s = f_sx1; f_x = f_x1}; {f_s = f_sx2; f_x = f_x2}]
+      f_s f_z s_z pi_z
+      [{s=s_x1; x = x1}; {s=s_x2; x = x2}]
+      aug_minimum_magnitude_number
 
   let block_maximum b f_sx1 f_x1 f_sx2 f_x2 f_s f_z pi_s pi_z (s_x1, x1) (s_x2, x2) s_z =
     block_op_binary b
@@ -2092,14 +2090,12 @@ module Float = struct
       [{s=s_x1; x = x1}; {s=s_x2; x = x2}]
       aug_maximum_magnitude
 
-  (* No aug_* for this
-
-    let block_maximum_magnitude_number b f_sx f_x f_sy f_y f_s f_z pi_s pi_z (s_x, x) (s_y, y) s_z =
-      block_op b
-        [{f_s = f_sx; f_x}; {f_s = f_sy; f_x = f_y}]
-        f_s f_z s_z pi_z
-        [{s=s_x1; x=x1}; {s=s_x2; x=x2}]
-        aug_maximum_magnitude_number *)
+  let block_maximum_magnitude_number b f_sx1 f_x1 f_sx2 f_x2 f_s f_z pi_s pi_z (s_x1, x1) (s_x2, x2) s_z =
+    block_op_binary b
+      [{f_s = f_sx1; f_x = f_x1}; {f_s = f_sx2; f_x = f_x2}]
+      f_s f_z s_z pi_z
+      [{s=s_x1; x=x1}; {s=s_x2; x=x2}]
+      aug_maximum_magnitude_number
 
   let block_fma b f_sx1 f_x1 f_sx2 f_x2 f_sx3 f_x3 f_s f_z pi_s pi_z (s_x1, x1) (s_x2, x2) (s_x3, x3) s_z =
     block_op_ternary b
