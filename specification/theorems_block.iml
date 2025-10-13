@@ -1196,3 +1196,31 @@ theorem block_faa_ok
     ] @>
     induct ~do_not:["gen"; "fert"; "delim"] ()
   ]
+
+theorem fold_aug_add_ok (init : CER.t) (xs : CER.t list) =
+  List.length xs >= 1 ==>
+  Result.is_ok ((Float.fold_aug_add init xs) [@trigger])
+  [@@disable Float.fold, Float.aug_add]
+  [@@by auto]
+  [@@fc]
+
+theorem block_reduce_add_ok (b : int) (f_sx : Format.t) (f_x : Format.t) (f_z : Format.t) (pi_z : Projection.t) (s_x, x : t * t list) =
+  b >= 1 && List.length x = b ==>
+  Result.is_ok (Float.block_reduce_add b f_sx f_x f_z pi_z (s_x, x))
+  [@@timeout 3600]
+  [@@disable extract_error, decode_block, nth_r, encode_block, aug_add, List.length, fold_aug_add, project]
+  [@@by induct ~do_not:["gen"; "fert"; "delim"] ()]
+
+theorem fold_aug_multiply_ok (init : CER.t) (xs : CER.t list) =
+  List.length xs >= 1 ==>
+  Result.is_ok ((Float.fold_aug_multiply init xs) [@trigger])
+  [@@disable Float.fold, Float.aug_multiply]
+  [@@by auto]
+  [@@fc]
+
+theorem block_reduce_multiply_ok (b : int) (f_sx : Format.t) (f_x : Format.t) (f_z : Format.t) (pi_z : Projection.t) (s_x, x : t * t list) =
+  b >= 1 && List.length x = b ==>
+  Result.is_ok (Float.block_reduce_multiply b f_sx f_x f_z pi_z (s_x, x))
+  [@@timeout 3600]
+  [@@disable extract_error, decode_block, nth_r, encode_block, aug_multiply, List.length, fold_aug_multiply, project]
+  [@@by induct ~do_not:["gen"; "fert"; "delim"] ()]

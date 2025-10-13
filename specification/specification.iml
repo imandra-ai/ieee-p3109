@@ -2110,4 +2110,32 @@ module Float = struct
       f_s f_z s_z pi_z
       [{s = s_x1; x = x1}; {s = s_x2; x = x2}; {s = s_x3; x = x3}]
       aug_faa
+
+  let fold_aug_add (init : CER.t) (x : CER.t list) : (CER.t, string) Result.t =
+    fold aug_add init x
+
+  let block_reduce_add
+    (b : int)
+    (f_sx : Format.t) (f_x : Format.t)
+    (f_z : Format.t) (pi_z : Projection.t)
+    (s_x, x : t * t list) :
+    (t, string) Result.t =
+    let* cx = decode_block b f_sx f_x (s_x, x) in
+    let* cz = fold_aug_add CER.zero cx in
+    let z = project f_z pi_z cz in
+    z
+
+  let fold_aug_multiply (init : CER.t) (x : CER.t list) : (CER.t, string) Result.t =
+    fold aug_multiply init x
+
+  let block_reduce_multiply
+    (b : int)
+    (f_sx : Format.t) (f_x : Format.t)
+    (f_z : Format.t) (pi_z : Projection.t)
+    (s_x, x : t * t list) :
+    (t, string) Result.t =
+    let* cx = decode_block b f_sx f_x (s_x, x) in
+    let* cz = fold_aug_multiply CER.zero cx in
+    let z = project f_z pi_z cz in
+    z
 end
