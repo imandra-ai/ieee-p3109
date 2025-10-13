@@ -222,12 +222,11 @@ theorem zero_is_zero (f : Format.t) (x : Float.t) =
 
 (* TODO: proof that the IEEE754 rounding mode in encode754 is irrelevant for our [x]s *)
 
-(** [internal_convert_to_p3109] never returns an error *)
-theorem internal_convert_to_p3109_ok (phi: IEEE754.Format.t) (f : Format.t) (pi : Projection.t) (x : IEEE754.t) =
-  Result.is_ok (Float.internal_convert_to_p3109 phi f pi x)
+(** [internal_convert_from_ieee754] never returns an error *)
+theorem internal_convert_from_ieee754_ok (phi: IEEE754.Format.t) (f : Format.t) (pi : Projection.t) (x : IEEE754.t) =
+  Result.is_ok (Float.internal_convert_from_ieee754 phi f pi x)
   [@@disable Float.project, Float.round_to_precision, Float.saturate, Util.pow2, Util.ipow2, Format.parameters]
   [@@by auto]
-
 
 (** 4.7.3 Conversion from P3109 to IEEE Std 754 *)
 
@@ -403,41 +402,6 @@ theorem internal_hypot_ok (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (pi
   [@@timeout 60]
   [@@disable Float.project, Float.decode, Float.decode_aux, Float.round_to_precision, Float.saturate, Util.pow2, Util.ipow2, Format.parameters]
   [@@by [%use aug_hypot_ok (Float.decode f_x x) (Float.decode f_y y)] @> auto]
-
-
-(** 4.8.6 Scaled addition *)
-
-(** [internal_scaled_add] never returns an error *)
-theorem internal_scaled_add_ok (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (pi : Projection.t)
-  (x : Float.t) (s_x : int) (y : Float.t) (s_y : int) =
-  Result.is_ok (Float.internal_scaled_add f_x f_y f_z pi x s_x y s_y)
-  [@@timeout 60]
-  [@@disable Float.project, Float.decode, Float.decode_aux, Util.pow2, Util.ipow2, Format.parameters]
-  [@@by auto]
-
-
-(** 4.8.7 Scaled multiplication *)
-
-(** [internal_scaled_multiply] never returns an error *)
-theorem internal__scaledmultiply_ok (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (pi : Projection.t)
-  (x : Float.t) (y : Float.t) (s : int) =
-  Result.is_ok (Float.internal_scaled_multiply f_x f_y f_z pi x y s)
-  [@@disable Float.project, Float.decode, Float.decode_aux, Util.pow2, Util.ipow2, Format.parameters]
-  [@@by auto]
-
-
-(** 4.9 Mixed IEEE Std 754 and P3109 operations *)
-
-(** [internal_scaled_fma] never returns an error *)
-theorem internal_scaled_fma_ok
-  (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (f_r : Format.t)
-  (pi : Projection.t)
-  (x : Float.t) (y : Float.t) (s_xy : int) (z : Float.t) (s_z : int) =
-  Result.is_ok (Float.internal_scaled_fma f_x f_y f_z f_r pi x y s_xy z s_z)
-  [@@timeout 3600]
-  [@@disable Float.project, Float.decode, Float.decode_aux, Float.round_to_precision, Float.saturate,
-             Util.pow2, Util.ipow2, Format.parameters]
-  [@@by auto]
 
 
 (** 4.10.1 Minimum and Maximum *)

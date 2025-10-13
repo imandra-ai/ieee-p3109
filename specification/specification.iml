@@ -478,15 +478,15 @@ module Float = struct
 
   (** 4.7.2 Conversion from IEEE Std 754 formats to P3109 *)
 
-  let internal_convert_to_p3109 (phi: IEEE754.Format.t) (f : Format.t) (pi : Projection.t) (x : IEEE754.t) : (t, string) Result.t =
+  let internal_convert_from_ieee754 (phi: IEEE754.Format.t) (f : Format.t) (pi : Projection.t) (x : IEEE754.t) : (t, string) Result.t =
     let open CER in
     match IEEE754.as_aug_real phi x with
     | Ok NaN -> Ok (nan f)
     | Ok r -> project f pi r
     | Error e -> Error e
 
-  let convert_to_p3109 (phi: IEEE754.Format.t) (f : Format.t) (pi : Projection.t) (x : IEEE754.t) : t =
-    match internal_convert_to_p3109 phi f pi x with
+  let convert_from_ieee754 (phi: IEEE754.Format.t) (f : Format.t) (pi : Projection.t) (x : IEEE754.t) : t =
+    match internal_convert_from_ieee754 phi f pi x with
     | Ok r -> r
     | _ -> nan f (* unreachable by theorem internal_convert_to_p3109_ok *)
 
@@ -494,7 +494,7 @@ module Float = struct
   (** 4.7.3 Conversion from P3109 to IEEE Std 754 *)
 
   (* Convert [x] (in [f_x]) to IEEE−754 binary interchange format Binary{[k]} under IEEE−754 rounding mode [rnd754] *)
-  let convert_to_ieee_754 (f : Format.t) (pi : Projection.t) (phi : IEEE754.Format.t) (x : t) : IEEE754.t =
+  let convert_to_ieee754 (f : Format.t) (pi : Projection.t) (phi : IEEE754.Format.t) (x : t) : IEEE754.t =
     let open CER in
     if is_nan f x then (* canonical if defined else quiet *)
       IEEE754.canonical_nan phi
@@ -1694,12 +1694,13 @@ module Float = struct
 
   open ErrorPropagation
 
-  let rec fold (f : 'a -> 'a -> ('a, string) Result.t) (init : 'a) (x: 'a list) : ('a, string) Result.t =
+  let rec reduce (f : CER.t -> CER.t -> (CER.t, string) Result.t) (x: CER.t list) : (CER.t, string) Result.t =
     match x with
-    | [] -> Ok init
-    | x1 :: rest ->
-      let* x2 = fold f init rest in
-      f x1 x2
+    | [x1; x2] -> f x1 x2
+    | x1 :: x2 :: rest ->
+      let* fx1x2 = f x1 x2 in
+      reduce f (fx1x2 :: rest)
+    | _ -> Error "reduce: precondition violation"
 
 
   (** 5.1.1 DecodeBlock *)
@@ -1775,8 +1776,8 @@ module Float = struct
 
   let map_aug_abs (x : CER.t list) : (CER.t, string) Result.t list = List.map aug_abs x
 
-  let fold_aug_maximum_finite (init : CER.t) (x : CER.t list) : (CER.t, string) Result.t =
-    fold aug_maximum_finite init x
+  let reduce_aug_maximum_finite (x : CER.t list) : (CER.t, string) Result.t =
+    reduce aug_maximum_finite (CER.zero :: x)
 
   let map_convert_maf s' cx =
     List.map (fun cx_i -> if s' = CER.zero then Ok CER.zero else aug_divide cx_i s') cx
@@ -1792,7 +1793,7 @@ module Float = struct
     else
       let cx = map_decode f_x x in
       let@ m = map_aug_abs cx in
-      let* cs = fold_aug_maximum_finite CER.zero m in (* init = NaN? *)
+      let* cs = reduce_aug_maximum_finite m in
       let* s = project f_s pi_s cs in
       let s' = decode f_s s in
       let@ cz = map_convert_maf s' cx in
@@ -1805,8 +1806,8 @@ module Float = struct
   let map2_aug_multiply (cx : CER.t list) (cy : CER.t list) : ((CER.t, string) Result.t list, string) Result.t =
     List.map2 aug_multiply cx cy
 
-  let fold_aug_add (init : CER.t) (cp : CER.t list) : (CER.t, string) Result.t =
-    fold aug_add init cp
+  let reduce_aug_add (cp : CER.t list) : (CER.t, string) Result.t =
+    reduce aug_add (CER.zero :: cp)
 
   let block_dot_product
     (b : int)
@@ -1820,7 +1821,7 @@ module Float = struct
     let* cx = decode_block b f_sx f_x (s_x, x) in
     let* cy = decode_block b f_sy f_y (s_y, y) in
     let*@ cp = map2_aug_multiply cx cy in
-    let* cz = fold_aug_add CER.zero cp in
+    let* cz = reduce_aug_add cp in
     let* z = project f_z pi_z cz in
     Ok z
 
@@ -2111,9 +2112,6 @@ module Float = struct
       [{s = s_x1; x = x1}; {s = s_x2; x = x2}; {s = s_x3; x = x3}]
       aug_faa
 
-  let fold_aug_add (init : CER.t) (x : CER.t list) : (CER.t, string) Result.t =
-    fold aug_add init x
-
   let block_reduce_add
     (b : int)
     (f_sx : Format.t) (f_x : Format.t)
@@ -2121,12 +2119,12 @@ module Float = struct
     (s_x, x : t * t list) :
     (t, string) Result.t =
     let* cx = decode_block b f_sx f_x (s_x, x) in
-    let* cz = fold_aug_add CER.zero cx in
+    let* cz = reduce_aug_add cx in
     let z = project f_z pi_z cz in
     z
 
-  let fold_aug_multiply (init : CER.t) (x : CER.t list) : (CER.t, string) Result.t =
-    fold aug_multiply init x
+  let reduce_aug_multiply (cp : CER.t list) : (CER.t, string) Result.t =
+    reduce aug_multiply (CER.one :: cp)
 
   let block_reduce_multiply
     (b : int)
@@ -2135,7 +2133,35 @@ module Float = struct
     (s_x, x : t * t list) :
     (t, string) Result.t =
     let* cx = decode_block b f_sx f_x (s_x, x) in
-    let* cz = fold_aug_multiply CER.zero cx in
+    let* cz = reduce_aug_multiply cx in
     let z = project f_z pi_z cz in
     z
+
+
+  (** Extra: Show how to do ScaledAdd, ScaledFMA, ScaledMultiply with B=1 *)
+
+  (** For [x] (in [f_x]), [y] (in [f_y]), [xscale], [yscale],
+      compute [x] * 2^[xscale] + [y] * 2^[yscale] and return in [f_z],
+      with projection [pi] *)
+  let internal_scaled_add f_x f_y f_z pi x s_x y s_y =
+    let* s_z = encode f_z CER.one in
+    let* (_, r) = block_add 1 f_x f_x f_y f_y f_z f_z pi pi (s_x, [x]) (s_y, [y]) s_z in
+    Ok (List.hd r)
+
+  let scaled_add (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) (s_x : t) (y : t) (s_y : t) : t =
+    match internal_scaled_add f_x f_y f_z pi x s_x y s_y with
+    | Ok r -> r
+    | Error _ -> nan f_z (* unreachable by theorem internal_scaled_add_ok *)
+
+
+  (** For [x] (in [f_x]), [y] (in [f_y]), [scale], compute
+      [x] * [y] * 2^[scale] and return in [f_z],
+      with rounding mode [rnd] and saturation mode [ovf] *)
+  (* let scaled_multiply (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (pi : Projection.t)
+      (x : t) (y : t) (s : int)  : t =     *)
+
+  (* let scaled_fma
+    (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (f_r : Format.t)
+    (pi : Projection.t)
+    (x : t) (y : t) (s_xy : int) (z : t) (s_z : int) : t = *)
 end

@@ -13,6 +13,7 @@ type t =
   | R of real
 
 let zero = R 0.0
+let one = R 1.0
 
 let r2a (x : real) : t = R x [@@macro]
 let of_real (x : real) : t = R x [@@macro]
