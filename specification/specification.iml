@@ -508,7 +508,7 @@ module Float = struct
   (** 4.7.4 Conversion from P3109 to P3109 *)
 
   (** Convert [x] (in [f_x]) to [f_z] with projection specification [pi] *)
-  let convert_p3109_to_p3109 (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) : (t, string) Result.t =
+  let convert (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) : (t, string) Result.t =
     project f_z pi (decode f_x x)
 
   (** 4.8.1 Unary sign operations *)
