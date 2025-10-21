@@ -423,16 +423,11 @@ module Float = struct
         if f.s = Signedness.Signed then ipow2 (k - 1)
         else ipow2 k - 1
         ))
-      | PINF
-        (* when f.d = Domain.Extended  *)
-        -> Ok (of_int_repr f (
+      | PINF -> Ok (of_int_repr f (
         if f.s = Signedness.Signed then ipow2 (k - 1) - 1
         else ipow2 k - 2)
         )
-      | NINF
-        (* when Signedness.Signed && f.d = Domain.Extended *)
-        ->
-        Ok (of_int_repr f (ipow2 k - 1))
+      | NINF -> Ok (of_int_repr f (ipow2 k - 1))
 
       | R x when x <. 0.0 ->
 
