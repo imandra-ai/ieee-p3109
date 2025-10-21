@@ -1,7 +1,7 @@
 \noindent\Case{\Cer\Divide(\NaN, \any) \gives  \NaN}\\
 \Case{\Cer\Divide(\any, \NaN) \gives  \NaN}\\
 \Case{\Cer\Divide(\pm\infty, \pm\infty) \gives  \NaN}\\
-\Case{\Cer\Divide(\any, Y) ~\If Y = \zero\gives  \NaN}\\
+\Case{\Cer\Divide(\any, \zero) \gives  \NaN}\\
 \Case{\Cer\Divide(+\infty, Y) ~\If Y > \zero\gives  +\infty}\\
 \Case{\Cer\Divide(+\infty, Y) ~\If Y < \zero\gives  -\infty}\\
 \Case{\Cer\Divide(-\infty, Y) ~\If Y > \zero\gives  -\infty}\\
