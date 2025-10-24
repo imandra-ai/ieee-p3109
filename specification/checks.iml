@@ -80,7 +80,7 @@ lemma none_value = is_r (decode f83 none) (CER.R (- 1.0)) [@@by auto]
 lemma ntwo_value = is_r (decode f83 ntwo) (CER.R (- 2.0)) [@@by auto]
 lemma nhuge_value = is_r (decode f83 nhuge) (CER.R (- 49152.0)) [@@by auto]
 
-theorem thm_tiny_val = (to_int_repr f83 tiny) = 1 [@@by unroll 26]
+theorem thm_tiny_val = (to_int_repr f83 tiny) = 1 [@@by unroll 50]
 
 lemma neg_tiny_not_nan = negate f83 tiny <> nan f83
   [@@by auto]

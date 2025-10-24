@@ -749,8 +749,8 @@ theorem within_format_range_kp (kp : Format.kpt) (x : Float.t) =
     [%use wfr_4 x] @>
     [%use wfr_3 x] @>
     [%use wfr_2 x] @>
-    unroll 0]
-  [@@timeout 10]
+    auto]
+  [@@disable is_within]
   [@@fc]
 
 theorem within_format_range (f : Format.t) (x : Float.t) =
