@@ -1999,9 +1999,9 @@ module Float = struct
 
   (** Extra: Show how to do ScaledAdd, ScaledFMA, ScaledMultiply with B=1 *)
 
-  (** For [x] (in [f_x]), [y] (in [f_y]), [xscale], [yscale],
-      compute [x] * 2^[xscale] + [y] * 2^[yscale] and return in [f_z],
-      with projection [pi] *)
+  (** For [x, s_x] (in [f_x]), [y, s_y] (in [f_y]),
+      compute [x] * [s_x] + [y] * [s_y] and return in [f_z],
+      with projection specification [pi] *)
   let internal_scaled_add f_x f_y f_z pi x s_x y s_y =
     let* s_z = encode f_z CER.one in (* Note: 1 is not in all formats, e.g. binary2p1se *)
     let* (_, r) = block_add 1 f_x f_x f_y f_y f_z f_z pi pi (s_x, [x]) (s_y, [y]) s_z in
@@ -2012,15 +2012,32 @@ module Float = struct
     | Ok r -> r
     | Error _ -> nan f_z (* unreachable by theorem internal_scaled_add_ok *)
 
+  (** For [x, s_x] (in [f_x]), [y, s_y] (in [f_y]),
+      compute [x] * [y] * [s] and return in [f_z],
+      with projection specification [pi] *)
+  let internal_scaled_multiply f_x f_y f_z pi x s_x y s_y =
+    let* s_z = encode f_z CER.one in (* Note: 1 is not in all formats, e.g. binary2p1se *)
+    let* (_, r) = block_multiply 1 f_x f_x f_y f_y f_z f_z pi pi (s_x, [x]) (s_y, [y]) s_z in
+    Ok (List.hd r)
 
-  (** For [x] (in [f_x]), [y] (in [f_y]), [scale], compute
-      [x] * [y] * 2^[scale] and return in [f_z],
-      with rounding mode [rnd] and saturation mode [ovf] *)
-  (* let scaled_multiply (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (pi : Projection.t)
-      (x : t) (y : t) (s : int)  : t =     *)
+  let scaled_multiply (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) (s_x : t) (y : t) (s_y : t) : t =
+    match internal_scaled_multiply f_x f_y f_z pi x s_x y s_y with
+    | Ok r -> r
+    | Error _ -> nan f_z (* unreachable by theorem internal_scaled_multiply_ok *)
 
-  (* let scaled_fma
-    (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (f_r : Format.t)
-    (pi : Projection.t)
-    (x : t) (y : t) (s_xy : int) (z : t) (s_z : int) : t = *)
+  (** For [x] (in [f_x]), [y] (in [f_y]), [s_xy] (in [f_sxy]),
+      [z] (in [f_z]) and [s_z] (in [f_sz]), compute
+      [x] * [y] * [s_xy] + [z] * [s_z] and return in [f_r],
+      with projection specification [pi] *)
+  let internal_scaled_fma f_x f_y f_sxy f_z f_sz f_r pi x y s_xy z s_z =
+    let* s_r = encode f_r CER.one in
+    let* (_, r) = block_fma 1 f_sxy f_x f_sxy f_y f_z f_sz f_r f_r pi pi (s_xy, [x]) (s_xy, [y]) (s_z, [z]) s_r in
+    Ok (List.hd r)
+
+  let scaled_fma
+    (f_x : Format.t) (f_y : Format.t) (f_sxy : Format.t) (f_z : Format.t) (f_sz : Format.t) (f_r : Format.t) (pi : Projection.t)
+    (x : t) (y : t) (s_xy : t) (z : t) (s_z : t) : t =
+    match internal_scaled_fma f_x f_y f_sxy f_z f_sz f_r pi x y s_xy z s_z with
+    | Ok r -> r
+    | Error _ -> nan f_z (* unreachable by theorem internal_scaled_fma_ok *)
 end
