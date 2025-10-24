@@ -6,6 +6,8 @@
 [@@@import ErrorPropagation, "ErrorPropagation.iml"]
 [@@@import IEEE754, "IEEE754.iml"]
 
+open ErrorPropagation
+
 (** Format definitions *)
 
 module Signedness = struct
@@ -101,9 +103,8 @@ module Format = struct
     | _ -> Error "invalid width"
 
   let of_parts (k : int) (p : int) (s : Signedness.t) (d : Domain.t) : (t, string) Result.t =
-    match of_kp k p with
-    | Ok kp -> Ok { kp; s; d }
-    | Error e -> Error e
+    let* kp = of_kp k p in
+    Ok { kp; s; d }
 
   let parameters (f : t) : int * int * int * real * real * Signedness.t * Domain.t =
     let open Util in
@@ -282,10 +283,8 @@ module Float = struct
     | x when x = ipow2  k      - 2 && d = Extended && s = Unsigned -> Ok PINF
 
     | x when ipow2 (k - 1) < x && x < ipow2 k && s = Signed ->
-
-      (match decode_aux k p b s d (of_int_repr_k k s (x - ipow2 (k - 1))) with
-      | Ok r -> Ok CER.(~- r)
-      | Error e -> Error e)
+      let* r = decode_aux k p b s d (of_int_repr_k k s (x - ipow2 (k - 1))) in
+      Ok CER.(~- r)
 
     | x ->
       let t = Real.of_int (x mod (ipow2 (p - 1))) in
@@ -430,10 +429,8 @@ module Float = struct
       | NINF -> Ok (of_int_repr f (ipow2 k - 1))
 
       | R x when x <. 0.0 ->
-
-        (match encode f CER.(R (-. x)) with
-        | Ok v -> Ok (of_int_repr f ((to_int_repr f v) + (ipow2 (k - 1))))
-        | Error e -> Error e)
+        let* v = encode f CER.(R (-. x)) in
+        Ok (of_int_repr f ((to_int_repr f v) + (ipow2 (k - 1))))
 
       | R x when x = 0.0 -> Ok zero
 
@@ -527,9 +524,8 @@ module Float = struct
     if f.s = Unsigned then
       Error "precondition failure"
     else
-      match aug_abs (decode f x) with
-      | Ok r -> encode f r
-      | Error e -> Error e
+      let* r = aug_abs (decode f x) in
+      encode f r
 
   (** Return the absolute value of [x] in [f] *)
   let abs (f : Format.t) (x : t) : t =
@@ -552,9 +548,8 @@ module Float = struct
     if f.s = Unsigned then
       Error "precondition failure"
     else
-      match aug_negate (decode f x) with
-      | Ok r -> encode f r
-      | Error e -> Error e
+      let* r = aug_negate (decode f x) in
+      encode f r
 
   (** Return the negation of [x] in [f] *)
   let negate (f : Format.t) (x : t) : t =
@@ -580,9 +575,8 @@ module Float = struct
     | _ -> Error "undefined"
 
   let internal_copy_sign (f : Format.t) (x : t) (y : t) : (t, string) Result.t =
-    match aug_copy_sign (decode f x) (decode f y) with
-    | Ok r -> encode f r
-    | Error e -> Error e
+    let* r = aug_copy_sign (decode f x) (decode f y) in
+    encode f r
 
   let copy_sign (f : Format.t) (x : t) (y : t) : t =
     match internal_copy_sign f x y with
@@ -607,9 +601,8 @@ module Float = struct
     | _ -> Error "undefined"
 
   let internal_add (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) (y : t)  : (t, string) Result.t =
-    match aug_add (decode f_x x) (decode f_y y) with
-    | Ok r -> project f_z pi r
-    | Error e -> Error e
+    let* r = aug_add (decode f_x x) (decode f_y y) in
+    project f_z pi r
 
   (** Add [x] (in [f_x]) to [y] (in [f_y]), and return in [f_z] under projection specification [pi] *)
   let add (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) (y : t)  : t =
@@ -632,9 +625,8 @@ module Float = struct
     | _ -> Error "undefined"
 
   let internal_subtract (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) (y : t) : (t, string) Result.t =
-    match aug_subtract (decode f_x x) (decode f_y y) with
-    | Ok r -> project f_z pi r
-    | Error e -> Error e
+    let* r = aug_subtract (decode f_x x) (decode f_y y) in
+    project f_z pi r
 
   (** For [x] (in [f_x]), [y] (in [f_y]) compute [x-y] and return in [f_z],
       with projection specification [pi] *)
@@ -670,9 +662,8 @@ module Float = struct
     | _ -> Error "undefined"
 
   let internal_multiply (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) (y : t) : (t, string) Result.t =
-    match aug_multiply (decode f_x x) (decode f_y y) with
-    | Ok r -> project f_z pi r
-    | Error e -> Error e
+    let* r = aug_multiply (decode f_x x) (decode f_y y) in
+    project f_z pi r
 
   (** For [x] (in [f_x]), [y] (in [f_y]) compute x * y and return in [f_z],
       with rounding mode [rnd] and saturation mode [ovf] *)
@@ -697,9 +688,8 @@ module Float = struct
     | _ -> Error "undefined"
 
   let internal_divide (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) (y : t) : (t, string) Result.t =
-    match aug_divide (decode f_x x) (decode f_y y) with
-    | Ok r -> project f_z pi r
-    | Error e -> Error e
+    let* r = aug_divide (decode f_x x) (decode f_y y) in
+    project f_z pi r
 
   (** For [x] (in [f_x]), [y] (in [f_y]) compute x / y and return in [f_z],
       with rounding mode [rnd] and saturation mode [ovf] *)
@@ -760,9 +750,8 @@ module Float = struct
     | _ -> Error "undefined"
 
   let internal_fma (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (f_r: Format.t) (pi : Projection.t) (x : t) (y : t) (z : t): (t, string) Result.t =
-    match aug_fma (decode f_x x) (decode f_y y) (decode f_z z) with
-    | Ok r -> project f_r pi r
-    | Error e -> Error e
+    let* r = aug_fma (decode f_x x) (decode f_y y) (decode f_z z) in
+    project f_r pi r
 
   let fma (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (f_r: Format.t) (pi : Projection.t) (x : t) (y : t) (z : t): t =
     match internal_fma f_x f_y f_z f_r pi x y z with
@@ -802,9 +791,8 @@ module Float = struct
     | _ -> Error "undefined"
 
   let internal_faa (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (f_r: Format.t) (pi : Projection.t) (x : t) (y : t) (z : t): (t, string) Result.t =
-    match aug_faa (decode f_x x) (decode f_y y) (decode f_z z) with
-    | Ok r -> project f_r pi r
-    | Error e -> Error e
+    let* r = aug_faa (decode f_x x) (decode f_y y) (decode f_z z) in
+    project f_r pi r
 
   let faa (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (f_r: Format.t) (pi : Projection.t) (x : t) (y : t) (z : t): t =
     match internal_faa f_x f_y f_z f_r pi x y z with
@@ -824,9 +812,8 @@ module Float = struct
     | _ -> Error "undefined"
 
   let internal_recip  (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) : (t, string) Result.t =
-    match aug_recip (decode f_x x) with
-    | Ok r -> project f_z pi r
-    | Error e -> Error e
+    let* r = aug_recip (decode f_x x) in
+    project f_z pi r
 
   let recip (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) : t =
     match internal_recip f_x f_z pi x with
@@ -847,9 +834,8 @@ module Float = struct
     | _ -> Error "undefined"
 
   let internal_sqrt (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) : (t, string) Result.t =
-    match aug_sqrt (decode f_x x) with
-    | Ok r -> project f_z pi r
-    | Error e -> Error e
+    let* r = aug_sqrt (decode f_x x) in
+    project f_z pi r
 
   let sqrt (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) : t =
     match internal_sqrt f_x f_z pi x with
@@ -870,9 +856,8 @@ module Float = struct
     | _ -> Error "undefined"
 
   let internal_rsqrt (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) : (t, string) Result.t =
-    match aug_rsqrt (decode f_x x) with
-    | Ok r -> project f_z pi r
-    | Error e -> Error e
+    let* r = aug_rsqrt (decode f_x x) in
+    project f_z pi r
 
   let rsqrt (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) : t =
   match internal_rsqrt f_x f_z pi x with
@@ -893,9 +878,8 @@ module Float = struct
     | _ -> Error "undefined"
 
   let internal_hypot (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) (y : t) : (t, string) Result.t =
-    match aug_hypot (decode f_x x) (decode f_y y) with
-    | Ok z -> project f_z pi z
-    | Error e -> Error e
+    let* z = aug_hypot (decode f_x x) (decode f_y y) in
+    project f_z pi z
 
   let hypot (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) (y : t): t =
     match internal_hypot f_x f_y f_z pi x y with
@@ -911,9 +895,8 @@ module Float = struct
     | _ -> Error "undefined"
 
   let internal_exp (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) : (t, string) Result.t =
-    match aug_exp (decode f_x x) with
-    | Ok z -> project f_z pi z
-    | Error e -> Error e
+    let* z = aug_exp (decode f_x x) in
+    project f_z pi z
 
   let exp (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) : t =
     match internal_exp f_x f_z pi x with
@@ -932,9 +915,8 @@ module Float = struct
     | _ -> Error "undefined"
 
   let internal_exp2 (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) : (t, string) Result.t =
-    match aug_exp2 (decode f_x x) with
-    | Ok z -> project f_z pi z
-    | Error e -> Error e
+    let* z = aug_exp2 (decode f_x x) in
+    project f_z pi z
 
   let exp2 (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) : t =
     match internal_exp2 f_x f_z pi x with
@@ -955,9 +937,8 @@ module Float = struct
     | _ -> Error "undefined"
 
   let internal_log (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) : (t, string) Result.t =
-    match aug_log (decode f_x x) with
-    | Ok z -> project f_z pi z
-    | Error e -> Error e
+    let* z = aug_log (decode f_x x) in
+    project f_z pi z
 
   let log (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) : t =
     match internal_log f_x f_z pi x with
@@ -978,9 +959,8 @@ module Float = struct
     | _ -> Error "undefined"
 
   let internal_log2 (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) : (t, string) Result.t =
-    match aug_log2 (decode f_x x) with
-    | Ok z -> project f_z pi z
-    | Error e -> Error e
+    let* z = aug_log2 (decode f_x x) in
+    project f_z pi z
 
   let log2 (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) : t =
     match internal_log2 f_x f_z pi x with
@@ -1007,9 +987,8 @@ module Float = struct
     | _ -> Error "undefined"
 
   let internal_minimum (f : Format.t) (x : t) (y : t) : (t, string) Result.t =
-    match aug_minimum (decode f x) (decode f y) with
-    | Ok r -> encode f r
-    | Error e -> Error e
+    let* r = aug_minimum (decode f x) (decode f y) in
+    encode f r
 
   let minimum (f : Format.t) (x : t) (y : t)  : t =
     match internal_minimum f x y  with
@@ -1033,9 +1012,8 @@ module Float = struct
     | _ -> Error "undefined"
 
   let internal_maximum (f : Format.t) (x : t) (y : t) : (t, string) Result.t =
-    match aug_maximum (decode f x) (decode f y) with
-    | Ok r -> encode f r
-    | Error e -> Error e
+    let* r = aug_maximum (decode f x) (decode f y) in
+    encode f r
 
   let maximum (f : Format.t) (x : t) (y : t) : t =
     match internal_maximum f x y  with
@@ -1054,9 +1032,8 @@ module Float = struct
     | _ -> Error "undefined"
 
   let internal_minimum_number (f : Format.t) (x : t) (y : t) : (t, string) Result.t =
-    match aug_minimum_number (decode f x) (decode f y) with
-    | Ok r -> encode f r
-    | Error e -> Error e
+    let* r = aug_minimum_number (decode f x) (decode f y) in
+    encode f r
 
   let minimum_number (f : Format.t) (x : t) (y : t) : t =
     match internal_minimum_number f x y with
@@ -1073,9 +1050,8 @@ module Float = struct
     | _ -> Error "undefined"
 
   let internal_maximum_number (f : Format.t) (x : t) (y : t) : (t, string) Result.t =
-    match aug_maximum_number (decode f x) (decode f y) with
-    | Ok r -> encode f r
-    | Error e -> Error e
+    let* r = aug_maximum_number (decode f x) (decode f y) in
+    encode f r
 
   let maximum_number (f : Format.t) (x : t) (y : t) : t =
     match internal_maximum_number f x y with
@@ -1101,9 +1077,8 @@ module Float = struct
     | _ -> Error "undefined"
 
   let internal_minimum_magnitude (f : Format.t) (x : t) (y : t) : (t, string) Result.t =
-    match aug_minimum_magnitude (decode f x) (decode f y) with
-    | Ok r -> encode f r
-    | Error e -> Error e
+    let* r = aug_minimum_magnitude (decode f x) (decode f y) in
+    encode f r
 
   let minimum_magnitude (f : Format.t) (x : t) (y : t)  : t =
     match internal_minimum_magnitude f x y  with
@@ -1125,9 +1100,8 @@ module Float = struct
     | _ -> Error "undefined"
 
   let internal_maximum_magnitude (f : Format.t) (x : t) (y : t) : (t, string) Result.t =
-    match aug_maximum_magnitude (decode f x) (decode f y) with
-    | Ok r -> encode f r
-    | Error e -> Error e
+    let* r = aug_maximum_magnitude (decode f x) (decode f y) in
+    encode f r
 
   let maximum_magnitude (f : Format.t) (x : t) (y : t) : t =
     match internal_maximum_magnitude f x y  with
@@ -1142,9 +1116,8 @@ module Float = struct
     | _, _ -> aug_minimum_magnitude x y
 
   let internal_minimum_magnitude_number (f : Format.t) (x : t) (y : t) : (t, string) Result.t =
-    match aug_minimum_magnitude_number (decode f x) (decode f y) with
-    | Ok r -> encode f r
-    | Error e -> Error e
+    let* r = aug_minimum_magnitude_number (decode f x) (decode f y) in
+    encode f r
 
   let minimum_magnitude_number (f : Format.t) (x : t) (y : t) : t =
     match internal_minimum_magnitude_number f x y  with
@@ -1159,9 +1132,8 @@ module Float = struct
     | _, _ -> aug_maximum_magnitude x y
 
   let internal_maximum_magnitude_number (f : Format.t) (x : t) (y : t) : (t, string) Result.t =
-    match aug_maximum_magnitude_number (decode f x) (decode f y) with
-    | Ok r -> encode f r
-    | Error e -> Error e
+    let* r = aug_maximum_magnitude_number (decode f x) (decode f y) in
+    encode f r
 
   let maximum_magnitude_number (f : Format.t) (x : t) (y : t) : t =
     match internal_maximum_magnitude_number f x y  with
@@ -1189,9 +1161,8 @@ module Float = struct
     | _ -> Error "undefined"
 
   let internal_minimum_finite (f : Format.t) (x : t) (y : t) : (t, string) Result.t =
-    match aug_minimum_finite (decode f x) (decode f y) with
-    | Ok r -> encode f r
-    | Error e -> Error e
+    let* r = aug_minimum_finite (decode f x) (decode f y) in
+    encode f r
 
   let minimum_finite (f : Format.t) (x : t) (y : t) : t =
     match internal_minimum_finite f x y  with
@@ -1216,9 +1187,8 @@ module Float = struct
     | _ -> Error "undefined"
 
   let internal_maximum_finite (f : Format.t) (x : t) (y : t) : (t, string) Result.t =
-    match aug_maximum_finite (decode f x) (decode f y) with
-    | Ok r -> encode f r
-    | Error e -> Error e
+    let* r = aug_maximum_finite (decode f x) (decode f y) in
+    encode f r
 
   let maximum_finite (f : Format.t) (x : t) (y : t) : t =
     match internal_maximum_finite f x y  with
@@ -1259,9 +1229,8 @@ module Float = struct
     | _ -> Error "undefined"
 
   let internal_clamp (f : Format.t) (x : t) (lo : t) (hi : t) : (t, string) Result.t =
-    match aug_clamp (decode f x) (decode f lo) (decode f hi) with
-    | Ok r -> encode f r
-    | Error e -> Error e
+    let* r = aug_clamp (decode f x) (decode f lo) (decode f hi) in
+    encode f r
 
   let clamp (f : Format.t) (x : t) (lo : t) (hi : t) : t =
     match internal_clamp f x lo hi with
@@ -1529,8 +1498,6 @@ module Float = struct
 
 
   (** 5 Block operations *)
-
-  open ErrorPropagation
 
   let rec reduce (f : CER.t -> CER.t -> (CER.t, string) Result.t) (x: CER.t list) : (CER.t, string) Result.t =
     match x with
