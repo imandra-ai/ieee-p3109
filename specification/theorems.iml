@@ -34,36 +34,37 @@ theorem m_lo_lt_m_hi (f : Format.t) =
   [@@by [%use m_hi_gt_0 f] @> auto]
   [@@fc]
 
+
 (** 4.6 Functions *)
 
-theorem internal_saturate_ok (m_lo : real) (m_hi : real) (sat : SaturationMode.t) (rnd : RoundingMode.t) (x : CER.t)  (s : Signedness.t) (d : Domain.t) =
-  Result.is_ok (Float.internal_saturate m_lo m_hi sat rnd x s d  [@trigger])
+theorem internal_wSaturate_ok (m_lo : real) (m_hi : real) (sat : SaturationMode.t) (rnd : RoundingMode.t) (x : CER.t)  (s : Signedness.t) (d : Domain.t) =
+  Result.is_ok (Float.internal_wSaturate m_lo m_hi sat rnd x s d  [@trigger])
   [@@by auto]
   [@@fc]
 
-theorem internal_round_to_precision_ok (p : int) (b : int) (rnd : RoundingMode.t) (x : CER.t) =
-  Result.is_ok (Float.internal_round_to_precision p b rnd x)
+theorem internal_wRoundToPrecision_ok (p : int) (b : int) (rnd : RoundingMode.t) (x : CER.t) =
+  Result.is_ok (Float.internal_wRoundToPrecision p b rnd x)
 
 (* [decode_aux] never throws an error *)
-theorem decode_aux_ok (k : int) (p : int) (b : int) (s: Signedness.t) (d : Domain.t) (x : Float.t) =
-  Result.is_ok ((Float.decode_aux k p b s d x) [@trigger])
+theorem wDecodeAux_ok (k : int) (p : int) (b : int) (s: Signedness.t) (d : Domain.t) (x : Float.t) =
+  Result.is_ok ((Float.wDecodeAux k p b s d x) [@trigger])
   [@@timeout 240]
   [@@by auto]
   [@@fc]
 
 (* [decode] always produces numbers within the format range *)
 theorem decode_within_range (f : Format.t) (x : Float.t) =
-  aug_real_is_within_range f ((Float.decode f x) [@trigger])
+  cer_is_within_range f ((Float.wDecode f x) [@trigger])
   [@@timeout 600]
-  [@@disable Float.decode, Float.decode_aux, Format.parameters]
+  [@@disable Float.wDecode, Float.wDecodeAux, Format.parameters]
   [@@by [%use Theorems_format_ranges.within_format_range f x] @> auto]
   [@@fc]
 
-(* [encode] is ok if the input is within the format range *)
-theorem encode_ok_within_range (f : Format.t) (x : CER.t) =
+(* [wEncode] is ok if the input is within the format range *)
+theorem wEncode_ok_within_range (f : Format.t) (x : CER.t) =
   let _, _, _, m_lo, m_hi, s, _ = Format.parameters f in
-  let encoded = Float.encode f x [@@trigger] in
-  if aug_real_is_within_range f x then
+  let encoded = Float.wEncode f x [@@trigger] in
+  if cer_is_within_range f x then
     Result.is_ok encoded
   else
     Result.is_error encoded
@@ -73,17 +74,17 @@ theorem encode_ok_within_range (f : Format.t) (x : CER.t) =
 
 (* Encoding a decoded number is always ok *)
 theorem decode_encode_ok (f : Format.t)  (x : Float.t) =
-  Result.is_ok (Float.encode f (Float.decode f x) [@trigger])
-  [@@disable Float.decode, Float.decode_aux, Float.encode, Util.pow2, Util.ipow2]
+  Result.is_ok (Float.wEncode f (Float.wDecode f x) [@trigger])
+  [@@disable Float.wDecode, Float.wDecodeAux, Float.wEncode, Util.pow2, Util.ipow2]
   [@@timeout 3600]
   [@@by [%use Theorems_format_ranges.within_format_range f x] @> auto]
   [@@fc]
 
 (* [saturate] always produces a number within the format range *)
-theorem saturate_is_within_range (f : Format.t) (x : CER.t) (sat : SaturationMode.t) (rnd : RoundingMode.t) =
+theorem wSaturate_is_within_range (f : Format.t) (x : CER.t) (sat : SaturationMode.t) (rnd : RoundingMode.t) =
   let _, _, _, m_lo, m_hi, _, _ = Format.parameters f in
-  let s = (Float.saturate m_lo m_hi sat rnd x f.s f.d [@trigger]) in
-  aug_real_is_within_range f s
+  let s = (Float.wSaturate m_lo m_hi sat rnd x f.s f.d [@trigger]) in
+  cer_is_within_range f s
   [@@timeout 3600]
   [@@disable Format.parameters, Util.ipow2, Util.pow2]
   [@@by auto]
@@ -92,18 +93,18 @@ theorem saturate_is_within_range (f : Format.t) (x : CER.t) (sat : SaturationMod
 (* Encoding after saturation is always ok *)
 theorem saturate_encode_ok (f : Format.t) (x : CER.t) (sat : SaturationMode.t) (rnd : RoundingMode.t) =
   let _, _, _, m_lo, m_hi, _, _ = Format.parameters f in
-  Result.is_ok (Float.encode f (Float.saturate m_lo m_hi sat rnd x f.s f.d) [@trigger])
-  [@@disable Float.encode, Float.saturate, Format.parameters]
-  [@@by [%use saturate_is_within_range f x sat rnd] @> auto]
+  Result.is_ok (Float.wEncode f (Float.wSaturate m_lo m_hi sat rnd x f.s f.d) [@trigger])
+  [@@disable Float.wEncode, Float.wSaturate, Format.parameters]
+  [@@by [%use wSaturate_is_within_range f x sat rnd] @> auto]
   [@@fc]
 
 let rounded f rnd x =
   let _, p, b, _, _, _, _ = Format.parameters f in
-  Float.round_to_precision p b rnd x
+  Float.wRoundToPrecision p b rnd x
 
 (** [project] never returns an error *)
-theorem project_ok (f : Format.t) (pi : Projection.t) (x : CER.t) =
-  Result.is_ok ((Float.project f pi x) [@trigger])
+theorem wProject_ok (f : Format.t) (pi : Projection.t) (x : CER.t) =
+  Result.is_ok ((Float.wProject f pi x) [@trigger])
   [@@timeout 30]
   [@@by
     [%use saturate_encode_ok f (rounded f (snd pi) x) (fst pi) (snd pi)]
@@ -115,21 +116,21 @@ theorem project_ok (f : Format.t) (pi : Projection.t) (x : CER.t) =
 
 theorem pinf_decodes_to_pinf (f : Format.t) (x : Float.t) =
   let open CER in
-  Float.is_pinf f x <==> ((Float.decode f x = PINF) [@trigger])
+  Float.is_pinf f x <==> ((Float.wDecode f x = PINF) [@trigger])
   [@@timeout 360]
   [@@by unroll_nonlin 10 10 100]
   [@@fc]
 
 theorem ninf_decodes_to_ninf (f : Format.t) (x : Float.t) =
   let open CER in
-  Float.is_ninf f x <==> ((Float.decode f x = NINF) [@trigger])
+  Float.is_ninf f x <==> ((Float.wDecode f x = NINF) [@trigger])
   [@@timeout 360]
   [@@by unroll_nonlin 10 10 100]
   [@@fc]
 
 theorem inf_decodes_to_inf (f : Format.t) (x : Float.t) =
   let open CER in
-  ((Float.is_inf f x) [@trigger]) <==> (Float.decode f x = NINF || Float.decode f x = PINF)
+  ((Float.is_inf f x) [@trigger]) <==> (Float.wDecode f x = NINF || Float.wDecode f x = PINF)
   [@@by
     [%use pinf_decodes_to_pinf f x] @>
     [%use ninf_decodes_to_ninf f x] @>
@@ -138,14 +139,14 @@ theorem inf_decodes_to_inf (f : Format.t) (x : Float.t) =
 
 theorem nan_decodes_to_nan (f : Format.t) (x : Float.t) =
   let open CER in
-  Float.is_nan f x <==> ((Float.decode f x = NaN) [@trigger])
+  Float.is_nan f x <==> ((Float.wDecode f x = NaN) [@trigger])
   [@@timeout 120]
   [@@by unroll 50]
   [@@fc]
 
 theorem zero_decodes_to_zero (f : Format.t) (x : Float.t) =
   let open CER in
-  Float.is_zero f x <==> (Float.decode f x = R 0.0) [@trigger]
+  Float.isZero f x <==> (Float.wDecode f x = R 0.0) [@trigger]
   [@@timeout 60]
   [@@by unroll 25]
   [@@fc]
@@ -158,14 +159,14 @@ theorem ipow2_gt_0 (n:int) =
 
 theorem decode_0_is_0 (f : Format.t)  =
   let open CER in
-  (Float.decode f 0) [@trigger] = R 0.0
+  (Float.wDecode f 0) [@trigger] = R 0.0
   [@@timeout 60]
   [@@by enumerate ["f"] @> ground_eval ()]
   [@@fc]
 
 theorem zero_means_is_zero (f : Format.t) (x : Float.t) =
   let open CER in
-  x = 0 ==> ((Float.is_zero f x) [@trigger])
+  x = 0 ==> ((Float.isZero f x) [@trigger])
   [@@timeout 3600]
   [@@disable Util.ipow2, Util.pow2]
   [@@by unroll_nonlin 10 10 1000]
@@ -173,13 +174,13 @@ theorem zero_means_is_zero (f : Format.t) (x : Float.t) =
 
 (* theorem zero_is_zero_fwd (f : Format.t) (x : Float.t) =
   let open CER in
-  x = 0 ==> ((Float.decode f x = R 0.0) [@trigger])
+  x = 0 ==> ((Float.wDecode f x = R 0.0) [@trigger])
   [@@timeout 360]
   [@@by enumerate ["f"] @> auto]
 
 theorem zero_is_zero_bwd (f : Format.t) (x : Float.t) =
   let open CER in
-  x = 0 <== ((Float.decode f x = R 0.0) [@trigger])
+  x = 0 <== ((Float.wDecode f x = R 0.0) [@trigger])
   [@@timeout 1200]
   (* [@@by enumerate ["f"] @> auto] *)
   [@@by auto]
@@ -187,9 +188,9 @@ theorem zero_is_zero_bwd (f : Format.t) (x : Float.t) =
 
 theorem zero_is_zero (f : Format.t) (x : Float.t) =
   let open CER in
-  x = 0 <==> ((Float.decode f x = R 0.0) [@trigger])
+  x = 0 <==> ((Float.wDecode f x = R 0.0) [@trigger])
   [@@timeout 60]
-  [@@disable Float.decode, Float.decode_aux]
+  [@@disable Float.wDecode, Float.wDecodeAux]
   [@@by
     [%use zero_is_zero_fwd f x] @>
     [%use zero_is_zero_bwd f x] @>
@@ -198,13 +199,13 @@ theorem zero_is_zero (f : Format.t) (x : Float.t) =
 
 (* theorem decode_specials (f : Format.t) (x : Float.t) =
   let open CER in
-  ((Float.is_pinf f x) <==> (Float.decode f x = PINF)) &&
-  ((Float.is_ninf f x) <==> (Float.decode f x = NINF)) &&
-  ((Float.is_nan f x) <==> (Float.decode f x = NaN)) &&
-  ((Float.is_zero f x) <==> (Float.decode f x = R 0.0)) &&
-  ((x = 0) <==> (Float.decode f x = R 0.0))
+  ((Float.is_pinf f x) <==> (Float.wDecode f x = PINF)) &&
+  ((Float.is_ninf f x) <==> (Float.wDecode f x = NINF)) &&
+  ((Float.is_nan f x) <==> (Float.wDecode f x = NaN)) &&
+  ((Float.is_zero f x) <==> (Float.wDecode f x = R 0.0)) &&
+  ((x = 0) <==> (Float.wDecode f x = R 0.0))
   [@@timeout 3600]
-  [@@disable Float.decode, Float.decode_aux, Util.pow2, Util.ipow2, Float.is_pinf, Float.is_ninf, Float.is_nan, Float.is_zero]
+  [@@disable Float.wDecode, Float.wDecodeAux, Util.pow2, Util.ipow2, Float.is_pinf, Float.is_ninf, Float.is_nan, Float.is_zero]
   [@@by
     [%use pinf_decodes_to_pinf f x] @>
     [%use ninf_decodes_to_ninf f x] @>
@@ -220,12 +221,12 @@ theorem zero_is_zero (f : Format.t) (x : Float.t) =
 
 (** 4.7.2 Conversion from IEEE Std 754 formats to P3109 *)
 
-(* TODO: proof that the IEEE754 rounding mode in encode754 is irrelevant for our [x]s *)
+(* TODO: proof that the IEEE754 rounding mode in wEncode754 is irrelevant for our [x]s *)
 
-(** [internal_convert_from_ieee754] never returns an error *)
+(** [internal_convertFromIEEE754] never returns an error *)
 theorem internal_convert_from_ieee754_ok (phi: IEEE754.Format.t) (f : Format.t) (pi : Projection.t) (x : IEEE754.t) =
-  Result.is_ok (Float.internal_convert_from_ieee754 phi f pi x)
-  [@@disable Float.project, Float.round_to_precision, Float.saturate, Util.pow2, Util.ipow2, Format.parameters]
+  Result.is_ok (Float.internal_convertFromIEEE754 phi f pi x)
+  [@@disable Float.wProject, Float.wRoundToPrecision, Float.wSaturate, Util.pow2, Util.ipow2, Format.parameters]
   [@@by auto]
 
 (** 4.7.3 Conversion from P3109 to IEEE Std 754 *)
@@ -254,16 +255,16 @@ theorem internal_negate_ok (f : Format.t) (x : Float.t) =
 (** 4.8.2 Binary sign operations *)
 
 (** [internal_copy_sign] never returns an error *)
-theorem internal_copy_sign_ok (f : Format.t) (x : Float.t) (y : Float.t) =
-  Result.is_ok (Float.internal_copy_sign f x y)
-  [@@disable Float.encode, Float.decode_aux, Util.pow2, Util.ipow2, Format.parameters]
+theorem internal_copySign_ok (f : Format.t) (x : Float.t) (y : Float.t) =
+  Result.is_ok (Float.internal_copySign f x y)
+  [@@disable Float.wEncode, Float.wDecodeAux, Util.pow2, Util.ipow2, Format.parameters]
   [@@timeout 120]
   [@@by
     [%use decode_within_range f x] @>
     [%use decode_within_range f y] @>
-    [%use encode_ok_within_range f (Float.decode f x)] @>
-    [%use encode_ok_within_range f CER.(~- (Float.decode f x))] @>
-    [%use encode_ok_within_range f CER.NaN] @>
+    [%use wEncode_ok_within_range f (Float.wDecode f x)] @>
+    [%use wEncode_ok_within_range f CER.(~- (Float.wDecode f x))] @>
+    [%use wEncode_ok_within_range f CER.NaN] @>
     auto]
 
 
@@ -273,7 +274,7 @@ theorem internal_copy_sign_ok (f : Format.t) (x : Float.t) (y : Float.t) =
 theorem internal_add_ok (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (pi : Projection.t)
   (x : Float.t) (y : Float.t) =
   Result.is_ok (Float.internal_add f_x f_y f_z pi x y)
-  [@@disable Specification.Float.project, Float.decode_aux, Util.pow2, Util.ipow2, Format.parameters]
+  [@@disable Specification.Float.wProject, Float.wDecodeAux, Util.pow2, Util.ipow2, Format.parameters]
   [@@timeout 60]
   [@@by auto]
 
@@ -281,21 +282,21 @@ theorem internal_add_ok (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (pi :
 theorem internal_subtract_ok (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (pi : Projection.t)
   (x : Float.t) (y : Float.t) =
   Result.is_ok (Float.internal_subtract f_x f_y f_z pi x y)
-  [@@disable Specification.Float.project, Float.decode_aux, Util.pow2, Util.ipow2, Format.parameters]
+  [@@disable Specification.Float.wProject, Float.wDecodeAux, Util.pow2, Util.ipow2, Format.parameters]
   [@@timeout 3600]
   [@@by auto]
 
 (** [internal_multiply] never returns an error *)
 theorem internal_multiply_ok (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (pi : Projection.t) (x : Float.t) (y : Float.t)  =
   Result.is_ok (Float.internal_multiply f_x f_y f_z pi x y)
-  [@@disable Specification.Float.project, Float.decode_aux, Util.pow2, Util.ipow2, Format.parameters]
+  [@@disable Specification.Float.wProject, Float.wDecodeAux, Util.pow2, Util.ipow2, Format.parameters]
   [@@timeout 60]
   [@@by auto]
 
 (** [internal_divide] never returns an error *)
 theorem internal_divide_ok (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (pi : Projection.t) (x : Float.t) (y : Float.t)  =
   Result.is_ok (Float.internal_divide f_x f_y f_z pi x y)
-  [@@disable Specification.Float.project, Specification.Float.decode, Float.decode_aux, Util.pow2, Util.ipow2, Format.parameters]
+  [@@disable Specification.Float.wProject, Specification.Float.wDecode, Float.wDecodeAux, Util.pow2, Util.ipow2, Format.parameters]
   [@@timeout 60]
   [@@by auto]
 
@@ -306,7 +307,7 @@ theorem internal_divide_ok (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (p
 theorem internal_fma_ok (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (f_r : Format.t) (pi : Projection.t)
   (x : Float.t) (y : Float.t) (z : Float.t) =
   Result.is_ok (Float.internal_fma f_x f_y f_z f_r pi x y z)
-  [@@disable Float.project, Float.decode, Float.round_to_precision, Float.saturate, Util.pow2, Util.ipow2,
+  [@@disable Float.wProject, Float.wDecode, Float.wRoundToPrecision, Float.wSaturate, Util.pow2, Util.ipow2,
     Format.parameters, Float.internal_fma]
   [@@by auto]
 
@@ -317,7 +318,7 @@ theorem internal_fma_ok (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (f_r 
 theorem internal_faa_ok (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (f_r : Format.t) (pi : Projection.t)
   (x : Float.t) (y : Float.t) (z : Float.t) =
   Result.is_ok (Float.internal_faa f_x f_y f_z f_r pi x y z)
-  [@@disable Float.project, Float.decode, Float.decode_aux, Float.round_to_precision, Float.saturate, Util.pow2, Util.ipow2, Format.parameters]
+  [@@disable Float.wProject, Float.wDecode, Float.wDecodeAux, Float.wRoundToPrecision, Float.wSaturate, Util.pow2, Util.ipow2, Format.parameters]
   [@@by auto]
 
 (** 4.8.5 Unary mathematical operations *)
@@ -326,51 +327,51 @@ theorem internal_faa_ok (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (f_r 
 theorem internal_recip_ok (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : Float.t) =
   Result.is_ok (Float.internal_recip f_x f_z pi x)
   [@@timeout 60]
-  [@@disable Float.project, Float.decode, Float.decode_aux, Float.round_to_precision, Float.saturate, Util.pow2, Util.ipow2, Format.parameters, Sqrt.sqrt]
+  [@@disable Float.wProject, Float.wDecode, Float.wDecodeAux, Float.wRoundToPrecision, Float.wSaturate, Util.pow2, Util.ipow2, Format.parameters, Sqrt.sqrt]
   [@@by auto]
 
 (** [internal_sqrt] never returns an error *)
 theorem internal_sqrt_ok (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : Float.t) =
   Result.is_ok (Float.internal_sqrt f_x f_z pi x)
   [@@timeout 60]
-  [@@disable Float.project, Float.decode, Float.decode_aux, Float.round_to_precision, Float.saturate, Util.pow2, Util.ipow2, Format.parameters, Sqrt.sqrt]
+  [@@disable Float.wProject, Float.wDecode, Float.wDecodeAux, Float.wRoundToPrecision, Float.wSaturate, Util.pow2, Util.ipow2, Format.parameters, Sqrt.sqrt]
   [@@by auto]
 
 (** [internal_rsqrt] never returns an error *)
 theorem internal_rsqrt_ok (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : Float.t) =
   Result.is_ok (Float.internal_rsqrt f_x f_z pi x)
   [@@timeout 3600]
-  [@@disable Float.project, Float.decode, Float.decode_aux, Float.round_to_precision, Float.saturate, Util.pow2, Util.ipow2, Format.parameters, Sqrt.sqrt]
+  [@@disable Float.wProject, Float.wDecode, Float.wDecodeAux, Float.wRoundToPrecision, Float.wSaturate, Util.pow2, Util.ipow2, Format.parameters, Sqrt.sqrt]
   [@@by auto]
 
 (** [internal_exp] never returns an error *)
 theorem internal_exp_ok (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : Float.t) =
   Result.is_ok (Float.internal_exp f_x f_z pi x)
-  [@@disable Specification.Float.project, Specification.Float.decode, Float.decode_aux, Format.parameters]
+  [@@disable Specification.Float.wProject, Specification.Float.wDecode, Float.wDecodeAux, Format.parameters]
   [@@by auto]
 
 (** [internal_exp2] never returns an error *)
 theorem internal_exp2_ok (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : Float.t) =
   Result.is_ok (Float.internal_exp2 f_x f_z pi x)
-  [@@disable Float.project, Float.decode, Float.decode_aux, Float.round_to_precision, Float.saturate, Exp.exp2, Format.parameters]
+  [@@disable Float.wProject, Float.wDecode, Float.wDecodeAux, Float.wRoundToPrecision, Float.wSaturate, Exp.exp2, Format.parameters]
   [@@by auto]
 
 (** [internal_log] never returns an error *)
 theorem internal_log_ok (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : Float.t) =
   Result.is_ok (Float.internal_log f_x f_z pi x)
-  [@@disable Float.project, Float.decode, Float.decode_aux, Log.log, Log.ln, Format.parameters]
+  [@@disable Float.wProject, Float.wDecode, Float.wDecodeAux, Log.log, Log.ln, Format.parameters]
   [@@by auto]
 
 (** [internal_log2] never returns an error *)
 theorem internal_log2_ok (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : Float.t) =
   Result.is_ok (Float.internal_log2 f_x f_z pi x)
-  [@@disable Float.project, Float.decode, Float.decode_aux, Log.log2, Log.log, Log.ln, Format.parameters]
+  [@@disable Float.wProject, Float.wDecode, Float.wDecodeAux, Log.log2, Log.log, Log.ln, Format.parameters]
   [@@by auto]
 
 
 (** 4.x.x Hypothenuse *)
 
-(* aug_hypot wants a few helpers *)
+(* whypot wants a few helpers *)
 theorem h1 (x : real) =
   ((Util.ripow (Real.abs x) 2) [@trigger]) >=. 0.0
   [@@timeout 10]
@@ -389,9 +390,9 @@ theorem h2 (x : real) (y : real) =
   [@@by auto]
   [@@fc]
 
-(** [aug_hypot] never returns an error *)
-theorem aug_hypot_ok (x : CER.t) (y : CER.t) =
-  Result.is_ok ((Float.aug_hypot x y) [@trigger])
+(** [whypot] never returns an error *)
+theorem whypot_ok (x : CER.t) (y : CER.t) =
+  Result.is_ok ((Float.wHypot x y) [@trigger])
   [@@timeout 60]
   [@@disable Sqrt.sqrt]
   [@@by auto]
@@ -400,8 +401,8 @@ theorem aug_hypot_ok (x : CER.t) (y : CER.t) =
 theorem internal_hypot_ok (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (pi : Projection.t) (x : Float.t) (y : Float.t) =
   Result.is_ok (Float.internal_hypot f_x f_y f_z pi x y)
   [@@timeout 60]
-  [@@disable Float.project, Float.decode, Float.decode_aux, Float.round_to_precision, Float.saturate, Util.pow2, Util.ipow2, Format.parameters]
-  [@@by [%use aug_hypot_ok (Float.decode f_x x) (Float.decode f_y y)] @> auto]
+  [@@disable Float.wProject, Float.wDecode, Float.wDecodeAux, Float.wRoundToPrecision, Float.wSaturate, Util.pow2, Util.ipow2, Format.parameters]
+  [@@by [%use whypot_ok (Float.wDecode f_x x) (Float.wDecode f_y y)] @> auto]
 
 
 (** 4.10.1 Minimum and Maximum *)
@@ -410,66 +411,66 @@ theorem internal_hypot_ok (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (pi
 theorem internal_minimum_ok (f : Format.t) (x : Float.t) (y : Float.t) =
   Result.is_ok (Float.internal_minimum f x y)
   [@@timeout 600]
-  [@@disable Float.decode, Float.decode_aux, Float.encode]
+  [@@disable Float.wDecode, Float.wDecodeAux, Float.wEncode]
   [@@by auto]
 
 (** [internal_maximum] never returns an error *)
 theorem internal_maximum_ok (f : Format.t) (x : Float.t) (y : Float.t) =
   Result.is_ok (Float.internal_maximum f x y)
   [@@timeout 600]
-  [@@disable Float.decode, Float.decode_aux, Float.encode]
+  [@@disable Float.wDecode, Float.wDecodeAux, Float.wEncode]
   [@@by auto]
 
 (** [internal_minimum_number] never returns an error *)
 theorem internal_minimum_number_ok (f : Format.t) (x : Float.t) (y : Float.t) =
-  Result.is_ok (Float.internal_minimum_magnitude f x y)
-  [@@disable Float.decode, Float.decode_aux, Float.encode]
+  Result.is_ok (Float.internal_minimumMagnitude f x y)
+  [@@disable Float.wDecode, Float.wDecodeAux, Float.wEncode]
   [@@by auto]
 
 (** [internal_maximum_number] never returns an error *)
 theorem internal_maximum_number_ok (f : Format.t) (x : Float.t) (y : Float.t) =
-  Result.is_ok (Float.internal_maximum_number f x y)
-  [@@disable Float.decode, Float.decode_aux, Float.encode]
+  Result.is_ok (Float.internal_maximumNumber f x y)
+  [@@disable Float.wDecode, Float.wDecodeAux, Float.wEncode]
   [@@by auto]
 
 (** 4.xx MinimumMagnitude, MaximumMagnitude, and 'Number' variants *)
 
 (** [internal_minimum_magnitude] never returns an error *)
 theorem internal_minimum_magnitude_ok (f : Format.t) (x : Float.t) (y : Float.t) =
-  Result.is_ok (Float.internal_minimum_magnitude f x y)
-  [@@disable Float.decode, Float.decode_aux, Float.encode]
+  Result.is_ok (Float.internal_minimumMagnitude f x y)
+  [@@disable Float.wDecode, Float.wDecodeAux, Float.wEncode]
   [@@by auto]
 
 (** [internal_maximum_magnitude] never returns an error *)
 theorem internal_maximum_magnitude_ok (f : Format.t) (x : Float.t) (y : Float.t) =
-  Result.is_ok (Float.internal_maximum_magnitude f x y)
-  [@@disable Float.decode, Float.decode_aux, Float.encode]
+  Result.is_ok (Float.internal_maximumMagnitude f x y)
+  [@@disable Float.wDecode, Float.wDecodeAux, Float.wEncode]
   [@@by auto]
 
 (** [internal_minimum_magnitude_number] never returns an error *)
 theorem internal_minimum_magnitude_number_ok (f : Format.t) (x : Float.t) (y : Float.t) =
-  Result.is_ok (Float.internal_minimum_magnitude_number f x y)
-  [@@disable Float.decode, Float.decode_aux, Float.encode]
+  Result.is_ok (Float.internal_minimumMagnitudeNumber f x y)
+  [@@disable Float.wDecode, Float.wDecodeAux, Float.wEncode]
   [@@by auto]
 
 (** [internal_maximum_magnitude] never returns an error *)
 theorem internal_maximum_magnitude_number_ok (f : Format.t) (x : Float.t) (y : Float.t) =
-  Result.is_ok (Float.internal_maximum_magnitude_number f x y)
-  [@@disable Float.decode, Float.decode_aux, Float.encode]
+  Result.is_ok (Float.internal_maximumMagnitudeNumber f x y)
+  [@@disable Float.wDecode, Float.wDecodeAux, Float.wEncode]
   [@@by auto]
 
 (** 4.xx MinimumFinite, MaximumFinite *)
 
 (** [internal_minimum_finite] never returns an error *)
 theorem internal_minimum_finite_ok (f : Format.t) (x : Float.t) (y : Float.t) =
-  Result.is_ok (Float.internal_minimum_finite f x y)
-  [@@disable Float.decode, Float.decode_aux, Float.encode]
+  Result.is_ok (Float.internal_minimumFinite f x y)
+  [@@disable Float.wDecode, Float.wDecodeAux, Float.wEncode]
   [@@by auto]
 
 (** [internal_maximum_finite] never returns an error *)
 theorem internal_maximum_finite_ok (f : Format.t) (x : Float.t) (y : Float.t) =
-  Result.is_ok (Float.internal_maximum_finite f x y)
-  [@@disable Float.decode, Float.decode_aux, Float.encode]
+  Result.is_ok (Float.internal_maximumFinite f x y)
+  [@@disable Float.wDecode, Float.wDecodeAux, Float.wEncode]
   [@@by auto]
 
 (** 4.9.3 Clamp *)
@@ -478,7 +479,7 @@ theorem internal_maximum_finite_ok (f : Format.t) (x : Float.t) (y : Float.t) =
 theorem internal_clamp_ok (f : Format.t) (x : Float.t) (lo : Float.t) (hi : Float.t) =
   Result.is_ok (Float.internal_clamp f x lo hi)
   [@@timeout 360]
-  [@@disable Float.decode, Float.decode_aux, Float.encode]
+  [@@disable Float.wDecode, Float.wDecodeAux, Float.wEncode]
   [@@by auto]
 
 
@@ -486,59 +487,58 @@ theorem internal_clamp_ok (f : Format.t) (x : Float.t) (lo : Float.t) (hi : Floa
 
 (** [internal_compare_less] never returns an error *)
 theorem internal_compare_less_ok (f_x : Format.t) (f_y : Format.t) (x : Float.t) (y : Float.t)  =
-  Result.is_ok (Float.internal_compare_less f_x f_y x y)
-  [@@disable Float.decode, Float.decode_aux, Float.encode]
+  Result.is_ok (Float.internal_compareLess f_x f_y x y)
+  [@@disable Float.wDecode, Float.wDecodeAux, Float.wEncode]
   [@@by auto]
 
 theorem internal_compare_less_equal_ok (f_x : Format.t) (f_y : Format.t) (x : Float.t) (y : Float.t)  =
-  Result.is_ok (Float.internal_compare_less_equal f_x f_y x y)
-  [@@disable Float.decode, Float.decode_aux, Float.encode]
+  Result.is_ok (Float.internal_compareLessEqual f_x f_y x y)
+  [@@disable Float.wDecode, Float.wDecodeAux, Float.wEncode]
   [@@by auto]
 
 theorem internal_compare_equal_ok (f_x : Format.t) (f_y : Format.t) (x : Float.t) (y : Float.t)  =
-  Result.is_ok (Float.internal_compare_equal f_x f_y x y)
-  [@@disable Float.decode, Float.decode_aux, Float.encode]
+  Result.is_ok (Float.internal_compareEqual f_x f_y x y)
+  [@@disable Float.wDecode, Float.wDecodeAux, Float.wEncode]
   [@@by auto]
 
 theorem internal_compare_greater_ok (f_x : Format.t) (f_y : Format.t) (x : Float.t) (y : Float.t)  =
-  Result.is_ok (Float.internal_compare_greater f_x f_y x y)
-  [@@disable Float.decode, Float.decode_aux, Float.encode]
+  Result.is_ok (Float.internal_compareGreater f_x f_y x y)
+  [@@disable Float.wDecode, Float.wDecodeAux, Float.wEncode]
   [@@by auto]
 
 
 theorem internal_compare_greater_equal_ok (f_x : Format.t) (f_y : Format.t) (x : Float.t) (y : Float.t)  =
-  Result.is_ok (Float.internal_compare_greater_equal f_x f_y x y)
-  [@@disable Float.decode, Float.decode_aux, Float.encode]
+  Result.is_ok (Float.internal_compareGreaterEqual f_x f_y x y)
+  [@@disable Float.wDecode, Float.wDecodeAux, Float.wEncode]
   [@@by auto]
 
 
 (** 4.10.3 Predicates and classification *)
 
 theorem internal_is_zero_ok (f : Format.t) (x : Float.t) =
-  Result.is_ok (Float.internal_is_zero f x)
-  [@@disable Float.decode, Float.decode_aux, Float.encode]
+  Result.is_ok (Float.internal_isZero f x)
+  [@@disable Float.wDecode, Float.wDecodeAux, Float.wEncode]
   [@@by auto]
 
 theorem internal_is_one_ok (f : Format.t) (x : Float.t) =
-  Result.is_ok (Float.internal_is_one f x)
-  [@@disable Float.decode, Float.decode_aux, Float.encode]
+  Result.is_ok (Float.internal_isOne f x)
+  [@@disable Float.wDecode, Float.wDecodeAux, Float.wEncode]
   [@@by auto]
 
 theorem internal_is_sign_minus_ok (f : Format.t) (x : Float.t) =
-  Result.is_ok (Float.internal_is_sign_minus f x)
-  [@@disable Float.decode, Float.decode_aux, Float.encode]
+  Result.is_ok (Float.internal_isSignMinus f x)
+  [@@disable Float.wDecode, Float.wDecodeAux, Float.wEncode]
   [@@by auto]
 
 
 (** 4.10.4 Classifier operation *)
 
-
 theorem predicate_coverage (f : Format.t) (x : Float.t) =
-  Float.is_nan f x ||
-  Float.is_infinite f x ||
-  Float.is_zero f x ||
-  Float.is_normal f x ||
-  Float.is_subnormal f x
+  Float.isNaN f x ||
+  Float.isInfinite f x ||
+  Float.isZero f x ||
+  Float.isNormal f x ||
+  Float.isSubnormal f x
   [@@timeout 3600]
   [@@by unroll_nonlin 600 10 250]
   [@@fc]
@@ -567,7 +567,7 @@ theorem minPositiveOf_ok (f : Format.t) =
 (* The result of minPositiveOf is never negative, zero, or NaN *)
 theorem minPositiveOf_positive (f : Format.t) =
   match minPositiveOf f with
-  | Ok r -> not (Float.is_sign_minus f r) && not (Float.is_zero f r) && not (Float.is_nan f r)
+  | Ok r -> not (Float.isSignMinus f r) && not (Float.isZero f r) && not (Float.is_nan f r)
   | Error _ -> false
   [@@by enumerate ["f"] @> ground_eval ()]
 
@@ -586,7 +586,7 @@ theorem minNormalOf_normal (f : Format.t) =
   | 2, _, _, Extended -> minNormalOf f = Ok (Float.nan f)
   | _ ->
     (match minNormalOf f with
-      | Ok r -> Float.is_normal f r
+      | Ok r -> Float.isNormal f r
       | Error _ -> true)
   [@@timeout 60]
   [@@by enumerate ["f"] @> ground_eval ()]

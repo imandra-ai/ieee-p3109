@@ -150,7 +150,7 @@ let rec from_binary (x : bool list) : int =
   | x :: xs ->
     (if x then Util.ipow2 (List.length xs) else 0) + (from_binary xs)
 
-let as_aug_real (phi : Format.t) (x : t) : (CER.t, string) Result.t =
+let as_cer (phi : Format.t) (x : t) : (CER.t, string) Result.t =
   if is_nan x phi then
     Ok NaN
   else if is_pinf x phi then

@@ -29,26 +29,26 @@ module Float = struct
 
   (** Classification predicates *)
 
-  let is_zero (_f : Format.t) (x : t) : bool =
+  let isZero (_f : Format.t) (x : t) : bool =
     not x.b7 && not x.b6 && not x.b5 && not x.b4 && not x.b3 && not x.b2 && not x.b1 && not x.b0 [@@macro]
 
-  let is_one (f : Format.t) (x : t) : bool =
+  let isOne (f : Format.t) (x : t) : bool =
     let open Specification.Format in
     not x.b7 &&
     match f.kp with
     | B8P1 -> not x.b6 && x.b5 && x.b4 && x.b3 && x.b2 && x.b1 && x.b0
     | _ -> x.b6 && not x.b5 && not x.b4 && not x.b3 && not x.b2 && not x.b1 && not x.b0
 
-  let is_nan (_f : Format.t) (x : t) : bool =
+  let isNaN (_f : Format.t) (x : t) : bool =
     x.b7 && not x.b6 && not x.b5 && not x.b4 && not x.b3 && not x.b2 && not x.b1 && not x.b0 [@@macro]
 
-  let is_infinite (f : Format.t) (x : t) : bool = x = ninf f || x = pinf f [@@macro]
+  let isInfinite (f : Format.t) (x : t) : bool = x = ninf f || x = pinf f [@@macro]
 
-  let is_finite (f : Format.t) (x : t) : bool = not (is_infinite f x) && not (is_nan f x) [@@macro]
+  let isFinite (f : Format.t) (x : t) : bool = not (isInfinite f x) && not (isNaN f x) [@@macro]
 
-  let is_normal (f : Format.t) (x : t) : bool =
+  let isNormal (f : Format.t) (x : t) : bool =
     let open Specification.Format in
-    is_finite f x
+    isFinite f x
     &&
     match f.kp with
     | B8P1 -> x.b6 || x.b5 || x.b4 || x.b3 || x.b2 || x.b1 || x.b0
@@ -60,9 +60,9 @@ module Float = struct
     | B8P7 -> x.b6
     | _ -> false
 
-  let is_subnormal (f : Format.t)  (x : t) : bool =
+  let isSubnormal (f : Format.t)  (x : t) : bool =
     let open Specification.Format in
-    is_finite f x && not (is_zero f x)
+    isFinite f x && not (isZero f x)
     &&
     match f.kp with
     | B8P1 -> not x.b6 && not x.b5 && not x.b4 && not x.b3 && not x.b2 && not x.b1 && not x.b0
@@ -74,31 +74,27 @@ module Float = struct
     | B8P7 -> not x.b6
     | _ -> false
 
-  let is_sign_minus (_f : Format.t) (x : t) : bool = x.b7
-
-  let is_signaling (_f : Format.t) (_x : t) : bool = false [@@macro]
-
-  let is_canonical (_f : Format.t) (_x : t) : bool = true [@@macro]
+  let isSignMinus (_f : Format.t) (x : t) : bool = x.b7
 
   (** Classifier *)
 
   type class_ = Specification.Float.class_
 
   let class_ (f : Format.t) (x : t) : class_ =
-      if is_nan f x then NaN
-      else if is_infinite f x && is_sign_minus f x then NegativeInfinity
-      else if is_normal f x && is_sign_minus f x then NegativeNormal
-      else if is_subnormal f x && is_sign_minus f x then NegativeSubnormal
-      else if is_zero f x then Zero
-      else if is_subnormal f x && not (is_sign_minus f x) then PositiveSubnormal
-      else if is_normal f x && not (is_sign_minus f x) then PositiveNormal
-      else if is_infinite f x && not (is_sign_minus f x) then PositiveInfinity
+      if isNaN f x then NaN
+      else if isInfinite f x && isSignMinus f x then NegativeInfinity
+      else if isNormal f x && isSignMinus f x then NegativeNormal
+      else if isSubnormal f x && isSignMinus f x then NegativeSubnormal
+      else if isZero f x then Zero
+      else if isSubnormal f x && not (isSignMinus f x) then PositiveSubnormal
+      else if isNormal f x && not (isSignMinus f x) then PositiveNormal
+      else if isInfinite f x && not (isSignMinus f x) then PositiveInfinity
       else NaN (* unreachable *)
 
   (** Operations *)
 
   let abs (f : Format.t) (x : t) : t =
-    if is_nan f x then x
+    if isNaN f x then x
     else
       {
         b7 = false;
@@ -112,7 +108,7 @@ module Float = struct
       }
 
   let negate (f : Format.t) (x : t) : t =
-    if is_nan f x || is_zero f x then x
+    if isNaN f x || isZero f x then x
     else
       {
         b7 = not x.b7;
@@ -141,7 +137,7 @@ module Float = struct
     Printf.sprintf "%s%s%s%s%s%s%s%s = %s" (bool_to_bin x.b7) (bool_to_bin x.b6)
       (bool_to_bin x.b5) (bool_to_bin x.b4) (bool_to_bin x.b3)
       (bool_to_bin x.b2) (bool_to_bin x.b1) (bool_to_bin x.b0)
-      (Math.CER.to_string (Specification.Float.decode f (i2s x)))
+      (Math.CER.to_string (Specification.Float.wDecode f (i2s x)))
       [@@ocamlformat "if-then-else=compact"] [@@program]
 
   [@@program]

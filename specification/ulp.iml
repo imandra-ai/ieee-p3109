@@ -7,11 +7,11 @@ open Float
 let unroll_nonlin qt nqt steps = Tactic.unroll ~smt:"z3-full-nonlinear" ~query_timeout:qt ~no_asm_query_timeout:nqt steps [@@no_extract]
 
 let one_up (f : Format.t) (x : Float.t) : Float.t =
-  if Float.is_nan f x || Float.is_infinite f x then x
+  if Float.isNaN f x || Float.isInfinite f x then x
   else (Float.of_int_repr f ((Float.to_int_repr f x) + 1))
 
 let one_down (f : Format.t) (x : Float.t) : Float.t =
-  if Float.is_nan f x || Float.is_infinite f x then x
+  if Float.isNaN f x || Float.isInfinite f x then x
   else (Float.of_int_repr f ((Float.to_int_repr f x) - 1))
 
 let only_exponent (f : Format.t) (x : Float.t) : Float.t =
@@ -22,6 +22,6 @@ let only_exponent (f : Format.t) (x : Float.t) : Float.t =
 
 let ulp (f : Format.t) (x : Float.t) : (real, string) Result.t =
   let oe = only_exponent f x in
-  match (decode f (Float.of_int_repr f (Float.to_int_repr f oe + 1))), decode f oe with
+  match (wDecode f (Float.of_int_repr f (Float.to_int_repr f oe + 1))), wDecode f oe with
   | R u, R l -> Ok(u -. l)
   | _ -> Error("undefined")

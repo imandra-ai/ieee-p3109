@@ -68,14 +68,14 @@ let cer_to_string (x : CER.t) =
 let _ =
   Printf.printf "(P1) 0xBB = %s\n"
     (cer_to_string
-       (Float.decode (fse Format.B8P1)
+       (Float.wDecode (fse Format.B8P1)
           (Float.of_int_repr (fse Format.B8P1) (Z.of_int 0xBB))))
 
 let chk_scaled_add x y s_x s_y f =
   Printf.printf "(%s * 2^%s + %s * 2^%s) = %s\n" (Float.to_string f x)
     (Z.to_string s_x) (Float.to_string f y) (Z.to_string s_y)
     (Float.to_string f
-       (Float.scaled_add f f f
+       (Float.scaledAdd f f f
           (SaturationMode.SatPropagate, RoundingMode.TowardPositive)
           x s_x y s_y))
 
@@ -88,7 +88,7 @@ let _ =
 let print_decode x =
   let f = f in
   let fx = Float.of_int_repr f (Z.of_int x) in
-  let dx = Float.decode f fx in
+  let dx = Float.wDecode f fx in
   Printf.printf "decode(%s) = %s\n" (Float.to_string f fx) (cer_to_string dx)
 
 let _ =
@@ -100,7 +100,7 @@ let _ =
 let _ =
   let f = f in
   let x = CER.i2a (Z.of_int (-1)) in
-  let ex = Float.encode f x in
+  let ex = Float.wEncode f x in
   Printf.printf "encode(%s) = %s\n"
     (cer_to_string x)
     (result_to_string ~f:(Float.to_string f) ex)
@@ -128,7 +128,7 @@ let _ =
 
 let _ =
   let x =
-    Float.round_to_precision (Z.of_int 3) (Z.of_int 16)
+    Float.wRoundToPrecision (Z.of_int 3) (Z.of_int 16)
       RoundingMode.TowardPositive
       (CER.r2a (Q.of_ints 21 10))
   in

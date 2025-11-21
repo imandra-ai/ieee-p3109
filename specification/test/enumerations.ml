@@ -218,15 +218,15 @@ let fsqrt_aux_both prec bias f rnd
     Printf.printf "i=%s: [%s,%s] " (Z.to_string o.i)
       (sprefix (rat_to_string_dec u.g) 24)
       (sprefix (rat_to_string_dec o.g) 24);
-    let urnded = Float.round_to_precision prec bias rnd (CER.R u.g) in
-    let ornded = Float.round_to_precision prec bias rnd (CER.R o.g) in
+    let urnded = Float.wRoundToPrecision prec bias rnd (CER.R u.g) in
+    let ornded = Float.wRoundToPrecision prec bias rnd (CER.R o.g) in
     Printf.printf "[%s,%s] [%02x,%02x]\n%!"
       (sprefix (cer_dec urnded) 24)
       (sprefix (cer_dec ornded) 24)
-      (match Float.encode f urnded with
+      (match Float.wEncode f urnded with
       | Ok urf -> Z.to_int (Float.to_int_repr f urf)
       | _ -> 0xFF)
-      (match Float.encode f ornded with
+      (match Float.wEncode f ornded with
       | Ok orf -> Z.to_int (Float.to_int_repr f orf)
       | _ -> 0xFF);
     if ornded = urnded then
@@ -261,7 +261,7 @@ let rec find_closest_floats_aux_ml (f : Format.t) (x : CER.t) (l : Float.t)
   else if Z.sub u l <= Z.one then Ok (l, u)
   else (
     let m = Z.div (Z.add l u) (Z.of_int 2) in
-    let dm = Float.decode f m in
+    let dm = Float.wDecode f m in
     match CER.ResultInfix.(dm * dm) with
     | Ok dmsq when CER.(dmsq >= x) -> find_closest_floats_aux_ml f x l m
     | Ok _ -> find_closest_floats_aux_ml f x m u
@@ -355,7 +355,7 @@ let print_closest (f_z : Format.t) (di : CER.t) =
     (match Fsqrt.find_closest_sqrt_floats f_z di with
     | Ok (u, o) ->
       Printf.printf "Closest: [%s,%s]\n%!" (Z.to_string u) (Z.to_string o);
-      (match r_of_aug (Float.decode f_z u), r_of_aug (Float.decode f_z o) with
+      (match r_of_aug (Float.wDecode f_z u), r_of_aug (Float.wDecode f_z o) with
       | Ok u, Ok o ->
         Printf.printf "[%s,%s]\n%!" (Q.to_string u) (Q.to_string o)
       | _ -> Printf.printf "Error\n%!")
@@ -383,7 +383,7 @@ let run_sqrt () =
               for i = 0 to max do
                 let start = Unix.gettimeofday () in
                 let fi = Float.of_int_repr f_x (Z.of_int i) in
-                let di = Float.decode f_x fi in
+                let di = Float.wDecode f_x fi in
                 if CER.(di >= zero) then (
                   if false then (
                     Printf.printf "%s\n" sep_line;

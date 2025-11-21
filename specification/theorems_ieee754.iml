@@ -7,8 +7,8 @@ open IEEE754
 
 let unroll_nonlin qt nqt steps = Tactic.unroll ~smt:"z3-full-nonlinear" ~query_timeout:qt ~no_asm_query_timeout:nqt steps
 
-theorem as_aug_real_ok (phi : Format.t) (x : t) =
-  (not (is_nan x phi) [@trigger]) ==> Result.is_ok (as_aug_real phi x)
+theorem as_cer_ok (phi : Format.t) (x : t) =
+  (not (is_nan x phi) [@trigger]) ==> Result.is_ok (as_cer phi x)
   [@@timeout 3600]
   [@@disable Util.pow2, Util.ipow2]
   [@@by auto]

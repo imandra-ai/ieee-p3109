@@ -1,0 +1,20 @@
+[@@@import Specification, "dune:specification"]
+[@@@import Theorems_pow2, "dune:theorems"]
+
+open Specification
+open CER
+open CER.Infix
+
+let unroll_nonlin qt nqt steps = Tactic.unroll ~smt:"z3-full-nonlinear" ~query_timeout:qt ~no_asm_query_timeout:nqt steps
+
+theorem floor_diff_leq_1 (x : real) =
+  x -. Util.floor x <. 1.0
+
+theorem rnd_1 (f : Format.t) (rnd : RoundingMode.t) (x : CER.t) =
+  let _, p, b, _ , _, _, _ = Format.parameters f in
+  let y = Float.wRoundToPrecision p b rnd x in
+  rnd = RoundingMode.TowardZero && x >= R 0.0 ==> y <= x
+  [@@timeout 3600]
+  [@@disable Format.parameters, Util.pow2, Util.ipow2]
+  [@@by auto]
+  (* [@@by unroll_nonlin 10 10 1000] *)

@@ -6,8 +6,8 @@ open Specification
 
 let fsqrt_aux_both prec bias rnd start (x : real) (p : int) : ((real * int), string) Result.t =
   let early_exit (u : Sqrt.state) (o : Sqrt.state) =
-    let urnded = Float.round_to_precision prec bias rnd (CER.R u.g) in
-    let ornded = Float.round_to_precision prec bias rnd (CER.R o.g) in
+    let urnded = Float.wRoundToPrecision prec bias rnd (CER.R u.g) in
+    let ornded = Float.wRoundToPrecision prec bias rnd (CER.R o.g) in
     if ornded = urnded then true
     else if CER.ResultInfix.(ornded * ornded) = Ok (CER.R x) then true
     else if o.g *. o.g = x then true
@@ -33,7 +33,7 @@ let rec find_closest_sqrt_floats_aux (f : Format.t) (x : CER.t) (l : Float.t) (u
   else if u - l <= 1 then Ok (l, u)
   else (
     let m = (l + u) / 2 in
-    let dm = Float.decode f m in
+    let dm = Float.wDecode f m in
     match CER.ResultInfix.(dm * dm) with
     | Ok dmsq when CER.ResultInfix.(dmsq >= x) -> find_closest_sqrt_floats_aux f x l m
     | Ok _ -> find_closest_sqrt_floats_aux f x m u
@@ -55,7 +55,7 @@ let fsqrt_start (f : Format.t) (x : real) (p : int) : (Sqrt.state * Sqrt.state) 
   match find_closest_sqrt_floats f (CER.R x) with
   | Ok (au, ao) ->
     (match
-      r_of_aug (Float.decode f au), r_of_aug (Float.decode f ao)
+      r_of_aug (Float.wDecode f au), r_of_aug (Float.wDecode f ao)
     with
     | Ok au, Ok ao ->
       let o : Sqrt.state =
@@ -74,11 +74,11 @@ let fsqrt_start (f : Format.t) (x : real) (p : int) : (Sqrt.state * Sqrt.state) 
   | _ -> Sqrt.default_start x p
 
 let fsqrt_i (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : Float.t) : (Float.t, string) Result.t * int =
-  let dx = Float.decode f_x x in
+  let dx = Float.wDecode f_x x in
   let start = fsqrt_start f_x in
   let _, p, bias, _, _, _, _ = Format.parameters f_z in
   match (cer_fsqrt p bias (snd pi) start dx) with
-  | Ok (r, i) -> Float.project f_z pi r, i
+  | Ok (r, i) -> Float.wProject f_z pi r, i
   | Error e -> Error e, 0
 
 let fsqrt (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : Float.t) : (Float.t, string) Result.t =

@@ -13,7 +13,7 @@ function fun_filter(name: string, options: Options) {
   if (globalThis.function_names)
     return globalThis.function_names.includes(name);
   else
-    return name.startsWith("aug_") && name != "aug_real_is_within_range" || name == "internal_saturate";
+    return name.startsWith("w") && name == "internal_wSaturate";
 };
 
 
@@ -1716,7 +1716,7 @@ function print_structure_item_desc(node: AST, options: Options): Doc {
           let r = ["\\noindent" as Doc];
 
           fname = camelize(fname);
-          fname = fname.replace(/aug/, "\\" + PREFIX + "\\");
+          fname = fname.replace(/^w/, "\\" + PREFIX + "\\");
           fname = fname.replace(/Fma/, "FMA");
           fname = fname.replace(/Faa/, "FAA");
           fname = fname.replace(/Rsqrt/, "RSqrt");
@@ -1728,7 +1728,12 @@ function print_structure_item_desc(node: AST, options: Options): Doc {
           while (fundef.pexp_desc[0] == "Pexp_open")
             fundef = fundef.pexp_desc[2];
 
-          if (fname == "\\Saturate" || fname == "\\SaturateAlt" || fname == "\\Cer\\MaximumNumber" || fname == "\\Cer\\MinimumNumber")
+          if (fname == "\\WSaturate") {
+            fname = "\\" + PREFIX + "\\Saturate"
+            options.move_everything_up = true;
+          }
+
+          if (fname == "\\Cer\\MaximumNumber" || fname == "\\Cer\\MinimumNumber")
             options.move_everything_up = true;
 
           while (fundef.pexp_desc[0] == "Pexp_let") {

@@ -27,25 +27,25 @@ eval pp (round (R (largest_normal_b32 *. 2.0)) Format.Binary32 RoundingMode.Towa
 *)
 
 verify (List.length (round (R 2.0) Format.Binary32 RoundingMode.TowardZero) = 32) [@@by auto]
-verify (as_aug_real Format.Binary32 (round (R 0.0) Format.Binary32 RoundingMode.TowardZero) = Ok (CER.R 0.0)) [@@by auto]
-verify (as_aug_real Format.Binary32 (round (R (- 1.0)) Format.Binary32 RoundingMode.TowardNegative) = Ok (CER.R (- 1.0))) [@@by auto]
-verify (as_aug_real Format.Binary32 (round (R 21.0) Format.Binary32 RoundingMode.TowardZero) = Ok (CER.R 21.0)) [@@by auto]
-verify (as_aug_real Format.Binary32 (round (R 0.125) Format.Binary32 RoundingMode.TowardZero) = Ok (CER.R (1.0 /. 8.0))) [@@by auto]
-verify (as_aug_real Format.Binary32 (round (R smallest_nz_b32) Format.Binary32 RoundingMode.TowardZero) =
+verify (as_cer Format.Binary32 (round (R 0.0) Format.Binary32 RoundingMode.TowardZero) = Ok (CER.R 0.0)) [@@by auto]
+verify (as_cer Format.Binary32 (round (R (- 1.0)) Format.Binary32 RoundingMode.TowardNegative) = Ok (CER.R (- 1.0))) [@@by auto]
+verify (as_cer Format.Binary32 (round (R 21.0) Format.Binary32 RoundingMode.TowardZero) = Ok (CER.R 21.0)) [@@by auto]
+verify (as_cer Format.Binary32 (round (R 0.125) Format.Binary32 RoundingMode.TowardZero) = Ok (CER.R (1.0 /. 8.0))) [@@by auto]
+verify (as_cer Format.Binary32 (round (R smallest_nz_b32) Format.Binary32 RoundingMode.TowardZero) =
         Ok (CER.R (1.0 /. 713623846352979940529142984724747568191373312.0))) [@@by auto]
-verify (as_aug_real Format.Binary32 (round (R largest_subnormal_b32) Format.Binary32 RoundingMode.TowardZero) =
+verify (as_cer Format.Binary32 (round (R largest_subnormal_b32) Format.Binary32 RoundingMode.TowardZero) =
         Ok (CER.R (1.0 /. 356811923176489970264571492362373784095686656.0))) [@@by auto]
-verify (as_aug_real Format.Binary32 (round (R smallest_normal_b32) Format.Binary32 RoundingMode.TowardZero) =
+verify (as_cer Format.Binary32 (round (R smallest_normal_b32) Format.Binary32 RoundingMode.TowardZero) =
         Ok (CER.R (1.0 /. 85070591730234615865843651857942052864.0))) [@@by auto]
-verify (as_aug_real Format.Binary32 (round (R largest_normal_b32) Format.Binary32 RoundingMode.TowardZero) =
+verify (as_cer Format.Binary32 (round (R largest_normal_b32) Format.Binary32 RoundingMode.TowardZero) =
         Ok (CER.R 340282346638528859811704183484516925440.0)) [@@by auto]
-verify (as_aug_real Format.Binary32 (pinf Format.Binary32) = Ok PINF) [@@by auto]
-verify (as_aug_real Format.Binary32 (round (R (largest_normal_b32 +. 1.0)) Format.Binary32 RoundingMode.TowardZero) =
+verify (as_cer Format.Binary32 (pinf Format.Binary32) = Ok PINF) [@@by auto]
+verify (as_cer Format.Binary32 (round (R (largest_normal_b32 +. 1.0)) Format.Binary32 RoundingMode.TowardZero) =
         Ok (CER.R 340282346638528859811704183484516925440.0)) [@@by auto]
 
 let roundtrip32 (x : t) : (t, string) Result.t =
   (* convert extended real to IEEE754 single and back again *)
-  as_aug_real Format.Binary32 (round x Format.Binary32 RoundingMode.TowardZero)
+  as_cer Format.Binary32 (round x Format.Binary32 RoundingMode.TowardZero)
 
 verify (roundtrip32 (R 0.0) = Ok (R 0.0)) [@@by auto]
 verify (roundtrip32 (R 1.0) = Ok (R 1.0)) [@@by auto]
@@ -63,4 +63,4 @@ verify (roundtrip32 (R (largest_normal_b32 *. 2.0)) = Ok PINF) [@@by auto]
 
 (* -0.0 doesn't survive a tround-trip *)
 verify (is_nzero (round (R 0.0) Format.Binary32 RoundingMode.TowardNegative)) [@@by auto]
-verify (as_aug_real Format.Binary32 (round (R 0.0) Format.Binary32 RoundingMode.TowardNegative) = Ok (R 0.0)) [@@by auto]
+verify (as_cer Format.Binary32 (round (R 0.0) Format.Binary32 RoundingMode.TowardNegative) = Ok (R 0.0)) [@@by auto]

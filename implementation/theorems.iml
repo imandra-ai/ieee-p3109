@@ -29,44 +29,44 @@ theorem correct_negate (f : Format.t) (x : Float.t) =
   [@@by enumerate ["f"] @> repeat split_and @>>| auto]
   [@@timeout 3600]
 
-(** Proof that our implementation of [is_zero] is correct *)
-theorem correct_is_zero (f : Format.t) (x : Float.t) =
+(** Proof that our implementation of [isZero] is correct *)
+theorem correct_isZero (f : Format.t) (x : Float.t) =
   format_supported f ==>
-  Implementation.Float.is_zero f x = Specification.Float.is_zero f (i2s x)
+  Implementation.Float.isZero f x = Specification.Float.isZero f (i2s x)
   [@@by enumerate ["f"] @> auto]
   [@@timeout 60]
 
-(** Proof that our implementation of [is_one] is correct *)
-theorem correct_is_one (f : Format.t) (x : Float.t) =
+(** Proof that our implementation of [isOne] is correct *)
+theorem correct_isOne (f : Format.t) (x : Float.t) =
   format_supported f ==>
-  Implementation.Float.is_one f x = Specification.Float.is_one f (i2s x)
+  Implementation.Float.isOne f x = Specification.Float.isOne f (i2s x)
   [@@by enumerate ["f"] @> auto]
   [@@timeout 60]
 
 (** Proof that our implementation of [is_nan] is correct *)
-theorem correct_is_nan (f : Format.t) (x : Float.t) =
+theorem correct_isNaN (f : Format.t) (x : Float.t) =
   format_supported f ==>
-  Implementation.Float.is_nan f x = Specification.Float.is_nan f (i2s x)
+  Implementation.Float.isNaN f x = Specification.Float.is_nan f (i2s x)
   [@@by enumerate ["f"] @> auto]
   [@@timeout 60]
 
-(** Proof that our implementation of [is_sign_minus] is correct *)
-theorem correct_is_sign_minus (f : Format.t) (x : Float.t) =
+(** Proof that our implementation of [isSignMinus] is correct *)
+theorem correct_isSignMinus (f : Format.t) (x : Float.t) =
   format_supported f ==>
-  Implementation.Float.is_sign_minus f x = Specification.Float.is_sign_minus f (i2s x)
+  Implementation.Float.isSignMinus f x = Specification.Float.isSignMinus f (i2s x)
   [@@by enumerate ["f"] @> auto]
   [@@timeout 60]
 
-(** Proof that our implementation of [is_normal] is correct *)
+(** Proof that our implementation of [isNormal] is correct *)
 theorem correct_is_normal (f : Format.t) (x : Float.t) =
   format_supported f ==>
-  Implementation.Float.is_normal f x = Specification.Float.is_normal f (i2s x)
+  Implementation.Float.isNormal f x = Specification.Float.isNormal f (i2s x)
   [@@by enumerate ["f"] @> auto]
   [@@timeout 60]
 
-(** Proof that our implementation of [is_subnormal] is correct *)
+(** Proof that our implementation of [isSubnormal] is correct *)
 theorem correct_is_subnormal (f : Format.t) (x : Float.t) =
   format_supported f ==>
-  Implementation.Float.is_subnormal f x = Specification.Float.is_subnormal f (i2s x)
+  Implementation.Float.isSubnormal f x = Specification.Float.isSubnormal f (i2s x)
   [@@by enumerate ["f"] @> auto]
   [@@timeout 60]

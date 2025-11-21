@@ -57,40 +57,40 @@ theorem map2_ok (f : 'a -> 'b -> 'c) (xs : 'a list) (ys : 'b list) =
   [@@by auto]
   [@@fc]
 
-(** [aug_add] never returns an error *)
-theorem aug_add_ok (x : CER.t) (y : CER.t) =
-  Result.is_ok ((Float.aug_add x y) [@trigger])
+(** [wAdd] never returns an error *)
+theorem wAdd_ok (x : CER.t) (y : CER.t) =
+  Result.is_ok ((Float.wAdd x y) [@trigger])
   [@@by auto]
   [@@fc]
 
-(** [aug_multiply] never returns an error *)
-theorem aug_multiply_ok (x : CER.t) (y : CER.t) =
-  Result.is_ok ((Float.aug_multiply x y) [@trigger])
+(** [wMultiply] never returns an error *)
+theorem wMultiply_ok (x : CER.t) (y : CER.t) =
+  Result.is_ok ((Float.wMultiply x y) [@trigger])
   [@@by auto]
   [@@fc]
 
-(** [aug_divide] never returns an error *)
-theorem aug_divide_ok (x : CER.t) (y : CER.t) =
-  Result.is_ok ((Float.aug_divide x y) [@trigger])
+(** [wDivide] never returns an error *)
+theorem wDivide_ok (x : CER.t) (y : CER.t) =
+  Result.is_ok ((Float.wDivide x y) [@trigger])
   [@@by auto]
   [@@fc]
 
-(** [aug_maximum_finite] never returns an error *)
-theorem aug_maximum_finite_ok (x : CER.t) (y : CER.t) =
-  Result.is_ok ((Float.aug_maximum_finite x y) [@trigger])
+(** [wMaximumFinite] never returns an error *)
+theorem wMaximumFinite_ok (x : CER.t) (y : CER.t) =
+  Result.is_ok ((Float.wMaximumFinite x y) [@trigger])
   [@@by auto]
   [@@fc]
 
-(** [aug_copy_sign] never returns an error *)
-theorem aug_copy_sign_ok (x : CER.t) (y : CER.t) =
-  Result.is_ok ((Float.aug_copy_sign x y) [@trigger])
+(** [wCopySign] never returns an error *)
+theorem wCopySign_ok (x : CER.t) (y : CER.t) =
+  Result.is_ok ((Float.wCopySign x y) [@trigger])
   [@@by auto]
   [@@fc]
 
-(* theorem reduce_aug_add_ok (x : CER.t list) =
+(* theorem reduce_wAdd_ok (x : CER.t list) =
   List.length x >= 1 ==>
-  Result.is_ok ((Float.reduce_aug_add x) [@trigger])
-  [@@disable Float.aug_add]
+  Result.is_ok ((Float.reduce_wAdd x) [@trigger])
+  [@@disable Float.wAdd]
   [@@by auto]
   [@@fc] *)
 
@@ -98,57 +98,57 @@ theorem reduce_trivial_ok (x: 'a list) =
   List.length x >= 2 ==> Result.is_ok ((reduce (fun x y -> Ok CER.zero) x))
   [@@by auto]
 
-theorem reduce_aug_add_ok (x : CER.t list) =
-  List.length x >= 2 ==> Result.is_ok ((reduce Float.aug_add x) [@trigger])
+theorem reduce_wAdd_ok (x : CER.t list) =
+  List.length x >= 2 ==> Result.is_ok ((reduce Float.wAdd x) [@trigger])
   [@@by auto]
   [@@fc]
 
-theorem reduce_aug_maximum_finite_ok (x : CER.t list) =
-  List.length x >= 2 ==> Result.is_ok ((Float.reduce Float.aug_maximum_finite x) [@trigger])
+theorem reduce_wMaximumFinite_ok (x : CER.t list) =
+  List.length x >= 2 ==> Result.is_ok ((Float.reduce Float.wMaximumFinite x) [@trigger])
   [@@by auto]
   [@@fc]
 
 (** 6.0.1 DecodeBlock *)
 
-theorem map_aug_multiply_ok (f_s : Format.t) (f_x : Format.t) (s, x : Float.t * Float.t list) =
-  Result.is_ok ((extract_error ((Float.map_aug_multiply f_s f_x s x) [@trigger])))
-  [@@disable Float.decode, Float.aug_multiply, List.map]
+theorem map_wMultiply_ok (f_s : Format.t) (f_x : Format.t) (s, x : Float.t * Float.t list) =
+  Result.is_ok ((extract_error ((Float.map_wMultiply f_s f_x s x) [@trigger])))
+  [@@disable Float.wDecode, Float.wMultiply, List.map]
   [@@by auto]
   [@@fc]
 
-(* theorem map_aug_multiply_preserves_length (f_s : Format.t) (f_x : Format.t) (s, x : Float.t * Float.t list) =
-  List.length ((Float.map_aug_multiply f_s f_x s x) [@trigger]) = List.length x
-  [@@disable Float.decode, Float.aug_multiply, List.map]
+(* theorem map_wMultiply_preserves_length (f_s : Format.t) (f_x : Format.t) (s, x : Float.t * Float.t list) =
+  List.length ((Float.map_wMultiply f_s f_x s x) [@trigger]) = List.length x
+  [@@disable Float.wDecode, Float.wMultiply, List.map]
   [@@by auto]
   [@@fc] *)
 
-theorem decode_block_ok (b : int) (f_s : Format.t) (f_x : Format.t) (s : Float.t) (x : Float.t list) =
+theorem wBlockDecode_ok (b : int) (f_s : Format.t) (f_x : Format.t) (s : Float.t) (x : Float.t list) =
   b = List.length x && b >= 1 ==>
-  Result.is_ok ((Float.decode_block b f_s f_x (s, x)) [@trigger])
+  Result.is_ok ((Float.wBlockDecode b f_s f_x (s, x)) [@trigger])
   [@@timeout 10]
-  [@@disable Float.decode, Float.aug_multiply, List.map]
+  [@@disable Float.wDecode, Float.wMultiply, List.map]
   [@@by
-    [%use map_aug_multiply_ok f_s f_x (s, x)] @>
-    [%expand "Specification.Float.decode_block"] @>
+    [%use map_wMultiply_ok f_s f_x (s, x)] @>
+    [%expand "Specification.Float.wBlockDecode"] @>
     simplify ()]
   [@@fc]
 
-theorem decode_block_preserves_length (b : int)  (f_s : Format.t) (f_x : Format.t) (s : Float.t) (x : Float.t list) =
+theorem wBlockDecode_preserves_length (b : int)  (f_s : Format.t) (f_x : Format.t) (s : Float.t) (x : Float.t list) =
   b = List.length x && b >= 1 ==>
-  match (Float.decode_block b f_s f_x (s, x)) [@trigger] with
+  match (Float.wBlockDecode b f_s f_x (s, x)) [@trigger] with
   | Ok r -> List.length r = b
   | _ -> false
   [@@timeout 10]
-  [@@disable Float.decode, Float.aug_multiply, Float.map_aug_multiply, List.map]
+  [@@disable Float.wDecode, Float.wMultiply, Float.map_wMultiply, List.map]
   [@@by
-    [%use map_aug_multiply_ok f_s f_x (s, x)] @>
+    [%use map_wMultiply_ok f_s f_x (s, x)] @>
     induct ~do_not:["gen"; "fert"; "delim"] ()
   ]
   [@@fc]
 
 (** 6.0.2 EncodeBlock *)
 
-theorem encode_block_map_ok (cs : CER.t) (x : CER.t list) =
+theorem wBlockProject_map_ok (cs : CER.t) (x : CER.t list) =
   Result.is_ok (extract_error (List.map
         (fun x_i ->
           match cs with
@@ -156,71 +156,71 @@ theorem encode_block_map_ok (cs : CER.t) (x : CER.t list) =
           | _ when x_i = CER.NaN -> Ok CER.NaN
           | R 0.0 -> Ok (R 0.0)
           | (PINF | NINF) -> Ok (R 1.0)
-          | _ -> aug_divide x_i cs)
+          | _ -> wDivide x_i cs)
         x))
-  [@@disable Float.decode, Float.aug_divide, List.map]
+  [@@disable Float.wDecode, Float.wDivide, List.map]
   [@@by auto]
 
 theorem map_project_ok f pi x =
   Result.is_ok (extract_error ((Float.map_project f pi x) [@trigger]))
-  [@@disable Float.project]
+  [@@disable Float.wProject]
   [@@by induct ~do_not:["gen"; "fert"; "delim"] ()]
   [@@fc]
 
-theorem encode_block_map_cz_ok cs x =
-  Result.is_ok (extract_error ((encode_block_map_cz cs x) [@trigger]))
+theorem wBlockProject_map_cz_ok cs x =
+  Result.is_ok (extract_error ((wBlockProject_map_cz cs x) [@trigger]))
   [@@by auto]
   [@@fc]
 
-theorem encode_block_ok (b : int) (f_s : Format.t) (f_z : Format.t) (pi_z : Projection.t) (s : t) (x : CER.t list) =
+theorem wBlockProject_ok (b : int) (f_s : Format.t) (f_z : Format.t) (pi_z : Projection.t) (s : t) (x : CER.t list) =
   b = List.length x ==>
-  Result.is_ok ((Float.encode_block b f_s f_z pi_z (s, x)) [@trigger])
+  Result.is_ok ((Float.wBlockProject b f_s f_z pi_z (s, x)) [@trigger])
   [@@timeout 60]
-  [@@disable Float.decode, Float.aug_divide, Float.project, List.map, Float.map_project]
+  [@@disable Float.wDecode, Float.wDivide, Float.wProject, List.map, Float.map_project]
   [@@by induct ~do_not:["gen"; "fert"; "delim"] ()]
   [@@fc]
 
 (** 6.0.3 ConvertFromBlock *)
 
-theorem convert_from_block_ok
+theorem convertFromBlock_ok
   (b : int)
   (f_s : Format.t) (f_x : Format.t) (f_z : Format.t)
   (pi_s : Projection.t) (pi_z : Projection.t)
   (s, x : t * t list) =
   b = List.length x && b >= 1 ==>
-  Result.is_ok (Float.convert_from_block b f_s f_x f_z pi_s pi_z (s, x))
+  Result.is_ok (Float.convertFromBlock b f_s f_x f_z pi_s pi_z (s, x))
   [@@timeout 10]
-  [@@disable Float.decode, Float.map_project, Float.decode_block]
+  [@@disable Float.wDecode, Float.map_project, Float.wBlockDecode]
   [@@by auto]
 
 (** 6.0.4 ConvertToBlock *)
 
-theorem convert_to_block_ok
+theorem convertToBlock_ok
   (b : int)
   (f_s : Format.t) (f_x : Format.t) (f_z : Format.t) (pi_z : Projection.t)
   (x, s : t list * t) =
   b = List.length x ==>
-  Result.is_ok (Float.convert_to_block b f_s f_x f_z pi_z (x, s))
-  [@@disable Float.decode, Float.map_project, Float.map_decode, Float.encode_block]
+  Result.is_ok (Float.convertToBlock b f_s f_x f_z pi_z (x, s))
+  [@@disable Float.wDecode, Float.map_project, Float.map_decode, Float.wBlockProject]
   [@@by auto]
 
 (** 6.0.5 ConvertToBlockMaxAbsFinite *)
 
-theorem map_aug_abs_ok (xs : CER.t list) =
-  Result.is_ok ((extract_error (map_aug_abs xs)) [@trigger])
-  [@@disable Float.decode, Float.aug_abs, List.map]
+theorem map_wabs_ok (xs : CER.t list) =
+  Result.is_ok ((extract_error (map_wabs xs)) [@trigger])
+  [@@disable Float.wDecode, Float.wAbs, List.map]
   [@@by auto]
   [@@fc]
 
-theorem reduce_aug_maximum_finite_ok (x : CER.t list) =
+theorem reduce_wMaximumFinite_ok (x : CER.t list) =
   List.length x >= 1 ==>
-  Result.is_ok ((Float.reduce_aug_maximum_finite x) [@trigger])
+  Result.is_ok ((Float.reduce_wMaximumFinite x) [@trigger])
   [@@by auto]
   [@@fc]
 
 theorem map_convert_maf_ok s' (x : CER.t list) =
   Result.is_ok (extract_error ((Float.map_convert_maf s' x) [@trigger]))
-  [@@disable Float.aug_divide, List.map]
+  [@@disable Float.wDivide, List.map]
   [@@by auto]
   [@@fc]
 
@@ -230,45 +230,47 @@ theorem convert_to_block_max_abs_finite_ok
   (pi_s : Projection.t) (pi_z : Projection.t)
   (x : t list) =
   b >= 1 && b = List.length x ==>
-  Result.is_ok (convert_to_block_max_abs_finite b f_s f_x f_z pi_s pi_z x)
-  [@@disable Float.reduce, Float.aug_maximum_finite, Float.aug_divide, Float.project, Float.decode, Float.map_aug_abs, Float.map_decode, Float.map_project, Float.reduce_aug_maximum_finite, Float.map_convert_maf, List.length, Format.parameters]
+  Result.is_ok (convertToBlockMaxAbsFinite b f_s f_x f_z pi_s pi_z x)
+  [@@disable Float.reduce, Float.wMaximumFinite, Float.wDivide, Float.wProject, Float.wDecode,
+    Float.map_wabs, Float.map_decode, Float.map_project, Float.reduce_wMaximumFinite,
+    Float.map_convert_maf, List.length, Format.parameters]
   [@@by induct ~do_not:["gen"; "fert"; "delim"] ()]
 
 (** 6.0.3 DotBlock *)
 
-theorem reduce_aug_add_confl_ok (x : CER.t list) =
-  List.length x >= 1 ==> Result.is_ok ((reduce_aug_add x) [@trigger])
+theorem reduce_wAdd_confl_ok (x : CER.t list) =
+  List.length x >= 1 ==> Result.is_ok ((reduce_wAdd x) [@trigger])
   [@@by auto]
   [@@fc]
 
-theorem reduce_aug_maximum_finite_extract_ok (xs : (CER.t, 'e) Result.t list) =
+theorem reduce_wMaximumFinite_extract_ok (xs : (CER.t, 'e) Result.t list) =
   List.length xs >= 2 ==>
   let r = (
     let* ys = extract_error xs in
-    Float.reduce Float.aug_maximum_finite ys) in
+    Float.reduce Float.wMaximumFinite ys) in
   Result.is_ok (extract_error xs) [@trigger] ==> Result.is_ok r
-  [@@disable Float.reduce, Float.aug_maximum_finite, List.map]
+  [@@disable Float.reduce, Float.wMaximumFinite, List.map]
   [@@by auto]
   [@@fc]
 
-theorem map2_aug_multiply_elems_ok cx cy =
+theorem map2_wMultiply_elems_ok cx cy =
   List.length cx = List.length cy ==>
-  match (Float.map2_aug_multiply cx cy) [@trigger] with
+  match (Float.map2_wMultiply cx cy) [@trigger] with
   | Ok q -> Result.is_ok (extract_error q)
   | _ -> false
-  [@@disable Float.aug_multiply, List.map2]
+  [@@disable Float.wMultiply, List.map2]
   [@@by induct ~do_not:["gen"; "fert"; "delim"] ()]
   [@@fc]
 
-theorem map2_aug_multiply_preserves_length cx cy =
+theorem map2_wMultiply_preserves_length cx cy =
   List.length cx = List.length cy ==>
-  match (Float.map2_aug_multiply cx cy) [@trigger] with
+  match (Float.map2_wMultiply cx cy) [@trigger] with
   | Ok q -> (
     match extract_error q with
     | Ok r -> List.length r = List.length cx
     | _ -> false)
   | _ -> false
-  [@@disable Float.aug_multiply, List.map2]
+  [@@disable Float.wMultiply, List.map2]
   [@@by induct ~do_not:["gen"; "fert"; "delim"] ()]
   [@@fc]
 
@@ -281,8 +283,8 @@ theorem block_dot_product_ok
   (s_x, x : Float.t * Float.t list)
   (s_y, y : Float.t * Float.t list) =
   b = List.length x && b = List.length y && b >= 1 ==>
-  Result.is_ok (Float.block_dot_product b f_sx f_x f_sy f_y f_z pi_z (s_x, x) (s_y, y))
-  [@@disable Float.aug_add, Float.reduce_aug_add, Float.map2_aug_multiply, Float.decode_block, Float.project, Format.parameters]
+  Result.is_ok (Float.blockDotProduct b f_sx f_x f_sy f_y f_z pi_z (s_x, x) (s_y, y))
+  [@@disable Float.wAdd, Float.reduce_wAdd, Float.map2_wMultiply, Float.wBlockDecode, Float.wProject, Format.parameters]
   [@@by auto]
 
 let rec equal_block_sizes (b : int) (args : block_op_argument list) : bool =
@@ -295,83 +297,83 @@ let rec equal_list_lengths (b : int) (xs : 'a list list) : bool =
   | [] -> true
   | x :: xs -> List.length x = b && equal_list_lengths b xs
 
-let decode_lb b p a = decode_block b p.f_s p.f_x (a.s, a.x)
+let decode_lb b p a = wBlockDecode b p.f_s p.f_x (a.s, a.x)
 
 theorem decode_lb_ok b p a =
   b >= 1 && List.length a.x = b ==>
   Result.is_ok ((decode_lb b p a) [@trigger])
-  [@@disable Float.decode_block]
+  [@@disable Float.wBlockDecode]
   [@@by auto]
   [@@fc]
 
 theorem decode_lb_ok b p a =
   b >= 1 && List.length a.x = b ==>
   Result.is_ok ((decode_lb b) p a)
-  [@@disable Float.decode_block, List.exists, List.for_all, List.length, List.map2]
+  [@@disable Float.wBlockDecode, List.exists, List.for_all, List.length, List.map2]
   [@@by auto]
   (* [@@fc] *)
 
-theorem block_op_map2_decode_block_ok b params args =
+theorem block_op_map2_wBlockDecode_ok b params args =
   b >= 1 &&
   List.length params = List.length args &&
   equal_block_sizes b args
   ==>
-  Result.is_ok ((block_op_map2_decode_block b params args) [@trigger])
-  [@@disable Float.decode_block, List.map2, List.exists, List.for_all, List.length]
+  Result.is_ok ((block_op_map2_wBlockDecode b params args) [@trigger])
+  [@@disable Float.wBlockDecode, List.map2, List.exists, List.for_all, List.length]
   [@@by simplify ()]
   [@@fc]
 
-theorem block_op_map2_decode_block_elems_ok b params args =
+theorem block_op_map2_wBlockDecode_elems_ok b params args =
   b >= 1 &&
   List.length params = List.length args &&
   equal_block_sizes b args
   ==>
-  match (block_op_map2_decode_block b params args) [@trigger] with
+  match (block_op_map2_wBlockDecode b params args) [@trigger] with
   | Ok q -> Result.is_ok (extract_error q)
   | _ -> false
-  [@@disable Float.decode_block]
+  [@@disable Float.wBlockDecode]
   (* This one fails non-determinstically, apparently because of different
     ordering of constraints from the simplifier. *)
   [@@by induct ~do_not:["gen"; "fert"; "delim"] ()]
   [@@fc]
 
-theorem block_op_map2_decode_block_preserves_length b params args =
+theorem block_op_map2_wBlockDecode_preserves_length b params args =
   List.length params = List.length args
   ==>
-  match (block_op_map2_decode_block b params args) [@trigger] with
+  match (block_op_map2_wBlockDecode b params args) [@trigger] with
   | Ok r -> (
     match extract_error r with
     | Ok decoded -> List.length decoded = List.length args
     | Error _ -> true)
   | Error _ -> true
-  [@@disable Float.decode_block]
+  [@@disable Float.wBlockDecode]
   [@@by induct ~do_not:["gen"; "fert"; "delim"] ()]
   [@@fc]
 
-theorem block_op_map2_decode_block_preserves_block_size b params args =
+theorem block_op_map2_wBlockDecode_preserves_block_size b params args =
   List.length params = List.length args
   ==>
-  match (block_op_map2_decode_block b params args) [@trigger] with
+  match (block_op_map2_wBlockDecode b params args) [@trigger] with
   | Ok r -> (
     match extract_error r with
     | Ok decoded -> List.for_all (fun d_i -> List.length d_i = b) decoded
     | Error _ -> true)
   | Error _ -> true
-  [@@disable Float.decode_block]
+  [@@disable Float.wBlockDecode]
   [@@timeout 120]
   [@@by induct ~do_not:["gen"; "fert"; "delim"] ()]
   [@@fc]
 
-theorem block_op_map2_decode_block_preserves_elems_length b params args =
+theorem block_op_map2_wBlockDecode_preserves_elems_length b params args =
   List.length params = List.length args
   ==>
-  match (block_op_map2_decode_block b params args) [@trigger] with
+  match (block_op_map2_wBlockDecode b params args) [@trigger] with
   | Ok r -> (
     match extract_error r with
     | Ok decoded -> equal_list_lengths b decoded
     | Error _ -> true)
   | Error _ -> true
-  [@@disable Float.decode_block]
+  [@@disable Float.wBlockDecode]
   [@@by induct ~do_not:["gen"; "fert"; "delim"] ()]
   [@@fc]
 
@@ -396,221 +398,221 @@ theorem block_op_map2_wop_ternary_ok wop x1 x2 x3 =
   [@@by auto]
 
 theorem block_op_map2_abs_elems_ok x1 =
-  match (Float.block_op_map2_wop_unary Float.aug_abs x1) [@trigger] with
+  match (Float.block_op_map2_wop_unary Float.wAbs x1) [@trigger] with
   | Ok r -> Result.is_ok (extract_error r)
   | Error _ -> false
-  [@@disable Float.aug_abs]
+  [@@disable Float.wAbs]
   [@@by auto]
   [@@fc]
 
 theorem block_op_map2_negate_elems_ok x1 =
-  match (Float.block_op_map2_wop_unary Float.aug_negate x1) [@trigger] with
+  match (Float.block_op_map2_wop_unary Float.wNegate x1) [@trigger] with
   | Ok r -> Result.is_ok (extract_error r)
   | Error _ -> false
-  [@@disable Float.aug_negate]
+  [@@disable Float.wNegate]
   [@@by auto]
   [@@fc]
 
 theorem block_op_map2_exp_elems_ok x1 =
-  match (Float.block_op_map2_wop_unary Float.aug_exp x1) [@trigger] with
+  match (Float.block_op_map2_wop_unary Float.wExp x1) [@trigger] with
   | Ok r -> Result.is_ok (extract_error r)
   | Error _ -> false
-  [@@disable Float.aug_exp]
+  [@@disable Float.wExp]
   [@@by auto]
   [@@fc]
 
 theorem block_op_map2_sqrt_elems_ok x1 =
-  match (Float.block_op_map2_wop_unary Float.aug_sqrt x1) [@trigger] with
+  match (Float.block_op_map2_wop_unary Float.wSqrt x1) [@trigger] with
   | Ok r -> Result.is_ok (extract_error r)
   | Error _ -> false
-  [@@disable Float.aug_sqrt]
+  [@@disable Float.wSqrt]
   [@@by auto]
   [@@fc]
 
 theorem block_op_map2_rsqrt_elems_ok x1 =
-  match (Float.block_op_map2_wop_unary Float.aug_rsqrt x1) [@trigger] with
+  match (Float.block_op_map2_wop_unary Float.wRSqrt x1) [@trigger] with
   | Ok r -> Result.is_ok (extract_error r)
   | Error _ -> false
-  [@@disable Float.aug_rsqrt]
+  [@@disable Float.wRSqrt]
   [@@by auto]
   [@@fc]
 
 theorem block_op_map2_exp2_elems_ok x1 =
-  match (Float.block_op_map2_wop_unary Float.aug_exp2 x1) [@trigger] with
+  match (Float.block_op_map2_wop_unary Float.wExp2 x1) [@trigger] with
   | Ok r -> Result.is_ok (extract_error r)
   | Error _ -> false
-  [@@disable Float.aug_exp2]
+  [@@disable Float.wExp2]
   [@@by auto]
   [@@fc]
 
 theorem block_op_map2_log2_elems_ok x1 =
-  match (Float.block_op_map2_wop_unary Float.aug_log2 x1) [@trigger] with
+  match (Float.block_op_map2_wop_unary Float.wLog2 x1) [@trigger] with
   | Ok r -> Result.is_ok (extract_error r)
   | Error _ -> false
-  [@@disable Float.aug_log2]
+  [@@disable Float.wLog2]
   [@@by auto]
   [@@fc]
 
 theorem block_op_map2_log_elems_ok x1 =
-  match (Float.block_op_map2_wop_unary Float.aug_log x1) [@trigger] with
+  match (Float.block_op_map2_wop_unary Float.wLog2 x1) [@trigger] with
   | Ok r -> Result.is_ok (extract_error r)
   | Error _ -> false
-  [@@disable Float.aug_log]
+  [@@disable Float.wLog2]
   [@@by auto]
   [@@fc]
 
 theorem block_op_map2_recip_elems_ok x1 =
-  match (Float.block_op_map2_wop_unary Float.aug_recip x1) [@trigger] with
+  match (Float.block_op_map2_wop_unary Float.wRecip x1) [@trigger] with
   | Ok r -> Result.is_ok (extract_error r)
   | Error _ -> false
-  [@@disable Float.aug_recip]
+  [@@disable Float.wRecip]
   [@@by auto]
   [@@fc]
 
-theorem block_op_map2_copy_sign_elems_ok x1 x2 =
+theorem block_op_map2_CopySign_elems_ok x1 x2 =
   List.length x1 = List.length x2 ==>
-  match (Float.block_op_map2_wop_binary Float.aug_copy_sign x1 x2) [@trigger] with
+  match (Float.block_op_map2_wop_binary Float.wCopySign x1 x2) [@trigger] with
   | Ok r -> Result.is_ok (extract_error r)
   | Error _ -> false
-  [@@disable Float.aug_copy_sign]
+  [@@disable Float.wCopySign]
   [@@by auto]
   [@@fc]
 
 theorem block_op_map2_add_elems_ok x1 x2 =
   List.length x1 = List.length x2 ==>
-  match (Float.block_op_map2_wop_binary Float.aug_add x1 x2) [@trigger] with
+  match (Float.block_op_map2_wop_binary Float.wAdd x1 x2) [@trigger] with
   | Ok r -> Result.is_ok (extract_error r)
   | Error _ -> false
-  [@@disable Float.aug_add]
+  [@@disable Float.wAdd]
   [@@by auto]
   [@@fc]
 
 theorem block_op_map2_subtract_elems_ok x1 x2 =
   List.length x1 = List.length x2 ==>
-  match (Float.block_op_map2_wop_binary Float.aug_subtract x1 x2) [@trigger] with
+  match (Float.block_op_map2_wop_binary Float.wSubtract x1 x2) [@trigger] with
   | Ok r -> Result.is_ok (extract_error r)
   | Error _ -> false
-  [@@disable Float.aug_subtract]
+  [@@disable Float.wSubtract]
   [@@by auto]
   [@@fc]
 
 theorem block_op_map2_multiply_elems_ok x1 x2 =
   List.length x1 = List.length x2 ==>
-  match (Float.block_op_map2_wop_binary Float.aug_multiply x1 x2) [@trigger] with
+  match (Float.block_op_map2_wop_binary Float.wMultiply x1 x2) [@trigger] with
   | Ok r -> Result.is_ok (extract_error r)
   | Error _ -> false
-  [@@disable Float.aug_multiply]
+  [@@disable Float.wMultiply]
   [@@by auto]
   [@@fc]
 
 theorem block_op_map2_divide_elems_ok x1 x2 =
   List.length x1 = List.length x2 ==>
-  match (Float.block_op_map2_wop_binary Float.aug_divide x1 x2) [@trigger] with
+  match (Float.block_op_map2_wop_binary Float.wDivide x1 x2) [@trigger] with
   | Ok r -> Result.is_ok (extract_error r)
   | Error _ -> false
-  [@@disable Float.aug_divide]
+  [@@disable Float.wDivide]
   [@@by auto]
   [@@fc]
 
 theorem block_op_map2_hypot_elems_ok x1 x2 =
   List.length x1 = List.length x2 ==>
-  match (Float.block_op_map2_wop_binary Float.aug_hypot x1 x2) [@trigger] with
+  match (Float.block_op_map2_wop_binary Float.wHypot x1 x2) [@trigger] with
   | Ok r -> Result.is_ok (extract_error r)
   | Error _ -> false
-  [@@disable Float.aug_hypot]
+  [@@disable Float.wHypot]
   [@@by auto]
   [@@fc]
 
 theorem block_op_map2_minimum_elems_ok x1 x2 =
   List.length x1 = List.length x2 ==>
-  match (Float.block_op_map2_wop_binary Float.aug_minimum x1 x2) [@trigger] with
+  match (Float.block_op_map2_wop_binary Float.wMinimum x1 x2) [@trigger] with
   | Ok r -> Result.is_ok (extract_error r)
   | Error _ -> false
-  [@@disable Float.aug_minimum]
+  [@@disable Float.wMinimum]
   [@@by auto]
   [@@fc]
 
 theorem block_op_map2_minimum_magnitude_elems_ok x1 x2 =
   List.length x1 = List.length x2 ==>
-  match (Float.block_op_map2_wop_binary Float.aug_minimum_magnitude x1 x2) [@trigger] with
+  match (Float.block_op_map2_wop_binary Float.wMinimumMagnitude x1 x2) [@trigger] with
   | Ok r -> Result.is_ok (extract_error r)
   | Error _ -> false
-  [@@disable Float.aug_minimum_magnitude]
+  [@@disable Float.wMinimumMagnitude]
   [@@by auto]
   [@@fc]
 
 theorem block_op_map2_minimum_magnitude_number_elems_ok x1 x2 =
   List.length x1 = List.length x2 ==>
-  match (Float.block_op_map2_wop_binary Float.aug_minimum_magnitude_number x1 x2) [@trigger] with
+  match (Float.block_op_map2_wop_binary Float.wMinimumMagnitudeNumber x1 x2) [@trigger] with
   | Ok r -> Result.is_ok (extract_error r)
   | Error _ -> false
-  [@@disable Float.aug_minimum_magnitude_number]
+  [@@disable Float.wMinimumMagnitudeNumber]
   [@@by auto]
   [@@fc]
 
 theorem block_op_map2_minimum_number_elems_ok x1 x2 =
   List.length x1 = List.length x2 ==>
-  match (Float.block_op_map2_wop_binary Float.aug_minimum_number x1 x2) [@trigger] with
+  match (Float.block_op_map2_wop_binary Float.wMinimumNumber x1 x2) [@trigger] with
   | Ok r -> Result.is_ok (extract_error r)
   | Error _ -> false
-  [@@disable Float.aug_minimum_number]
+  [@@disable Float.wMinimumNumber]
   [@@by auto]
   [@@fc]
 
 theorem block_op_map2_maximum_elems_ok x1 x2 =
   List.length x1 = List.length x2 ==>
-  match (Float.block_op_map2_wop_binary Float.aug_maximum x1 x2) [@trigger] with
+  match (Float.block_op_map2_wop_binary Float.wMaximum x1 x2) [@trigger] with
   | Ok r -> Result.is_ok (extract_error r)
   | Error _ -> false
-  [@@disable Float.aug_maximum]
+  [@@disable Float.wMaximum]
   [@@by auto]
   [@@fc]
 
 theorem block_op_map2_maximum_magnitude_elems_ok x1 x2 =
   List.length x1 = List.length x2 ==>
-  match (Float.block_op_map2_wop_binary Float.aug_maximum_magnitude x1 x2) [@trigger] with
+  match (Float.block_op_map2_wop_binary Float.wMaximumMagnitude x1 x2) [@trigger] with
   | Ok r -> Result.is_ok (extract_error r)
   | Error _ -> false
-  [@@disable Float.aug_maximum_magnitude]
+  [@@disable Float.wMaximumMagnitude]
   [@@by auto]
   [@@fc]
 
 theorem block_op_map2_maximum_magnitude_number_elems_ok x1 x2 =
   List.length x1 = List.length x2 ==>
-  match (Float.block_op_map2_wop_binary Float.aug_maximum_magnitude_number x1 x2) [@trigger] with
+  match (Float.block_op_map2_wop_binary Float.wMaximumMagnitudeNumber x1 x2) [@trigger] with
   | Ok r -> Result.is_ok (extract_error r)
   | Error _ -> false
-  [@@disable Float.aug_maximum_magnitude_number]
+  [@@disable Float.wMaximumMagnitudeNumber]
   [@@by auto]
   [@@fc]
 
 
 theorem block_op_map2_maximum_number_elems_ok x1 x2 =
   List.length x1 = List.length x2 ==>
-  match (Float.block_op_map2_wop_binary Float.aug_maximum_number x1 x2) [@trigger] with
+  match (Float.block_op_map2_wop_binary Float.wMaximumNumber x1 x2) [@trigger] with
   | Ok r -> Result.is_ok (extract_error r)
   | Error _ -> false
-  [@@disable Float.aug_maximum_number]
+  [@@disable Float.wMaximumNumber]
   [@@by auto]
   [@@fc]
 
 theorem block_op_map2_fma_elems_ok x1 x2 x3 =
   List.length x1 = List.length x2 &&
   List.length x2 = List.length x3 ==>
-  match (Float.block_op_map2_wop_ternary Float.aug_fma x1 x2 x3) [@trigger] with
+  match (Float.block_op_map2_wop_ternary Float.wFMA x1 x2 x3) [@trigger] with
   | Ok r -> Result.is_ok (extract_error r)
   | Error _ -> false
-  [@@disable Float.aug_fma]
+  [@@disable Float.wFMA]
   [@@by auto]
   [@@fc]
 
 theorem block_op_map2_faa_elems_ok x1 x2 x3 =
   List.length x1 = List.length x2 &&
   List.length x2 = List.length x3 ==>
-  match (Float.block_op_map2_wop_ternary Float.aug_faa x1 x2 x3) [@trigger] with
+  match (Float.block_op_map2_wop_ternary Float.wFAA x1 x2 x3) [@trigger] with
   | Ok r -> Result.is_ok (extract_error r)
   | Error _ -> false
-  [@@disable Float.aug_faa]
+  [@@disable Float.wFAA]
   [@@by auto]
   [@@fc]
 
@@ -658,12 +660,12 @@ theorem block_abs_ok
   (s_x, x : Float.t * Float.t list)
   (s_z : Float.t) =
   block_preconditions_unary b f_sx f_x f_s f_z pi_s pi_z (s_x, x) s_z ==>
-  Result.is_ok (Float.block_abs b f_sx f_x f_s f_z pi_s pi_z (s_x, x) s_z)
+  Result.is_ok (Float.blockAbs b f_sx f_x f_s f_z pi_s pi_z (s_x, x) s_z)
   [@@timeout 3600]
   [@@disable
-    Float.reduce, Float.aug_abs, Float.map2_aug_multiply,
-    Float.decode_block, Float.project, Format.parameters, List.map, List.map2,
-    Float.encode_block, Float.block_op_map2_wop_unary]
+    Float.reduce, Float.wAbs, Float.map2_wMultiply,
+    Float.wBlockDecode, Float.wProject, Format.parameters, List.map, List.map2,
+    Float.wBlockProject, Float.block_op_map2_wop_unary]
   [@@by induct ~do_not:["gen"; "fert"; "delim"] ()]
 
 theorem block_negate_ok
@@ -676,12 +678,12 @@ theorem block_negate_ok
   (s_x, x : Float.t * Float.t list)
   (s_z : Float.t) =
   block_preconditions_unary b f_sx f_x f_s f_z pi_s pi_z (s_x, x) s_z ==>
-  Result.is_ok (Float.block_negate b f_sx f_x f_s f_z pi_s pi_z (s_x, x) s_z)
+  Result.is_ok (Float.blockNegate b f_sx f_x f_s f_z pi_s pi_z (s_x, x) s_z)
   [@@timeout 3600]
   [@@disable
-    Float.reduce, Float.aug_negate, Float.map2_aug_multiply,
-    Float.decode_block, Float.project, Format.parameters, List.map, List.map2,
-    Float.encode_block, Float.block_op_map2_wop_unary]
+    Float.reduce, Float.wNegate, Float.map2_wMultiply,
+    Float.wBlockDecode, Float.wProject, Format.parameters, List.map, List.map2,
+    Float.wBlockProject, Float.block_op_map2_wop_unary]
   [@@by induct ~do_not:["gen"; "fert"; "delim"] ()]
 
 theorem block_exp_ok
@@ -694,12 +696,12 @@ theorem block_exp_ok
   (s_x, x : Float.t * Float.t list)
   (s_z : Float.t) =
   block_preconditions_unary b f_sx f_x f_s f_z pi_s pi_z (s_x, x) s_z ==>
-  Result.is_ok (Float.block_exp b f_sx f_x f_s f_z pi_s pi_z (s_x, x) s_z)
+  Result.is_ok (Float.blockExp b f_sx f_x f_s f_z pi_s pi_z (s_x, x) s_z)
   [@@timeout 3600]
   [@@disable
-    Float.reduce, Float.aug_exp, Float.map2_aug_multiply,
-    Float.decode_block, Float.project, Format.parameters, List.map, List.map2,
-    Float.encode_block, Float.block_op_map2_wop_unary]
+    Float.reduce, Float.wExp, Float.map2_wMultiply,
+    Float.wBlockDecode, Float.wProject, Format.parameters, List.map, List.map2,
+    Float.wBlockProject, Float.block_op_map2_wop_unary]
   [@@by induct ~do_not:["gen"; "fert"; "delim"] ()]
 
 theorem block_sqrt_ok
@@ -712,12 +714,12 @@ theorem block_sqrt_ok
   (s_x, x : Float.t * Float.t list)
   (s_z : Float.t) =
   block_preconditions_unary b f_sx f_x f_s f_z pi_s pi_z (s_x, x) s_z ==>
-  Result.is_ok (Float.block_sqrt b f_sx f_x f_s f_z pi_s pi_z (s_x, x) s_z)
+  Result.is_ok (Float.blockSqrt b f_sx f_x f_s f_z pi_s pi_z (s_x, x) s_z)
   [@@timeout 3600]
   [@@disable
-    Float.reduce, Float.aug_sqrt, Float.map2_aug_multiply,
-    Float.decode_block, Float.project, Format.parameters, List.map, List.map2,
-    Float.encode_block, Float.block_op_map2_wop_unary]
+    Float.reduce, Float.wSqrt, Float.map2_wMultiply,
+    Float.wBlockDecode, Float.wProject, Format.parameters, List.map, List.map2,
+    Float.wBlockProject, Float.block_op_map2_wop_unary]
   [@@by induct ~do_not:["gen"; "fert"; "delim"] ()]
 
 theorem block_rsqrt_ok
@@ -730,12 +732,12 @@ theorem block_rsqrt_ok
   (s_x, x : Float.t * Float.t list)
   (s_z : Float.t) =
   block_preconditions_unary b f_sx f_x f_s f_z pi_s pi_z (s_x, x) s_z ==>
-  Result.is_ok (Float.block_rsqrt b f_sx f_x f_s f_z pi_s pi_z (s_x, x) s_z)
+  Result.is_ok (Float.blockRSqrt b f_sx f_x f_s f_z pi_s pi_z (s_x, x) s_z)
   [@@timeout 3600]
   [@@disable
-    Float.reduce, Float.aug_rsqrt, Float.map2_aug_multiply,
-    Float.decode_block, Float.project, Format.parameters, List.map, List.map2,
-    Float.encode_block, Float.block_op_map2_wop_unary]
+    Float.reduce, Float.wRSqrt, Float.map2_wMultiply,
+    Float.wBlockDecode, Float.wProject, Format.parameters, List.map, List.map2,
+    Float.wBlockProject, Float.block_op_map2_wop_unary]
   [@@by induct ~do_not:["gen"; "fert"; "delim"] ()]
 
 theorem block_exp2_ok
@@ -748,12 +750,12 @@ theorem block_exp2_ok
   (s_x, x : Float.t * Float.t list)
   (s_z : Float.t) =
   block_preconditions_unary b f_sx f_x f_s f_z pi_s pi_z (s_x, x) s_z ==>
-  Result.is_ok (Float.block_exp2 b f_sx f_x f_s f_z pi_s pi_z (s_x, x) s_z)
+  Result.is_ok (Float.blockExp2 b f_sx f_x f_s f_z pi_s pi_z (s_x, x) s_z)
   [@@timeout 3600]
   [@@disable
-    Float.reduce, Float.aug_exp2, Float.map2_aug_multiply,
-    Float.decode_block, Float.project, Format.parameters, List.map, List.map2,
-    Float.encode_block, Float.block_op_map2_wop_unary]
+    Float.reduce, Float.wExp2, Float.map2_wMultiply,
+    Float.wBlockDecode, Float.wProject, Format.parameters, List.map, List.map2,
+    Float.wBlockProject, Float.block_op_map2_wop_unary]
   [@@by induct ~do_not:["gen"; "fert"; "delim"] ()]
 
 theorem block_log2_ok
@@ -766,12 +768,12 @@ theorem block_log2_ok
   (s_x, x : Float.t * Float.t list)
   (s_z : Float.t) =
   block_preconditions_unary b f_sx f_x f_s f_z pi_s pi_z (s_x, x) s_z ==>
-  Result.is_ok (Float.block_log2 b f_sx f_x f_s f_z pi_s pi_z (s_x, x) s_z)
+  Result.is_ok (Float.blockLog2 b f_sx f_x f_s f_z pi_s pi_z (s_x, x) s_z)
   [@@timeout 3600]
   [@@disable
-    Float.reduce, Float.aug_log2, Float.map2_aug_multiply,
-    Float.decode_block, Float.project, Format.parameters, List.map, List.map2,
-    Float.encode_block, Float.block_op_map2_wop_unary]
+    Float.reduce, Float.wLog2, Float.map2_wMultiply,
+    Float.wBlockDecode, Float.wProject, Format.parameters, List.map, List.map2,
+    Float.wBlockProject, Float.block_op_map2_wop_unary]
   [@@by induct ~do_not:["gen"; "fert"; "delim"] ()]
 
 theorem block_log_ok
@@ -784,12 +786,12 @@ theorem block_log_ok
   (s_x, x : Float.t * Float.t list)
   (s_z : Float.t) =
   block_preconditions_unary b f_sx f_x f_s f_z pi_s pi_z (s_x, x) s_z ==>
-  Result.is_ok (Float.block_log b f_sx f_x f_s f_z pi_s pi_z (s_x, x) s_z)
+  Result.is_ok (Float.blockLog b f_sx f_x f_s f_z pi_s pi_z (s_x, x) s_z)
   [@@timeout 3600]
   [@@disable
-    Float.reduce, Float.aug_log, Float.map2_aug_multiply,
-    Float.decode_block, Float.project, Format.parameters, List.map, List.map2,
-    Float.encode_block, Float.block_op_map2_wop_unary]
+    Float.reduce, Float.wLog, Float.map2_wMultiply,
+    Float.wBlockDecode, Float.wProject, Format.parameters, List.map, List.map2,
+    Float.wBlockProject, Float.block_op_map2_wop_unary]
   [@@by induct ~do_not:["gen"; "fert"; "delim"] ()]
 
 theorem block_recip_ok
@@ -802,12 +804,12 @@ theorem block_recip_ok
   (s_x, x : Float.t * Float.t list)
   (s_z : Float.t) =
   block_preconditions_unary b f_sx f_x f_s f_z pi_s pi_z (s_x, x) s_z ==>
-  Result.is_ok (Float.block_recip b f_sx f_x f_s f_z pi_s pi_z (s_x, x) s_z)
+  Result.is_ok (Float.blockRecip b f_sx f_x f_s f_z pi_s pi_z (s_x, x) s_z)
   [@@timeout 3600]
   [@@disable
-    Float.reduce, Float.aug_recip, Float.map2_aug_multiply,
-    Float.decode_block, Float.project, Format.parameters, List.map, List.map2,
-    Float.encode_block, Float.block_op_map2_wop_unary]
+    Float.reduce, Float.wRecip, Float.map2_wMultiply,
+    Float.wBlockDecode, Float.wProject, Format.parameters, List.map, List.map2,
+    Float.wBlockProject, Float.block_op_map2_wop_unary]
   [@@by induct ~do_not:["gen"; "fert"; "delim"] ()]
 
 let block_preconditions_binary b f_sx1 f_x1 f_sx2 f_x2 f_s f_z pi_s pi_z (s_x1, x1) (s_x2, x2) s_z =
@@ -830,7 +832,7 @@ let block_preconditions_ternary b f_sx1 f_x1 f_sx2 f_x2 f_sx3 f_x3 f_s f_z pi_s 
   equal_block_sizes b args
   [@@macro]
 
-theorem block_copy_sign_ok
+theorem block_CopySign_ok
   (b : int)
   (f_sx1 : Format.t) (f_x1 : Format.t)
   (f_sx2 : Format.t) (f_x2 : Format.t)
@@ -842,12 +844,12 @@ theorem block_copy_sign_ok
   (s_x2, x2 : Float.t * Float.t list)
   (s_z : Float.t) =
   block_preconditions_binary b f_sx1 f_x1 f_sx2 f_x2 f_s f_z pi_s pi_z (s_x1, x1) (s_x2, x2) s_z ==>
-  Result.is_ok (Float.block_copy_sign b f_sx1 f_x1 f_sx2 f_x2 f_s f_z pi_s pi_z (s_x1, x1) (s_x2, x2) s_z)
+  Result.is_ok (Float.blockCopySign b f_sx1 f_x1 f_sx2 f_x2 f_s f_z pi_s pi_z (s_x1, x1) (s_x2, x2) s_z)
   [@@timeout 3600]
   [@@disable
-    Float.reduce, Float.aug_copy_sign, Float.map2_aug_multiply,
-    Float.decode_block, Float.project, Format.parameters, List.map, List.map2,
-    Float.encode_block, Float.block_op_map2_wop_binary]
+    Float.reduce, Float.wCopySign, Float.map2_wMultiply,
+    Float.wBlockDecode, Float.wProject, Format.parameters, List.map, List.map2,
+    Float.wBlockProject, Float.block_op_map2_wop_binary]
   [@@by induct ~do_not:["gen"; "fert"; "delim"] ()]
 
 theorem block_add_ok
@@ -862,12 +864,12 @@ theorem block_add_ok
   (s_x2, x2 : Float.t * Float.t list)
   (s_z : Float.t) =
   block_preconditions_binary b f_sx1 f_x1 f_sx2 f_x2 f_s f_z pi_s pi_z (s_x1, x1) (s_x2, x2) s_z ==>
-  Result.is_ok (Float.block_add b f_sx1 f_x1 f_sx2 f_x2 f_s f_z pi_s pi_z (s_x1, x1) (s_x2, x2) s_z)
+  Result.is_ok (Float.blockAdd b f_sx1 f_x1 f_sx2 f_x2 f_s f_z pi_s pi_z (s_x1, x1) (s_x2, x2) s_z)
   [@@timeout 3600]
   [@@disable
-    Float.reduce, Float.aug_add, Float.map2_aug_multiply,
-    Float.decode_block, Float.project, Format.parameters, List.map, List.map2,
-    Float.encode_block, Float.block_op_map2_wop_binary]
+    Float.reduce, Float.wAdd, Float.map2_wMultiply,
+    Float.wBlockDecode, Float.wProject, Format.parameters, List.map, List.map2,
+    Float.wBlockProject, Float.block_op_map2_wop_binary]
   [@@by induct ~do_not:["gen"; "fert"; "delim"] ()]
 
 theorem block_subtract_ok
@@ -882,12 +884,12 @@ theorem block_subtract_ok
   (s_x2, x2 : Float.t * Float.t list)
   (s_z : Float.t) =
   block_preconditions_binary b f_sx1 f_x1 f_sx2 f_x2 f_s f_z pi_s pi_z (s_x1, x1) (s_x2, x2) s_z ==>
-  Result.is_ok (Float.block_subtract b f_sx1 f_x1 f_sx2 f_x2 f_s f_z pi_s pi_z (s_x1, x1) (s_x2, x2) s_z)
+  Result.is_ok (Float.blockSubtract b f_sx1 f_x1 f_sx2 f_x2 f_s f_z pi_s pi_z (s_x1, x1) (s_x2, x2) s_z)
   [@@timeout 3600]
   [@@disable
-    Float.reduce, Float.aug_subtract, Float.map2_aug_multiply,
-    Float.decode_block, Float.project, Format.parameters, List.map, List.map2,
-    Float.encode_block, Float.block_op_map2_wop_binary]
+    Float.reduce, Float.wSubtract, Float.map2_wMultiply,
+    Float.wBlockDecode, Float.wProject, Format.parameters, List.map, List.map2,
+    Float.wBlockProject, Float.block_op_map2_wop_binary]
   [@@by induct ~do_not:["gen"; "fert"; "delim"] ()]
 
 theorem block_multiply_ok
@@ -902,12 +904,12 @@ theorem block_multiply_ok
   (s_x2, x2 : Float.t * Float.t list)
   (s_z : Float.t) =
   block_preconditions_binary b f_sx1 f_x1 f_sx2 f_x2 f_s f_z pi_s pi_z (s_x1, x1) (s_x2, x2) s_z ==>
-  Result.is_ok (Float.block_multiply b f_sx1 f_x1 f_sx2 f_x2 f_s f_z pi_s pi_z (s_x1, x1) (s_x2, x2) s_z)
+  Result.is_ok (Float.blockMultiply b f_sx1 f_x1 f_sx2 f_x2 f_s f_z pi_s pi_z (s_x1, x1) (s_x2, x2) s_z)
   [@@timeout 3600]
   [@@disable
-    Float.reduce, Float.aug_multiply, Float.map2_aug_multiply,
-    Float.decode_block, Float.project, Format.parameters, List.map, List.map2,
-    Float.encode_block, Float.block_op_map2_wop_binary]
+    Float.reduce, Float.wMultiply, Float.map2_wMultiply,
+    Float.wBlockDecode, Float.wProject, Format.parameters, List.map, List.map2,
+    Float.wBlockProject, Float.block_op_map2_wop_binary]
   [@@by induct ~do_not:["gen"; "fert"; "delim"] ()]
 
 theorem block_divide_ok
@@ -922,12 +924,12 @@ theorem block_divide_ok
   (s_x2, x2 : Float.t * Float.t list)
   (s_z : Float.t) =
   block_preconditions_binary b f_sx1 f_x1 f_sx2 f_x2 f_s f_z pi_s pi_z (s_x1, x1) (s_x2, x2) s_z ==>
-  Result.is_ok (Float.block_divide b f_sx1 f_x1 f_sx2 f_x2 f_s f_z pi_s pi_z (s_x1, x1) (s_x2, x2) s_z)
+  Result.is_ok (Float.blockDivide b f_sx1 f_x1 f_sx2 f_x2 f_s f_z pi_s pi_z (s_x1, x1) (s_x2, x2) s_z)
   [@@timeout 3600]
   [@@disable
-    Float.reduce, Float.aug_divide, Float.map2_aug_multiply,
-    Float.decode_block, Float.project, Format.parameters, List.map, List.map2,
-    Float.encode_block, Float.block_op_map2_wop_binary]
+    Float.reduce, Float.wDivide, Float.map2_wMultiply,
+    Float.wBlockDecode, Float.wProject, Format.parameters, List.map, List.map2,
+    Float.wBlockProject, Float.block_op_map2_wop_binary]
   [@@by induct ~do_not:["gen"; "fert"; "delim"] ()]
 
 
@@ -943,12 +945,12 @@ theorem block_hypot_ok
   (s_x2, x2 : Float.t * Float.t list)
   (s_z : Float.t) =
   block_preconditions_binary b f_sx1 f_x1 f_sx2 f_x2 f_s f_z pi_s pi_z (s_x1, x1) (s_x2, x2) s_z ==>
-  Result.is_ok (Float.block_hypot b f_sx1 f_x1 f_sx2 f_x2 f_s f_z pi_s pi_z (s_x1, x1) (s_x2, x2) s_z)
+  Result.is_ok (Float.blockHypot b f_sx1 f_x1 f_sx2 f_x2 f_s f_z pi_s pi_z (s_x1, x1) (s_x2, x2) s_z)
   [@@timeout 3600]
   [@@disable
-    Float.reduce, Float.aug_hypot, Float.map2_aug_multiply,
-    Float.decode_block, Float.project, Format.parameters, List.map, List.map2,
-    Float.encode_block, Float.block_op_map2_wop_binary]
+    Float.reduce, Float.wHypot, Float.map2_wMultiply,
+    Float.wBlockDecode, Float.wProject, Format.parameters, List.map, List.map2,
+    Float.wBlockProject, Float.block_op_map2_wop_binary]
   [@@by induct ~do_not:["gen"; "fert"; "delim"] ()]
 
 theorem block_minimum_ok
@@ -963,12 +965,12 @@ theorem block_minimum_ok
   (s_x2, x2 : Float.t * Float.t list)
   (s_z : Float.t) =
   block_preconditions_binary b f_sx1 f_x1 f_sx2 f_x2 f_s f_z pi_s pi_z (s_x1, x1) (s_x2, x2) s_z ==>
-  Result.is_ok (Float.block_minimum b f_sx1 f_x1 f_sx2 f_x2 f_s f_z pi_s pi_z (s_x1, x1) (s_x2, x2) s_z)
+  Result.is_ok (Float.blockMinimum b f_sx1 f_x1 f_sx2 f_x2 f_s f_z pi_s pi_z (s_x1, x1) (s_x2, x2) s_z)
   [@@timeout 3600]
   [@@disable
-    Float.reduce, Float.aug_minimum, Float.map2_aug_multiply,
-    Float.decode_block, Float.project, Format.parameters, List.map, List.map2,
-    Float.encode_block, Float.block_op_map2_wop_binary]
+    Float.reduce, Float.wMinimum, Float.map2_wMultiply,
+    Float.wBlockDecode, Float.wProject, Format.parameters, List.map, List.map2,
+    Float.wBlockProject, Float.block_op_map2_wop_binary]
   [@@by induct ~do_not:["gen"; "fert"; "delim"] ()]
 
 theorem block_minimum_number_ok
@@ -983,12 +985,12 @@ theorem block_minimum_number_ok
   (s_x2, x2 : Float.t * Float.t list)
   (s_z : Float.t) =
   block_preconditions_binary b f_sx1 f_x1 f_sx2 f_x2 f_s f_z pi_s pi_z (s_x1, x1) (s_x2, x2) s_z ==>
-  Result.is_ok (Float.block_minimum_number b f_sx1 f_x1 f_sx2 f_x2 f_s f_z pi_s pi_z (s_x1, x1) (s_x2, x2) s_z)
+  Result.is_ok (Float.blockMinimumNumber b f_sx1 f_x1 f_sx2 f_x2 f_s f_z pi_s pi_z (s_x1, x1) (s_x2, x2) s_z)
   [@@timeout 3600]
   [@@disable
-    Float.reduce, Float.aug_minimum_number, Float.map2_aug_multiply,
-    Float.decode_block, Float.project, Format.parameters, List.map, List.map2,
-    Float.encode_block, Float.block_op_map2_wop_binary]
+    Float.reduce, Float.wMinimumNumber, Float.map2_wMultiply,
+    Float.wBlockDecode, Float.wProject, Format.parameters, List.map, List.map2,
+    Float.wBlockProject, Float.block_op_map2_wop_binary]
   [@@by induct ~do_not:["gen"; "fert"; "delim"] ()]
 
 theorem block_minimum_magnitude_ok
@@ -1003,12 +1005,12 @@ theorem block_minimum_magnitude_ok
   (s_x2, x2 : Float.t * Float.t list)
   (s_z : Float.t) =
   block_preconditions_binary b f_sx1 f_x1 f_sx2 f_x2 f_s f_z pi_s pi_z (s_x1, x1) (s_x2, x2) s_z ==>
-  Result.is_ok (Float.block_minimum_magnitude b f_sx1 f_x1 f_sx2 f_x2 f_s f_z pi_s pi_z (s_x1, x1) (s_x2, x2) s_z)
+  Result.is_ok (Float.blockMinimumMagnitude b f_sx1 f_x1 f_sx2 f_x2 f_s f_z pi_s pi_z (s_x1, x1) (s_x2, x2) s_z)
   [@@timeout 3600]
   [@@disable
-    Float.reduce, Float.aug_minimum_magnitude, Float.map2_aug_multiply,
-    Float.decode_block, Float.project, Format.parameters, List.map, List.map2,
-    Float.encode_block, Float.block_op_map2_wop_binary]
+    Float.reduce, Float.wMinimumMagnitude, Float.map2_wMultiply,
+    Float.wBlockDecode, Float.wProject, Format.parameters, List.map, List.map2,
+    Float.wBlockProject, Float.block_op_map2_wop_binary]
   [@@by induct ~do_not:["gen"; "fert"; "delim"] ()]
 
 theorem block_minimum_magnitude_number_ok
@@ -1023,12 +1025,12 @@ theorem block_minimum_magnitude_number_ok
   (s_x2, x2 : Float.t * Float.t list)
   (s_z : Float.t) =
   block_preconditions_binary b f_sx1 f_x1 f_sx2 f_x2 f_s f_z pi_s pi_z (s_x1, x1) (s_x2, x2) s_z ==>
-  Result.is_ok (Float.block_minimum_magnitude_number b f_sx1 f_x1 f_sx2 f_x2 f_s f_z pi_s pi_z (s_x1, x1) (s_x2, x2) s_z)
+  Result.is_ok (Float.blockMinimumMagnitudeNumber b f_sx1 f_x1 f_sx2 f_x2 f_s f_z pi_s pi_z (s_x1, x1) (s_x2, x2) s_z)
   [@@timeout 3600]
   [@@disable
-    Float.reduce, Float.aug_minimum_magnitude_number, Float.map2_aug_multiply,
-    Float.decode_block, Float.project, Format.parameters, List.map, List.map2,
-    Float.encode_block, Float.block_op_map2_wop_binary]
+    Float.reduce, Float.wMinimumMagnitudeNumber, Float.map2_wMultiply,
+    Float.wBlockDecode, Float.wProject, Format.parameters, List.map, List.map2,
+    Float.wBlockProject, Float.block_op_map2_wop_binary]
   [@@by induct ~do_not:["gen"; "fert"; "delim"] ()]
 
 theorem block_maximum_ok
@@ -1043,12 +1045,12 @@ theorem block_maximum_ok
   (s_x2, x2 : Float.t * Float.t list)
   (s_z : Float.t) =
   block_preconditions_binary b f_sx1 f_x1 f_sx2 f_x2 f_s f_z pi_s pi_z (s_x1, x1) (s_x2, x2) s_z ==>
-  Result.is_ok (Float.block_maximum b f_sx1 f_x1 f_sx2 f_x2 f_s f_z pi_s pi_z (s_x1, x1) (s_x2, x2) s_z)
+  Result.is_ok (Float.blockMaximum b f_sx1 f_x1 f_sx2 f_x2 f_s f_z pi_s pi_z (s_x1, x1) (s_x2, x2) s_z)
   [@@timeout 3600]
   [@@disable
-    Float.reduce, Float.aug_maximum, Float.map2_aug_multiply,
-    Float.decode_block, Float.project, Format.parameters, List.map, List.map2,
-    Float.encode_block, Float.block_op_map2_wop_binary]
+    Float.reduce, Float.wMaximum, Float.map2_wMultiply,
+    Float.wBlockDecode, Float.wProject, Format.parameters, List.map, List.map2,
+    Float.wBlockProject, Float.block_op_map2_wop_binary]
   [@@by induct ~do_not:["gen"; "fert"; "delim"] ()]
 
 theorem block_maximum_number_ok
@@ -1063,12 +1065,12 @@ theorem block_maximum_number_ok
   (s_x2, x2 : Float.t * Float.t list)
   (s_z : Float.t) =
   block_preconditions_binary b f_sx1 f_x1 f_sx2 f_x2 f_s f_z pi_s pi_z (s_x1, x1) (s_x2, x2) s_z ==>
-  Result.is_ok (Float.block_maximum_number b f_sx1 f_x1 f_sx2 f_x2 f_s f_z pi_s pi_z (s_x1, x1) (s_x2, x2) s_z)
+  Result.is_ok (Float.blockMaximumNumber b f_sx1 f_x1 f_sx2 f_x2 f_s f_z pi_s pi_z (s_x1, x1) (s_x2, x2) s_z)
   [@@timeout 3600]
   [@@disable
-    Float.reduce, Float.aug_maximum_number, Float.map2_aug_multiply,
-    Float.decode_block, Float.project, Format.parameters, List.map, List.map2,
-    Float.encode_block, Float.block_op_map2_wop_binary]
+    Float.reduce, Float.wMaximumNumber, Float.map2_wMultiply,
+    Float.wBlockDecode, Float.wProject, Format.parameters, List.map, List.map2,
+    Float.wBlockProject, Float.block_op_map2_wop_binary]
   [@@by induct ~do_not:["gen"; "fert"; "delim"] ()]
 
 theorem block_maximum_magnitude_ok
@@ -1083,12 +1085,12 @@ theorem block_maximum_magnitude_ok
   (s_x2, x2 : Float.t * Float.t list)
   (s_z : Float.t) =
   block_preconditions_binary b f_sx1 f_x1 f_sx2 f_x2 f_s f_z pi_s pi_z (s_x1, x1) (s_x2, x2) s_z ==>
-  Result.is_ok (Float.block_maximum_magnitude b f_sx1 f_x1 f_sx2 f_x2 f_s f_z pi_s pi_z (s_x1, x1) (s_x2, x2) s_z)
+  Result.is_ok (Float.blockMaximumMagnitude b f_sx1 f_x1 f_sx2 f_x2 f_s f_z pi_s pi_z (s_x1, x1) (s_x2, x2) s_z)
   [@@timeout 3600]
   [@@disable
-    Float.reduce, Float.aug_maximum_magnitude, Float.map2_aug_multiply,
-    Float.decode_block, Float.project, Format.parameters, List.map, List.map2,
-    Float.encode_block, Float.block_op_map2_wop_binary]
+    Float.reduce, Float.wMaximumMagnitude, Float.map2_wMultiply,
+    Float.wBlockDecode, Float.wProject, Format.parameters, List.map, List.map2,
+    Float.wBlockProject, Float.block_op_map2_wop_binary]
   [@@by induct ~do_not:["gen"; "fert"; "delim"] ()]
 
 theorem block_maximum_magnitude_number_ok
@@ -1103,12 +1105,12 @@ theorem block_maximum_magnitude_number_ok
   (s_x2, x2 : Float.t * Float.t list)
   (s_z : Float.t) =
   block_preconditions_binary b f_sx1 f_x1 f_sx2 f_x2 f_s f_z pi_s pi_z (s_x1, x1) (s_x2, x2) s_z ==>
-  Result.is_ok (Float.block_maximum_magnitude_number b f_sx1 f_x1 f_sx2 f_x2 f_s f_z pi_s pi_z (s_x1, x1) (s_x2, x2) s_z)
+  Result.is_ok (Float.blockMaximumMagnitudeNumber b f_sx1 f_x1 f_sx2 f_x2 f_s f_z pi_s pi_z (s_x1, x1) (s_x2, x2) s_z)
   [@@timeout 3600]
   [@@disable
-    Float.reduce, Float.aug_maximum_magnitude_number, Float.map2_aug_multiply,
-    Float.decode_block, Float.project, Format.parameters, List.map, List.map2,
-    Float.encode_block, Float.block_op_map2_wop_binary]
+    Float.reduce, Float.wMaximumMagnitudeNumber, Float.map2_wMultiply,
+    Float.wBlockDecode, Float.wProject, Format.parameters, List.map, List.map2,
+    Float.wBlockProject, Float.block_op_map2_wop_binary]
   [@@by induct ~do_not:["gen"; "fert"; "delim"] ()]
 
 theorem op_block_ternary_decoded_ok b params args =
@@ -1118,14 +1120,14 @@ theorem op_block_ternary_decoded_ok b params args =
   equal_block_sizes b args
   ==>
   Result.is_ok (
-    let*@ cxs = block_op_map2_decode_block b params args in
+    let*@ cxs = block_op_map2_wBlockDecode b params args in
     Ok (true))
-  [@@disable extract_error, block_op_map2_decode_block]
+  [@@disable extract_error, block_op_map2_wBlockDecode]
   [@@by
-    [%use block_op_map2_decode_block_ok b params args] @>
-    [%use block_op_map2_decode_block_elems_ok b params args] @>
-    [%use block_op_map2_decode_block_preserves_length b params args] @>
-    [%use block_op_map2_decode_block_preserves_block_size b params args] @>
+    [%use block_op_map2_wBlockDecode_ok b params args] @>
+    [%use block_op_map2_wBlockDecode_elems_ok b params args] @>
+    [%use block_op_map2_wBlockDecode_preserves_length b params args] @>
+    [%use block_op_map2_wBlockDecode_preserves_block_size b params args] @>
     simplify ()
   ]
 
@@ -1136,18 +1138,18 @@ theorem op_block_ternary_decoded_lengths_equal b params args =
   equal_block_sizes b args
   ==>
   match
-    let*@ cxs = block_op_map2_decode_block b params args in
+    let*@ cxs = block_op_map2_wBlockDecode b params args in
     Ok (equal_list_lengths b cxs)
   with
   | Ok r -> r
   | _ -> false
-  [@@disable extract_error, block_op_map2_decode_block]
+  [@@disable extract_error, block_op_map2_wBlockDecode]
   [@@by
     [%use op_block_ternary_decoded_ok b params args] @>
-    [%use block_op_map2_decode_block_ok b params args] @>
-    [%use block_op_map2_decode_block_elems_ok b params args] @>
-    [%use block_op_map2_decode_block_preserves_length b params args] @>
-    [%use block_op_map2_decode_block_preserves_block_size b params args] @>
+    [%use block_op_map2_wBlockDecode_ok b params args] @>
+    [%use block_op_map2_wBlockDecode_elems_ok b params args] @>
+    [%use block_op_map2_wBlockDecode_preserves_length b params args] @>
+    [%use block_op_map2_wBlockDecode_preserves_block_size b params args] @>
     simplify ()
   ]
 
@@ -1159,7 +1161,7 @@ theorem nth_r_preserves_block_size (b : int) (n : int) (xs : 'a list list) =
   [@@by auto]
 
 let decoded b params args =
-  match block_op_map2_decode_block b params args with
+  match block_op_map2_wBlockDecode b params args with
   | Ok r -> (match extract_error r with Ok r -> r | _ -> [])
   | _ -> []
 
@@ -1170,7 +1172,7 @@ theorem op_block_ternary_decoded_lengths b params args =
   equal_block_sizes b args
   ==>
   match
-    let*@ cxs = block_op_map2_decode_block b params args in
+    let*@ cxs = block_op_map2_wBlockDecode b params args in
     let* x1 = nth_r 0 cxs in
     let* x2 = nth_r 1 cxs in
     let* x3 = nth_r 2 cxs in
@@ -1178,13 +1180,13 @@ theorem op_block_ternary_decoded_lengths b params args =
   with
   | Ok r -> r
   | _ -> false
-  [@@disable extract_error, block_op_map2_decode_block, nth_r, List.length]
+  [@@disable extract_error, block_op_map2_wBlockDecode, nth_r, List.length]
   [@@by
     [%use op_block_ternary_decoded_ok b params args] @>
-    [%use block_op_map2_decode_block_ok b params args] @>
-    [%use block_op_map2_decode_block_elems_ok b params args] @>
-    [%use block_op_map2_decode_block_preserves_length b params args] @>
-    [%use block_op_map2_decode_block_preserves_block_size b params args] @>
+    [%use block_op_map2_wBlockDecode_ok b params args] @>
+    [%use block_op_map2_wBlockDecode_elems_ok b params args] @>
+    [%use block_op_map2_wBlockDecode_preserves_length b params args] @>
+    [%use block_op_map2_wBlockDecode_preserves_block_size b params args] @>
     [%use op_block_ternary_decoded_lengths_equal b params args] @>
     [%use nth_r_preserves_block_size b 0 (decoded b params args)] @>
     [%use nth_r_preserves_block_size b 1 (decoded b params args)] @>
@@ -1205,21 +1207,21 @@ theorem op_block_ternary_fma_encode_ok
   equal_block_sizes b args
   ==>
   Result.is_ok (
-    let*@ cxs = block_op_map2_decode_block b params args in
+    let*@ cxs = block_op_map2_wBlockDecode b params args in
     let* x1 = nth_r 0 cxs in
     let* x2 = nth_r 1 cxs in
     let* x3 = nth_r 2 cxs in
-    let*@ cz = block_op_map2_wop_ternary aug_fma x1 x2 x3 in
-    let* z = encode_block b f_s f_z pi_z (s_z, cz) in
+    let*@ cz = block_op_map2_wop_ternary wFMA x1 x2 x3 in
+    let* z = wBlockProject b f_s f_z pi_z (s_z, cz) in
     Ok (s_z, z)
   )
-  [@@disable extract_error, block_op_map2_decode_block, nth_r, List.length, block_op_map2_wop_ternary, encode_block]
+  [@@disable extract_error, block_op_map2_wBlockDecode, nth_r, List.length, block_op_map2_wop_ternary, wBlockProject]
   [@@by
     [%use op_block_ternary_decoded_ok b params args] @>
-    [%use block_op_map2_decode_block_ok b params args] @>
-    [%use block_op_map2_decode_block_elems_ok b params args] @>
-    [%use block_op_map2_decode_block_preserves_length b params args] @>
-    [%use block_op_map2_decode_block_preserves_block_size b params args] @>
+    [%use block_op_map2_wBlockDecode_ok b params args] @>
+    [%use block_op_map2_wBlockDecode_elems_ok b params args] @>
+    [%use block_op_map2_wBlockDecode_preserves_length b params args] @>
+    [%use block_op_map2_wBlockDecode_preserves_block_size b params args] @>
     [%use op_block_ternary_decoded_lengths_equal b params args] @>
     [%use nth_r_preserves_block_size b 0 (decoded b params args)] @>
     [%use nth_r_preserves_block_size b 1 (decoded b params args)] @>
@@ -1242,9 +1244,9 @@ theorem block_fma_ok
   (s_x3, x3 : Float.t * Float.t list)
   (s_z : Float.t) =
   block_preconditions_ternary b f_sx1 f_x1 f_sx2 f_x2 f_sx3 f_x3 f_s f_z pi_s pi_z (s_x1, x1) (s_x2, x2) (s_x3, x3) s_z ==>
-  Result.is_ok (Float.block_fma b f_sx1 f_x1 f_sx2 f_x2 f_sx3 f_x3 f_s f_z pi_s pi_z (s_x1, x1) (s_x2, x2) (s_x3, x3) s_z)
+  Result.is_ok (Float.blockFMA b f_sx1 f_x1 f_sx2 f_x2 f_sx3 f_x3 f_s f_z pi_s pi_z (s_x1, x1) (s_x2, x2) (s_x3, x3) s_z)
   [@@timeout 3600]
-  [@@disable extract_error, block_op_map2_decode_block, nth_r, List.length, block_op_map2_wop_ternary, encode_block]
+  [@@disable extract_error, block_op_map2_wBlockDecode, nth_r, List.length, block_op_map2_wop_ternary, wBlockProject]
   [@@by
     [%use op_block_ternary_fma_encode_ok b
       [{f_s = f_sx1; f_x = f_x1}; {f_s = f_sx2; f_x = f_x2}; {f_s = f_sx3; f_x = f_x3}]
@@ -1267,21 +1269,21 @@ theorem op_block_ternary_faa_encode_ok
   equal_block_sizes b args
   ==>
   Result.is_ok (
-    let*@ cxs = block_op_map2_decode_block b params args in
+    let*@ cxs = block_op_map2_wBlockDecode b params args in
     let* x1 = nth_r 0 cxs in
     let* x2 = nth_r 1 cxs in
     let* x3 = nth_r 2 cxs in
-    let*@ cz = block_op_map2_wop_ternary aug_faa x1 x2 x3 in
-    let* z = encode_block b f_s f_z pi_z (s_z, cz) in
+    let*@ cz = block_op_map2_wop_ternary wFAA x1 x2 x3 in
+    let* z = wBlockProject b f_s f_z pi_z (s_z, cz) in
     Ok (s_z, z)
   )
-  [@@disable extract_error, block_op_map2_decode_block, nth_r, List.length, block_op_map2_wop_ternary, encode_block]
+  [@@disable extract_error, block_op_map2_wBlockDecode, nth_r, List.length, block_op_map2_wop_ternary, wBlockProject]
   [@@by
     [%use op_block_ternary_decoded_ok b params args] @>
-    [%use block_op_map2_decode_block_ok b params args] @>
-    [%use block_op_map2_decode_block_elems_ok b params args] @>
-    [%use block_op_map2_decode_block_preserves_length b params args] @>
-    [%use block_op_map2_decode_block_preserves_block_size b params args] @>
+    [%use block_op_map2_wBlockDecode_ok b params args] @>
+    [%use block_op_map2_wBlockDecode_elems_ok b params args] @>
+    [%use block_op_map2_wBlockDecode_preserves_length b params args] @>
+    [%use block_op_map2_wBlockDecode_preserves_block_size b params args] @>
     [%use op_block_ternary_decoded_lengths_equal b params args] @>
     [%use nth_r_preserves_block_size b 0 (decoded b params args)] @>
     [%use nth_r_preserves_block_size b 1 (decoded b params args)] @>
@@ -1303,9 +1305,9 @@ theorem block_faa_ok
   (s_x3, x3 : Float.t * Float.t list)
   (s_z : Float.t) =
   block_preconditions_ternary b f_sx1 f_x1 f_sx2 f_x2 f_sx3 f_x3 f_s f_z pi_s pi_z (s_x1, x1) (s_x2, x2) (s_x3, x3) s_z ==>
-  Result.is_ok (Float.block_faa b f_sx1 f_x1 f_sx2 f_x2 f_sx3 f_x3 f_s f_z pi_s pi_z (s_x1, x1) (s_x2, x2) (s_x3, x3) s_z)
+  Result.is_ok (Float.blockFAA b f_sx1 f_x1 f_sx2 f_x2 f_sx3 f_x3 f_s f_z pi_s pi_z (s_x1, x1) (s_x2, x2) (s_x3, x3) s_z)
   [@@timeout 3600]
-  [@@disable extract_error, block_op_map2_decode_block, nth_r, List.length, block_op_map2_wop_ternary, encode_block]
+  [@@disable extract_error, block_op_map2_wBlockDecode, nth_r, List.length, block_op_map2_wop_ternary, wBlockProject]
   [@@by
     [%use op_block_ternary_faa_encode_ok b
       [{f_s = f_sx1; f_x = f_x1}; {f_s = f_sx2; f_x = f_x2}; {f_s = f_sx3; f_x = f_x3}]
@@ -1317,26 +1319,26 @@ theorem block_faa_ok
 
 theorem block_reduce_add_ok (b : int) (f_sx : Format.t) (f_x : Format.t) (f_z : Format.t) (pi_z : Projection.t) (s_x, x : t * t list) =
   b >= 1 && List.length x = b ==>
-  Result.is_ok (Float.block_reduce_add b f_sx f_x f_z pi_z (s_x, x))
+  Result.is_ok (Float.blockReduceAdd b f_sx f_x f_z pi_z (s_x, x))
   [@@timeout 3600]
-  [@@disable extract_error, decode_block, nth_r, encode_block, aug_add, List.length, project, reduce_aug_add]
+  [@@disable extract_error, wBlockDecode, nth_r, wBlockProject, wAdd, List.length, wProject, reduce_wAdd]
   [@@by induct ~do_not:["gen"; "fert"; "delim"] ()]
 
-theorem reduce_aug_multiply_ok (x : CER.t list) =
-  List.length x >= 2 ==> Result.is_ok ((reduce Float.aug_multiply x) [@trigger])
+theorem reduce_wMultiply_ok (x : CER.t list) =
+  List.length x >= 2 ==> Result.is_ok ((reduce Float.wMultiply x) [@trigger])
   [@@by auto]
   [@@fc]
 
-theorem reduce_aug_multiply_confl_ok (x : CER.t list) =
-  List.length x >= 1 ==> Result.is_ok ((reduce_aug_multiply x) [@trigger])
+theorem reduce_wMultiply_confl_ok (x : CER.t list) =
+  List.length x >= 1 ==> Result.is_ok ((reduce_wMultiply x) [@trigger])
   [@@by auto]
   [@@fc]
 
 theorem block_reduce_multiply_ok (b : int) (f_sx : Format.t) (f_x : Format.t) (f_z : Format.t) (pi_z : Projection.t) (s_x, x : t * t list) =
   b >= 1 && List.length x = b ==>
-  Result.is_ok (Float.block_reduce_multiply b f_sx f_x f_z pi_z (s_x, x))
+  Result.is_ok (Float.blockReduceMultiply b f_sx f_x f_z pi_z (s_x, x))
   [@@timeout 3600]
-  [@@disable extract_error, decode_block, nth_r, encode_block, aug_multiply, List.length, project, reduce_aug_multiply]
+  [@@disable extract_error, wBlockDecode, nth_r, wBlockProject, wMultiply, List.length, wProject, reduce_wMultiply]
   [@@by induct ~do_not:["gen"; "fert"; "delim"] ()]
 
 theorem block_op_map2_wop_binary_preserves_block_size
@@ -1373,19 +1375,19 @@ theorem block_op_binary_preserves_block_size
   | _ -> true
   [@@timeout 3600]
   [@@disable
-    project, Format.parameters, List.map, List.map2,
-    reduce, decode_block, encode_block, block_op_map2_wop_binary,
-    block_op_map2_decode_block]
+    wProject, Format.parameters, List.map, List.map2,
+    reduce, wBlockDecode, wBlockProject, block_op_map2_wop_binary,
+    block_op_map2_wBlockDecode]
   (* nondet? *)
   [@@by induct ~do_not:["gen"; "fert"; "delim"] ()]
   [@@fc]
 
-let one (f : Format.t) = match encode f CER.one with Ok r -> r | _ -> nan f
+let one (f : Format.t) = match wEncode f CER.one with Ok r -> r | _ -> nan f
 
 let is_in_value_set (f : Format.t) (x : CER.t) =
   match
-    let* e = encode f x in
-    let d = decode f e in
+    let* e = wEncode f x in
+    let d = wDecode f e in
     Ok (d = x)
   with
   | Ok r -> r
@@ -1405,13 +1407,13 @@ theorem one_in_value_set (f : Format.t) =
 (* Scaled addition via a block of size 1 is okay as long as the output format has 1.0 in it's value set. *)
 theorem internal_scaled_add_ok f_x f_y f_z pi x s_x y s_y =
   is_in_value_set f_z CER.one ==>
-  Result.is_ok (Float.internal_scaled_add f_x f_y f_z pi x s_x y s_y)
+  Result.is_ok (Float.internal_scaledAdd f_x f_y f_z pi x s_x y s_y)
   [@@timeout 3600]
   [@@disable
-    project, Format.parameters, List.map, List.map2,
-    reduce, decode_block, encode_block, block_op_map2_wop_binary,
-    block_op_map2_decode_block,
-    encode, decode, Util.pow2, Util.ipow2, block_add]
+    wProject, Format.parameters, List.map, List.map2,
+    reduce, wBlockDecode, wBlockProject, block_op_map2_wop_binary,
+    block_op_map2_wBlockDecode,
+    wEncode, wDecode, Util.pow2, Util.ipow2, blockAdd]
   [@@by
     [%use block_add_ok 1 f_x f_x f_y f_y f_z f_z pi pi (s_x, [x]) (s_y, [y]) (one f_z)] @>
     induct ~do_not:["gen"; "fert"; "delim"] ()
@@ -1420,13 +1422,13 @@ theorem internal_scaled_add_ok f_x f_y f_z pi x s_x y s_y =
 (* Scaled multiplication via a block of size 1 is okay as long as the output format has 1.0 in it's value set. *)
 theorem internal_scaled_multiply_ok f_x f_y f_z pi x s_x y s_y =
   is_in_value_set f_z CER.one ==>
-  Result.is_ok (Float.internal_scaled_multiply f_x f_y f_z pi x s_x y s_y)
+  Result.is_ok (Float.internal_scaledMultiply f_x f_y f_z pi x s_x y s_y)
   [@@timeout 3600]
   [@@disable
-    project, Format.parameters, List.map, List.map2,
-    reduce, decode_block, encode_block, block_op_map2_wop_binary,
-    block_op_map2_decode_block,
-    encode, decode, Util.pow2, Util.ipow2, block_multiply]
+    wProject, Format.parameters, List.map, List.map2,
+    reduce, wBlockDecode, wBlockProject, block_op_map2_wop_binary,
+    block_op_map2_wBlockDecode,
+    wEncode, wDecode, Util.pow2, Util.ipow2, blockMultiply]
   [@@by
     [%use block_multiply_ok 1 f_x f_x f_y f_y f_z f_z pi pi (s_x, [x]) (s_y, [y]) (one f_z)] @>
     induct ~do_not:["gen"; "fert"; "delim"] ()
@@ -1451,9 +1453,9 @@ theorem block_op_ternary_preserves_block_size
   | _ -> true
   [@@timeout 3600]
   [@@disable
-    project, Format.parameters, List.map, List.map2,
-    reduce, decode_block, encode_block, block_op_map2_wop_ternary,
-    block_op_map2_decode_block]
+    wProject, Format.parameters, List.map, List.map2,
+    reduce, wBlockDecode, wBlockProject, block_op_map2_wop_ternary,
+    block_op_map2_wBlockDecode]
   (* nondet? *)
   [@@by induct ~do_not:["gen"; "fert"; "delim"] ()]
   [@@fc]
@@ -1461,13 +1463,13 @@ theorem block_op_ternary_preserves_block_size
 (* Scaled FMA via a block of size 1 is okay as long as the output format has 1.0 in it's value set. *)
 theorem internal_scaled_fma_ok f_x f_y f_sxy f_z f_sz f_r pi x y s_xy z s_z =
   is_in_value_set f_r CER.one ==>
-  Result.is_ok (Float.internal_scaled_fma f_x f_y f_sxy f_z f_sz f_r pi x y s_xy z s_z)
+  Result.is_ok (Float.internal_scaledFMA f_x f_y f_sxy f_z f_sz f_r pi x y s_xy z s_z)
   [@@timeout 3600]
   [@@disable
-    project, Format.parameters, List.map, List.map2,
-    reduce, decode_block, encode_block, block_op_map2_wop_ternary,
-    block_op_map2_decode_block,
-    encode, decode, Util.pow2, Util.ipow2, block_fma]
+    wProject, Format.parameters, List.map, List.map2,
+    reduce, wBlockDecode, wBlockProject, block_op_map2_wop_ternary,
+    block_op_map2_wBlockDecode,
+    wEncode, wDecode, Util.pow2, Util.ipow2, blockFMA]
   (* nondet? *)
   [@@by
     [%use block_fma_ok 1 f_sxy f_x f_sxy f_y f_sz f_z f_r f_r pi pi (s_xy, [x]) (s_xy, [y]) (s_z, [z]) (one f_r)] @>

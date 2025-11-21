@@ -19,7 +19,7 @@ let m_hi_codepoint (f : Format.t) : int =
 
 theorem m_hi_codepoint_decodes_to_m_hi (f : Format.t) =
   let _, _, _, _, m_hi, _, _ = Format.parameters f in
-  match Float.decode f (m_hi_codepoint f) with
+  match Float.wDecode f (m_hi_codepoint f) with
   | R r -> r = m_hi
   | _ -> false
   [@@timeout 120]

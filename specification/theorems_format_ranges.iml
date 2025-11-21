@@ -10,7 +10,7 @@ open Signedness
 open Domain
 
 let is_within_f (f : Format.t) (x : Float.t) : bool =
-  aug_real_is_within_range f (Float.decode f x)
+  cer_is_within_range f (Float.wDecode f x)
 
 let is_within (kp : Format.kpt) (x : Float.t) : bool =
   is_within_f { kp = kp; s = Signed; d = Extended } x &&

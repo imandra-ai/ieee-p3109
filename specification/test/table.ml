@@ -78,7 +78,7 @@ let mk_fn_tbl (fn : Q.t -> int -> (bool * Q.t, string) Result.t)
     Printf.printf "0x%02x," i;
 
     let fp = Float.of_int_repr f (Z.of_int i) in
-    (match Float.decode f fp with
+    (match Float.wDecode f fp with
     | decoded ->
       print_cer_dec decoded;
       (match decoded with
@@ -100,12 +100,12 @@ let mk_fn_tbl (fn : Q.t -> int -> (bool * Q.t, string) Result.t)
                 print_bool (Q.lt (Q.abs diff) ulp)
               | Error _ -> Printf.printf "?,?,")
             | Error e -> Printf.printf "%s," e);
-            (match Float.project f pi (R out_real) with
+            (match Float.wProject f pi (R out_real) with
             | Ok projected ->
               Printf.printf "0x%s,%s,"
                 (Z.format "x" (Float.to_int_repr f projected))
                 (Z.format "08b" (Float.to_int_repr f projected));
-              (match Float.decode f projected with
+              (match Float.wDecode f projected with
               | out_dec -> print_cer_dec out_dec)
             | Error e -> Printf.printf "%s," e)
           | Error e -> Printf.printf "%s" e)
@@ -193,14 +193,14 @@ let mk_f_tbl (k : int) (p : int) (s : bool) (e : bool) =
   in
   let kf, pf, bias, _, m_hi, s, d = Format.parameters f in
   Printf.printf "B%sP%s%s%s: bias = %s, m_hi = %s\n\n" (Z.to_string kf)
-    (Z.to_string pf) (domain_to_char d) (signedness_to_char s)
+    (Z.to_string pf) (signedness_to_char s) (domain_to_char d)
     (Z.to_string bias) (rat_to_string_dec m_hi);
   for i = 0 to (1 lsl k) - 1 do
     let iz = Float.to_int_repr f (Z.of_int i) in
-    let d = Float.decode f iz in
+    let d = Float.wDecode f iz in
     let rats = cer_to_string d in
     let ds = cer_to_string_dec d in
-    Printf.printf "%02x | %s | %s | %s\n" i (int2bin_str i k) ds rats
+    Printf.printf "%02x | %s | %s | %s | %b\n" i (int2bin_str i k) ds rats (Float.isNormal f iz)
   done
 
 let mk_f_csv_tbl (dir : string) (k : int) (p : int) (s : bool) (e : bool) =
@@ -224,7 +224,7 @@ let mk_f_csv_tbl (dir : string) (k : int) (p : int) (s : bool) (e : bool) =
   let oc = open_out fn in
   for i = 0 to (1 lsl k) - 1 do
     let iz = Float.to_int_repr f (Z.of_int i) in
-    let d = Float.decode f iz in
+    let d = Float.wDecode f iz in
     let rats = cer_to_string d in
     let ds = cer_to_string_dec d in
     Printf.fprintf oc "%02x,%s,%s\n" i ds rats
@@ -248,7 +248,7 @@ let run (cli : params) : unit =
     | Exp2 ps -> mk_fn_tbl exp2 inv_exp2 f ps.precision
     | Format { k; p; s; e } -> mk_f_tbl k p s e
     | Formats ->
-      for k = 3 to 8 do
+      for k = 2 to 8 do
         for p = 1 to k do
           for s = 0 to 1 do
             for d = 0 to 1 do
