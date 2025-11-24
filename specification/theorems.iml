@@ -559,6 +559,7 @@ theorem internal_class_ok (f : Format.t) (x : Float.t) =
 
 (* It's always ok to get minPositiveOf *)
 theorem minPositiveOf_ok (f : Format.t) =
+  let open Float in
   Result.is_ok ((minPositiveOf f) [@trigger])
   [@@disable Util.pow2, Util.ipow2, Format.parameters]
   [@@by auto]
@@ -566,13 +567,15 @@ theorem minPositiveOf_ok (f : Format.t) =
 
 (* The result of minPositiveOf is never negative, zero, or NaN *)
 theorem minPositiveOf_positive (f : Format.t) =
+  let open Float in
   match minPositiveOf f with
-  | Ok r -> not (Float.isSignMinus f r) && not (Float.isZero f r) && not (Float.is_nan f r)
+  | Ok r -> not (isSignMinus f r) && not (isZero f r) && not (is_nan f r)
   | Error _ -> false
   [@@by enumerate ["f"] @> ground_eval ()]
 
 (* It's always ok to get minNormalOf *)
 theorem minNormalOf_ok (f : Format.t) =
+  let open Float in
   Result.is_ok ((minNormalOf f) [@trigger])
   [@@disable Util.pow2, Util.ipow2, Format.parameters]
   [@@by auto]
@@ -580,13 +583,15 @@ theorem minNormalOf_ok (f : Format.t) =
 
 (* The result of minNormalOf is normal, with some exceptions *)
 theorem minNormalOf_normal (f : Format.t) =
+  let open Float in
   let k, p, _, _, _, s, d = Format.parameters f in
   match k, p, s, d with
   | k, p, Signed, _ when k = p -> true (* Signed k = p is not a valid format *)
-  | 2, _, _, Extended -> minNormalOf f = Ok (Float.nan f)
+  | 2, 1, Signed, Extended -> minNormalOf f = Ok (nan f)
+  | 2, 2, Unsigned, Extended -> minNormalOf f = Ok (nan f)
   | _ ->
     (match minNormalOf f with
-      | Ok r -> Float.isNormal f r
+      | Ok r -> isNormal f r
       | Error _ -> true)
   [@@timeout 60]
   [@@by enumerate ["f"] @> ground_eval ()]

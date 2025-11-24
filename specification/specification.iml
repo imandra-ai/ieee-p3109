@@ -2028,50 +2028,54 @@ module Float = struct
     match internal_scaledFMA f_x f_y f_sxy f_z f_sz f_r pi x y s_xy z s_z with
     | Ok r -> r
     | Error _ -> nan f_z (* unreachable by theorem internal_scaled_fma_ok *)
+
+
+  (** 4.5 Format-level operations *)
+
+  let bitWidthOf (f : Format.t) : int = Format.k f
+  let precisionOf (f : Format.t) : int = Format.p f
+  let signednessOf (f : Format.t) : Signedness.t = f.s
+  let domainOf (f : Format.t) : Domain.t = f.d
+
+  let exponentBitsOf (f : Format.t) : int =
+    let k, p, _, _, _, _, _ = Format.parameters f in
+    match f.s with
+    | Signed -> k - p - 1
+    | Unsigned -> k - p
+
+  let trailingBitsOf (f : Format.t) : int =
+    Format.p f - 1
+
+  let exponentBiasOf (f : Format.t) : int =
+    let k, p, _, _, _, s, _ = Format.parameters f in
+    match s with
+    | Signed -> if k = p then -1 else Util.ipow2 (k - p - 1)
+    | Unsigned -> Util.ipow2 (k - p)
+
+  let maxFiniteOf (f : Format.t) : (t, string) Result.t =
+    let _, _, _, _, m_hi, _, _ = Format.parameters f in
+    wEncode f (CER.R m_hi)
+
+  let minFiniteOf (f : Format.t) : (t, string) Result.t =
+    let _, _, _, m_lo, _, s, _ = Format.parameters f in
+    wEncode f (CER.R m_lo)
+
+  let minPositiveOf (f : Format.t) : (t, string) Result.t =
+    let open Signedness in
+    let open Domain in
+    let k, p, _, _, _, s, d = Format.parameters f in
+    match k, p, s, d with
+    | 2, _, Signed, Extended -> pinf f
+    | _ -> Ok 1
+
+  let minNormalOf (f : Format.t) : (t, string) Result.t =
+    let open Signedness in
+    let open Domain in
+    let k, p, b, _, _, s, d = Format.parameters f in
+    match k, p, s, d with
+    | 2, 1, Signed, Extended -> Ok (nan f)
+    | 2, 2, Unsigned, Extended -> Ok (nan f)
+    | _ -> Ok (Util.ipow2 (p - 1))
+
+
 end
-
-(** 4.5 Format-level operations *)
-
-let bitWidthOf (f : Format.t) : int = Format.k f
-let precisionOf (f : Format.t) : int = Format.p f
-let signednessOf (f : Format.t) : Signedness.t = f.s
-let domainOf (f : Format.t) : Domain.t = f.d
-
-let exponentBitsOf (f : Format.t) : int =
-  let k, p, _, _, _, _, _ = Format.parameters f in
-  match f.s with
-  | Signed -> k - p - 1
-  | Unsigned -> k - p
-
-let trailingBitsOf (f : Format.t) : int =
-  Format.p f - 1
-
-let exponentBiasOf (f : Format.t) : int =
-  let k, p, _, _, _, s, _ = Format.parameters f in
-  match s with
-  | Signed -> if k = p then -1 else Util.ipow2 (k - p - 1)
-  | Unsigned -> Util.ipow2 (k - p)
-
-let maxFiniteOf (f : Format.t) : (Float.t, string) Result.t =
-  let _, _, _, _, m_hi, _, _ = Format.parameters f in
-  Float.wEncode f (CER.R m_hi)
-
-let minFiniteOf (f : Format.t) : (Float.t, string) Result.t =
-  let _, _, _, m_lo, _, s, _ = Format.parameters f in
-  Float.wEncode f (CER.R m_lo)
-
-let minPositiveOf (f : Format.t) : (Float.t, string) Result.t =
-  let open Signedness in
-  let open Domain in
-  let k, p, _, _, _, s, d = Format.parameters f in
-  match k, p, s, d with
-  | 2, _, Signed, Extended -> Float.pinf f
-  | _ -> Ok 1
-
-let minNormalOf (f : Format.t) : (Float.t, string) Result.t =
-  let open Signedness in
-  let open Domain in
-  let k, p, b, _, _, s, d = Format.parameters f in
-  match k, p, s, d with
-  | 2, _, _, Extended -> Ok (Float.nan f)
-  | _ -> Ok (Util.ipow2 (p - 1))
