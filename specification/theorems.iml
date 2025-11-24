@@ -2,11 +2,13 @@
 [@@@import Log, "dune:math"]
 [@@@import Exp, "dune:math"]
 [@@@import Specification, "specification.iml"]
+[@@@import ErrorPropagation, "ErrorPropagation.iml"]
 [@@@import Theorems_pow2, "theorems_pow2.iml"]
 [@@@import Theorems_format_ranges, "theorems_format_ranges.iml"]
 [@@@import Theorems_IEEE754, "theorems_ieee754.iml"]
 
 open Specification
+open ErrorPropagation
 
 let unroll_nonlin qt nqt steps = Tactic.unroll ~smt:"z3-full-nonlinear" ~query_timeout:qt ~no_asm_query_timeout:nqt steps
 
@@ -630,5 +632,17 @@ theorem internal_tanh_ok (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (
 theorem internal_softplus_ok (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : Float.t) =
   Result.is_ok (Float.internal_softplus f_x f_z pi x)
   [@@disable Specification.Float.wProject, Specification.Float.wDecode, Float.wDecodeAux, Format.parameters, Log.log, Log.ln, Exp.exp]
-  [@@timeout 3600]
   [@@by auto]
+
+(** [internal_softmax] never returns an error *)
+theorem map_project_ok f pi x =
+  Result.is_ok (extract_error ((Float.map_project f pi x) [@trigger]))
+  [@@disable Float.wProject]
+  [@@by induct ~do_not:["gen"; "fert"; "delim"] ()]
+  [@@fc]
+
+theorem internal_softmax_ok (f_x : Format.t) (f_r : Format.t) (pi : Projection.t) (xs : Float.t list) =
+  Result.is_ok (Float.internal_softmax f_x f_r pi xs)
+  [@@disable Specification.Float.wProject, Specification.Float.wDecode, Float.wDecodeAux, Format.parameters, Log.log, Log.ln, Exp.exp, Float.map_decode, Float.map_project]
+  [@@timeout 3600]
+  [@@by induct ~do_not:["gen"; "fert"; "delim"] ()]

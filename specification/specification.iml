@@ -2211,8 +2211,36 @@ module Float = struct
     | Ok x -> x
     | Error _ -> (nan f_z) (* unreachable by theorem internal_softplus_ok *)
 
+  let softmax_denom (xs : CER.t list) : CER.t =
+    let open CER in
+    let open CER.Infix in
+    List.fold_left (fun acc (x : CER.t) ->
+        acc + (match x with
+        | NaN -> CER.NaN
+        | PINF -> PINF
+        | NINF -> (R 0.0)
+        | R xr -> (R (Exp.exp xr 9)))) CER.zero xs
+
+  let wSoftmax (xs : CER.t list) : (CER.t list, string) Result.t =
+    let open CER in
+    let open CER.Infix in
+    let denom : CER.t = softmax_denom xs in
+    Ok (List.map (fun x -> x / denom) xs)
+
+
+  let internal_softmax (f_x : Format.t) (f_r : Format.t) (pi : Projection.t) (xs : t list) : (t list, string) Result.t =
+    let cx = map_decode f_x xs in
+    let* zs = wSoftmax cx in
+    let@ r = map_project f_r pi zs in
+    Ok r
+
+  let softmax (f_x : Format.t) (f_r : Format.t) (pi : Projection.t) (xs : t list) : t list =
+    match internal_softmax f_x f_r pi xs with
+    | Ok r -> r
+    | Error e -> [] (* unreachable by theorem internal_softmax_ok *)
+
 (*
-  softmax, logsoftmax for activation functions
+  logsoftmax for activation functions
 *)
 
 end
