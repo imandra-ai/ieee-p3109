@@ -266,6 +266,8 @@ function operator_precedence_info(op: string | undefined, more_than_one_arg = fa
     return new PrecedenceInfo("log_e", Notation.Prefix, Associativity.Left, 17);
   else if (op == "Log.log2")
     return new PrecedenceInfo("log_2", Notation.Prefix, Associativity.Left, 17);
+  else if (op == "sin" || op == "cos" || op == "tanh")
+    return new PrecedenceInfo(op, Notation.Prefix, Associativity.Left, 17);
   else if (op == "Util.ripow")
     return new PrecedenceInfo("^", Notation.Infix, Associativity.None, 13);
   else if (op == "Sqrt.sqrt")
@@ -394,6 +396,7 @@ function print_constant_desc(node: AST, options: Options): Doc {
       // *)
       if (args[0] == "0.0") return "\\zero";
       if (args[0] == "1.0") return "\\one";
+      if (args[0] == "-1.0") return "-\\one";
       const val = 0; // args[0];
       return par_if(val < 0, args[1] ? args[0].concat(args[1]) : args[0]);
     }
@@ -1176,12 +1179,15 @@ function print_expression_desc(node: AST, options: Options): Doc {
           if (opname == "-.") opname = "-";
           else if (opname == "~-.") opname = "-";
           // Drop the approximation precision from some operators
-          if (opname == "e^" || opname == "\\sqrt" || opname == "log_e" || opname == "log_2" || opname == "Exp.exp2" || opname == "Log.ln") { r.pop(); r.pop(); }
+          if (opname == "e^" || opname == "\\sqrt" ||
+            opname == "log_e" || opname == "log_2" || opname == "Exp.exp2" || opname == "Log.ln") { r.pop(); r.pop(); }
           let want_par = false;
           if (opname == "Exp.exp2")
             opname = "2^";
           else if (opname == "Log.ln")
             opname = "log_e";
+          else if (opname == "sin" || opname == "cos" || opname == "tanh")
+            want_par = true;
           if (opname == "log_e" || opname == "log_2") {
             opname = "\\" + opname;
             want_par = false;
@@ -1716,7 +1722,13 @@ function print_structure_item_desc(node: AST, options: Options): Doc {
           let r = ["\\noindent" as Doc];
 
           fname = camelize(fname);
-          fname = fname.replace(/^w/, "\\" + PREFIX + "\\");
+          if (/\d/.test(fname)) {
+            // Latex commands can't have digits in their name; needs \\csname.
+            fname = fname.replace(/^w/, "");
+            fname = `\\${PREFIX}\\csname ${fname}\\endcsname `;
+          }
+          else
+            fname = fname.replace(/^w/, "\\" + PREFIX + "\\");
           fname = fname.replace(/Fma/, "FMA");
           fname = fname.replace(/Faa/, "FAA");
           fname = fname.replace(/Rsqrt/, "RSqrt");

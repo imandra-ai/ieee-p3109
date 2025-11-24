@@ -595,3 +595,40 @@ theorem minNormalOf_normal (f : Format.t) =
       | Error _ -> true)
   [@@timeout 60]
   [@@by enumerate ["f"] @> ground_eval ()]
+
+(** [internal_expm1] never returns an error *)
+theorem internal_expm1_ok (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : Float.t) =
+  Result.is_ok (Float.internal_expm1 f_x f_z pi x)
+  [@@disable Specification.Float.wProject, Specification.Float.wDecode, Float.wDecodeAux, Format.parameters]
+  [@@by auto]
+
+(** [internal_log1p] never returns an error *)
+theorem internal_log1p_ok (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : Float.t) =
+  Result.is_ok (Float.internal_log1p f_x f_z pi x)
+  [@@disable Float.wProject, Float.wDecode, Float.wDecodeAux, Log.log, Log.ln, Format.parameters]
+  [@@by auto]
+
+(** [internal_sin] never returns an error *)
+theorem internal_sin_ok (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : Float.t) =
+  Result.is_ok (Float.internal_sin f_x f_z pi x)
+  [@@disable Specification.Float.wProject, Specification.Float.wDecode, Float.wDecodeAux, Format.parameters]
+  [@@by auto]
+
+(** [internal_cos] never returns an error *)
+theorem internal_cos_ok (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : Float.t) =
+  Result.is_ok (Float.internal_cos f_x f_z pi x)
+  [@@disable Specification.Float.wProject, Specification.Float.wDecode, Float.wDecodeAux, Format.parameters]
+  [@@by auto]
+
+(** [internal_tanh] never returns an error *)
+theorem internal_tanh_ok (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : Float.t) =
+  Result.is_ok (Float.internal_tanh f_x f_z pi x)
+  [@@disable Specification.Float.wProject, Specification.Float.wDecode, Float.wDecodeAux, Format.parameters]
+  [@@by auto]
+
+(** [internal_softplus] never returns an error *)
+theorem internal_softplus_ok (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : Float.t) =
+  Result.is_ok (Float.internal_softplus f_x f_z pi x)
+  [@@disable Specification.Float.wProject, Specification.Float.wDecode, Float.wDecodeAux, Format.parameters, Log.log, Log.ln, Exp.exp]
+  [@@timeout 3600]
+  [@@by auto]

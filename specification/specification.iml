@@ -3,6 +3,7 @@
 [@@@import Sqrt, "dune:math"]
 [@@@import Exp, "dune:math"]
 [@@@import Log, "dune:math"]
+[@@@import Trigonometric, "dune:math"]
 [@@@import ErrorPropagation, "ErrorPropagation.iml"]
 [@@@import IEEE754, "IEEE754.iml"]
 
@@ -2077,5 +2078,141 @@ module Float = struct
     | 2, 2, Unsigned, Extended -> Ok (nan f)
     | _ -> Ok (Util.ipow2 (p - 1))
 
+  (** New operations *)
+
+  let wExpm1 (x : CER.t) : (CER.t, string) Result.t =
+    let open CER in
+    match x with
+    | NaN -> Ok NaN
+    | PINF -> Ok PINF
+    | NINF -> Ok (R (- 1.0))
+    | R x ->
+      Ok (R ((Exp.exp x 9) -. 1.0)) (* TODO: Proof that 9 is enough *)
+    | _ -> Error "undefined"
+
+  let internal_expm1 (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) : (t, string) Result.t =
+    let* z = wExpm1 (wDecode f_x x) in
+    wProject f_z pi z
+
+  let expm1 (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) : t =
+    match internal_expm1 f_x f_z pi x with
+    | Ok x -> x
+    | Error _ -> (nan f_z) (* unreachable by theorem internal_expm1_ok *)
+
+  let wLog1p (x : CER.t) : (CER.t, string) Result.t =
+    let open CER in
+    match x with
+    | NaN -> Ok NaN
+    | PINF -> Ok PINF
+    | NINF -> Ok (R (- 1.0))
+    | R x when x <. (- 1.0) -> Ok NaN
+    | R x when x = (- 1.0) -> Ok NINF
+    | R x ->
+      match Log.ln (1.0 +. x) 9 with (* TODO: Proof that 9 is enough *)
+      | Ok r -> Ok (R r)
+      | Error e -> Error e
+    | _ -> Error "undefined"
+
+  let internal_log1p (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) : (t, string) Result.t =
+    let* z = wLog1p (wDecode f_x x) in
+    wProject f_z pi z
+
+  let log1p (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) : t =
+    match internal_log1p f_x f_z pi x with
+    | Ok x -> x
+    | Error _ -> (nan f_z) (* unreachable by theorem internal_log1p_ok *)
+
+  let wSin (x : CER.t) : (CER.t, string) Result.t =
+    let open CER in
+    let open Trigonometric in
+    match x with
+    | NaN -> Ok NaN
+    | PINF -> Ok NaN
+    | NINF -> Ok NaN
+    | R x ->
+      (match sin x with
+      | Ok r -> Ok (R (r))
+      | Error e -> Error e)
+    | _ -> Error "undefined"
+
+  let internal_sin (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) : (t, string) Result.t =
+    let* z = wSin (wDecode f_x x) in
+    wProject f_z pi z
+
+  let sin (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) : t =
+    match internal_sin f_x f_z pi x with
+    | Ok x -> x
+    | Error _ -> (nan f_z) (* unreachable by theorem internal_sin_ok *)
+
+  let wCos (x : CER.t) : (CER.t, string) Result.t =
+    let open CER in
+    let open Trigonometric in
+    match x with
+    | NaN -> Ok NaN
+    | PINF -> Ok NaN
+    | NINF -> Ok NaN
+    | R x ->
+      (match cos x with
+      | Ok r -> Ok (R (r))
+      | Error e -> Error e)
+    | _ -> Error "undefined"
+
+  let internal_cos (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) : (t, string) Result.t =
+    let* z = wCos (wDecode f_x x) in
+    wProject f_z pi z
+
+  let cos (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) : t =
+    match internal_cos f_x f_z pi x with
+    | Ok x -> x
+    | Error _ -> (nan f_z) (* unreachable by theorem internal_cos_ok *)
+
+  let wTanh (x : CER.t) : (CER.t, string) Result.t =
+    let open CER in
+    let open Trigonometric in
+    match x with
+    | NaN -> Ok NaN
+    | PINF -> Ok NaN
+    | NINF -> Ok NaN
+    | R x ->
+      (match tanh x with
+      | Ok r -> Ok (R (r))
+      | Error e -> Error e)
+    | _ -> Error "undefined"
+
+  let internal_tanh (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) : (t, string) Result.t =
+    let* z = wTanh (wDecode f_x x) in
+    wProject f_z pi z
+
+  let tanh (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) : t =
+    match internal_tanh f_x f_z pi x with
+    | Ok x -> x
+    | Error _ -> (nan f_z) (* unreachable by theorem internal_tanh_ok *)
+
+  let wSoftplus (x : CER.t) : (CER.t, string) Result.t =
+    let open CER in
+    match x with
+    | NaN -> Ok NaN
+    | PINF -> Ok NaN
+    | NINF -> Ok (R 0.0)
+    | R x when (Exp.exp x 9) <. (- 1.0) -> Ok NaN
+    | R x when (Exp.exp x 9) = (- 1.0) -> Ok NINF
+    | R x ->
+      (match Log.ln (1.0 +. (Exp.exp x 9)) 9 with (* TODO: Proof that 9 is enough *)
+      | Ok r -> Ok (R (r))
+      | Error e -> Error e)
+    | _ -> Error "undefined"
+
+  let internal_softplus (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) : (t, string) Result.t =
+    let* z = wSoftplus (wDecode f_x x) in
+    wProject f_z pi z
+
+  let softplus (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) : t =
+    match internal_softplus f_x f_z pi x with
+    | Ok x -> x
+    | Error _ -> (nan f_z) (* unreachable by theorem internal_softplus_ok *)
+
+(*
+  softmax, logsoftmax for activation functions
+*)
 
 end

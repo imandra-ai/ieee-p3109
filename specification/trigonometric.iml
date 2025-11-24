@@ -1,0 +1,5 @@
+[@@@import Util, "dune:math"]
+
+let sin (x : real) : (real, string) Result.t = Ok 0.0 (* TODO *)
+let cos (x : real) : (real, string) Result.t = Ok 0.0 (* TODO *)
+let tanh (x : real) : (real, string) Result.t = Ok 0.0 (* TODO *)
