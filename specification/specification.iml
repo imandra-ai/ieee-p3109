@@ -2129,10 +2129,7 @@ module Float = struct
     | NaN -> Ok NaN
     | PINF -> Ok NaN
     | NINF -> Ok NaN
-    | R x ->
-      (match sin x with
-      | Ok r -> Ok (R (r))
-      | Error e -> Error e)
+    | R x -> Ok (R (sin x 15)) (* TODO: prove that 15 is enough *)
     | _ -> Error "undefined"
 
   let internal_sin (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) : (t, string) Result.t =
@@ -2151,10 +2148,7 @@ module Float = struct
     | NaN -> Ok NaN
     | PINF -> Ok NaN
     | NINF -> Ok NaN
-    | R x ->
-      (match cos x with
-      | Ok r -> Ok (R (r))
-      | Error e -> Error e)
+    | R x -> Ok (R (cos x 15)) (* TODO: prove that 15 is enough *)
     | _ -> Error "undefined"
 
   let internal_cos (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) : (t, string) Result.t =
@@ -2166,6 +2160,29 @@ module Float = struct
     | Ok x -> x
     | Error _ -> (nan f_z) (* unreachable by theorem internal_cos_ok *)
 
+  let wTan (x : CER.t) : (CER.t, string) Result.t =
+    let open CER in
+    let open Trigonometric in
+    match x with
+    | NaN -> Ok NaN
+    | PINF -> Ok NaN
+    | NINF -> Ok NaN
+    | R x when Trigonometric.cos x 15 = 0.0 -> Ok NaN
+    | R x ->
+      (match tan x 15 with (* TODO: prove that 15 is enough *)
+      | Ok r -> Ok (R (r))
+      | Error e -> Error e)
+    | _ -> Error "undefined"
+
+  let internal_tan (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) : (t, string) Result.t =
+    let* z = wTan (wDecode f_x x) in
+    wProject f_z pi z
+
+  let tan (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) : t =
+    match internal_tan f_x f_z pi x with
+    | Ok x -> x
+    | Error _ -> (nan f_z) (* unreachable by theorem internal_tan_ok *)
+
   let wTanh (x : CER.t) : (CER.t, string) Result.t =
     let open CER in
     let open Trigonometric in
@@ -2173,10 +2190,7 @@ module Float = struct
     | NaN -> Ok NaN
     | PINF -> Ok (R 1.0)
     | NINF -> Ok (R (- 1.0))
-    | R x ->
-      (match tanh x with
-      | Ok r -> Ok (R (r))
-      | Error e -> Error e)
+    | R x -> Ok (R (tanh x 15))  (* TODO: prove that 15 is enough *)
     | _ -> Error "undefined"
 
   let internal_tanh (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) : (t, string) Result.t =

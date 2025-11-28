@@ -1,5 +1,7 @@
 [@@@import ErrorPropagation, "ErrorPropagation.iml"]
 [@@@import Util, "dune:math"]
+[@@@import Exp, "dune:math"]
+[@@@import Log, "dune:math"]
 
 open ErrorPropagation
 
@@ -7,33 +9,46 @@ open ErrorPropagation
   The functions sin, cos, tan, asin, acos, atan, and atan2 measure angles in radians.
   The functions sinPi, cosPi, asinPi, acosPi, atanPi, and atan2Pi measure angles in half-revolutions. *)
 
-let sin (x : real) : (real, string) Result.t =
-  let term (x : real) (n : int) : (real, string) Result.t =
-    let* fac = Util.rfactorial (2 * n + 1) in
-    Ok ((Util.ripow (- 1.0) n) *. (Util.ripow x (2 * n + 1) /. fac))
+let sin (x : real) (p : int) : real =
+  let term (x : real) (n : int) : real =
+    let fac = Util.rfactorial (2 * n + 1) in (* Note: n >= 0 here*)
+    (Util.ripow (- 1.0) n) *. (Util.ripow x (2 * n + 1) /. fac)
   in
-  Util.sum (fun i _ -> term x i) 0 10
+  Util.sum (fun i _ -> term x i) 0 p
 
-let cos (x : real) : (real, string) Result.t =
-  let term (x : real) (n : int) : (real, string) Result.t =
-    let* fac = Util.rfactorial (2 * n) in
-    Ok ((Util.ripow (- 1.0) n) *. (Util.ripow x (2 * n) /. fac))
+let cos (x : real) (p : int) : real =
+  let term (x : real) (n : int) : real =
+    let fac = Util.rfactorial (2 * n) in (* Note: n >= 0 here*)
+    (Util.ripow (- 1.0) n) *. (Util.ripow x (2 * n) /. fac)
   in
-  Util.sum (fun i _ -> term x i) 0 10
+  Util.sum (fun i _ -> term x i) 0 p
 
-let tan (x : real) : (real, string) Result.t =
-  let* cos_x = cos x in
-  let* sin_x = sin x in
+let tan (x : real) (p : int) : (real, string) Result.t =
+  let cos_x = cos x p in
+  let sin_x = sin x p in
   if cos_x = 0.0 then
     Error "division by zero"
   else
     Ok (sin_x /. cos_x)
 
-let sinh (x : real) : (real, string) Result.t = Ok 0.0 (* TODO *)
-let cosh (x : real) : (real, string) Result.t = Ok 0.0 (* TODO *)
-let tanh (x : real) : (real, string) Result.t = Ok 0.0 (* TODO *)
 
-let arcsin (x : real) : (real, string) Result.t = Ok 0.0 (* TODO *) (* sin _ = x*)
+let sinh (x : real) (p : int) : real =
+  (1.0 -. Exp.exp (-. (2.0 *. x)) p)
+  /.
+  (2.0 *. Exp.exp (-. x) p)
+
+let cosh (x : real) (p : int) : real =
+  (1.0 +. Exp.exp (-. (2.0 *. x)) p)
+  /.
+  (2.0 *. Exp.exp (-. x) p)
+
+let tanh (x : real) (p : int) : real =
+  (Exp.exp (2.0 *. x) p -. 1.0)
+  /.
+  (Exp.exp (2.0 *. x) p +. 1.0)
+
+
+let arcsin (x : real) : (real, string) Result.t = Ok 0.0 (* TODO *) (* sin _ = x *)
 let arccos (x : real) : (real, string) Result.t = Ok 0.0 (* TODO *)
 let arctan (x : real) : (real, string) Result.t = Ok 0.0 (* TODO *)
 
@@ -45,31 +60,49 @@ let arctanh (x : real) : (real, string) Result.t = Ok 0.0 (* TODO *) (* 1/2 * ln
 (* Some properties *)
 
 let pi = 3.1415926535897932384626433832795
+let prec = 15
 
-verify (sin 0.0 = Ok 0.0) [@@by auto]
+verify (sin 0.0 prec = 0.0) [@@by auto]
 
 verify (
-  match sin pi with
-  | Ok r -> 0.0 <=. r && r <=. 0.0000000001
-  | _ -> false)
+  let r = sin pi prec in
+  -0.0000000001 <=. r && r <=. 0.0000000001)
   [@@by auto]
 
 verify (
-  match sin (pi /. 2.0) with
-  | Ok r -> 0.99999999999999999 <=. r && r <=. 1.00000000000000001
-  | _ -> false)
+  let r = sin (pi /. 2.0) prec in
+  0.99999999999999999 <=. r && r <=. 1.00000000000000001)
   [@@by auto]
 
-verify (cos 0.0 = Ok 1.0) [@@by auto]
+verify (cos 0.0 prec = 1.0) [@@by auto]
 
 verify (
-  match cos pi with
-  | Ok r -> -1.000001 <=. r && r <=. -0.999999
-  | _ -> false)
+  let r = cos pi prec in
+  -1.000001 <=. r && r <=. -0.999999)
   [@@by auto]
 
 verify (
-  match cos (pi /. 2.0) with
-  | Ok r -> 0.0 <=. r && r <=. 0.0000000001
-  | _ -> false)
+  let r = cos (pi /. 2.0) prec in
+  -0.0000000001 <=. r && r <=. 0.0000000001)
+  [@@by auto]
+
+verify (sinh 0.0 prec = 0.0)
+
+verify (
+  let r = sinh 1.0 prec in
+  1.1752011 <=. r && r <=. 1.1752012)
+  [@@by auto]
+
+verify (cosh 0.0 prec = 1.0)
+
+verify (
+  let r = cosh 1.0 prec in
+  1.543080631 <=. r && r <=. 1.543080632)
+  [@@by auto]
+
+verify (tanh 0.0 prec = 0.0)
+
+verify (
+  let r = tanh 1.0 prec in
+  0.76159415580 <=. r && r <=. 0.76159415586)
   [@@by auto]

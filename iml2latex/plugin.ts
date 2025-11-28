@@ -1127,8 +1127,8 @@ function print_expression_desc(node: AST, options: Options): Doc {
       op_info.name = op_info.name.replace("||", "\\Or");
       op_info.name = op_info.name.replace("*.", "\\times");
 
-      if (op_info.name.startsWith("aug_")) {
-        op_info.name = "\\" + PREFIX + "\\" + op_info.name;
+      if (op_info.name.startsWith("w")) {
+        op_info.name = "\\" + PREFIX + "\\" + op_info.name.substring(1);
       }
 
       switch (op_info.notation) {

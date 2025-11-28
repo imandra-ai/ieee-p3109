@@ -622,6 +622,12 @@ theorem internal_cos_ok (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x
   [@@disable Specification.Float.wProject, Specification.Float.wDecode, Float.wDecodeAux, Format.parameters]
   [@@by auto]
 
+(** [internal_tan] never returns an error *)
+theorem internal_tan_ok (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : Float.t) =
+  Result.is_ok (Float.internal_tan f_x f_z pi x)
+  [@@disable Specification.Float.wProject, Specification.Float.wDecode, Float.wDecodeAux, Format.parameters, Trigonometric.sin, Trigonometric.cos]
+  [@@by auto]
+
 (** [internal_tanh] never returns an error *)
 theorem internal_tanh_ok (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : Float.t) =
   Result.is_ok (Float.internal_tanh f_x f_z pi x)
