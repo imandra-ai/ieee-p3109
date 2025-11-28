@@ -1128,7 +1128,7 @@ function print_expression_desc(node: AST, options: Options): Doc {
       op_info.name = op_info.name.replace("*.", "\\times");
 
       if (op_info.name.startsWith("aug_")) {
-        op_info.name = "\\" + PREFIX + "\\" + capitalize_first(op_info.name.substring(4));
+        op_info.name = "\\" + PREFIX + "\\" + op_info.name;
       }
 
       switch (op_info.notation) {

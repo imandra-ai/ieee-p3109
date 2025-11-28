@@ -11,8 +11,8 @@ spec.tex:
 	:
 
 %.tex: ../specification/specification.iml node_modules *.ts *.js
-	npx tsx iml2latex.ts ../specification/specification.iml $(patsubst %.tex,%,$@) > $(patsubst w%,aug_%,$@)
-	sed -i -e :a -e '/^\n*$$/{$$d;N;};/\n$$/ba' $(patsubst w%,aug_%,$@)
+	npx tsx iml2latex.ts ../specification/specification.iml $(patsubst %.tex,%,$@) > $@
+	sed -i -e :a -e '/^\n*$$/{$$d;N;};/\n$$/ba' $@
 
 node_modules:
 	npm install
