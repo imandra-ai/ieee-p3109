@@ -1188,7 +1188,7 @@ function print_expression_desc(node: AST, options: Options): Doc {
             opname = "log_e";
           else if (opname == "sin" || opname == "cos" || opname == "tanh")
             want_par = true;
-          if (opname == "log_e" || opname == "log_2") {
+          if (opname == "log_e" || opname == "log_2" || opname == "sin" || opname == "cos" || opname == "tanh") {
             opname = "\\" + opname;
             want_par = false;
           }
