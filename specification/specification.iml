@@ -2104,7 +2104,7 @@ module Float = struct
     match x with
     | NaN -> Ok NaN
     | PINF -> Ok PINF
-    | NINF -> Ok (R (- 1.0))
+    | NINF -> Ok NaN
     | R x when x <. (- 1.0) -> Ok NaN
     | R x when x = (- 1.0) -> Ok NINF
     | R x ->
@@ -2171,8 +2171,8 @@ module Float = struct
     let open Trigonometric in
     match x with
     | NaN -> Ok NaN
-    | PINF -> Ok NaN
-    | NINF -> Ok NaN
+    | PINF -> Ok (R 1.0)
+    | NINF -> Ok (R (- 1.0))
     | R x ->
       (match tanh x with
       | Ok r -> Ok (R (r))
