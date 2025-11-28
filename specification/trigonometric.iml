@@ -9,17 +9,19 @@ open ErrorPropagation
   The functions sin, cos, tan, asin, acos, atan, and atan2 measure angles in radians.
   The functions sinPi, cosPi, asinPi, acosPi, atanPi, and atan2Pi measure angles in half-revolutions. *)
 
+let ( ^. ) (x : real) (y : int) = Util.ripow x y
+
 let sin (x : real) (p : int) : real =
   let term (x : real) (n : int) : real =
     let fac = Util.rfactorial (2 * n + 1) in (* Note: n >= 0 here*)
-    (Util.ripow (- 1.0) n) *. (Util.ripow x (2 * n + 1) /. fac)
+    ((- 1.0) ^. n) *. ((x ^. (2 * n + 1)) /. fac)
   in
   Util.sum (fun i _ -> term x i) 0 p
 
 let cos (x : real) (p : int) : real =
   let term (x : real) (n : int) : real =
     let fac = Util.rfactorial (2 * n) in (* Note: n >= 0 here*)
-    (Util.ripow (- 1.0) n) *. (Util.ripow x (2 * n) /. fac)
+    ((- 1.0) ^. n) *. ((x ^. (2 * n)) /. fac)
   in
   Util.sum (fun i _ -> term x i) 0 p
 
@@ -33,28 +35,84 @@ let tan (x : real) (p : int) : (real, string) Result.t =
 
 
 let sinh (x : real) (p : int) : real =
-  (1.0 -. Exp.exp (-. (2.0 *. x)) p)
+  let open Exp in
+  (1.0 -. exp (-. (2.0 *. x)) p)
   /.
-  (2.0 *. Exp.exp (-. x) p)
+  (2.0 *. exp (-. x) p)
 
 let cosh (x : real) (p : int) : real =
-  (1.0 +. Exp.exp (-. (2.0 *. x)) p)
+  let open Exp in
+  (1.0 +. exp (-. (2.0 *. x)) p)
   /.
-  (2.0 *. Exp.exp (-. x) p)
+  (2.0 *. exp (-. x) p)
 
 let tanh (x : real) (p : int) : real =
-  (Exp.exp (2.0 *. x) p -. 1.0)
+  let open Exp in
+  (exp (2.0 *. x) p -. 1.0)
   /.
-  (Exp.exp (2.0 *. x) p +. 1.0)
+  (exp (2.0 *. x) p +. 1.0)
 
 
-let arcsin (x : real) : (real, string) Result.t = Ok 0.0 (* TODO *) (* sin _ = x *)
-let arccos (x : real) : (real, string) Result.t = Ok 0.0 (* TODO *)
-let arctan (x : real) : (real, string) Result.t = Ok 0.0 (* TODO *)
+let arcsin (x : real) (p : int) : (real, string) Result.t =
+  if x <. -1.0 || x >. 1.0 then
+    Error "invalid"
+  else
+    let term (x : real) (n : int) : real =
+      let fac_2n = Util.rfactorial (2 * n) in (* Note: n >= 0 here*)
+      let fac_n = Util.rfactorial n in
+      (fac_2n /. (((2.0 ^. n) *. fac_n) ^. 2))
+      *.
+      ((x ^. (2 * n + 1)) /. Real.of_int (2 * n + 1))
+    in
+    Ok (Util.sum (fun i _ -> term x i) 0 p)
 
-let arcsinh (x : real) : (real, string) Result.t = Ok 0.0 (* TODO *)
-let arccosh (x : real) : (real, string) Result.t = Ok 0.0 (* TODO *)
-let arctanh (x : real) : (real, string) Result.t = Ok 0.0 (* TODO *) (* 1/2 * ln ((1 + x)/(1 - x)) *)
+let arccos (x : real) (p : int) : (real, string) Result.t =
+  if x <. -1.0 || x >. 1.0 then
+    Error "invalid"
+  else
+    Error "TODO"
+
+let arctan (x : real) (p : int) : (real, string) Result.t =
+  if x <. -1.0 || x >. 1.0 then
+    Error "invalid"
+  else
+    let term (x : real) (n : int) : real =
+      (((- 1.0) ^. n) /. Real.of_int (2 * n + 1))
+      *.
+      x ^. (2 * n + 1)
+    in
+    Ok (Util.sum (fun i _ -> term x i) 0 p)
+
+let arcsinh (x : real) (p : int) : (real, string) Result.t =
+  if x <. -1.0 || x >. 1.0 then
+    Error "invalid"
+  else
+    let term (x : real) (n : int) : real =
+      let fac_2n = Util.rfactorial (2 * n) in (* Note: n >= 0 here*)
+      let fac_n = Util.rfactorial n in
+      ((((- 1.0) ^. n) *. fac_2n) /. ((Util.pow2 (2 * n)) *. (fac_n ^. 2) *. (Real.of_int (2 * n + 1))))
+      *.
+      (x ^. (2 * n + 1))
+    in
+    Ok (Util.sum (fun i _ -> term x i) 0 p)
+
+let arccosh (x : real) (p : int) : (real, string) Result.t =
+  if x <. -1.0 || x >. 1.0 then
+    Error "invalid"
+  else
+    Error "TODO"
+
+let arctanh (x : real) (p : int) : (real, string) Result.t =
+   if x <=. -1.0 || x >=. 1.0 then
+    Error "invalid"
+  else
+    (* Note: This converges incredibly slowly as we get close to +-1.0. *)
+    let term (x : real) (n : int) : real =
+      (x ^. (2 * n + 1))
+      /.
+      (Real.of_int (2 * n + 1))
+    in
+    Ok (Util.sum (fun i _ -> term x i) 0 p)
 
 
 (* Some properties *)
@@ -105,4 +163,51 @@ verify (tanh 0.0 prec = 0.0)
 verify (
   let r = tanh 1.0 prec in
   0.76159415580 <=. r && r <=. 0.76159415586)
+  [@@by auto]
+
+
+verify (arcsin 0.0 prec = Ok 0.0) [@@by auto]
+
+verify (
+  let r = arcsin 0.84 prec in
+  match r with
+  | Ok r -> 0.997244 <=. r && r <=. 1.002756
+  | _ -> false)
+  [@@by auto]
+
+verify (arctan 0.0 prec = Ok 0.0) [@@by auto]
+
+verify (
+  let r = arctan 0.5 prec in
+  match r with
+  | Ok r -> 0.495380 <=. r && r <=. 0.495381
+  | _ -> false)
+  [@@by auto]
+
+verify (arcsinh 0.0 prec = Ok 0.0) [@@by auto]
+
+verify (
+  let r = arcsinh 0.5 prec in
+  match r with
+  | Ok r -> 0.481211825 <=. r && r <=. 0.481211826
+  | _ -> false)
+  [@@by auto]
+
+
+verify (arctanh 0.0 prec = Ok 0.0) [@@by auto]
+verify (arctanh 1.0 prec = Error "invalid") [@@by auto]
+verify (arctanh (- 1.0) prec = Error "invalid") [@@by auto]
+
+verify (
+  let r = arctanh 0.5 prec in
+  match r with
+  | Ok r -> 0.5493061 <=. r && r <=. 0.5493062
+  | _ -> false)
+  [@@by auto]
+
+verify (
+  let r = arctanh 0.9 prec in
+  match r with
+  | Ok r -> 1.468 <=. r && r <=. 1.479
+  | _ -> false)
   [@@by auto]
