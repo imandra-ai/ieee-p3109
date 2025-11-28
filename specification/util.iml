@@ -1,6 +1,6 @@
 (** Some math utility functions *)
 
-[@@@import ErrorPropagation, "ErrorPropagation.iml"]
+[@@@import ErrorPropagation, "dune:basic"]
 
 open ErrorPropagation
 
@@ -100,38 +100,57 @@ let rec num_bits (x : int) : int =
     1 + num_bits (x / 2)
   [@@measure Ordinal.of_int (abs x)]
 
-let rec factorial (x : int) : (int, string) Result.t =
+let rec factorial (x : int) : int =
   if x < 0 then
-    Error "invalid"
+    - (x * (factorial ((- x) - 1)))
   else if x = 0 then
-    Ok 1
+    1
   else
-    let* t = factorial (x - 1) in
-    Ok (x * t)
+    x * factorial (x - 1)
+  [@@measure Ordinal.of_int (abs x)]
 
-let rec rfactorial (x : int) : (real, string) Result.t =
+let rec rfactorial (x : int) : real =
   if x < 0 then
-    Error "invalid"
+    -. (Real.of_int x *. (rfactorial ((- x) - 1)))
   else if x = 0 then
-    Ok 1.0
+    1.0
   else
-    let* t = rfactorial (x - 1) in
-    Ok (Real.of_int x *. t)
+    let t = rfactorial (x - 1) in
+    (Real.of_int x *. t)
+  [@@measure Ordinal.of_int (abs x)]
 
-let rec sum (f : int -> int -> (real, string) Result.t) (from : int) (to_ : int) : (real, string) Result.t =
+let rec sum (f : int -> int -> real) (from : int) (to_ : int) : real =
+  if from > to_ then
+    0.0
+  else
+    let cur = f from to_ in
+    let rest = sum f (from + 1) to_ in
+    cur +. rest
+  [@@measure Ordinal.of_int (to_ - from)]
+
+let rec product (f : int -> int -> real) (from : int) (to_ : int) : real =
+  if from > to_ then
+    1.0
+  else
+    let cur = f from to_ in
+    let rest = product f (from + 1) to_ in
+    cur *. rest
+  [@@measure Ordinal.of_int (to_ - from)]
+
+let rec rsum (f : int -> int -> (real, string) Result.t) (from : int) (to_ : int) : (real, string) Result.t =
   if from > to_ then
     Ok 0.0
   else
     let* cur = f from to_ in
-    let* rest = sum f (from + 1) to_ in
+    let* rest = rsum f (from + 1) to_ in
     Ok (cur +. rest)
   [@@measure Ordinal.of_int (to_ - from)]
 
-let rec product (f : int -> int -> (real, string) Result.t) (from : int) (to_ : int) : (real, string) Result.t =
+let rec rproduct (f : int -> int -> (real, string) Result.t) (from : int) (to_ : int) : (real, string) Result.t =
   if from > to_ then
-    Ok 0.0
+    Ok 1.0
   else
     let* cur = f from to_ in
-    let* rest = sum f (from + 1) to_ in
+    let* rest = rproduct f (from + 1) to_ in
     Ok (cur *. rest)
   [@@measure Ordinal.of_int (to_ - from)]

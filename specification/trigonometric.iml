@@ -1,4 +1,4 @@
-[@@@import ErrorPropagation, "ErrorPropagation.iml"]
+[@@@import ErrorPropagation, "dune:basic"]
 [@@@import Util, "dune:math"]
 [@@@import Exp, "dune:math"]
 [@@@import Log, "dune:math"]

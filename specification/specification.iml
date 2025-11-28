@@ -4,7 +4,7 @@
 [@@@import Exp, "dune:math"]
 [@@@import Log, "dune:math"]
 [@@@import Trigonometric, "dune:math"]
-[@@@import ErrorPropagation, "ErrorPropagation.iml"]
+[@@@import ErrorPropagation, "dune:basic"]
 [@@@import IEEE754, "IEEE754.iml"]
 
 open ErrorPropagation

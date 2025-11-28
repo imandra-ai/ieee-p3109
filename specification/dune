@@ -1,27 +1,35 @@
 (library
- (name math)
+ (name basic)
  (package p3109)
  (flags :standard -open Imandrax_prelude -open Prelude_extracted)
- (modules ExReal CER Util Sqrt Log Exp Agm Trigonometric)
+ (modules ErrorPropagation)
  (modes byte native)
  (libraries imandrax_prelude))
 
 (library
+ (name math)
+ (package p3109)
+ (flags :standard -open Imandrax_prelude -open Prelude_extracted -open Basic)
+ (modules ExReal CER Util Sqrt Log Exp Agm Trigonometric)
+ (modes byte native)
+ (libraries imandrax_prelude basic))
+
+(library
  (name specification)
  (package p3109)
- (flags :standard -open Imandrax_prelude -open Prelude_extracted -open Math)
- (modules Specification IEEE754 ErrorPropagation)
+ (flags :standard -open Imandrax_prelude -open Prelude_extracted -open Math -open Basic)
+ (modules Specification IEEE754)
  (modes byte native)
- (libraries imandrax_prelude math)
+ (libraries imandrax_prelude math basic)
  (preprocess
   (pps ppx_deriving.std ppx_subliner)))
 
 (library
  (name theorems)
  (package p3109)
- (flags :standard -open Imandrax_prelude -open Prelude_extracted -open Math)
+ (flags :standard -open Imandrax_prelude -open Prelude_extracted -open Math -open Basic)
  (modules Theorems_format_ranges Theorems_m_hi Theorems_sqrt Theorems_sqrt_convergence Ulp Fsqrt)
  (modes byte native)
- (libraries imandrax_prelude math specification)
+ (libraries imandrax_prelude math specification basic)
  (preprocess
   (pps ppx_deriving.std ppx_subliner)))

@@ -266,7 +266,7 @@ function operator_precedence_info(op: string | undefined, more_than_one_arg = fa
     return new PrecedenceInfo("log_e", Notation.Prefix, Associativity.Left, 17);
   else if (op == "Log.log2")
     return new PrecedenceInfo("log_2", Notation.Prefix, Associativity.Left, 17);
-  else if (op == "sin" || op == "cos" || op == "tanh")
+  else if (op == "sin" || op == "cos" || op == "tan" || op == "sinh" || op == "cosh" || op == "tanh")
     return new PrecedenceInfo(op, Notation.Prefix, Associativity.Left, 17);
   else if (op == "Util.ripow")
     return new PrecedenceInfo("^", Notation.Infix, Associativity.None, 13);
@@ -1126,6 +1126,7 @@ function print_expression_desc(node: AST, options: Options): Doc {
       op_info.name = op_info.name.replace("&&", "\\And");
       op_info.name = op_info.name.replace("||", "\\Or");
       op_info.name = op_info.name.replace("*.", "\\times");
+      op_info.name = op_info.name.replace("Trigonometric.cos", "cos");
 
       if (op_info.name.startsWith("w")) {
         op_info.name = "\\" + PREFIX + "\\" + op_info.name.substring(1);
@@ -1180,7 +1181,10 @@ function print_expression_desc(node: AST, options: Options): Doc {
           else if (opname == "~-.") opname = "-";
           // Drop the approximation precision from some operators
           if (opname == "e^" || opname == "\\sqrt" ||
-            opname == "log_e" || opname == "log_2" || opname == "Exp.exp2" || opname == "Log.ln") { r.pop(); r.pop(); }
+            opname == "log_e" || opname == "log_2" || opname == "Exp.exp2" || opname == "Log.ln" ||
+            opname == "sin" || opname == "cos" || opname == "tan" ||
+            opname == "sinh" || opname == "cosh" || opname == "tanh"
+          ) { r.pop(); r.pop(); }
           let want_par = false;
           if (opname == "Exp.exp2")
             opname = "2^";
@@ -1188,7 +1192,7 @@ function print_expression_desc(node: AST, options: Options): Doc {
             opname = "log_e";
           else if (opname == "sin" || opname == "cos" || opname == "tanh")
             want_par = true;
-          if (opname == "log_e" || opname == "log_2" || opname == "sin" || opname == "cos" || opname == "tanh") {
+          if (opname == "log_e" || opname == "log_2" || opname == "sin" || opname == "cos" || opname == "tan" || opname == "sinh" || opname == "cosh" || opname == "tanh") {
             opname = "\\" + opname;
             want_par = false;
           }
