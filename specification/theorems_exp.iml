@@ -3,6 +3,7 @@
 [@@@import ExReal, "ExReal.iml"]
 [@@@import Specification, "specification.iml"]
 [@@@import Theorems_log, "theorems_log.iml"]
+[@@@import Theorems_pow2, "theorems_pow2.iml"]
 
 open ExReal
 open Specification
@@ -25,5 +26,67 @@ theorem ln2_gt0_ok (p : int) =
 theorem exp2_ok (x : real) (p : int) =
   let r = exp2 x p [@@trigger] in
   Result.is_ok r
+  [@@by auto]
+  [@@fc]
+
+theorem h1 (x : real) =
+  ((Util.ripow (Real.abs x) 2) [@trigger]) >=. 0.0
+  [@@by auto]
+  [@@fc]
+
+theorem ripow_gt0 (x : real) (n : int) =
+  x >=. 0.0 ==> (Util.ripow x n) [@trigger] >=. 0.0
+  [@@by auto]
+  [@@fc]
+
+theorem int_real_gt0 (x : int) =
+  x >= 0 ==> (Real.of_int x) [@trigger] >=. 0.0
+  [@@by auto]
+  [@@fc]
+
+theorem div_gt0 (x : real) (y : int) =
+  x >=. 0.0 && y >= 1 ==> x /. (Real.of_int y) [@trigger] >=. 0.0
+  [@@by unroll_nonlin 100 100 1]
+  [@@fc]
+
+theorem exp_refine_accs_pos (i : int) (p : int) (x : real) (f : int) (f_acc : int) (r_acc : real) =
+  x >=. 0.0 && r_acc >=. 0.0 && f >= 0 && f_acc > 0
+  ==>
+  let f_acc, r_acc = (exp_refine_accs i p x f f_acc r_acc) [@trigger] in
+  f_acc > 0 && r_acc >=. 0.0
+  [@@by auto]
+  [@@fc]
+
+theorem exp_refine_pos (i : int) (p : int) (x : real) (f : int) (f_acc : int) (r_acc : real) =
+  x >=. 0.0 && r_acc >=. 0.0 && f >= 0 && f_acc > 0
+  ==>
+  (exp_refine i p x f f_acc r_acc) [@trigger] >=. 0.0
+  [@@by auto]
+  [@@fc]
+
+theorem exp_refine_pos2 (i : int) (p : int) (x : real) (f : int) (f_acc : int) (r_acc : real) =
+  x <. 0.0 && r_acc >=. 0.0 && f >= 0 && f_acc > 0
+  ==>
+  (exp_refine i p (-. x) f f_acc r_acc) [@trigger] >=. 0.0
+  [@@by auto]
+  [@@fc]
+
+lemma div_neg_gt0 (x : real) (rt : real) =
+  x <=. 0.0 && rt >. 0.0 ==> (-. x) /. rt >=. 0.0
+  [@@by unroll_nonlin 1 1 0]
+  [@@fc]
+
+theorem exp_refine_pos_neg (i : int) (p : int) (x : real) (f : int) (f_acc : int) (r_acc : real) =
+  x <. 0.0 && r_acc >=. 0.0 && f >= 0 && f_acc > 0
+  ==>
+  let q = (exp_refine i p (-. x) f f_acc r_acc) [@trigger] in
+  if q = 0.0 then true else 1.0 /. q >=. 0.0
+  [@@by auto]
+  [@@fc]
+
+theorem exp_is_positive (x : real) (n : int) =
+  let open CER in
+  (exp x n) [@trigger] >=. 0.0
+  [@@disable Exp.exp_refine]
   [@@by auto]
   [@@fc]

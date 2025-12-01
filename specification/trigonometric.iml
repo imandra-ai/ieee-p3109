@@ -84,20 +84,17 @@ let arctan (x : real) (p : int) : (real, string) Result.t =
     Ok (Util.sum (fun i _ -> term x i) 0 p)
 
 let arcsinh (x : real) (p : int) : (real, string) Result.t =
-  if x <. -1.0 || x >. 1.0 then
-    Error "invalid"
-  else
-    let term (x : real) (n : int) : real =
-      let fac_2n = Util.rfactorial (2 * n) in (* Note: n >= 0 here*)
-      let fac_n = Util.rfactorial n in
-      ((((- 1.0) ^. n) *. fac_2n) /. ((Util.pow2 (2 * n)) *. (fac_n ^. 2) *. (Real.of_int (2 * n + 1))))
-      *.
-      (x ^. (2 * n + 1))
-    in
-    Ok (Util.sum (fun i _ -> term x i) 0 p)
+  let term (x : real) (n : int) : real =
+    let fac_2n = Util.rfactorial (2 * n) in (* Note: n >= 0 here*)
+    let fac_n = Util.rfactorial n in
+    ((((- 1.0) ^. n) *. fac_2n) /. ((Util.pow2 (2 * n)) *. (fac_n ^. 2) *. (Real.of_int (2 * n + 1))))
+    *.
+    (x ^. (2 * n + 1))
+  in
+  Ok (Util.sum (fun i _ -> term x i) 0 p)
 
 let arccosh (x : real) (p : int) : (real, string) Result.t =
-  if x <. -1.0 || x >. 1.0 then
+  if x <. 1.0 then
     Error "invalid"
   else
     Ok 0.0 (* TODO *)

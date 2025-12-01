@@ -565,9 +565,10 @@ theorem maxFiniteOf_ok (f : Format.t) =
   [@@by auto]
 
 theorem minFiniteOf_ok (f : Format.t) =
-  Result.is_ok (Float.minFiniteOf f)
+  Result.is_ok (Float.minFiniteOf f) [@trigger]
   [@@disable Format.parameters, Float.wEncode]
   [@@by auto]
+  [@@fc]
 
 (* It's always ok to get minPositiveOf *)
 theorem minPositiveOf_ok (f : Format.t) =
@@ -609,14 +610,14 @@ theorem minNormalOf_normal (f : Format.t) =
   [@@by enumerate ["f"] @> ground_eval ()]
 
 (** [internal_expm1] never returns an error *)
-theorem internal_expm1_ok (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : Float.t) =
-  Result.is_ok (Float.internal_expm1 f_x f_z pi x)
+theorem internal_expMinusOne_ok (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : Float.t) =
+  Result.is_ok (Float.internal_expMinusOne f_x f_z pi x)
   [@@disable Specification.Float.wProject, Specification.Float.wDecode, Float.wDecodeAux, Format.parameters]
   [@@by auto]
 
 (** [internal_log1p] never returns an error *)
-theorem internal_log1p_ok (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : Float.t) =
-  Result.is_ok (Float.internal_log1p f_x f_z pi x)
+theorem internal_logOnePlus_ok (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : Float.t) =
+  Result.is_ok (Float.internal_logOnePlus f_x f_z pi x)
   [@@disable Float.wProject, Float.wDecode, Float.wDecodeAux, Log.log, Log.ln, Format.parameters]
   [@@by auto]
 
@@ -711,13 +712,43 @@ theorem internal_softmax_ok (f_x : Format.t) (f_r : Format.t) (pi : Projection.t
   [@@timeout 3600]
   [@@by induct ~do_not:["gen"; "fert"; "delim"] ()]
 
-theorem next_up_ok (f_x : Format.t) (f_r : Format.t) (x : Float.t) =
-  Result.is_ok (Float.next_up f_x f_r x)
-  [@@disable Specification.Float.wProject, Specification.Float.wEncode, Specification.Float.wDecode, Float.wDecodeAux, Format.parameters]
+(** [internal_nextGreaterThan] never returns an error *)
+theorem internal_nextGreaterThan_ok (f : Format.t) (x : Float.t) =
+  Result.is_ok (Float.internal_nextGreaterThan f x)
+  [@@disable Format.parameters, Float.minFiniteOf]
   [@@by auto]
 
-theorem next_down_ok (f_x : Format.t) (f_r : Format.t) (x : Float.t) =
-  Result.is_ok (Float.next_down f_x f_r x)
-  [@@disable Specification.Float.wProject, Specification.Float.wEncode, Specification.Float.wDecode, Float.wDecodeAux, Format.parameters]
+(** [internal_nextLessThan] never returns an error *)
+theorem internal_nextLessThan_ok (f : Format.t) (x : Float.t) =
+  Result.is_ok (Float.internal_nextLessThan f x)
+  [@@disable Format.parameters, Float.minFiniteOf]
   [@@by auto]
 
+(* Some extras *)
+
+theorem wExp_is_positive (x : CER.t) =
+  let open CER in
+  match Float.wExp x with
+  | Ok CER.NaN -> true
+  | Ok CER.PINF -> true
+  | Ok CER.NINF -> false
+  | Ok (R x) -> x >=. 0.0
+  | Error _ -> false
+  [@@timeout 3600]
+  [@@disable Format.parameters, Util.pow2, Util.ipow2, Util.ripow, Exp.exp]
+  [@@by auto]
+
+theorem wRoundToPrecision_preserves_positivity (p : int) (b : int) (rnd : RoundingMode.t) (x : CER.t) =
+  let open CER.Infix in
+  x >= CER.zero ==> (Float.wRoundToPrecision p b rnd x) [@trigger] >= CER.zero
+  [@@disable Util.pow2, Util.ipow2, Util.floor_log2_abs, Util.floor, Util.ifloor]
+  [@@by auto]
+  [@@fc]
+
+theorem wSaturate_preserves_positivity (m_lo : real) (m_hi : real) (sat : SaturationMode.t) (rnd : RoundingMode.t) (x : CER.t) (s : Signedness.t) (d : Domain.t) =
+  let open CER.Infix in
+  m_lo <=. 0.0 && m_hi >. 0.0 ==>
+  x >= CER.zero ==> (Float.wSaturate m_lo m_hi sat rnd x s d) [@trigger] >= CER.zero
+  [@@disable Float.wDecode, Float.wDecodeAux, Format.parameters, Util.pow2, Util.ipow2, Util.floor_log2_abs, Util.floor, Util.ifloor]
+  [@@by auto]
+  [@@fc]

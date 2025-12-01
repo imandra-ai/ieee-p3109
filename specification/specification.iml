@@ -1294,7 +1294,7 @@ module Float = struct
   let internal_compareLessEqual (f_x : Format.t) (f_y : Format.t)  (x : t) (y : t) : (bool, string) Result.t =
     wCompareLessEqual (wDecode f_x x) (wDecode f_y y)
 
-  let compareLessEqual (f_x : Format.t) (f_y : Format.t) (x : t) (y : t)  : bool =
+  let compareLessEqual (f_x : Format.t) (f_y : Format.t) (x : t) (y : t) : bool =
     match internal_compareLessEqual f_x f_y x y  with
     | Ok r -> r
     | Error _ -> false (* unreachable by theorem internal_compare_less_equal_ok *)
@@ -1317,7 +1317,7 @@ module Float = struct
   let internal_compareEqual (f_x : Format.t) (f_y : Format.t)  (x : t) (y : t) : (bool, string) Result.t =
     wCompareEqual (wDecode f_x x) (wDecode f_y y)
 
-  let compare_equal (f_x : Format.t) (f_y : Format.t) (x : t) (y : t)  : bool =
+  let compare_equal (f_x : Format.t) (f_y : Format.t) (x : t) (y : t) : bool =
     match internal_compareEqual f_x f_y x y  with
     | Ok r -> r
     | Error _ -> false (* unreachable by theorem internal_compare_equal_ok *)
@@ -1339,7 +1339,7 @@ module Float = struct
   let internal_compareGreater (f_x : Format.t) (f_y : Format.t)  (x : t) (y : t) : (bool, string) Result.t =
     wCompareGreater (wDecode f_x x) (wDecode f_y y)
 
-  let compareGreater (f_x : Format.t) (f_y : Format.t) (x : t) (y : t)  : bool =
+  let compareGreater (f_x : Format.t) (f_y : Format.t) (x : t) (y : t) : bool =
     match internal_compareGreater f_x f_y x y  with
     | Ok r -> r
     | Error _ -> false (* unreachable by theorem internal_compareGreater_ok *)
@@ -1361,7 +1361,7 @@ module Float = struct
   let internal_compareGreaterEqual (f_x : Format.t) (f_y : Format.t)  (x : t) (y : t) : (bool, string) Result.t =
     wCompareGreaterEqual (wDecode f_x x) (wDecode f_y y)
 
-  let compareGreaterEqual (f_x : Format.t) (f_y : Format.t) (x : t) (y : t)  : bool =
+  let compareGreaterEqual (f_x : Format.t) (f_y : Format.t) (x : t) (y : t) : bool =
     match internal_compareGreaterEqual f_x f_y x y  with
     | Ok r -> r
     | Error _ -> false (* unreachable by theorem internal_compareGreaterEqual_ok *)
@@ -2390,8 +2390,6 @@ module Float = struct
       | Ok r -> Ok (R (r))
       | Error e -> Error e)
     | _ -> Error "undefined"
-    (* | R x when (Exp.exp x 9) <. (- 1.0) -> Ok NaN
-    | R x when (Exp.exp x 9) = (- 1.0) -> Ok NINF *)
 
   let internal_softplus (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) : (t, string) Result.t =
     let* z = wSoftplus (wDecode f_x x) in
@@ -2418,7 +2416,6 @@ module Float = struct
     let denom : CER.t = softmax_denom xs in
     Ok (List.map (fun x -> x / denom) xs)
 
-
   let internal_softmax (f_x : Format.t) (f_r : Format.t) (pi : Projection.t) (xs : t list) : (t list, string) Result.t =
     let cx = map_decode f_x xs in
     let* zs = wSoftmax cx in
@@ -2434,28 +2431,36 @@ module Float = struct
   logsoftmax for activation functions
 *)
 
-  let next_up (f_x : Format.t) (f_r : Format.t) (x : t) : (t, string) Result.t =
-    let open CER in
-    let m_hi = maxFiniteOf f_x in
-    let s_r = signednessOf f_r in
-    let d_r = domainOf f_r in
-    match wDecode f_x x with
-    | CER.NaN -> Ok (nan f_r)
-    | PINF -> if d_r = Domain.Extended then pinf f_r else Ok (nan f_r)
-    | NINF -> if d_r = Domain.Extended && s_r = Signedness.Signed then minFiniteOf f_r else Ok (nan f_r)
-    | R m_hi -> if d_r = Domain.Extended && s_r = Signedness.Signed then pinf f_r else Ok (nan f_r)
-    | _ -> wEncode f_r (wDecode f_x (x + 1))
+  let internal_nextGreaterThan (f : Format.t) (x : t) : (t, string) Result.t =
+    let open Signedness in
+    let open Domain in
+    let max_finite = maxFiniteOf f in
+    let smallest_negative =
+      match minFiniteOf f with
+      | Ok q -> negate f q
+      | Error e -> 0
+    in
+    match x with
+    | _ when isNaN f x -> Ok (nan f)
+    | _ when isInfinite f x && not (isSignMinus f x) -> minFiniteOf f
+    | _ when isInfinite f x && isSignMinus f x -> Ok (nan f)
+    | max_finite when domainOf f = Finite -> Ok (nan f)
+    | max_finite when domainOf f = Extended -> pinf f
+    | smallest_negative when signednessOf f = Signed -> Ok zero
+    | _ when isSignMinus f x -> Ok (x - 1)
+    | _ -> Ok (x + 1)
 
-  let next_down (f_x : Format.t) (f_r : Format.t) (x : t) : (t, string) Result.t =
-    let open CER in
-    let m_lo = minFiniteOf f_x in
-    let s_r = signednessOf f_r in
-    let d_r = domainOf f_r in
-    match wDecode f_x x with
-    | CER.NaN -> Ok (nan f_r)
-    | PINF -> if d_r = Domain.Extended && s_r = Signedness.Signed then maxFiniteOf f_r else Ok (nan f_r)
-    | NINF -> if d_r = Domain.Extended then ninf f_r else Ok (nan f_r)
-    | R m_lo -> if d_r = Domain.Extended && s_r = Signedness.Signed then ninf f_r else Ok (nan f_r)
-    | _ -> wEncode f_r (wDecode f_x (x - 1))
+  let nextGreaterThan (f : Format.t) (x : t) : t =
+    match internal_nextGreaterThan f x with
+    | Ok r -> r
+    | _ -> 0 (* unreachable by internal_nextGreaterThan_ok *)
+
+  let internal_nextLessThan (f : Format.t) (x : t) : (t, string) Result.t =
+    Error "TODO"
+
+  let nextLessThan (f : Format.t) (x : t) : t =
+    match internal_nextLessThan f x with
+    | Ok r -> r
+    | _ -> 0 (* unreachable by internal_nextLessThan_ok *)
 
 end
