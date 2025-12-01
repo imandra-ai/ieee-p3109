@@ -559,6 +559,16 @@ theorem internal_class_ok (f : Format.t) (x : Float.t) =
 
 (** 4.5 Format-level operations *)
 
+theorem maxFiniteOf_ok (f : Format.t) =
+  Result.is_ok (Float.maxFiniteOf f)
+  [@@disable Format.parameters, Float.wEncode]
+  [@@by auto]
+
+theorem minFiniteOf_ok (f : Format.t) =
+  Result.is_ok (Float.minFiniteOf f)
+  [@@disable Format.parameters, Float.wEncode]
+  [@@by auto]
+
 (* It's always ok to get minPositiveOf *)
 theorem minPositiveOf_ok (f : Format.t) =
   let open Float in
