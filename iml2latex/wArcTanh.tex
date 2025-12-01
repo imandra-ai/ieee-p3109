@@ -1,5 +1,7 @@
 \noindent\Case{\Cer\ArcTanh(\NaN) \gives  \NaN}\\
-\Case{\Cer\ArcTanh(+\infty) \gives  \one}\\
-\Case{\Cer\ArcTanh(-\infty) \gives  -\one}\\
+\Case{\Cer\ArcTanh(+\infty) \gives  \NaN}\\
+\Case{\Cer\ArcTanh(-\infty) \gives  \NaN}\\
 \Case{\Cer\ArcTanh(X) ~\If X \leq -\one \Or X \geq \one\gives  \NaN}\\
+\Case{\Cer\ArcTanh(X) ~\If X = \one\gives  +\infty}\\
+\Case{\Cer\ArcTanh(X) ~\If X = -\one\gives  -\infty}\\
 \Case{\Cer\ArcTanh(X) \gives \arctanh{ X}}\\

@@ -2360,8 +2360,8 @@ module Float = struct
     let open Trigonometric in
     match x with
     | NaN -> Ok NaN
-    | PINF -> Ok (R 1.0)
-    | NINF -> Ok (R (- 1.0))
+    | PINF -> Ok NaN
+    | NINF -> Ok NaN
     | R x when x <=. -1.0 || x >=. 1.0 -> Ok NaN
     | R x when x = 1.0 -> Ok PINF
     | R x when x = -1.0 -> Ok NINF
