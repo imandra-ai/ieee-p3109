@@ -652,3 +652,14 @@ theorem internal_softmax_ok (f_x : Format.t) (f_r : Format.t) (pi : Projection.t
   [@@disable Specification.Float.wProject, Specification.Float.wDecode, Float.wDecodeAux, Format.parameters, Log.log, Log.ln, Exp.exp, Float.map_decode, Float.map_project]
   [@@timeout 3600]
   [@@by induct ~do_not:["gen"; "fert"; "delim"] ()]
+
+theorem next_up_ok (f_x : Format.t) (f_r : Format.t) (x : Float.t) =
+  Result.is_ok (Float.next_up f_x f_r x)
+  [@@disable Specification.Float.wProject, Specification.Float.wEncode, Specification.Float.wDecode, Float.wDecodeAux, Format.parameters]
+  [@@by auto]
+
+theorem next_down_ok (f_x : Format.t) (f_r : Format.t) (x : Float.t) =
+  Result.is_ok (Float.next_down f_x f_r x)
+  [@@disable Specification.Float.wProject, Specification.Float.wEncode, Specification.Float.wDecode, Float.wDecodeAux, Format.parameters]
+  [@@by auto]
+

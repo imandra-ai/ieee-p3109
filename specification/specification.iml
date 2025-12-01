@@ -2257,4 +2257,28 @@ module Float = struct
   logsoftmax for activation functions
 *)
 
+  let next_up (f_x : Format.t) (f_r : Format.t) (x : t) : (t, string) Result.t =
+    let open CER in
+    let m_hi = maxFiniteOf f_x in
+    let s_r = signednessOf f_r in
+    let d_r = domainOf f_r in
+    match wDecode f_x x with
+    | CER.NaN -> Ok (nan f_r)
+    | PINF -> if d_r = Domain.Extended then pinf f_r else Ok (nan f_r)
+    | NINF -> if d_r = Domain.Extended && s_r = Signedness.Signed then minFiniteOf f_r else Ok (nan f_r)
+    | R m_hi -> if d_r = Domain.Extended && s_r = Signedness.Signed then pinf f_r else Ok (nan f_r)
+    | _ -> wEncode f_r (wDecode f_x (x + 1))
+
+  let next_down (f_x : Format.t) (f_r : Format.t) (x : t) : (t, string) Result.t =
+    let open CER in
+    let m_lo = minFiniteOf f_x in
+    let s_r = signednessOf f_r in
+    let d_r = domainOf f_r in
+    match wDecode f_x x with
+    | CER.NaN -> Ok (nan f_r)
+    | PINF -> if d_r = Domain.Extended && s_r = Signedness.Signed then maxFiniteOf f_r else Ok (nan f_r)
+    | NINF -> if d_r = Domain.Extended then ninf f_r else Ok (nan f_r)
+    | R m_lo -> if d_r = Domain.Extended && s_r = Signedness.Signed then ninf f_r else Ok (nan f_r)
+    | _ -> wEncode f_r (wDecode f_x (x - 1))
+
 end
