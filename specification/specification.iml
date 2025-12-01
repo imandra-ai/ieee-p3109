@@ -3,6 +3,7 @@
 [@@@import Sqrt, "dune:math"]
 [@@@import Exp, "dune:math"]
 [@@@import Log, "dune:math"]
+[@@@import Pi, "dune:math"]
 [@@@import Trigonometric, "dune:math"]
 [@@@import ErrorPropagation, "dune:basic"]
 [@@@import IEEE754, "IEEE754.iml"]
@@ -2291,8 +2292,8 @@ module Float = struct
     let open Trigonometric in
     match x with
     | NaN -> Ok NaN
-    | PINF -> Ok (R (pi /. 2.0))
-    | NINF -> Ok (R (-. (pi /. 2.0)))
+    | PINF -> Ok (R (Pi.pi 15 /. 2.0))
+    | NINF -> Ok (R (-. (Pi.pi 15 /. 2.0)))
     | R x ->
       (match arctan x 15 with (* TODO: prove that 15 is enough *)
       | Ok r -> Ok (R (r))

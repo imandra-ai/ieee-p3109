@@ -266,7 +266,7 @@ function operator_precedence_info(op: string | undefined, more_than_one_arg = fa
     return new PrecedenceInfo("log_e", Notation.Prefix, Associativity.Left, 17);
   else if (op == "Log.log2")
     return new PrecedenceInfo("log_2", Notation.Prefix, Associativity.Left, 17);
-  else if (op == "pi")
+  else if (op == "Pi.pi")
     return new PrecedenceInfo("\\pi", Notation.Prefix, Associativity.Left, 17);
   else if (op == "sin" || op == "cos" || op == "tan" || op == "sinh" || op == "cosh" || op == "tanh")
     return new PrecedenceInfo(op, Notation.Prefix, Associativity.Left, 17);
@@ -1188,7 +1188,8 @@ function print_expression_desc(node: AST, options: Options): Doc {
             "sin", "cos", "tan",
             "sinh", "cosh", "tanh",
             "arcsin", "arccos", "arctan",
-            "arcsinh", "arccosh", "arctanh"
+            "arcsinh", "arccosh", "arctanh",
+            "\\pi"
           ].indexOf(opname) >= 0
           ) { r.pop(); r.pop(); }
           let want_par = false;
@@ -1196,8 +1197,6 @@ function print_expression_desc(node: AST, options: Options): Doc {
             opname = "2^";
           else if (opname == "Log.ln")
             opname = "log_e";
-          else if (opname == "Pi" || opname == "\\pi")
-            opname = "\\pi";
           if ([
             "log_e", "log_2",
             "sin", "cos", "tan",
