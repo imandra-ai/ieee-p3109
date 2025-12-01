@@ -2080,7 +2080,7 @@ module Float = struct
 
   (** New operations *)
 
-  let wExpm1 (x : CER.t) : (CER.t, string) Result.t =
+  let wExpMinusOne (x : CER.t) : (CER.t, string) Result.t =
     let open CER in
     match x with
     | NaN -> Ok NaN
@@ -2090,16 +2090,16 @@ module Float = struct
       Ok (R ((Exp.exp x 9) -. 1.0)) (* TODO: Proof that 9 is enough *)
     | _ -> Error "undefined"
 
-  let internal_expm1 (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) : (t, string) Result.t =
-    let* z = wExpm1 (wDecode f_x x) in
+  let internal_expMinusOne (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) : (t, string) Result.t =
+    let* z = wExpMinusOne (wDecode f_x x) in
     wProject f_z pi z
 
   let expm1 (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) : t =
-    match internal_expm1 f_x f_z pi x with
+    match internal_expMinusOne f_x f_z pi x with
     | Ok x -> x
     | Error _ -> (nan f_z) (* unreachable by theorem internal_expm1_ok *)
 
-  let wLog1p (x : CER.t) : (CER.t, string) Result.t =
+  let wLogOnePlus (x : CER.t) : (CER.t, string) Result.t =
     let open CER in
     match x with
     | NaN -> Ok NaN
@@ -2113,12 +2113,12 @@ module Float = struct
       | Error e -> Error e
     | _ -> Error "undefined"
 
-  let internal_log1p (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) : (t, string) Result.t =
-    let* z = wLog1p (wDecode f_x x) in
+  let internal_logOnePlus(f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) : (t, string) Result.t =
+    let* z = wLogOnePlus (wDecode f_x x) in
     wProject f_z pi z
 
-  let log1p (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) : t =
-    match internal_log1p f_x f_z pi x with
+  let logOnePlus (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) : t =
+    match internal_logOnePlus f_x f_z pi x with
     | Ok x -> x
     | Error _ -> (nan f_z) (* unreachable by theorem internal_log1p_ok *)
 
@@ -2188,8 +2188,8 @@ module Float = struct
     let open Trigonometric in
     match x with
     | NaN -> Ok NaN
-    | PINF -> Ok NaN
-    | NINF -> Ok NaN
+    | PINF -> Ok PINF
+    | NINF -> Ok NINF
     | R x -> Ok (R (sinh x 15)) (* TODO: prove that 15 is enough *)
     | _ -> Error "undefined"
 
@@ -2207,8 +2207,8 @@ module Float = struct
     let open Trigonometric in
     match x with
     | NaN -> Ok NaN
-    | PINF -> Ok NaN
-    | NINF -> Ok NaN
+    | PINF -> Ok PINF
+    | NINF -> Ok PINF
     | R x -> Ok (R (cosh x 15)) (* TODO: prove that 15 is enough *)
     | _ -> Error "undefined"
 
@@ -2291,9 +2291,8 @@ module Float = struct
     let open Trigonometric in
     match x with
     | NaN -> Ok NaN
-    | PINF -> Ok NaN
-    | NINF -> Ok NaN
-    | R x when x <. -1.0 || x >. 1.0 -> Ok NaN
+    | PINF -> Ok (R (pi /. 2.0))
+    | NINF -> Ok (R (-. (pi /. 2.0)))
     | R x ->
       (match arctan x 15 with (* TODO: prove that 15 is enough *)
       | Ok r -> Ok (R (r))
@@ -2314,9 +2313,8 @@ module Float = struct
     let open Trigonometric in
     match x with
     | NaN -> Ok NaN
-    | PINF -> Ok NaN
-    | NINF -> Ok NaN
-    | R x when x <. -1.0 || x >. 1.0 -> Ok NaN
+    | PINF -> Ok PINF
+    | NINF -> Ok NINF
     | R x ->
       (match arcsinh x 15 with (* TODO: prove that 15 is enough *)
        | Ok r -> Ok (R r)
@@ -2337,9 +2335,9 @@ module Float = struct
     let open Trigonometric in
     match x with
     | NaN -> Ok NaN
-    | PINF -> Ok NaN
+    | PINF -> Ok PINF
     | NINF -> Ok NaN
-    | R x when x <. -1.0 || x >. 1.0 -> Ok NaN
+    | R x when x <. 1.0 -> Ok NaN
     | R x ->
       (match arccosh x 15 with (* TODO: prove that 15 is enough *)
       | Ok r -> Ok (R r)
@@ -2362,9 +2360,9 @@ module Float = struct
     | NaN -> Ok NaN
     | PINF -> Ok NaN
     | NINF -> Ok NaN
-    | R x when x <=. -1.0 || x >=. 1.0 -> Ok NaN
     | R x when x = 1.0 -> Ok PINF
     | R x when x = -1.0 -> Ok NINF
+    | R x when x <. -1.0 || x >. 1.0 -> Ok NaN
     | R x ->
       (match arctanh x 15 with  (* TODO: prove that 15 is enough *)
       | Ok r -> Ok (R r)
@@ -2384,15 +2382,15 @@ module Float = struct
     let open CER in
     match x with
     | NaN -> Ok NaN
-    | PINF -> Ok NaN
+    | PINF -> Ok PINF
     | NINF -> Ok (R 0.0)
-    | R x when (Exp.exp x 9) <. (- 1.0) -> Ok NaN
-    | R x when (Exp.exp x 9) = (- 1.0) -> Ok NINF
     | R x ->
       (match Log.ln (1.0 +. (Exp.exp x 9)) 9 with (* TODO: Proof that 9 is enough *)
       | Ok r -> Ok (R (r))
       | Error e -> Error e)
     | _ -> Error "undefined"
+    (* | R x when (Exp.exp x 9) <. (- 1.0) -> Ok NaN
+    | R x when (Exp.exp x 9) = (- 1.0) -> Ok NINF *)
 
   let internal_softplus (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) : (t, string) Result.t =
     let* z = wSoftplus (wDecode f_x x) in
