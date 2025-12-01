@@ -72,16 +72,13 @@ let arccos (x : real) (p : int) : (real, string) Result.t =
   else
     Ok 0.0 (* TODO *)
 
-let arctan (x : real) (p : int) : (real, string) Result.t =
-  if x <. -1.0 || x >. 1.0 then
-    Error "invalid"
-  else
-    let term (x : real) (n : int) : real =
-      (((- 1.0) ^. n) /. Real.of_int (2 * n + 1))
-      *.
-      x ^. (2 * n + 1)
-    in
-    Ok (Util.sum (fun i _ -> term x i) 0 p)
+let arctan (x : real) (p : int) : real =
+  let term (x : real) (n : int) : real =
+    (((- 1.0) ^. n) /. Real.of_int (2 * n + 1))
+    *.
+    x ^. (2 * n + 1)
+  in
+  Util.sum (fun i _ -> term x i) 0 p
 
 let arcsinh (x : real) (p : int) : (real, string) Result.t =
   let term (x : real) (n : int) : real =

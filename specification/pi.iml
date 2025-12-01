@@ -1,1 +1,11 @@
-let pi (p : int) = 3.14159265358979323846
+[@@@import ErrorPropagation, "dune:basic"]
+[@@@import Util, "dune:math"]
+
+let ( ^. ) (x : real) (y : int) = Util.ripow x y
+
+let pi (p : int) : real =
+  (* A very slowly converging approximation of pi. *)
+  let term (k : int) : real =
+    2.0 /. Real.of_int ((4 * k + 1) * (4 * k + 3))
+  in
+  4.0 *. Util.sum (fun k _ -> term k) 0 p

@@ -672,7 +672,7 @@ theorem internal_arccos_ok (f_x : Format.t) (f_z : Format.t) (pi : Projection.t)
 (** [internal_arctan] never returns an error *)
 theorem internal_arctan_ok (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : Float.t) =
   Result.is_ok (Float.internal_arctan f_x f_z pi x)
-  [@@disable Specification.Float.wProject, Specification.Float.wDecode, Float.wDecodeAux, Format.parameters, Trigonometric.sin, Trigonometric.cos]
+  [@@disable Specification.Float.wProject, Specification.Float.wDecode, Float.wDecodeAux, Format.parameters, Pi.pi]
   [@@by auto]
 
 (** [internal_arcsinh] never returns an error *)

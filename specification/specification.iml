@@ -2292,12 +2292,9 @@ module Float = struct
     let open Trigonometric in
     match x with
     | NaN -> Ok NaN
-    | PINF -> Ok (R (Pi.pi 15 /. 2.0))
+    | PINF -> Ok (R (Pi.pi 15 /. 2.0)) (* TODO: prove that 15 is enough *)
     | NINF -> Ok (R (-. (Pi.pi 15 /. 2.0)))
-    | R x ->
-      (match arctan x 15 with (* TODO: prove that 15 is enough *)
-      | Ok r -> Ok (R (r))
-      | Error e -> Error e)
+    | R x -> Ok (R (arctan x 15)) (* TODO: prove that 15 is enough *)
     | _ -> Error "undefined"
 
   let internal_arctan (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) : (t, string) Result.t =
