@@ -2424,9 +2424,28 @@ module Float = struct
     | Ok r -> r
     | Error e -> [] (* unreachable by theorem internal_softmax_ok *)
 
-(*
-  logsoftmax for activation functions
-*)
+  let map_wLog (xs : CER.t list) : (CER.t list, string) Result.t =
+    let@ r = List.map (fun x -> wLog x) xs in
+    Ok r
+
+  let wLogSoftmax (xs : CER.t list) : (CER.t list, string) Result.t =
+    let open CER in
+    let open CER.Infix in
+    match wSoftmax xs with
+    | Ok s -> map_wLog s (* TODO: Proof that 9 is enough *)
+    | Error e -> Error e
+
+  let internal_logSoftmax (f_x : Format.t) (f_r : Format.t) (pi : Projection.t) (xs : t list) : (t list, string) Result.t =
+    let cx = map_decode f_x xs in
+    let* zs = wLogSoftmax cx in
+    let@ r = map_project f_r pi zs in
+    Ok r
+
+  let logSoftmax (f_x : Format.t) (f_r : Format.t) (pi : Projection.t) (xs : t list) : t list =
+    match internal_logSoftmax f_x f_r pi xs with
+    | Ok r -> r
+    | Error e -> [] (* unreachable by theorem internal_logSoftmax_ok *)
+
 
   let internal_nextGreaterThan (f : Format.t) (x : t) : (t, string) Result.t =
     let open Signedness in

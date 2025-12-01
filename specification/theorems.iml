@@ -708,7 +708,20 @@ theorem map_project_ok f pi x =
 
 theorem internal_softmax_ok (f_x : Format.t) (f_r : Format.t) (pi : Projection.t) (xs : Float.t list) =
   Result.is_ok (Float.internal_softmax f_x f_r pi xs)
-  [@@disable Specification.Float.wProject, Specification.Float.wDecode, Float.wDecodeAux, Format.parameters, Log.log, Log.ln, Exp.exp, Float.map_decode, Float.map_project]
+  [@@disable Specification.Float.wProject, Specification.Float.wDecode, Float.wDecodeAux, Format.parameters, Float.map_decode, Float.map_project]
+  [@@timeout 3600]
+  [@@by induct ~do_not:["gen"; "fert"; "delim"] ()]
+
+(** [internal_logSoftmax] never returns an error *)
+theorem map_wLog_ok x =
+  Result.is_ok (Float.map_wLog x) [@trigger]
+  [@@disable Float.wLog]
+  [@@by induct ~do_not:["gen"; "fert"; "delim"] ()]
+  [@@fc]
+
+theorem internal_logsoftmax_ok (f_x : Format.t) (f_r : Format.t) (pi : Projection.t) (xs : Float.t list) =
+  Result.is_ok (Float.internal_logSoftmax f_x f_r pi xs)
+  [@@disable Specification.Float.wProject, Specification.Float.wDecode, Float.wDecodeAux, Format.parameters, Float.map_decode, Float.map_project, Float.map_wLog]
   [@@timeout 3600]
   [@@by induct ~do_not:["gen"; "fert"; "delim"] ()]
 
