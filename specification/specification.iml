@@ -2363,6 +2363,8 @@ module Float = struct
     | PINF -> Ok (R 1.0)
     | NINF -> Ok (R (- 1.0))
     | R x when x <=. -1.0 || x >=. 1.0 -> Ok NaN
+    | R x when x = 1.0 -> Ok PINF
+    | R x when x = -1.0 -> Ok NINF
     | R x ->
       (match arctanh x 15 with  (* TODO: prove that 15 is enough *)
       | Ok r -> Ok (R r)
