@@ -2183,6 +2183,44 @@ module Float = struct
     | Ok x -> x
     | Error _ -> (nan f_z) (* unreachable by theorem internal_tan_ok *)
 
+  let wSinh (x : CER.t) : (CER.t, string) Result.t =
+    let open CER in
+    let open Trigonometric in
+    match x with
+    | NaN -> Ok NaN
+    | PINF -> Ok NaN
+    | NINF -> Ok NaN
+    | R x -> Ok (R (sinh x 15)) (* TODO: prove that 15 is enough *)
+    | _ -> Error "undefined"
+
+  let internal_sinh (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) : (t, string) Result.t =
+    let* z = wSinh (wDecode f_x x) in
+    wProject f_z pi z
+
+  let sinh (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) : t =
+    match internal_sinh f_x f_z pi x with
+    | Ok x -> x
+    | Error _ -> (nan f_z) (* unreachable by theorem internal_sinh_ok *)
+
+  let wCosh (x : CER.t) : (CER.t, string) Result.t =
+    let open CER in
+    let open Trigonometric in
+    match x with
+    | NaN -> Ok NaN
+    | PINF -> Ok NaN
+    | NINF -> Ok NaN
+    | R x -> Ok (R (cosh x 15)) (* TODO: prove that 15 is enough *)
+    | _ -> Error "undefined"
+
+  let internal_cosh (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) : (t, string) Result.t =
+    let* z = wCosh (wDecode f_x x) in
+    wProject f_z pi z
+
+  let cosh (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) : t =
+    match internal_cosh f_x f_z pi x with
+    | Ok x -> x
+    | Error _ -> (nan f_z) (* unreachable by theorem internal_cosh_ok *)
+
   let wTanh (x : CER.t) : (CER.t, string) Result.t =
     let open CER in
     let open Trigonometric in
@@ -2201,6 +2239,144 @@ module Float = struct
     match internal_tanh f_x f_z pi x with
     | Ok x -> x
     | Error _ -> (nan f_z) (* unreachable by theorem internal_tanh_ok *)
+
+  let wArcSin (x : CER.t) : (CER.t, string) Result.t =
+    let open CER in
+    let open Trigonometric in
+    match x with
+    | NaN -> Ok NaN
+    | PINF -> Ok NaN
+    | NINF -> Ok NaN
+    | R x when x <. -1.0 || x >. 1.0 -> Ok NaN
+    | R x ->
+      (match arcsin x 15 with (* TODO: prove that 15 is enough *)
+      | Ok r -> Ok (R r)
+      | Error e -> Error e)
+    | _ -> Error "undefined"
+
+  let internal_arcsin (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) : (t, string) Result.t =
+    let* z = wArcSin (wDecode f_x x) in
+    wProject f_z pi z
+
+  let arcsin (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) : t =
+    match internal_arcsin f_x f_z pi x with
+    | Ok x -> x
+    | Error _ -> (nan f_z) (* unreachable by theorem internal_arcsin_ok *)
+
+  let wArcCos (x : CER.t) : (CER.t, string) Result.t =
+    let open CER in
+    let open Trigonometric in
+    match x with
+    | NaN -> Ok NaN
+    | PINF -> Ok NaN
+    | NINF -> Ok NaN
+    | R x when x <. -1.0 || x >. 1.0 -> Ok NaN
+    | R x ->
+      (match arccos x 15 with (* TODO: prove that 15 is enough *)
+       | Ok r -> Ok (R r)
+       | Error e -> Error e)
+    | _ -> Error "undefined"
+
+  let internal_arccos (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) : (t, string) Result.t =
+    let* z = wArcCos (wDecode f_x x) in
+    wProject f_z pi z
+
+  let cos (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) : t =
+    match internal_arccos f_x f_z pi x with
+    | Ok x -> x
+    | Error _ -> (nan f_z) (* unreachable by theorem internal_arccos_ok *)
+
+  let wArcTan (x : CER.t) : (CER.t, string) Result.t =
+    let open CER in
+    let open Trigonometric in
+    match x with
+    | NaN -> Ok NaN
+    | PINF -> Ok NaN
+    | NINF -> Ok NaN
+    | R x when x <. -1.0 || x >. 1.0 -> Ok NaN
+    | R x ->
+      (match arctan x 15 with (* TODO: prove that 15 is enough *)
+      | Ok r -> Ok (R (r))
+      | Error e -> Error e)
+    | _ -> Error "undefined"
+
+  let internal_arctan (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) : (t, string) Result.t =
+    let* z = wArcTan (wDecode f_x x) in
+    wProject f_z pi z
+
+  let tan (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) : t =
+    match internal_arctan f_x f_z pi x with
+    | Ok x -> x
+    | Error _ -> (nan f_z) (* unreachable by theorem internal_arctan_ok *)
+
+  let wArcSinh (x : CER.t) : (CER.t, string) Result.t =
+    let open CER in
+    let open Trigonometric in
+    match x with
+    | NaN -> Ok NaN
+    | PINF -> Ok NaN
+    | NINF -> Ok NaN
+    | R x when x <. -1.0 || x >. 1.0 -> Ok NaN
+    | R x ->
+      (match arcsinh x 15 with (* TODO: prove that 15 is enough *)
+       | Ok r -> Ok (R r)
+       | Error e -> Error e)
+    | _ -> Error "undefined"
+
+  let internal_arcsinh (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) : (t, string) Result.t =
+    let* z = wArcSinh (wDecode f_x x) in
+    wProject f_z pi z
+
+  let sinh (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) : t =
+    match internal_arcsinh f_x f_z pi x with
+    | Ok x -> x
+    | Error _ -> (nan f_z) (* unreachable by theorem internal_arcsinh_ok *)
+
+  let wArcCosh (x : CER.t) : (CER.t, string) Result.t =
+    let open CER in
+    let open Trigonometric in
+    match x with
+    | NaN -> Ok NaN
+    | PINF -> Ok NaN
+    | NINF -> Ok NaN
+    | R x when x <. -1.0 || x >. 1.0 -> Ok NaN
+    | R x ->
+      (match arccosh x 15 with (* TODO: prove that 15 is enough *)
+      | Ok r -> Ok (R r)
+      | Error e -> Error e)
+    | _ -> Error "undefined"
+
+  let internal_arccosh (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) : (t, string) Result.t =
+    let* z = wArcCosh (wDecode f_x x) in
+    wProject f_z pi z
+
+  let arccosh (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) : t =
+    match internal_arccosh f_x f_z pi x with
+    | Ok x -> x
+    | Error _ -> (nan f_z) (* unreachable by theorem internal_cosh_ok *)
+
+  let wArcTanh (x : CER.t) : (CER.t, string) Result.t =
+    let open CER in
+    let open Trigonometric in
+    match x with
+    | NaN -> Ok NaN
+    | PINF -> Ok (R 1.0)
+    | NINF -> Ok (R (- 1.0))
+    | R x when x <=. -1.0 || x >=. 1.0 -> Ok NaN
+    | R x ->
+      (match arctanh x 15 with  (* TODO: prove that 15 is enough *)
+      | Ok r -> Ok (R r)
+      | Error e -> Error e)
+    | _ -> Error "undefined"
+
+  let internal_arctanh (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) : (t, string) Result.t =
+    let* z = wArcTanh (wDecode f_x x) in
+    wProject f_z pi z
+
+  let arctanh (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) : t =
+    match internal_arctanh f_x f_z pi x with
+    | Ok x -> x
+    | Error _ -> (nan f_z) (* unreachable by theorem internal_arctanh_ok *)
 
   let wSoftplus (x : CER.t) : (CER.t, string) Result.t =
     let open CER in

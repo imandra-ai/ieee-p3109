@@ -638,9 +638,57 @@ theorem internal_tan_ok (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x
   [@@disable Specification.Float.wProject, Specification.Float.wDecode, Float.wDecodeAux, Format.parameters, Trigonometric.sin, Trigonometric.cos]
   [@@by auto]
 
+(** [internal_sinh] never returns an error *)
+theorem internal_sinh_ok (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : Float.t) =
+  Result.is_ok (Float.internal_sinh f_x f_z pi x)
+  [@@disable Specification.Float.wProject, Specification.Float.wDecode, Float.wDecodeAux, Format.parameters]
+  [@@by auto]
+
+(** [internal_cosh] never returns an error *)
+theorem internal_cosh_ok (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : Float.t) =
+  Result.is_ok (Float.internal_cosh f_x f_z pi x)
+  [@@disable Specification.Float.wProject, Specification.Float.wDecode, Float.wDecodeAux, Format.parameters]
+  [@@by auto]
+
 (** [internal_tanh] never returns an error *)
 theorem internal_tanh_ok (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : Float.t) =
   Result.is_ok (Float.internal_tanh f_x f_z pi x)
+  [@@disable Specification.Float.wProject, Specification.Float.wDecode, Float.wDecodeAux, Format.parameters]
+  [@@by auto]
+
+(** [internal_arcsin] never returns an error *)
+theorem internal_arcsin_ok (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : Float.t) =
+  Result.is_ok (Float.internal_arcsin f_x f_z pi x)
+  [@@disable Specification.Float.wProject, Specification.Float.wDecode, Float.wDecodeAux, Format.parameters]
+  [@@by auto]
+
+(** [internal_arccos] never returns an error *)
+theorem internal_arccos_ok (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : Float.t) =
+  Result.is_ok (Float.internal_arccos f_x f_z pi x)
+  [@@disable Specification.Float.wProject, Specification.Float.wDecode, Float.wDecodeAux, Format.parameters]
+  [@@by auto]
+
+(** [internal_arctan] never returns an error *)
+theorem internal_arctan_ok (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : Float.t) =
+  Result.is_ok (Float.internal_arctan f_x f_z pi x)
+  [@@disable Specification.Float.wProject, Specification.Float.wDecode, Float.wDecodeAux, Format.parameters, Trigonometric.sin, Trigonometric.cos]
+  [@@by auto]
+
+(** [internal_arcsinh] never returns an error *)
+theorem internal_arcsinh_ok (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : Float.t) =
+  Result.is_ok (Float.internal_arcsinh f_x f_z pi x)
+  [@@disable Specification.Float.wProject, Specification.Float.wDecode, Float.wDecodeAux, Format.parameters]
+  [@@by auto]
+
+(** [internal_arccosh] never returns an error *)
+theorem internal_arccosh_ok (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : Float.t) =
+  Result.is_ok (Float.internal_arccosh f_x f_z pi x)
+  [@@disable Specification.Float.wProject, Specification.Float.wDecode, Float.wDecodeAux, Format.parameters]
+  [@@by auto]
+
+(** [internal_arctanh] never returns an error *)
+theorem internal_arctanh_ok (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : Float.t) =
+  Result.is_ok (Float.internal_arctanh f_x f_z pi x)
   [@@disable Specification.Float.wProject, Specification.Float.wDecode, Float.wDecodeAux, Format.parameters]
   [@@by auto]
 

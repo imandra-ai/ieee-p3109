@@ -1180,19 +1180,27 @@ function print_expression_desc(node: AST, options: Options): Doc {
           if (opname == "-.") opname = "-";
           else if (opname == "~-.") opname = "-";
           // Drop the approximation precision from some operators
-          if (opname == "e^" || opname == "\\sqrt" ||
-            opname == "log_e" || opname == "log_2" || opname == "Exp.exp2" || opname == "Log.ln" ||
-            opname == "sin" || opname == "cos" || opname == "tan" ||
-            opname == "sinh" || opname == "cosh" || opname == "tanh"
+          if ([
+            "e^", "\\sqrt",
+            "log_e", "log_2", "Exp.exp2", "Log.ln",
+            "sin", "cos", "tan",
+            "sinh", "cosh", "tanh",
+            "arcsin", "arccos", "arctan",
+            "arcsinh", "arccosh", "arctanh"
+          ].indexOf(opname) >= 0
           ) { r.pop(); r.pop(); }
           let want_par = false;
           if (opname == "Exp.exp2")
             opname = "2^";
           else if (opname == "Log.ln")
             opname = "log_e";
-          else if (opname == "sin" || opname == "cos" || opname == "tanh")
-            want_par = true;
-          if (opname == "log_e" || opname == "log_2" || opname == "sin" || opname == "cos" || opname == "tan" || opname == "sinh" || opname == "cosh" || opname == "tanh") {
+          if ([
+            "log_e", "log_2",
+            "sin", "cos", "tan",
+            "sinh", "cosh", "tanh",
+            "arcsin", "arccos", "arctan",
+            "arcsinh", "arccosh", "arctanh"
+          ].indexOf(opname) >= 0) {
             opname = "\\" + opname;
             want_par = false;
           }

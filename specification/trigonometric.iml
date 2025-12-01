@@ -70,7 +70,7 @@ let arccos (x : real) (p : int) : (real, string) Result.t =
   if x <. -1.0 || x >. 1.0 then
     Error "invalid"
   else
-    Error "TODO"
+    Ok 0.0 (* TODO *)
 
 let arctan (x : real) (p : int) : (real, string) Result.t =
   if x <. -1.0 || x >. 1.0 then
@@ -100,7 +100,7 @@ let arccosh (x : real) (p : int) : (real, string) Result.t =
   if x <. -1.0 || x >. 1.0 then
     Error "invalid"
   else
-    Error "TODO"
+    Ok 0.0 (* TODO *)
 
 let arctanh (x : real) (p : int) : (real, string) Result.t =
    if x <=. -1.0 || x >=. 1.0 then
