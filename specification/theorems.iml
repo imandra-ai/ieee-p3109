@@ -333,6 +333,12 @@ theorem internal_rsqrt_ok (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) 
   [@@disable Float.wProject, Float.wDecode, Float.wDecodeAux, Float.wRoundToPrecision, Float.wSaturate, Util.pow2, Util.ipow2, Format.parameters, Sqrt.sqrt]
   [@@by auto]
 
+(** [wExp] never returns an error *)
+theorem wExp_ok (x : CER.t) =
+  Result.is_ok (Float.wExp x)
+  [@@disable Exp.exp]
+  [@@by auto]
+
 (** [internal_exp] never returns an error *)
 theorem internal_exp_ok (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : Float.t) =
   Result.is_ok (Float.internal_exp f_x f_z pi x)
@@ -343,6 +349,12 @@ theorem internal_exp_ok (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x
 theorem internal_exp2_ok (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : Float.t) =
   Result.is_ok (Float.internal_exp2 f_x f_z pi x)
   [@@disable Float.wProject, Float.wDecode, Float.wDecodeAux, Float.wRoundToPrecision, Float.wSaturate, Exp.exp2, Format.parameters]
+  [@@by auto]
+
+(** [wLog] never returns an error *)
+theorem wLog_ok (x : CER.t) =
+  Result.is_ok (Float.wLog x)
+  [@@disable Log.ln]
   [@@by auto]
 
 (** [internal_log] never returns an error *)

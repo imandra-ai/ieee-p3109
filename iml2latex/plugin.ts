@@ -769,6 +769,12 @@ function print_value_constraint(node: AST, options: Options): Doc {
   }
 }
 
+function has_nolatex(attrs): boolean {
+  return attrs.find((x) => {
+    return (x.attr_name.txt == "ocaml.doc" || x.attr_name.txt == "ocaml.text") && get_attr_payload_string(x) == "nolatex";
+  });
+};
+
 function print_value_binding(node: AST, options: Options): Doc {
   // {
   //   pvb_pat: pattern;
@@ -777,11 +783,17 @@ function print_value_binding(node: AST, options: Options): Doc {
   //   pvb_attributes: attributes;
   //   pvb_loc: Location.t;
   // }(** [let pat : type_constraint = exp] *)
-  return g([
-    f([print_pattern(node.pvb_pat, options),
-    ...(node.pvb_constraint ? ifnonempty([line, ":", line], print_value_constraint(node.pvb_constraint, options)) : []),
-      line, "=", line,
-    ...print_expression(node.pvb_expr, options)])]);
+
+  const attrs = node.pvb_attributes;
+
+  if (has_nolatex(attrs))
+    return [];
+  else
+    return g([
+      f([print_pattern(node.pvb_pat, options),
+      ...(node.pvb_constraint ? ifnonempty([line, ":", line], print_value_constraint(node.pvb_constraint, options)) : []),
+        line, "=", line,
+      ...print_expression(node.pvb_expr, options)])]);
 }
 
 function print_expression(node: AST, options: Options): Doc[] {
@@ -992,6 +1004,17 @@ function is_construct_with_args(x: AST): boolean {
   return x.pexp_desc[0] == "Pexp_construct" && x.pexp_desc[2] !== null;
 }
 
+function is_const(x: AST): boolean {
+  return x.pexp_desc[0] == "Pexp_constant" &&
+    (x.pexp_desc[1].pconst_desc[0] == "Pconst_float" ||
+      x.pexp_desc[1].pconst_desc[0] == "Pconst_integer");
+}
+
+function is_construct_with_args_except_R(x: AST): boolean {
+  // console.log(`EXP: ${JSON.stringify(x)}`)
+  return x.pexp_desc[0] == "Pexp_construct" && x.pexp_desc[2] !== null && x.pexp_desc[1].txt[1] != "R" && is_const(x.pexp_desc[2]);
+}
+
 function is_neg_const(x: AST): boolean {
   return x.pexp_desc[0] == "Pexp_constant" &&
     ((x.pexp_desc[1].pconst_desc[0] == "Pconst_float" ||
@@ -1080,7 +1103,7 @@ function print_expression_desc(node: AST, options: Options): Doc {
           ["\\ensuremath{", print_value_binding(vb, options), "}"]
         )),
           line, hardline,
-          ...print_expression(expr, options),
+        ...print_expression(expr, options),
         ]);
     }
     case "Pexp_function":
@@ -1177,7 +1200,7 @@ function print_expression_desc(node: AST, options: Options): Doc {
               ...par_if(
                 op_info_arg.precedence < op_info.precedence ||
                 (op_info_arg.precedence == op_info.precedence &&
-                  (/* is_apply_with_args(arg[1]) || */ is_construct_with_args(arg[1]) || is_neg_const(arg[1]) || is_infix_op(arg[1]))),
+                  (/* is_apply_with_args(arg[1]) || */ is_construct_with_args_except_R(arg[1]) || is_neg_const(arg[1]) || is_infix_op(arg[1]))),
                 print_expression(arg[1], options))];
           }));
           let opname = op_info.name;
@@ -1210,6 +1233,9 @@ function print_expression_desc(node: AST, options: Options): Doc {
           ].indexOf(opname) >= 0) {
             opname = "\\" + opname;
             want_par = false;
+          }
+          if (opname.startsWith("\\Cer")) {
+            want_par = true;
           }
           return f([opname, "{", par_if(r.length > 1 || want_par, [indent([line, ...r])]), "}"]);
         }
@@ -1767,11 +1793,14 @@ function print_structure_item_desc(node: AST, options: Options): Doc {
           if (fname == "\\Cer\\MaximumNumber" || fname == "\\Cer\\MinimumNumber")
             options.move_everything_up = true;
 
+
           while (fundef.pexp_desc[0] == "Pexp_let") {
-            r = r.concat(join([hardline], fundef.pexp_desc[2].map(vb =>
-              ["\\Case{", print_value_binding(vb, options), "}", "\\\\"]
-            )));
-            r.push(hardline);
+            r = r.concat(join([hardline], fundef.pexp_desc[2].map(vb => {
+              if (has_nolatex(vb.pvb_attributes))
+                return []
+              else
+                return ["\\Case{", print_value_binding(vb, options), "}", "\\\\", hardline];
+            })));
             fundef = fundef.pexp_desc[3];
           }
 

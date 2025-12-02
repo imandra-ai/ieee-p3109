@@ -2075,12 +2075,17 @@ module Float = struct
 
   let wExpMinusOne (x : CER.t) : (CER.t, string) Result.t =
     let open CER in
+
+    let wExp xr =
+      (* A helper to squelch the error handling *)
+      match xr with
+      | Ok r -> wExp r
+      | Error _ -> Ok CER.zero (* unreachable by theorem wExp_ok *)
+      [@@ocaml.doc "nolatex"]
+    in
+
     match x with
-    | NaN -> Ok NaN
-    | PINF -> Ok PINF
-    | NINF -> Ok (R (- 1.0))
-    | R x ->
-      Ok (R ((Exp.exp x 9) -. 1.0)) (* TODO: Proof that 9 is enough *)
+    | x -> wSubtract (wExp x) (R 1.0)
     | _ -> Error "undefined"
 
   let internal_expMinusOne (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) : (t, string) Result.t =
@@ -2094,16 +2099,15 @@ module Float = struct
 
   let wLogOnePlus (x : CER.t) : (CER.t, string) Result.t =
     let open CER in
+    let wLog xr =
+      (* A helper to squelch the error handling *)
+      match xr with
+      | Ok r -> wLog r
+      | Error _ -> Ok CER.zero (* unreachable by theorem wLog_ok *)
+      [@@ocaml.doc "nolatex"]
+    in
     match x with
-    | NaN -> Ok NaN
-    | PINF -> Ok PINF
-    | NINF -> Ok NaN
-    | R x when x <. (- 1.0) -> Ok NaN
-    | R x when x = (- 1.0) -> Ok NINF
-    | R x ->
-      match Log.ln (1.0 +. x) 9 with (* TODO: Proof that 9 is enough *)
-      | Ok r -> Ok (R r)
-      | Error e -> Error e
+    | x -> wLog (wAdd (R 1.0) x)
     | _ -> Error "undefined"
 
   let internal_logOnePlus(f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) : (t, string) Result.t =
