@@ -236,38 +236,25 @@ theorem internal_convert_from_ieee754_ok (phi: IEEE754.Format.t) (f : Format.t) 
 (** 4.8.1 Unary sign operations *)
 
 (** [internal_abs] never returns an error *)
-theorem internal_abs_ok (f : Format.t) (x : Float.t) =
-  f.s = Signedness.Signed ==>
-  Result.is_ok (Float.internal_abs f x)
-  [@@timeout 60]
-  [@@by
-    [%use decode_encode_ok f x]
-    @> unroll_nonlin 10 10 1000]
+theorem internal_abs_ok (f_x : Format.t) (f_r : Format.t) (pi : Projection.t) (x : Float.t) =
+  Result.is_ok (Float.internal_abs f_x f_r pi x)
+  [@@disable Specification.Float.wProject, Float.wDecodeAux, Util.pow2, Util.ipow2, Format.parameters]
+  [@@by auto]
 
 (** [internal_negate] never returns an error *)
-theorem internal_negate_ok (f : Format.t) (x : Float.t) =
-  f.s = Signedness.Signed ==>
-  Result.is_ok (Float.internal_negate f x)
-  [@@timeout 120]
-  [@@by
-    [%use decode_encode_ok f x]
-    @> unroll_nonlin 10 10 1000]
+theorem internal_negate_ok (f_x : Format.t) (f_r : Format.t) (pi : Projection.t) (x : Float.t) =
+  Result.is_ok (Float.internal_negate f_x f_r pi x)
+  [@@disable Specification.Float.wProject, Float.wDecodeAux, Util.pow2, Util.ipow2, Format.parameters]
+  [@@by auto]
 
 
 (** 4.8.2 Binary sign operations *)
 
 (** [internal_copy_sign] never returns an error *)
-theorem internal_copySign_ok (f : Format.t) (x : Float.t) (y : Float.t) =
-  Result.is_ok (Float.internal_copySign f x y)
-  [@@disable Float.wEncode, Float.wDecodeAux, Util.pow2, Util.ipow2, Format.parameters]
-  [@@timeout 120]
-  [@@by
-    [%use decode_within_range f x] @>
-    [%use decode_within_range f y] @>
-    [%use wEncode_ok_within_range f (Float.wDecode f x)] @>
-    [%use wEncode_ok_within_range f CER.(~- (Float.wDecode f x))] @>
-    [%use wEncode_ok_within_range f CER.NaN] @>
-    auto]
+theorem internal_copySign_ok (f_x : Format.t) (f_y : Format.t) (f_r : Format.t) (pi : Projection.t) (x : Float.t) (y : Float.t) =
+  Result.is_ok (Float.internal_copySign f_x f_y f_r pi x y)
+  [@@disable Specification.Float.wProject, Float.wDecodeAux, Util.pow2, Util.ipow2, Format.parameters]
+  [@@by auto]
 
 
 (** 4.8.3 Binary arithmetic operations *)

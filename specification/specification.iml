@@ -523,19 +523,15 @@ module Float = struct
     | R x -> Ok (R (Real.abs x))
     | _ -> Error "undefined"
 
-  let internal_abs (f : Format.t) (x : t) : (t, string) Result.t =
-    let open Signedness in
-    if f.s = Unsigned then
-      Error "precondition failure"
-    else
-      let* r = wAbs (wDecode f x) in
-      wEncode f r
+  let internal_abs (f_x : Format.t) (f_r : Format.t) (pi : Projection.t) (x : t) : (t, string) Result.t =
+      let* r = wAbs (wDecode f_x x) in
+      wProject f_r pi r
 
   (** Return the absolute value of [x] in [f] *)
-  let abs (f : Format.t) (x : t) : t =
-    match internal_abs f x  with
+  let abs (f_x : Format.t) (f_r : Format.t) (pi : Projection.t) (x : t) : t =
+    match internal_abs f_x f_r pi x  with
     | Ok x -> x
-    | Error _ -> nan f (* unreachable by theorem internal_abs_ok *)
+    | Error _ -> nan f_r (* unreachable by theorem internal_abs_ok *)
 
 
   let wNegate (x : CER.t) : (CER.t, string) Result.t =
@@ -547,19 +543,15 @@ module Float = struct
     | R x -> Ok (R (-. x))
     | _ -> Error "undefined"
 
-  let internal_negate (f : Format.t) (x : t) : (t, string) Result.t =
-    let open Signedness in
-    if f.s = Unsigned then
-      Error "precondition failure"
-    else
-      let* r = wNegate (wDecode f x) in
-      wEncode f r
+  let internal_negate (f_x : Format.t) (f_r : Format.t) (pi : Projection.t) (x : t) : (t, string) Result.t =
+    let* r = wNegate (wDecode f_x x) in
+    wProject f_r pi r
 
   (** Return the negation of [x] in [f] *)
-  let negate (f : Format.t) (x : t) : t =
-    match internal_negate f x with
+  let negate (f_x : Format.t) (f_r : Format.t) (pi : Projection.t) (x : t) : t =
+    match internal_negate f_x f_r pi x with
     | Ok r -> r
-    | Error _ -> nan f (* unreachable by theorem internal_negate_ok *)
+    | Error _ -> nan f_r (* unreachable by theorem internal_negate_ok *)
 
 
   (** 4.11.2 CopySign *)
@@ -578,14 +570,14 @@ module Float = struct
     | R x,  R y when y <. 0.0 -> Ok (R (-. (Real.abs x)))
     | _ -> Error "undefined"
 
-  let internal_copySign (f : Format.t) (x : t) (y : t) : (t, string) Result.t =
-    let* r = wCopySign (wDecode f x) (wDecode f y) in
-    wEncode f r
+  let internal_copySign (f_x : Format.t) (f_y : Format.t) (f_r : Format.t) (pi : Projection.t) (x : t) (y : t) : (t, string) Result.t =
+    let* r = wCopySign (wDecode f_x x) (wDecode f_y y) in
+    wProject f_r pi r
 
-  let copySign (f : Format.t) (x : t) (y : t) : t =
-    match internal_copySign f x y with
+  let copySign (f_x : Format.t) (f_y : Format.t) (f_r : Format.t) (pi : Projection.t) (x : t) (y : t) : t =
+    match internal_copySign f_x f_y f_r pi x y with
     | Ok x -> x
-    | Error _ -> nan f (* unreachable by theorem internal_copySign_ok *)
+    | Error _ -> nan f_r (* unreachable by theorem internal_copySign_ok *)
 
 
   (** 4.11.3 Addition, Subtraction *)
