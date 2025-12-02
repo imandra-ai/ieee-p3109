@@ -268,6 +268,8 @@ function operator_precedence_info(op: string | undefined, more_than_one_arg = fa
     return new PrecedenceInfo("log_2", Notation.Prefix, Associativity.Left, 17);
   else if (op == "Pi.pi")
     return new PrecedenceInfo("\\pi", Notation.Prefix, Associativity.Left, 17);
+  else if (op == "Pi.pi_half")
+    return new PrecedenceInfo("pi_half", Notation.Prefix, Associativity.Left, 17);
   else if (op == "sin" || op == "cos" || op == "tan" || op == "sinh" || op == "cosh" || op == "tanh")
     return new PrecedenceInfo(op, Notation.Prefix, Associativity.Left, 17);
   else if (op == "Util.ripow")
@@ -1189,14 +1191,16 @@ function print_expression_desc(node: AST, options: Options): Doc {
             "sinh", "cosh", "tanh",
             "arcsin", "arccos", "arctan",
             "arcsinh", "arccosh", "arctanh",
-            "\\pi"
+            "pi_half"
           ].indexOf(opname) >= 0
           ) { r.pop(); r.pop(); }
           let want_par = false;
           if (opname == "Exp.exp2")
             opname = "2^";
           else if (opname == "Log.ln")
-            opname = "log_e";
+            opname = "log_e"
+          else if (opname == "pi_half")
+            opname = "\\frac{\\pi}{2}";
           if ([
             "log_e", "log_2",
             "sin", "cos", "tan",

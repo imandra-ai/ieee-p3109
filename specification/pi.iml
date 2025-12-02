@@ -9,3 +9,6 @@ let pi (p : int) : real =
     2.0 /. Real.of_int ((4 * k + 1) * (4 * k + 3))
   in
   4.0 *. Util.sum (fun k _ -> term k) 0 p
+
+let pi_half (p : int) : real =
+  0.5 *. (pi p)
