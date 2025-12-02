@@ -941,7 +941,7 @@ module Float = struct
     let open CER in
     match x with
     | NaN -> Ok NaN
-    | R x when x = 0.0 -> Ok NaN
+    | R 0.0 -> Ok NaN
     | (PINF | NINF) -> Ok (R 0.0)
     | R x -> Ok (R (1.0 /. x))
     | _ -> Error "undefined"
