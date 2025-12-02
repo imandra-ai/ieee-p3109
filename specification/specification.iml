@@ -121,7 +121,11 @@ module Format = struct
     let m_hi : real =
       if p = 1 then
         match f.s, f.d with
-        | Signed, Extended ->   pow2 (ipow2 (k - 1) - bias - 2)
+        | Signed, Extended -> (
+          match k with
+          | 2 -> 0.0
+          | _ -> pow2 (ipow2 (k - 1) - bias - 2)
+        )
         | Signed, Finite ->     pow2 (ipow2 (k - 1) - bias - 1)
         | Unsigned, Extended -> pow2 (ipow2 k       - bias - 3)
         | Unsigned, Finite ->   pow2 (ipow2 k       - bias - 2)
@@ -131,6 +135,7 @@ module Format = struct
         | Signed, Finite ->     pow2 (ipow2 (k - p) - bias - 1) *. (2. -. pow2 (2 - p - 1))
         | Unsigned, Extended -> (
           match p with
+          | 2 when k = 2->      pow2 (ipow2 (k - p + 1) - bias - 2) *. (2. -. pow2 (2 - p))
           | 2 ->                pow2 (ipow2 (k - p + 1) - bias - 2) *. (2. -. pow2 (2 - p - 1))
           | _ ->                pow2 (ipow2 (k - p + 1) - bias - 1) *. (2. -. pow2 (2 - p) -. pow2 (2 - p - 1))
         )
@@ -270,7 +275,78 @@ module Float = struct
   let is_pinf f x = Ok (to_int_repr f x) = pinf f
   let is_inf f x = is_ninf f x || is_pinf f x
 
+
+  (** 4.5 Format-level operations *)
+
+  let bitWidthOf (f : Format.t) : int = Format.k f
+  let precisionOf (f : Format.t) : int = Format.p f
+  let signednessOf (f : Format.t) : Signedness.t = f.s
+  let domainOf (f : Format.t) : Domain.t = f.d
+
+  let exponentBitsOf (f : Format.t) : int =
+    let k = bitWidthOf f in
+    let p = precisionOf f in
+    match f.s with
+    | Signed -> k - p - 1
+    | Unsigned -> k - p
+
+  let trailingBitsOf (f : Format.t) : int =
+    precisionOf f - 1
+
+  let exponentBiasOf (f : Format.t) : int =
+    let k = bitWidthOf f in
+    let p = precisionOf f in
+    match f.s with
+    | Signed -> if k = p then -1 else Util.ipow2 (k - p - 1)
+    | Unsigned -> Util.ipow2 (k - p)
+
+  let maxFiniteOf (f : Format.t) : t =
+    let open Util in
+    let open Signedness in
+    let open Domain in
+    let k = bitWidthOf f in
+    match signednessOf f, domainOf f with
+    | Signed, Extended ->   ipow2 (k - 1) - 2
+    | Signed, Finite ->     ipow2 (k - 1) - 1
+    | Unsigned, Extended -> ipow2 k - 3
+    | Unsigned, Finite ->   ipow2 k - 2
+
+  let minFiniteOf (f : Format.t) : t =
+    let open Util in
+    let k = bitWidthOf f in
+    if f.s = Signedness.Signed && not (k = 2 && f.d = Domain.Extended) then
+      (maxFiniteOf f) + ipow2 (k - 1)
+    else
+      zero
+
+  let internal_minPositiveOf (f : Format.t) : (t, string) Result.t =
+    let open Signedness in
+    let open Domain in
+    let k, p, _, _, _, s, d = Format.parameters f in
+    match k, p, s, d with
+    | 2, _, Signed, Extended -> pinf f
+    | _ -> Ok 1
+
+  let minPositiveOf (f : Format.t) : t =
+    match internal_minPositiveOf f with
+    | Ok r -> r
+    | Error _ -> zero (* unreachable by theorem internal_minPositiveOf_ok *)
+
+  let minNormalOf (f : Format.t) : t =
+    let open Signedness in
+    let open Domain in
+    match bitWidthOf f, precisionOf f, signednessOf f, domainOf f with
+    | 2, 1, Signed, Extended -> nan f
+    | 2, 2, Unsigned, Extended -> nan f
+    | _ -> Util.ipow2 (precisionOf f - 1)
+
+  let satOf (pi : Projection.t) : SaturationMode.t = fst pi
+
+  let rndOf (pi : Projection.t) : RoundingMode.t = snd pi
+
+
   (** 4.9.1 Decode *)
+
   let rec wDecodeAux (k : int) (p : int) (b : int) (s: Signedness.t) (d : Domain.t) (x : t) : (CER.t, string) Result.t =
     let open Util in
     let open Signedness in
@@ -456,10 +532,9 @@ module Float = struct
 
   (** wProject extended real value [x] to P3109 format [f]. *)
   let wProject (f : Format.t) (pi : Projection.t) (x : CER.t) : (t, string) Result.t =
-    let _, p, b, m_lo, m_hi, _, _ = Format.parameters f in
-    let sat, rnd = pi in
-    let r : CER.t = wRoundToPrecision p b rnd x in
-    let s : CER.t = wSaturate m_lo m_hi sat rnd r f.s f.d in
+    let _, _, _, m_lo, m_hi, _, _ = Format.parameters f in
+    let r : CER.t = wRoundToPrecision (precisionOf f) (exponentBiasOf f) (rndOf pi) x in
+    let s : CER.t = wSaturate m_lo m_hi (satOf pi) (rndOf pi) r f.s f.d in
     wEncode f s
 
 
@@ -2024,53 +2099,6 @@ module Float = struct
     | Error _ -> nan f_z (* unreachable by theorem internal_scaled_fma_ok *)
 
 
-  (** 4.5 Format-level operations *)
-
-  let bitWidthOf (f : Format.t) : int = Format.k f
-  let precisionOf (f : Format.t) : int = Format.p f
-  let signednessOf (f : Format.t) : Signedness.t = f.s
-  let domainOf (f : Format.t) : Domain.t = f.d
-
-  let exponentBitsOf (f : Format.t) : int =
-    let k, p, _, _, _, _, _ = Format.parameters f in
-    match f.s with
-    | Signed -> k - p - 1
-    | Unsigned -> k - p
-
-  let trailingBitsOf (f : Format.t) : int =
-    Format.p f - 1
-
-  let exponentBiasOf (f : Format.t) : int =
-    let k, p, _, _, _, s, _ = Format.parameters f in
-    match s with
-    | Signed -> if k = p then -1 else Util.ipow2 (k - p - 1)
-    | Unsigned -> Util.ipow2 (k - p)
-
-  let maxFiniteOf (f : Format.t) : (t, string) Result.t =
-    let _, _, _, _, m_hi, _, _ = Format.parameters f in
-    wEncode f (CER.R m_hi)
-
-  let minFiniteOf (f : Format.t) : (t, string) Result.t =
-    let _, _, _, m_lo, _, s, _ = Format.parameters f in
-    wEncode f (CER.R m_lo)
-
-  let minPositiveOf (f : Format.t) : (t, string) Result.t =
-    let open Signedness in
-    let open Domain in
-    let k, p, _, _, _, s, d = Format.parameters f in
-    match k, p, s, d with
-    | 2, _, Signed, Extended -> pinf f
-    | _ -> Ok 1
-
-  let minNormalOf (f : Format.t) : (t, string) Result.t =
-    let open Signedness in
-    let open Domain in
-    let k, p, b, _, _, s, d = Format.parameters f in
-    match k, p, s, d with
-    | 2, 1, Signed, Extended -> Ok (nan f)
-    | 2, 2, Unsigned, Extended -> Ok (nan f)
-    | _ -> Ok (Util.ipow2 (p - 1))
-
   (** New operations *)
 
   let wExpMinusOne (x : CER.t) : (CER.t, string) Result.t =
@@ -2078,9 +2106,9 @@ module Float = struct
 
     let wExp xr =
       (* A helper to squelch the error handling *)
-      match xr with
-      | Ok r -> wExp r
-      | Error _ -> Ok CER.zero (* unreachable by theorem wExp_ok *)
+      match wExp xr with
+      | Ok r -> r
+      | Error _ -> CER.zero (* unreachable by theorem wExp_ok *)
       [@@ocaml.doc "nolatex"]
     in
 
@@ -2092,7 +2120,7 @@ module Float = struct
     let* z = wExpMinusOne (wDecode f_x x) in
     wProject f_z pi z
 
-  let expm1 (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) : t =
+  let expMinusOne (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) : t =
     match internal_expMinusOne f_x f_z pi x with
     | Ok x -> x
     | Error _ -> (nan f_z) (* unreachable by theorem internal_expm1_ok *)
@@ -2506,8 +2534,8 @@ module Float = struct
     | nan -> Ok nan
     | ninf when domainOf f = Extended && signednessOf f = Signed -> Ok nan
     | pinf when domainOf f = Extended -> Ok (maxFiniteOf f)
-    | minFinite when domainOf f = Extended -> Ok ninf
-    | minFinite when domainOf f = Finite -> Ok nan
+    | minFinite when domainOf f = Extended && signednessOf f = Signed -> Ok ninf
+    | minFinite when domainOf f = Finite || signednessOf f = Unsigned -> Ok nan
     | 0 when signednessOf f = Signed -> Ok smallestNegative
     | _ when isSignMinus f x -> Ok (x + 1)
     | _ -> Ok (x - 1)

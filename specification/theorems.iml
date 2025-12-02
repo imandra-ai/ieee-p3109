@@ -24,14 +24,14 @@ theorem format_parameter_limits (f : Format.t) =
   [@@fc]
 
 theorem m_hi_gt_0 (f : Format.t) =
-  let _, _, _, m_lo, m_hi, _, _ = Format.parameters f in
-  m_hi >. 0.0
+  let k, p, _, m_lo, m_hi, _, _ = Format.parameters f in
+  (k = 2 && p = 1 && m_hi = 0.0) || m_hi >. 0.0
   [@@timeout 20]
   [@@by enumerate ["f"] @> ground_eval ()]
 
 theorem m_lo_lt_m_hi (f : Format.t) =
-  let _, _, _, m_lo, m_hi, _, _ = Format.parameters f [@trigger] in
-  m_lo <. m_hi
+  let k, p, _, m_lo, m_hi, _, _ = Format.parameters f [@trigger] in
+  not (k = 2 && p = 1) ==> m_lo <. m_hi
   [@@disable Format.parameters, Util.ipow2, Util.pow2]
   [@@by [%use m_hi_gt_0 f] @> auto]
   [@@fc]
@@ -64,7 +64,6 @@ theorem decode_within_range (f : Format.t) (x : Float.t) =
 
 (* [wEncode] is ok if the input is within the format range *)
 theorem wEncode_ok_within_range (f : Format.t) (x : CER.t) =
-  let _, _, _, m_lo, m_hi, s, _ = Format.parameters f in
   let encoded = Float.wEncode f x [@@trigger] in
   if cer_is_within_range f x then
     Result.is_ok encoded
@@ -354,7 +353,7 @@ theorem internal_exp2_ok (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (
 (** [wLog] never returns an error *)
 theorem wLog_ok (x : CER.t) =
   Result.is_ok (Float.wLog x)
-  [@@disable Log.ln]
+  [@@disable Log.log, Log.ln]
   [@@by auto]
 
 (** [internal_log] never returns an error *)
@@ -558,63 +557,40 @@ theorem internal_class_ok (f : Format.t) (x : Float.t) =
 
 (** 4.5 Format-level operations *)
 
-theorem maxFiniteOf_ok (f : Format.t) =
-  Result.is_ok (Float.maxFiniteOf f)
-  [@@disable Format.parameters, Float.wEncode]
-  [@@by auto]
-
-theorem minFiniteOf_ok (f : Format.t) =
-  Result.is_ok (Float.minFiniteOf f) [@trigger]
-  [@@disable Format.parameters, Float.wEncode]
-  [@@by auto]
-  [@@fc]
-
 (* It's always ok to get minPositiveOf *)
-theorem minPositiveOf_ok (f : Format.t) =
-  let open Float in
-  Result.is_ok ((minPositiveOf f) [@trigger])
+theorem internal_minPositiveOf_ok (f : Format.t) =
+  Result.is_ok ((Float.internal_minPositiveOf f) [@trigger])
   [@@disable Util.pow2, Util.ipow2, Format.parameters]
   [@@by auto]
   [@@fc]
 
-(* The result of minPositiveOf is never negative, zero, or NaN *)
+(* The result of minPositiveOf is never negative, zero, or NaN (but it can be +oo) *)
 theorem minPositiveOf_positive (f : Format.t) =
   let open Float in
-  match minPositiveOf f with
-  | Ok r -> not (isSignMinus f r) && not (isZero f r) && not (is_nan f r)
-  | Error _ -> false
+  let r = minPositiveOf f in
+  not (isSignMinus f r) && not (isZero f r) && not (is_nan f r)
   [@@by enumerate ["f"] @> ground_eval ()]
-
-(* It's always ok to get minNormalOf *)
-theorem minNormalOf_ok (f : Format.t) =
-  let open Float in
-  Result.is_ok ((minNormalOf f) [@trigger])
-  [@@disable Util.pow2, Util.ipow2, Format.parameters]
-  [@@by auto]
-  [@@fc]
 
 (* The result of minNormalOf is normal, with some exceptions *)
 theorem minNormalOf_normal (f : Format.t) =
   let open Float in
   let k, p, _, _, _, s, d = Format.parameters f in
+  (s = Signedness.Unsigned || p < k) ==>
   match k, p, s, d with
-  | k, p, Signed, _ when k = p -> true (* Signed k = p is not a valid format *)
-  | 2, 1, Signed, Extended -> minNormalOf f = Ok (nan f)
-  | 2, 2, Unsigned, Extended -> minNormalOf f = Ok (nan f)
-  | _ ->
-    (match minNormalOf f with
-      | Ok r -> isNormal f r
-      | Error _ -> true)
+  | 2, 1, Signed, Extended -> minNormalOf f = (nan f)
+  | 2, 2, Unsigned, Extended -> minNormalOf f = (nan f)
+  | _ -> isNormal f (minNormalOf f)
+  [@@disable Util.pow2, Util.ipow2, Format.parameters]
   [@@timeout 60]
   [@@by enumerate ["f"] @> ground_eval ()]
 
-(** [internal_expm1] never returns an error *)
+(** [internal_expMinusOne] never returns an error *)
 theorem internal_expMinusOne_ok (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : Float.t) =
   Result.is_ok (Float.internal_expMinusOne f_x f_z pi x)
   [@@disable Specification.Float.wProject, Specification.Float.wDecode, Float.wDecodeAux, Format.parameters]
   [@@by auto]
 
-(** [internal_log1p] never returns an error *)
+(** [internal_logOnePlus] never returns an error *)
 theorem internal_logOnePlus_ok (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : Float.t) =
   Result.is_ok (Float.internal_logOnePlus f_x f_z pi x)
   [@@disable Float.wProject, Float.wDecode, Float.wDecodeAux, Log.log, Log.ln, Format.parameters]
@@ -764,3 +740,21 @@ theorem wSaturate_preserves_positivity (m_lo : real) (m_hi : real) (sat : Satura
   [@@disable Float.wDecode, Float.wDecodeAux, Format.parameters, Util.pow2, Util.ipow2, Util.floor_log2_abs, Util.floor, Util.ifloor]
   [@@by auto]
   [@@fc]
+
+(* Check minFiniteOf/maxFiniteOf are equivalent to m_lo/m_hi *)
+
+theorem maxFinite_is_m_hi (f : Format.t) =
+  let k, p, _, _, m_hi, s, _ = Format.parameters f in
+  (s = Signedness.Unsigned || p < k) ==>
+  CER.R m_hi = Float.wDecode f (Float.maxFiniteOf f)
+  [@@disable Util.pow2, Util.ipow2, Util.floor_log2_abs, Util.floor, Util.ifloor, Log.ln, Exp.exp]
+  [@@timeout 20]
+  [@@by enumerate ["f"] @> ground_eval ()]
+
+theorem minFinite_is_m_lo (f : Format.t) =
+  let k, p, _, m_lo, _, s, _ = Format.parameters f in
+  (s = Signedness.Unsigned || p < k) ==>
+  CER.R m_lo = Float.wDecode f (Float.minFiniteOf f)
+  [@@disable Util.pow2, Util.ipow2, Util.floor_log2_abs, Util.floor, Util.ifloor, Log.ln, Exp.exp]
+  [@@timeout 20]
+  [@@by enumerate ["f"] @> ground_eval ()]
