@@ -169,13 +169,11 @@ verify (
   | _ -> false)
   [@@by auto]
 
-verify (arctan 0.0 prec = Ok 0.0) [@@by auto]
+verify (arctan 0.0 prec = 0.0) [@@by auto]
 
 verify (
   let r = arctan 0.5 prec in
-  match r with
-  | Ok r -> 0.495380 <=. r && r <=. 0.495381
-  | _ -> false)
+  0.495380 <=. r && r <=. 0.495381)
   [@@by auto]
 
 verify (arcsinh 0.0 prec = Ok 0.0) [@@by auto]
