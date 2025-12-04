@@ -1630,14 +1630,11 @@ module Float = struct
 
   (** 5.1.1 DecodeBlock *)
 
-  let map_wMultiply (f_s : Format.t) (f_x : Format.t) (s : t) (x : t list) : (CER.t, string) Result.t list =
-    List.map (fun x_i -> wMultiply (wDecode f_s s) (wDecode f_x x_i)) x
-
   let wBlockDecode (b : int) (f_s : Format.t) (f_x : Format.t) (s, x : t * t list) : (CER.t list, string) Result.t =
     if b < 1 || b <> List.length x then
       Error "invalid block size"
     else
-      let@ cz = map_wMultiply f_s f_x s x in
+      let@ cz = List.map (fun x_i -> wMultiply (wDecode f_s s) (wDecode f_x x_i)) x in
       Ok cz
 
   (** 5.1.2 EncodeBlock *)
