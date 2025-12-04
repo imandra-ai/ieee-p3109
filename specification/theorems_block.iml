@@ -111,11 +111,35 @@ theorem reduce_wMaximumFinite_ok (x : CER.t list) =
 
 (** 6.0.1 DecodeBlock *)
 
-theorem map_wMultiply_ok (f_s : Format.t) (f_x : Format.t) (s, x : Float.t * Float.t list) =
+(* theorem map_wMultiply_ok (f_s : Format.t) (f_x : Format.t) (s, x : Float.t * Float.t list) =
   Result.is_ok ((extract_error ((Float.map_wMultiply f_s f_x s x) [@trigger])))
   [@@disable Float.wDecode, Float.wMultiply, List.map]
   [@@by auto]
-  [@@fc]
+  [@@fc] *)
+
+theorem wMultiplyLambda_ok (x : CER.t) (y : CER.t) =
+  Result.is_ok ((fun z -> wMultiply x z) y)
+  [@@by auto]
+
+theorem map_wMultiply_ok (f_s : Format.t) (f_x : Format.t) (s : Float.t) (x :  Float.t list) =
+  Result.is_ok ((extract_error ((List.map (fun x_i -> wMultiply (wDecode f_s s) (wDecode f_x x_i)) x))))
+  [@@disable Float.wDecode, Float.wMultiply, List.map]
+  [@@by
+    [%cases
+      (Result.is_ok
+        (([? at (List.map (_ : Float.t -> (CER.t, string) Result.t) x) index(1)])
+          s))]
+    @>
+      (*
+      [%use ErrorPropagation.extract_error_empty ([] : (Float.t, string) Result.t list)] @> simplify ();
+      [%use wMultiply_ok
+        [? at (wMultiply (_) (_)) index(1)]
+        [? at (wMultiply (_) (_)) index(2)] ] @>
+      (* simplify () *)
+      ] *)
+    skip
+  ]
+  (* [@@fc] *)
 
 (* theorem map_wMultiply_preserves_length (f_s : Format.t) (f_x : Format.t) (s, x : Float.t * Float.t list) =
   List.length ((Float.map_wMultiply f_s f_x s x) [@trigger]) = List.length x
@@ -123,13 +147,14 @@ theorem map_wMultiply_ok (f_s : Format.t) (f_x : Format.t) (s, x : Float.t * Flo
   [@@by auto]
   [@@fc] *)
 
+(*
 theorem wBlockDecode_ok (b : int) (f_s : Format.t) (f_x : Format.t) (s : Float.t) (x : Float.t list) =
   b = List.length x && b >= 1 ==>
   Result.is_ok ((Float.wBlockDecode b f_s f_x (s, x)) [@trigger])
   [@@timeout 10]
   [@@disable Float.wDecode, Float.wMultiply, List.map]
   [@@by
-    [%use map_wMultiply_ok f_s f_x (s, x)] @>
+    (* [%use map_wMultiply_ok f_s f_x (s, x)] @> *)
     [%expand "Specification.Float.wBlockDecode"] @>
     simplify ()]
   [@@fc]
@@ -1476,3 +1501,5 @@ theorem internal_scaled_fma_ok f_x f_y f_sxy f_z f_sz f_r pi x y s_xy z s_z =
     [%use block_fma_ok 1 f_sxy f_x f_sxy f_y f_sz f_z f_r f_r pi pi (s_xy, [x]) (s_xy, [y]) (s_z, [z]) (one f_r)] @>
     induct ~do_not:["gen"; "fert"; "delim"] ()
   ]
+
+  *)

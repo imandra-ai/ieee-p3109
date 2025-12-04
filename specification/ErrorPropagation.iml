@@ -46,3 +46,8 @@ theorem extract_error_preserves_length (xs : ('a, 'b) Result.t list) =
   | _ -> true
   [@@by auto]
   [@@fc]
+
+theorem extract_error_empty (xs : ('a, 'b) Result.t list)=
+  xs = [] ==> Result.is_ok  (extract_error xs) [@trigger]
+  [@@by auto]
+  [@@fc]

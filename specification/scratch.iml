@@ -1,0 +1,47 @@
+[@@@import Util, "dune:math"]
+[@@@import Log, "dune:math"]
+[@@@import Exp, "dune:math"]
+[@@@import ErrorPropagation, "dune:basic"]
+[@@@import Specification, "specification.iml"]
+[@@@import Theorems, "theorems.iml"]
+[@@@import Theorems_pow2, "theorems_pow2.iml"]
+[@@@import Theorems_format_ranges, "theorems_format_ranges.iml"]
+[@@@import Theorems_IEEE754, "theorems_ieee754.iml"]
+
+open Specification
+open Float
+open ErrorPropagation
+open Theorems
+
+let unroll_nonlin qt nqt steps = Tactic.unroll ~smt:"z3-full-nonlinear" ~query_timeout:qt ~no_asm_query_timeout:nqt steps
+
+theorem wMultiply_ok (x : CER.t) (y : CER.t) =
+  Result.is_ok (wMultiply x y)
+  [@@by auto]
+
+theorem wDecode_wMultiply_ok (f_x : Format.t) (f_y : Format.t) (x : Float.t) (y : Float.t) =
+  Result.is_ok (wMultiply (wDecode f_x x) (wDecode f_y y))
+  [@@by [%use wMultiply_ok (wDecode f_x x) (wDecode f_y y)] @> auto]
+
+theorem map_wMultiply_ok (f_s : Format.t) (f_x : Format.t) (s : Float.t) (x :  Float.t list) =
+  Result.is_ok (extract_error (List.map (fun x_i -> wMultiply (wDecode f_s s) (wDecode f_x x_i)) x))
+  [@@disable Float.wDecode, Float.wMultiply, List.map]
+  [@@by auto]
+
+let wBlockDecode (b : int) (f_s : Format.t) (f_x : Format.t) (s : t) (x : t list) : (CER.t list, string) Result.t =
+  if b < 1 || b <> List.length x then
+    Error "invalid block size"
+  else
+    let@ cz = List.map (fun x_i -> wMultiply (wDecode f_s s) (wDecode f_x x_i)) x in
+    Ok cz
+
+theorem wBlockDecode_ok (b : int) (f_s : Format.t) (f_x : Format.t) (s : Float.t) (x : Float.t list) =
+  b >= 1 && b = List.length x ==>
+  Result.is_ok (wBlockDecode b f_s f_x s x)
+  [@@timeout 3600]
+  [@@disable Float.wDecode, Float.wMultiply, List.map]
+  [@@by
+    simplify () @>
+    [%use map_wMultiply_ok f_s f_x s x] @>
+    unroll 0
+  ]
