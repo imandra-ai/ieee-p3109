@@ -67,33 +67,26 @@ theorem wAdd_ok (x : CER.t) (y : CER.t) =
 (** [wMultiply] never returns an error *)
 theorem wMultiply_ok (x : CER.t) (y : CER.t) =
   Result.is_ok ((Float.wMultiply x y) [@trigger])
-  [@@by auto]
+  [@@by expand "Specification.Float.wMultiply" @> unroll 0]
   [@@fc]
 
 (** [wDivide] never returns an error *)
 theorem wDivide_ok (x : CER.t) (y : CER.t) =
   Result.is_ok ((Float.wDivide x y) [@trigger])
-  [@@by auto]
+  [@@by expand "Specification.Float.wDivide" @> unroll 0]
   [@@fc]
 
 (** [wMaximumFinite] never returns an error *)
 theorem wMaximumFinite_ok (x : CER.t) (y : CER.t) =
   Result.is_ok ((Float.wMaximumFinite x y) [@trigger])
-  [@@by auto]
+  [@@by expand "Specification.Float.wMaximumFinite" @> unroll 0]
   [@@fc]
 
 (** [wCopySign] never returns an error *)
 theorem wCopySign_ok (x : CER.t) (y : CER.t) =
   Result.is_ok ((Float.wCopySign x y) [@trigger])
-  [@@by auto]
+  [@@by expand "Specification.Float.wCopySign" @> unroll 0]
   [@@fc]
-
-(* theorem reduce_wAdd_ok (x : CER.t list) =
-  List.length x >= 1 ==>
-  Result.is_ok ((Float.reduce_wAdd x) [@trigger])
-  [@@disable Float.wAdd]
-  [@@by auto]
-  [@@fc] *)
 
 theorem reduce_trivial_ok (x: 'a list) =
   List.length x >= 2 ==> Result.is_ok ((reduce (fun x y -> Ok CER.zero) x))
@@ -111,61 +104,51 @@ theorem reduce_wMaximumFinite_ok (x : CER.t list) =
 
 (** 6.0.1 DecodeBlock *)
 
-(* theorem map_wMultiply_ok (f_s : Format.t) (f_x : Format.t) (s, x : Float.t * Float.t list) =
-  Result.is_ok ((extract_error ((Float.map_wMultiply f_s f_x s x) [@trigger])))
-  [@@disable Float.wDecode, Float.wMultiply, List.map]
-  [@@by auto]
-  [@@fc] *)
+theorem wDecode_wMultiply_ok (f_x : Format.t) (f_y : Format.t) (x : Float.t) (y : Float.t) =
+  Result.is_ok (wMultiply (wDecode f_x x) (wDecode f_y y))
+  [@@by [%use wMultiply_ok (wDecode f_x x) (wDecode f_y y)] @> trivial]
 
-theorem wMultiplyLambda_ok (x : CER.t) (y : CER.t) =
-  Result.is_ok ((fun z -> wMultiply x z) y)
-  [@@by auto]
+theorem map_wMultiply_ok_base (f_s : Format.t) (f_x : Format.t) (s : Float.t) (x :  Float.t list) =
+  x = [] ==> Result.is_ok (extract_error (List.map (fun x_i -> wMultiply (wDecode f_s s) (wDecode f_x x_i)) x))
+
+theorem map_wMultiply_ok_ind (f_s : Format.t) (f_x : Format.t) (s : Float.t) (x :  Float.t list) =
+  x <> [] && Result.is_ok (extract_error (List.map (fun x_i -> wMultiply (wDecode f_s s) (wDecode f_x x_i)) (List.tl x)))
+  ==> Result.is_ok (extract_error (List.map (fun x_i -> wMultiply (wDecode f_s s) (wDecode f_x x_i)) x))
+  [@@disable Float.wDecode, Float.wMultiply, List.map]
+  [@@by unroll 10]
 
 theorem map_wMultiply_ok (f_s : Format.t) (f_x : Format.t) (s : Float.t) (x :  Float.t list) =
-  Result.is_ok ((extract_error ((List.map (fun x_i -> wMultiply (wDecode f_s s) (wDecode f_x x_i)) x))))
+  Result.is_ok (extract_error (List.map (fun x_i -> wMultiply (wDecode f_s s) (wDecode f_x x_i)) x))
   [@@disable Float.wDecode, Float.wMultiply, List.map]
+  (* [@@by auto] *)
   [@@by
-    [%cases
-      (Result.is_ok
-        (([? at (List.map (_ : Float.t -> (CER.t, string) Result.t) x) index(1)])
-          s))]
-    @>
-      (*
-      [%use ErrorPropagation.extract_error_empty ([] : (Float.t, string) Result.t list)] @> simplify ();
-      [%use wMultiply_ok
-        [? at (wMultiply (_) (_)) index(1)]
-        [? at (wMultiply (_) (_)) index(2)] ] @>
-      (* simplify () *)
-      ] *)
-    skip
+    induction () @>|
+      [
+        [%use map_wMultiply_ok_base f_s f_x s x] @> auto;
+        [%use map_wMultiply_ok_ind f_s f_x s x] @> auto
+      ]
   ]
-  (* [@@fc] *)
 
-(* theorem map_wMultiply_preserves_length (f_s : Format.t) (f_x : Format.t) (s, x : Float.t * Float.t list) =
-  List.length ((Float.map_wMultiply f_s f_x s x) [@trigger]) = List.length x
-  [@@disable Float.wDecode, Float.wMultiply, List.map]
-  [@@by auto]
-  [@@fc] *)
 
-(*
 theorem wBlockDecode_ok (b : int) (f_s : Format.t) (f_x : Format.t) (s : Float.t) (x : Float.t list) =
-  b = List.length x && b >= 1 ==>
+  b >= 1 && b = List.length x ==>
   Result.is_ok ((Float.wBlockDecode b f_s f_x (s, x)) [@trigger])
-  [@@timeout 10]
-  [@@disable Float.wDecode, Float.wMultiply, List.map]
+  [@@timeout 3600]
+  [@@disable Float.wDecode, Float.wMultiply, List.map, ErrorPropagation.extract_error]
   [@@by
-    (* [%use map_wMultiply_ok f_s f_x (s, x)] @> *)
-    [%expand "Specification.Float.wBlockDecode"] @>
-    simplify ()]
+    simplify () @>
+    [%use map_wMultiply_ok f_s f_x s x] @>
+    auto]
   [@@fc]
 
+  (*
 theorem wBlockDecode_preserves_length (b : int)  (f_s : Format.t) (f_x : Format.t) (s : Float.t) (x : Float.t list) =
   b = List.length x && b >= 1 ==>
   match (Float.wBlockDecode b f_s f_x (s, x)) [@trigger] with
   | Ok r -> List.length r = b
   | _ -> false
   [@@timeout 10]
-  [@@disable Float.wDecode, Float.wMultiply, Float.map_wMultiply, List.map]
+  [@@disable Float.wDecode, Float.wMultiply, List.map]
   [@@by
     [%use map_wMultiply_ok f_s f_x (s, x)] @>
     induct ~do_not:["gen"; "fert"; "delim"] ()
