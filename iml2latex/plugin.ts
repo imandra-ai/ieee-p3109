@@ -267,9 +267,11 @@ function operator_precedence_info(op: string | undefined, more_than_one_arg = fa
   else if (op == "Log.log2")
     return new PrecedenceInfo("log_2", Notation.Prefix, Associativity.Left, 17);
   else if (op == "Pi.pi")
-    return new PrecedenceInfo("\\pi", Notation.Prefix, Associativity.Left, 17);
+    return new PrecedenceInfo("pi", Notation.Prefix, Associativity.Left, 17);
   else if (op == "Pi.pi_half")
     return new PrecedenceInfo("pi_half", Notation.Prefix, Associativity.Left, 17);
+  else if (op == "Pi.pi_quarter")
+    return new PrecedenceInfo("pi_quarter", Notation.Prefix, Associativity.Left, 17);
   else if (op == "sin" || op == "cos" || op == "tan" || op == "sinh" || op == "cosh" || op == "tanh")
     return new PrecedenceInfo(op, Notation.Prefix, Associativity.Left, 17);
   else if (op == "Util.ripow")
@@ -401,6 +403,8 @@ function print_constant_desc(node: AST, options: Options): Doc {
       if (args[0] == "0.0") return "\\zero";
       if (args[0] == "1.0") return "\\one";
       if (args[0] == "-1.0") return "-\\one";
+      if (args[0].endsWith(".0")) return args[0].substring(0, args[0].length - 2);
+
       const val = 0; // args[0];
       return par_if(val < 0, args[1] ? args[0].concat(args[1]) : args[0]);
     }
@@ -1154,6 +1158,7 @@ function print_expression_desc(node: AST, options: Options): Doc {
       op_info.name = op_info.name.replace("||", "\\Or");
       op_info.name = op_info.name.replace("*.", "\\times");
       op_info.name = op_info.name.replace("Trigonometric.cos", "cos");
+      op_info.name = op_info.name.replace("Trigonometric.atan2", "atan2");
 
       if (op_info.name.startsWith("w")) {
         op_info.name = "\\" + PREFIX + "\\" + op_info.name.substring(1);
@@ -1214,7 +1219,7 @@ function print_expression_desc(node: AST, options: Options): Doc {
             "sinh", "cosh", "tanh",
             "arcsin", "arccos", "arctan",
             "arcsinh", "arccosh", "arctanh",
-            "pi_half"
+            "pi", "pi_half", "pi_quarter", "atan2"
           ].indexOf(opname) >= 0
           ) { r.pop(); r.pop(); }
           let want_par = false;
@@ -1222,8 +1227,12 @@ function print_expression_desc(node: AST, options: Options): Doc {
             opname = "2^";
           else if (opname == "Log.ln")
             opname = "log_e"
+          else if (opname == "pi")
+            opname = "\\pi";
           else if (opname == "pi_half")
             opname = "\\frac{\\pi}{2}";
+          else if (opname == "pi_quarter")
+            opname = "\\frac{\\pi}{4}";
           if ([
             "log_e", "log_2",
             "sin", "cos", "tan",
