@@ -2535,10 +2535,10 @@ module Float = struct
     match d, s, to_int_repr f x with
     | _, _, nan -> Ok nan
     | Extended, _, pinf -> Ok nan
-    | Finite, _, maxFinite -> Ok nan
-    | Extended, _, maxFinite -> Ok pinf
+    | Finite, _, x when x = maxFinite -> Ok nan
+    | Extended, _, x when x = maxFinite -> Ok pinf
     | Extended, Signed, ninf -> Ok minFinite
-    | _, Signed, smallestNegative -> Ok zero
+    | _, Signed, x when x = smallestNegative -> Ok zero
     | _, Signed, x when isSignMinus f x -> Ok (x - 1)
     | _, _, x -> Ok (x + 1)
 
@@ -2575,10 +2575,10 @@ module Float = struct
     let smallestNegative = negate f f (SatPropagate, NearestTiesToEven) (minPositiveOf f) in
     match d, s, to_int_repr f x with
     | _, _, nan -> Ok nan
-    | Finite, _, minFinite -> Ok nan
+    | Finite, _, x when x = minFinite -> Ok nan
     | _, Unsigned, zero -> Ok nan
     | Extended, Signed, ninf -> Ok nan
-    | Extended, Signed, minFinite -> Ok ninf
+    | Extended, Signed, x when x = minFinite -> Ok ninf
     | Extended, _, pinf -> Ok maxFinite
     | _, Signed, zero -> Ok smallestNegative
     | _, Signed, x when isSignMinus f x -> Ok (x + 1)
