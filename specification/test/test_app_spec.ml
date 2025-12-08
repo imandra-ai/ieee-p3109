@@ -22,7 +22,7 @@ Printf.printf "+oo = %s\n" (Float.to_string f (Result.get_ok (Float.pinf f)));;
 
 Printf.printf "-oo = %s\n" (Float.to_string f (Result.get_ok (Float.ninf f)))
 
-let neg_pinf = Float.negate f (Result.get_ok (Float.pinf f));;
+let neg_pinf = Float.negate f f (SaturationMode.OvfInf, RoundingMode.NearestTiesToEven) (Result.get_ok (Float.pinf f));;
 
 Printf.printf "(- +oo) = %s\n" (Float.to_string f neg_pinf);;
 
@@ -30,7 +30,7 @@ Printf.printf "NaN = NaN: %b\n" (Float.nan f = Float.nan f)
 
 let chk_neg x f =
   Printf.printf "-(%s) = %s\n" (Float.to_string f x)
-    (Float.to_string f (Float.negate f x))
+    (Float.to_string f (Float.negate f f (SaturationMode.OvfInf, RoundingMode.NearestTiesToEven) x))
 
 let _ =
   let f = f in
