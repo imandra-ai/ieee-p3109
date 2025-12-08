@@ -1047,6 +1047,46 @@ module Float = struct
     | Ok r -> r
     | Error _ -> nan f_z (* unreachable by theorem internal_hypot_ok *)
 
+  let wAtan2 (y : CER.t) (x : CER.t) : (CER.t, string) Result.t =
+    let open CER in
+    match y, x with
+    | NaN, _ -> Ok NaN
+    | _, NaN -> Ok NaN
+    (* If y is +0 (-0) and x is less than 0, +pi (-pi) is returned. *)
+    | R 0.0, NINF -> Ok (R (Pi.pi 8))
+    | R 0.0, R x when x <. 0.0 -> Ok (R (Pi.pi 8))
+    (* If y is +0 (-0) and x is greater than 0, +0 (-0) is returned. *)
+    | R 0.0, PINF -> Ok (R 0.0)
+    | R 0.0, R x when x >. 0.0 -> Ok (R 0.0)
+    (* If y is a finite value greater (less) than 0, and x is negative infinity, +pi (-pi) is returned. *)
+    | R y, NINF when y >. 0.0 -> Ok (R (Pi.pi 8))
+    | R y, NINF when y <. 0.0 -> Ok (R (-. (Pi.pi 8)))
+    (* If y is a finite value greater (less) than 0, and x is positive infinity, +0 (-0) is returned. *)
+    | R y, PINF when y >. 0.0 -> Ok (R 0.0)
+    | R y, PINF when y <. 0.0 -> Ok (R 0.0)
+    (* If y is positive infinity (negative infinity), and x is finite, pi/2 (-pi/2) is returned. *)
+    | PINF, R _ -> Ok (R (Pi.pi_half 8))
+    | NINF, R _ -> Ok (R (-. (Pi.pi_half 8)))
+    (* If y is positive infinity (negative infinity) and x is negative infinity, +3*pi/4 (-3*pi/4) is returned. *)
+    | PINF, NINF -> Ok (R (3.0 *. (Pi.pi_quarter 8)))
+    | NINF, NINF -> Ok (R (-3.0 *. (Pi.pi_quarter 8)))
+    (* If y is positive infinity (negative infinity) and x is positive infinity, +pi/4 (-pi/4) is returned. *)
+    | PINF, PINF -> Ok (R (Pi.pi_quarter 8))
+    | NINF, PINF -> Ok (R (-. (Pi.pi_quarter 8)))
+    | R x, R y ->
+      (match Trigonometric.atan2 x y 8 with (* TODO: Proof that 8 is enough *)
+      | Ok r -> Ok (R r)
+      | Error e -> Error e)
+    | _ -> Error "undefined"
+
+  let internal_atan2 (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) (y : t) : (t, string) Result.t =
+    let* z = wAtan2 (wDecode f_x x) (wDecode f_y y) in
+    wProject f_z pi z
+
+  let atan2 (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) (y : t): t =
+    match internal_atan2 f_x f_y f_z pi x y with
+    | Ok r -> r
+    | Error _ -> nan f_z (* unreachable by theorem internal_atan2_ok *)
 
   (** 4.12 Extrema *)
 

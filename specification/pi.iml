@@ -12,3 +12,6 @@ let pi (p : int) : real =
 
 let pi_half (p : int) : real =
   0.5 *. (pi p)
+
+let pi_quarter (p : int) : real =
+  0.25 *. (pi p)
