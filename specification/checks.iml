@@ -15,6 +15,8 @@ let f81 = {Format.kp = Format.B8P1; s = Signedness.Signed; d = Domain.Extended}
 let f82 = {Format.kp = Format.B8P2; s = Signedness.Signed; d = Domain.Extended}
 let f83 = {Format.kp = Format.B8P3; s = Signedness.Signed; d = Domain.Extended}
 
+let dflt_negate = negate f83 f83 (SaturationMode.OvfInf, RoundingMode.NearestTiesToEven)
+
 (** Check that the precision of B8P3 is as expected *)
 lemma fmt_prec_p3 (f : Format.t) = (f = f83) ==> (Format.precision f) = 3
 
@@ -82,7 +84,7 @@ lemma nhuge_value = is_r (wDecode f83 nhuge) (CER.R (- 49152.0)) [@@by auto]
 
 theorem thm_tiny_val = (to_int_repr f83 tiny) = 1 [@@by unroll 50]
 
-lemma neg_tiny_not_nan = negate f83 tiny <> nan f83
+lemma neg_tiny_not_nan = dflt_negate tiny <> nan f83
   [@@by auto]
 
 theorem tiny_encode = Float.wEncode f83 (CER.R (1.0 /. 131072.0)) = Ok (tiny)
@@ -94,10 +96,10 @@ theorem neg_tiny_encode = Float.wEncode f83  (CER.R (-1.0 /. 131072.0)) = Ok (ti
 theorem x = Float.wEncode f83 (CER.R (1.0 /. 131072.0)) = Ok ( tiny )
   [@@by auto]
 
-lemma none_is_neg_one = none = negate f83 one [@@by auto]
-lemma zero_is_zero = zero = negate f83 zero [@@by auto]
+lemma none_is_neg_one = none = dflt_negate one [@@by auto]
+lemma zero_is_zero = zero = dflt_negate zero [@@by auto]
 
-lemma huge_neg_real = is_r (wDecode f83 (negate f83 huge)) (CER.R (- 49152.0)) [@@by auto]
+lemma huge_neg_real = is_r (wDecode f83 (dflt_negate huge)) (CER.R (- 49152.0)) [@@by auto]
 
 lemma log1 = Util.floor_log2_abs 49152.0 16 = 15 [@@by auto]
 lemma log2 = Util.floor_log2_abs 24576.0 16 = 14 [@@by auto]
@@ -106,7 +108,7 @@ lemma tst1 = is_r (wDecode f83 (of_int_repr f83 0xFA)) (CER.R (- 24576.0)) [@@by
 
 lemma tst2 = is_r (wDecode f83 (of_int_repr f83 0xF8)) (CER.R (- 16384.0)) [@@by auto]
 
-lemma tst2_real = is_r (wDecode f83 (negate f83 (of_int_repr f83 0xF8))) (CER.R 16384.0)
+lemma tst2_real = is_r (wDecode f83 (dflt_negate (of_int_repr f83 0xF8))) (CER.R 16384.0)
   [@@by auto]
 
 lemma rBB1 = is_r (Float.wDecode f81 (of_int_repr f83 0x3B)) (CER.R 0.03125) [@@by auto]
