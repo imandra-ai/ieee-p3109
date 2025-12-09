@@ -2365,7 +2365,7 @@ module Float = struct
     let* z = wArcTan (wDecode f_x x) in
     wProject f_z pi z
 
-  let tan (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) : t =
+  let arctan (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) : t =
     match internal_arctan f_x f_z pi x with
     | Ok x -> x
     | Error _ -> (nan f_z) (* unreachable by theorem internal_arctan_ok *)
