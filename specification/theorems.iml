@@ -397,28 +397,29 @@ theorem wHypot_ok (x : CER.t) (y : CER.t) =
   [@@disable Sqrt.sqrt]
   [@@by auto]
 
+(** [hypot] never returns an error *)
 theorem internal_hypot_ok (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (pi : Projection.t) (x : Float.t) (y : Float.t) =
   Result.is_ok (Float.internal_hypot f_x f_y f_z pi x y)
   [@@disable Float.wProject, Float.wDecode, Float.wDecodeAux, Float.wRoundToPrecision, Float.wSaturate, Util.pow2, Util.ipow2, Format.parameters, Float.wHypot]
   [@@by [%use wHypot_ok (Float.wDecode f_x x) (Float.wDecode f_y y)] @> auto]
 
-(** [wAtan2] never returns an error *)
-theorem cer_atan2_ok (y : real) (x : real) (p : int) =
-  Result.is_ok (Trigonometric.atan2 y x p) [@trigger]
+(** [wArcTan2] never returns an error *)
+theorem cer_arctan2_ok (y : real) (x : real) (p : int) =
+  Result.is_ok (Trigonometric.arctan2 y x p) [@trigger]
   [@@disable Sqrt.sqrt, Trigonometric.arctan]
   [@@by auto]
   [@@fc]
 
-theorem wAtan2_ok (y : CER.t) (x : CER.t) (p : int) =
-  Result.is_ok (Float.wAtan2 y x)
-  (* [@@by unroll_nonlin 10 10 20] *)
-  [@@disable Util.pow2, Util.ipow2, Trigonometric.atan2]
+theorem wArcTan2_ok (y : CER.t) (x : CER.t) (p : int) =
+  Result.is_ok (Float.wArcTan2 y x)
+  [@@disable Util.pow2, Util.ipow2, Trigonometric.arctan2]
   [@@by auto]
 
-theorem internal_atan2_ok (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (pi : Projection.t) (x : Float.t) (y : Float.t) =
-  Result.is_ok (Float.internal_atan2 f_x f_y f_z pi x y)
-  [@@disable Float.wProject, Float.wDecode, Float.wDecodeAux, Float.wRoundToPrecision, Float.wSaturate, Util.pow2, Util.ipow2, Format.parameters, Float.wAtan2]
-  [@@by [%use wAtan2_ok (Float.wDecode f_x x) (Float.wDecode f_y y) 8] @> auto]
+(** [arcTan2] never returns an error *)
+theorem internal_arcTan2_ok (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (pi : Projection.t) (x : Float.t) (y : Float.t) =
+  Result.is_ok (Float.internal_arcTan2 f_x f_y f_z pi x y)
+  [@@disable Float.wProject, Float.wDecode, Float.wDecodeAux, Float.wRoundToPrecision, Float.wSaturate, Util.pow2, Util.ipow2, Format.parameters, Float.wArcTan2]
+  [@@by [%use wArcTan2_ok (Float.wDecode f_x x) (Float.wDecode f_y y) 8] @> auto]
 
 
 (** 4.10.1 Minimum and Maximum *)

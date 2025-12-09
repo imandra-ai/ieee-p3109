@@ -1158,7 +1158,7 @@ function print_expression_desc(node: AST, options: Options): Doc {
       op_info.name = op_info.name.replace("||", "\\Or");
       op_info.name = op_info.name.replace("*.", "\\times");
       op_info.name = op_info.name.replace("Trigonometric.cos", "cos");
-      op_info.name = op_info.name.replace("Trigonometric.atan2", "atan2");
+      op_info.name = op_info.name.replace("Trigonometric.arctan2", "arctan2");
 
       if (op_info.name.startsWith("w")) {
         op_info.name = "\\" + PREFIX + "\\" + op_info.name.substring(1);
@@ -1219,7 +1219,7 @@ function print_expression_desc(node: AST, options: Options): Doc {
             "sinh", "cosh", "tanh",
             "arcsin", "arccos", "arctan",
             "arcsinh", "arccosh", "arctanh",
-            "pi", "pi_half", "pi_quarter", "atan2"
+            "pi", "pi_half", "pi_quarter", "arctan2"
           ].indexOf(opname) >= 0
           ) { r.pop(); r.pop(); }
           let want_par = false;

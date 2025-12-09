@@ -1047,7 +1047,7 @@ module Float = struct
     | Ok r -> r
     | Error _ -> nan f_z (* unreachable by theorem internal_hypot_ok *)
 
-  let wAtan2 (y : CER.t) (x : CER.t) : (CER.t, string) Result.t =
+  let wArcTan2 (y : CER.t) (x : CER.t) : (CER.t, string) Result.t =
     let open CER in
     match y, x with
     | NaN, _ -> Ok NaN
@@ -1074,19 +1074,19 @@ module Float = struct
     | PINF, PINF -> Ok (R (Pi.pi_quarter 8))
     | NINF, PINF -> Ok (R (-. (Pi.pi_quarter 8)))
     | R x, R y ->
-      (match Trigonometric.atan2 x y 8 with (* TODO: Proof that 8 is enough *)
+      (match Trigonometric.arctan2 x y 8 with (* TODO: Proof that 8 is enough *)
       | Ok r -> Ok (R r)
       | Error e -> Error e)
     | _ -> Error "undefined"
 
-  let internal_atan2 (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) (y : t) : (t, string) Result.t =
-    let* z = wAtan2 (wDecode f_x x) (wDecode f_y y) in
+  let internal_arcTan2 (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) (y : t) : (t, string) Result.t =
+    let* z = wArcTan2 (wDecode f_x x) (wDecode f_y y) in
     wProject f_z pi z
 
-  let atan2 (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) (y : t): t =
-    match internal_atan2 f_x f_y f_z pi x y with
+  let arcTan2 (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) (y : t): t =
+    match internal_arcTan2 f_x f_y f_z pi x y with
     | Ok r -> r
-    | Error _ -> nan f_z (* unreachable by theorem internal_atan2_ok *)
+    | Error _ -> nan f_z (* unreachable by theorem internal_arcTan2_ok *)
 
   (** 4.12 Extrema *)
 

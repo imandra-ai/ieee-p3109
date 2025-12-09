@@ -109,7 +109,7 @@ let arctanh (x : real) (p : int) : (real, string) Result.t =
     in
     Ok (Util.sum (fun i _ -> term x i) 0 p)
 
-let atan2 (y : real) (x : real) (p : int) : (real, string) Result.t =
+let arctan2 (y : real) (x : real) (p : int) : (real, string) Result.t =
   let* s = Sqrt.sqrt ((x ^. 2) +. (y ^. 2)) p in
   if y = 0.0 then
     Ok (2.0 *. (arctan 0.0 p))

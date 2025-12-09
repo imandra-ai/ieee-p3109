@@ -1,0 +1,20 @@
+\noindent\Case{\Cer\csname ArcTan2\endcsname (\NaN, \any) \gives  \NaN}\\
+\Case{\Cer\csname ArcTan2\endcsname (\any, \NaN) \gives  \NaN}\\
+\Case{\Cer\csname ArcTan2\endcsname (\zero, -\infty) \gives  \pi{ }}\\
+\Case{\Cer\csname ArcTan2\endcsname (\zero, X) ~\If X < \zero\gives  \pi{ }}\\
+\Case{\Cer\csname ArcTan2\endcsname (\zero, +\infty) \gives  \zero}\\
+\Case{\Cer\csname ArcTan2\endcsname (\zero, X) ~\If X > \zero\gives  \zero}\\
+\Case{\Cer\csname ArcTan2\endcsname (Y, -\infty) ~\If Y > \zero\gives  \pi{ }}\\
+\Case{\Cer\csname ArcTan2\endcsname (Y, -\infty) ~\If Y < \zero\gives  -{ \pi{ }}}\\
+\Case{\Cer\csname ArcTan2\endcsname (Y, +\infty) ~\If Y > \zero\gives  \zero}\\
+\Case{\Cer\csname ArcTan2\endcsname (Y, +\infty) ~\If Y < \zero\gives  \zero}\\
+\Case{\Cer\csname ArcTan2\endcsname (+\infty, X) \gives  \frac{\pi}{2}{ }}\\
+\Case{\Cer\csname ArcTan2\endcsname (-\infty, X) \gives  -{ \frac{\pi}{2}{ }}}\\
+\Case{\Cer\csname ArcTan2\endcsname (+\infty, -\infty) \gives
+ 3 \times \frac{\pi}{4}{ }}\\
+\Case{\Cer\csname ArcTan2\endcsname (-\infty, -\infty) \gives
+ -3 \times \frac{\pi}{4}{ }}\\
+\Case{\Cer\csname ArcTan2\endcsname (+\infty, +\infty) \gives  \frac{\pi}{4}{ }}\\
+\Case{\Cer\csname ArcTan2\endcsname (-\infty, +\infty) \gives
+ -{ \frac{\pi}{4}{ }}}\\
+\Case{\Cer\csname ArcTan2\endcsname (X, Y) \gives arctan2{( X,  Y)}}\\
