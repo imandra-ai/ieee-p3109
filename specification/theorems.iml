@@ -685,6 +685,42 @@ theorem internal_arctanh_ok (f_x : Format.t) (f_z : Format.t) (pi : Projection.t
   [@@disable Specification.Float.wProject, Specification.Float.wDecode, Float.wDecodeAux, Format.parameters]
   [@@by auto]
 
+(** [internal_sinPi] never returns an error *)
+theorem internal_sinPi_ok (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : Float.t) =
+  Result.is_ok (Float.internal_sinPi f_x f_z pi x)
+  [@@disable Specification.Float.wProject, Specification.Float.wDecode, Float.wDecodeAux, Format.parameters]
+  [@@by auto]
+
+(** [internal_cosPi] never returns an error *)
+theorem internal_cosPi_ok (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : Float.t) =
+  Result.is_ok (Float.internal_cosPi f_x f_z pi x)
+  [@@disable Specification.Float.wProject, Specification.Float.wDecode, Float.wDecodeAux, Format.parameters]
+  [@@by auto]
+
+(** [internal_tanPi] never returns an error *)
+theorem internal_tanPi_ok (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : Float.t) =
+  Result.is_ok (Float.internal_tanPi f_x f_z pi x)
+  [@@disable Specification.Float.wProject, Specification.Float.wDecode, Float.wDecodeAux, Format.parameters, Trigonometric.sin, Trigonometric.cos, Trigonometric.tan]
+  [@@by auto]
+
+(** [internal_arcSinPi] never returns an error *)
+theorem internal_arcSinPi_ok (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : Float.t) =
+  Result.is_ok (Float.internal_arcSinPi f_x f_z pi x)
+  [@@disable Specification.Float.wProject, Specification.Float.wDecode, Float.wDecodeAux, Format.parameters]
+  [@@by auto]
+
+(** [internal_arcCosPi] never returns an error *)
+theorem internal_arcCosPi_ok (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : Float.t) =
+  Result.is_ok (Float.internal_arcCosPi f_x f_z pi x)
+  [@@disable Specification.Float.wProject, Specification.Float.wDecode, Float.wDecodeAux, Format.parameters]
+  [@@by auto]
+
+(** [internal_arcTanPi] never returns an error *)
+theorem internal_arcTanPi_ok (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : Float.t) =
+  Result.is_ok (Float.internal_arcTanPi f_x f_z pi x)
+  [@@disable Specification.Float.wProject, Specification.Float.wDecode, Float.wDecodeAux, Format.parameters, Pi.pi]
+  [@@by auto]
+
 (** [internal_softplus] never returns an error *)
 theorem internal_softplus_ok (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : Float.t) =
   Result.is_ok (Float.internal_softplus f_x f_z pi x)

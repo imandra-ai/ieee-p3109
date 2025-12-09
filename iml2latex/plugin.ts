@@ -198,7 +198,7 @@ function operator_precedence_info(op: string | undefined, more_than_one_arg = fa
     // - -. (prefix)
     if ((op == "-" || op == "-." || op == "~-" || op == "~-.") && !more_than_one_arg)
       return new PrecedenceInfo(op, Notation.Prefix, Associativity.None, 16);
-    // **… lsl lsr asr
+    // **… lsl lsr asz
     if (op.startsWith("**") || op == "lsl" || op == "lsr" || op == "asr")
       return new PrecedenceInfo(op, Notation.Infix, Associativity.Right, 15);
     // *… /… %… mod land lor lxor
@@ -272,7 +272,12 @@ function operator_precedence_info(op: string | undefined, more_than_one_arg = fa
     return new PrecedenceInfo("pi_half", Notation.Prefix, Associativity.Left, 17);
   else if (op == "Pi.pi_quarter")
     return new PrecedenceInfo("pi_quarter", Notation.Prefix, Associativity.Left, 17);
-  else if (op == "sin" || op == "cos" || op == "tan" || op == "sinh" || op == "cosh" || op == "tanh")
+  else if (
+    op == "sin" || op == "cos" || op == "tan" || op == "sinh" || op == "cosh" || op == "tanh" ||
+    op == "arcsin" || op == "arccos" || op == "arctan" || op == "arcsinh" || op == "arccosh" || op == "arctanh"
+  )
+    return new PrecedenceInfo(op, Notation.Prefix, Associativity.Left, 17);
+  else if (op == "sin_pi" || op == "cos_pi" || op == "tan_pi" || op == "arcsin_pi" || op == "arccos_pi" || op == "arctan_pi")
     return new PrecedenceInfo(op, Notation.Prefix, Associativity.Left, 17);
   else if (op == "Util.ripow")
     return new PrecedenceInfo("^", Notation.Infix, Associativity.None, 13);
@@ -779,6 +784,12 @@ function has_nolatex(attrs): boolean {
   });
 };
 
+function has_latexpar(attrs): boolean {
+  return attrs.find((x) => {
+    return (x.attr_name.txt == "ocaml.doc" || x.attr_name.txt == "ocaml.text") && get_attr_payload_string(x) == "latexpar";
+  });
+};
+
 function print_value_binding(node: AST, options: Options): Doc {
   // {
   //   pvb_pat: pattern;
@@ -808,8 +819,9 @@ function print_expression(node: AST, options: Options): Doc[] {
   // 	pexp_attributes: attributes;  (** [... [\@id1] [\@id2]] *)
   //  }
   return [
-    print_expression_desc(node.pexp_desc, options),
-    ...ifnonempty(line, print_attributes(node.pexp_attributes, 1, options))];
+    par_if(has_latexpar(node.pexp_attributes),
+      [print_expression_desc(node.pexp_desc, options),
+      ...ifnonempty(line, print_attributes(node.pexp_attributes, 1, options))])];
 }
 
 function print_function_param_desc(node: AST, options: Options): Doc {
@@ -1157,8 +1169,7 @@ function print_expression_desc(node: AST, options: Options): Doc {
       op_info.name = op_info.name.replace("&&", "\\And");
       op_info.name = op_info.name.replace("||", "\\Or");
       op_info.name = op_info.name.replace("*.", "\\times");
-      op_info.name = op_info.name.replace("Trigonometric.cos", "cos");
-      op_info.name = op_info.name.replace("Trigonometric.arctan2", "arctan2");
+      op_info.name = op_info.name.replace(/^Trigonometric./, "");
 
       if (op_info.name.startsWith("w")) {
         op_info.name = "\\" + PREFIX + "\\" + op_info.name.substring(1);
@@ -1219,7 +1230,9 @@ function print_expression_desc(node: AST, options: Options): Doc {
             "sinh", "cosh", "tanh",
             "arcsin", "arccos", "arctan",
             "arcsinh", "arccosh", "arctanh",
-            "pi", "pi_half", "pi_quarter", "arctan2"
+            "pi", "pi_half", "pi_quarter", "arctan2",
+            "sin_pi", "cos_pi", "tan_pi",
+            "arcsin_pi", "arccos_pi", "arctan_pi"
           ].indexOf(opname) >= 0
           ) { r.pop(); r.pop(); }
           let want_par = false;
@@ -1246,7 +1259,10 @@ function print_expression_desc(node: AST, options: Options): Doc {
           if (opname.startsWith("\\Cer")) {
             want_par = true;
           }
-          return f([opname, "{", par_if(r.length > 1 || want_par, [indent([line, ...r])]), "}"]);
+          if (opname == "arcsin_pi" || opname == "arccos_pi" || opname == "arctan_pi")
+            return f(["\\" + opname.substring(0, opname.length - 3), "{", [indent([line, "(", ...r, ")", "/", "\\pi"])], "}"]);
+          else
+            return f([opname, "{", par_if(r.length > 1 || want_par, [indent([line, ...r])]), "}"]);
         }
         case Notation.Outfix: {
           const r: Doc[] = join(line, op_args.map(arg => {

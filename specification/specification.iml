@@ -1049,6 +1049,7 @@ module Float = struct
 
   let wArcTan2 (y : CER.t) (x : CER.t) : (CER.t, string) Result.t =
     let open CER in
+    let open Trigonometric in
     match y, x with
     | NaN, _ -> Ok NaN
     | _, NaN -> Ok NaN
@@ -1074,7 +1075,7 @@ module Float = struct
     | PINF, PINF -> Ok (R (Pi.pi_quarter 8))
     | NINF, PINF -> Ok (R (-. (Pi.pi_quarter 8)))
     | R x, R y ->
-      (match Trigonometric.arctan2 x y 8 with (* TODO: Proof that 8 is enough *)
+      (match arctan2 x y 8 with (* TODO: Proof that 8 is enough *)
       | Ok r -> Ok (R r)
       | Error e -> Error e)
     | _ -> Error "undefined"
@@ -2439,6 +2440,129 @@ module Float = struct
     match internal_arctanh f_x f_z pi x with
     | Ok x -> x
     | Error _ -> (nan f_z) (* unreachable by theorem internal_arctanh_ok *)
+
+  let wSinPi (x : CER.t) : (CER.t, string) Result.t =
+    let open CER in
+    let open Trigonometric in
+    match x with
+    | NaN -> Ok NaN
+    | PINF -> Ok NaN
+    | NINF -> Ok NaN
+    | R x -> Ok (R (Trigonometric.sin (x *. (Pi.pi 32)) 32)) (* TODO: prove that 32 is enough *)
+    | _ -> Error "undefined"
+
+  let internal_sinPi (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) : (t, string) Result.t =
+    let* z = wSinPi (wDecode f_x x) in
+    wProject f_z pi z
+
+  let sinPi (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) : t =
+    match internal_sinPi f_x f_z pi x with
+    | Ok x -> x
+    | Error _ -> (nan f_z) (* unreachable by theorem internal_sinPi_ok *)
+
+  let wCosPi (x : CER.t) : (CER.t, string) Result.t =
+    let open CER in
+    let open Trigonometric in
+    match x with
+    | NaN -> Ok NaN
+    | PINF -> Ok NaN
+    | NINF -> Ok NaN
+    | R x -> Ok (R (Trigonometric.cos (x *. (Pi.pi 32)) 32)) (* TODO: prove that 32 is enough *)
+    | _ -> Error "undefined"
+
+  let internal_cosPi (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) : (t, string) Result.t =
+    let* z = wCosPi (wDecode f_x x) in
+    wProject f_z pi z
+
+  let cosPi (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) : t =
+    match internal_cosPi f_x f_z pi x with
+    | Ok x -> x
+    | Error _ -> (nan f_z) (* unreachable by theorem internal_cosPi_ok *)
+
+  let wTanPi (x : CER.t) : (CER.t, string) Result.t =
+    let open CER in
+    let open Trigonometric in
+    match x with
+    | NaN -> Ok NaN
+    | PINF -> Ok NaN
+    | NINF -> Ok NaN
+    | R x when Trigonometric.cos (x *. (Pi.pi 32)) 32 = 0.0 -> Ok NaN
+    | R x ->
+      (match Trigonometric.tan (x *. (Pi.pi 32)) 32 with (* TODO: prove that 32 is enough *)
+      | Ok r -> Ok (R r)
+      | Error e -> Error e)
+    | _ -> Error "undefined"
+
+  let internal_tanPi (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) : (t, string) Result.t =
+    let* z = wTanPi (wDecode f_x x) in
+    wProject f_z pi z
+
+  let tanPi (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) : t =
+    match internal_tanPi f_x f_z pi x with
+    | Ok x -> x
+    | Error _ -> (nan f_z) (* unreachable by theorem internal_tanPi_ok *)
+
+  let wArcSinPi (x : CER.t) : (CER.t, string) Result.t =
+    let open CER in
+    match x with
+    | NaN -> Ok NaN
+    | PINF -> Ok NaN
+    | NINF -> Ok NaN
+    | R x when x <. -1.0 || x >. 1.0 -> Ok NaN
+    | R x ->
+      (match Trigonometric.arcsin_pi x 32 with (* TODO: prove that 32 is enough *)
+      | Ok r -> Ok (R r)
+      | Error e -> Error e)
+    | _ -> Error "undefined"
+
+  let internal_arcSinPi (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) : (t, string) Result.t =
+    let* z = wArcSinPi (wDecode f_x x) in
+    wProject f_z pi z
+
+  let arcSinPi (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) : t =
+    match internal_arcSinPi f_x f_z pi x with
+    | Ok x -> x
+    | Error _ -> (nan f_z) (* unreachable by theorem internal_arcSinPi_ok *)
+
+  let wArcCosPi (x : CER.t) : (CER.t, string) Result.t =
+    let open CER in
+    match x with
+    | NaN -> Ok NaN
+    | PINF -> Ok NaN
+    | NINF -> Ok NaN
+    | R x when x <. -1.0 || x >. 1.0 -> Ok NaN
+    | R x ->
+      (match Trigonometric.arccos_pi x 32 with (* TODO: prove that 32 is enough *)
+      | Ok r -> Ok (R r)
+      | Error e -> Error e)
+    | _ -> Error "undefined"
+
+  let internal_arcCosPi (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) : (t, string) Result.t =
+    let* z = wArcCosPi (wDecode f_x x) in
+    wProject f_z pi z
+
+  let arcCosPi (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) : t =
+    match internal_arcCosPi f_x f_z pi x with
+    | Ok x -> x
+    | Error _ -> (nan f_z) (* unreachable by theorem internal_arcCosPi_ok *)
+
+  let wArcTanPi (x : CER.t) : (CER.t, string) Result.t =
+    let open CER in
+    match x with
+    | NaN -> Ok NaN
+    | PINF -> Ok (R (1.0 /. 2.0))
+    | NINF -> Ok (R (-1.0 /. 2.0))
+    | R x -> Ok (R (Trigonometric.arctan_pi x 32)) (* TODO: prove that 32 is enough *)
+    | _ -> Error "undefined"
+
+  let internal_arcTanPi (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) : (t, string) Result.t =
+    let* z = wArcTanPi (wDecode f_x x) in
+    wProject f_z pi z
+
+  let arcTanPi (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) : t =
+    match internal_arcTanPi f_x f_z pi x with
+    | Ok x -> x
+    | Error _ -> (nan f_z) (* unreachable by theorem internal_arcTanPi_ok *)
 
   let wSoftplus (x : CER.t) : (CER.t, string) Result.t =
     let open CER in

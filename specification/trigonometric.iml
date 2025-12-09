@@ -3,6 +3,7 @@
 [@@@import Exp, "dune:math"]
 [@@@import Log, "dune:math"]
 [@@@import Sqrt, "dune:math"]
+[@@@import Pi, "dune:math"]
 
 open ErrorPropagation
 
@@ -71,7 +72,8 @@ let arccos (x : real) (p : int) : (real, string) Result.t =
   if x <. -1.0 || x >. 1.0 then
     Error "invalid"
   else
-    Ok 0.0 (* TODO *)
+    let* s = arcsin x p in
+    Ok (Pi.pi_half p -. s)
 
 let arctan (x : real) (p : int) : real =
   let term (x : real) (n : int) : real =
@@ -117,7 +119,30 @@ let arctan2 (y : real) (x : real) (p : int) : (real, string) Result.t =
     Ok (2.0 *. (arctan ((s -. x) /. y) p))
 
 
-(* Some properties *)
+let sin_pi (x : real) (p : int) : real = sin (Pi.pi p *. x) p
+
+let cos_pi (x : real) (p : int) : real = cos (Pi.pi p *. x) p
+
+let tan_pi (x : real) (p : int) : (real, string) Result.t = tan (Pi.pi p *. x) p
+
+let arcsin_pi (x : real) (p : int) : (real, string) Result.t =
+  if x <. -1.0 || x >. 1.0 then
+    Error "invalid"
+  else
+    let* a = arcsin x p in
+    Ok (a /. (Pi.pi p))
+
+let arccos_pi (x : real) (p : int) : (real, string) Result.t =
+  if x <. -1.0 || x >. 1.0 then
+    Error "invalid"
+  else
+    let* a = arccos x p in
+    Ok (a /. (Pi.pi p))
+
+let arctan_pi (x : real) (p : int) : real =
+  arctan x p /. (Pi.pi p)
+
+(* Some checks/properties *)
 
 let pi = 3.1415926535897932384626433832795
 let prec = 15
@@ -210,4 +235,22 @@ verify (
   match r with
   | Ok r -> 1.468 <=. r && r <=. 1.479
   | _ -> false)
+  [@@by auto]
+
+verify (
+  match arcsin_pi 1.0 32 with
+  | Ok q -> 0.47 <=. q && q <=. 0.53
+  | Error _ -> false)
+  [@@by auto]
+
+verify (
+  match arccos_pi 1.0 32 with
+  | Ok q -> 0.0 <=. q && q <=. 0.03
+  | Error _ -> false)
+  [@@by auto]
+
+verify (
+  match arccos_pi (-1.0) 32 with
+  | Ok q -> 0.96 <=. q && q <=. 1.0
+  | Error _ -> false)
   [@@by auto]
