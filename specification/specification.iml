@@ -1105,7 +1105,7 @@ module Float = struct
     | _, PINF -> Ok (R 0.0)
     | R 0.0, R x when x >. 0.0 -> Ok (R 0.0)
     | PINF, _ -> Ok (R (Pi.pi_half 8))
-    | R y, _ when y >. 0.0 -> Ok (R (Pi.pi_half 8))
+    | R y, R 0.0 when y >. 0.0 -> Ok (R (Pi.pi_half 8))
     | _, NINF -> Ok (R (Pi.pi 8))
     | R 0.0, R x when x <. 0.0 -> Ok (R (Pi.pi 8))
     | NINF, _ -> Ok (R (-. (Pi.pi_half 8)))
