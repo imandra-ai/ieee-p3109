@@ -18,6 +18,10 @@
 \Case{\Cer\csname ArcTan2\endcsname (-\infty, +\infty) \gives
  -{ \frac{\pi}{4}{ }}}\\
 \Case{\Cer\csname ArcTan2\endcsname (\zero, \zero) \gives  \zero}\\
+\Case{\Cer\csname ArcTan2\endcsname (Y, \zero) ~\If Y < \zero\gives  -{
+  \frac{\pi}{2}{ }}}\\
+\Case{\Cer\csname ArcTan2\endcsname (Y, \zero) ~\If Y > \zero\gives  \frac{\pi}{2}{
+  }}\\
 \Case{\Cer\csname ArcTan2\endcsname (Y, X) ~\If X > \zero\gives  \arctan{
   (
   Y / X
@@ -32,4 +36,3 @@
   Y / X
   )}
 - \pi{ }}\\
-\Case{\Cer\csname ArcTan2\endcsname (X, Y) \gives arctan2{( X,  Y)}}\\

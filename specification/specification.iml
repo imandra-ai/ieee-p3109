@@ -1076,13 +1076,13 @@ module Float = struct
     | PINF, PINF -> Ok (R (Pi.pi_quarter 8))
     | NINF, PINF -> Ok (R (-. (Pi.pi_quarter 8)))
     | R 0.0, R 0.0 -> Ok (R 0.0)
+    (* If y is less than 0 and x is +0 or -0, -pi/2 is returned. *)
+    | R y, R 0.0 when y <. 0.0 -> Ok (R (-. (Pi.pi_half 8)))
+    (* If y is greater than 0 and x is +0 or -0, pi/2 is returned. *)
+    | R y, R 0.0 when y >. 0.0 -> Ok (R (Pi.pi_half 8))
     | R y, R x when x >. 0.0 -> Ok (R (Trigonometric.arctan (y /. x) 32))
     | R y, R x when y >. 0.0 && x <. 0.0 -> Ok (R ((Trigonometric.arctan (y /. x) 32) +. (Pi.pi 8)))
     | R y, R x when y <. 0.0 && x <. 0.0 -> Ok (R ((Trigonometric.arctan (y /. x) 32) -. (Pi.pi 8)))
-    | R x, R y ->
-      (match arctan2 x y 8 with (* TODO: Proof that 8 is enough *) (* Use arctan (Y/X) instead *)
-      | Ok r -> Ok (R r)
-      | Error e -> Error e)
     | _ -> Error "undefined"
 
   let internal_arcTan2 (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) (y : t) : (t, string) Result.t =
