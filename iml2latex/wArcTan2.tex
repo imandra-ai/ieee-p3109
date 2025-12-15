@@ -1,27 +1,18 @@
 \noindent\Case{\Cer\csname ArcTan2\endcsname (\NaN, \any) \gives  \NaN}\\
 \Case{\Cer\csname ArcTan2\endcsname (\any, \NaN) \gives  \NaN}\\
-\Case{\Cer\csname ArcTan2\endcsname (\zero, -\infty) \gives  \pi{ }}\\
-\Case{\Cer\csname ArcTan2\endcsname (\zero, X) ~\If X < \zero\gives  \pi{ }}\\
-\Case{\Cer\csname ArcTan2\endcsname (\zero, +\infty) \gives  \zero}\\
+\Case{\Cer\csname ArcTan2\endcsname (\zero, \zero) \gives  \NaN}\\
+\Case{\Cer\csname ArcTan2\endcsname (-\infty, \pm\infty) \gives  \NaN}\\
+\Case{\Cer\csname ArcTan2\endcsname (+\infty, \pm\infty) \gives  \NaN}\\
+\Case{\Cer\csname ArcTan2\endcsname (\any, +\infty) \gives  \zero}\\
 \Case{\Cer\csname ArcTan2\endcsname (\zero, X) ~\If X > \zero\gives  \zero}\\
-\Case{\Cer\csname ArcTan2\endcsname (Y, -\infty) ~\If Y > \zero\gives  \pi{ }}\\
-\Case{\Cer\csname ArcTan2\endcsname (Y, -\infty) ~\If Y < \zero\gives  -{ \pi{ }}}\\
-\Case{\Cer\csname ArcTan2\endcsname (Y, +\infty) ~\If Y > \zero\gives  \zero}\\
-\Case{\Cer\csname ArcTan2\endcsname (Y, +\infty) ~\If Y < \zero\gives  \zero}\\
-\Case{\Cer\csname ArcTan2\endcsname (+\infty, X) \gives  \frac{\pi}{2}{ }}\\
-\Case{\Cer\csname ArcTan2\endcsname (-\infty, X) \gives  -{ \frac{\pi}{2}{ }}}\\
-\Case{\Cer\csname ArcTan2\endcsname (+\infty, -\infty) \gives
- 3 \times \frac{\pi}{4}{ }}\\
-\Case{\Cer\csname ArcTan2\endcsname (-\infty, -\infty) \gives
- -3 \times \frac{\pi}{4}{ }}\\
-\Case{\Cer\csname ArcTan2\endcsname (+\infty, +\infty) \gives  \frac{\pi}{4}{ }}\\
-\Case{\Cer\csname ArcTan2\endcsname (-\infty, +\infty) \gives
- -{ \frac{\pi}{4}{ }}}\\
-\Case{\Cer\csname ArcTan2\endcsname (\zero, \zero) \gives  \zero}\\
-\Case{\Cer\csname ArcTan2\endcsname (Y, \zero) ~\If Y < \zero\gives  -{
-  \frac{\pi}{2}{ }}}\\
+\Case{\Cer\csname ArcTan2\endcsname (+\infty, \any) \gives  \frac{\pi}{2}{ }}\\
 \Case{\Cer\csname ArcTan2\endcsname (Y, \zero) ~\If Y > \zero\gives  \frac{\pi}{2}{
   }}\\
+\Case{\Cer\csname ArcTan2\endcsname (\any, -\infty) \gives  \pi{ }}\\
+\Case{\Cer\csname ArcTan2\endcsname (\zero, X) ~\If X < \zero\gives  \pi{ }}\\
+\Case{\Cer\csname ArcTan2\endcsname (-\infty, \any) \gives  -{ \frac{\pi}{2}{ }}}\\
+\Case{\Cer\csname ArcTan2\endcsname (Y, \zero) ~\If Y < \zero\gives  -{
+  \frac{\pi}{2}{ }}}\\
 \Case{\Cer\csname ArcTan2\endcsname (Y, X) ~\If X > \zero\gives  \arctan{
   (
   Y / X

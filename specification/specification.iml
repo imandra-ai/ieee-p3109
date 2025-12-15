@@ -754,7 +754,8 @@ module Float = struct
     match x, y with
     | NaN, _ -> Ok NaN
     | _, NaN -> Ok NaN
-    | (PINF | NINF), (PINF | NINF) -> Ok NaN
+    | PINF, (PINF | NINF) -> Ok NaN
+    | NINF, (PINF | NINF) -> Ok NaN
     | _, R 0.0 -> Ok NaN
     | PINF, R y when y >. 0.0 -> Ok PINF
     | PINF, R y when y <. 0.0 -> Ok NINF
@@ -1047,7 +1048,7 @@ module Float = struct
     | Ok r -> r
     | Error _ -> nan f_z (* unreachable by theorem internal_hypot_ok *)
 
-  let wArcTan2 (y : CER.t) (x : CER.t) : (CER.t, string) Result.t =
+  let wArcTan2Alt (y : CER.t) (x : CER.t) : (CER.t, string) Result.t =
     let open CER in
     let open Trigonometric in
     (* IEEE 754-compliant version *)
@@ -1085,23 +1086,24 @@ module Float = struct
     | R y, R x when y <. 0.0 && x <. 0.0 -> Ok (R ((Trigonometric.arctan (y /. x) 32) -. (Pi.pi 8)))
     | _ -> Error "undefined"
 
-  let internal_arcTan2 (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) (y : t) : (t, string) Result.t =
-    let* z = wArcTan2 (wDecode f_x x) (wDecode f_y y) in
+  let internal_arcTan2Alt (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) (y : t) : (t, string) Result.t =
+    let* z = wArcTan2Alt (wDecode f_x x) (wDecode f_y y) in
     wProject f_z pi z
 
-  let arcTan2 (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (pi : Projection.t) (y : t) (x : t) : t =
-    match internal_arcTan2 f_x f_y f_z pi y x with
+  let arcTan2Alt (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (pi : Projection.t) (y : t) (x : t) : t =
+    match internal_arcTan2Alt f_x f_y f_z pi y x with
     | Ok r -> r
     | Error _ -> nan f_z (* unreachable by theorem internal_arcTan2_ok *)
 
-  let wArcTan2Alt (y : CER.t) (x : CER.t) : (CER.t, string) Result.t =
+  let wArcTan2 (y : CER.t) (x : CER.t) : (CER.t, string) Result.t =
     let open CER in
     let open Trigonometric in
     match y, x with
     | NaN, _ -> Ok NaN
     | _, NaN -> Ok NaN
     | R 0.0, R 0.0 -> Ok NaN
-    | (PINF | NINF), (PINF | NINF) -> Ok NaN
+    | NINF, (PINF | NINF) -> Ok NaN
+    | PINF, (PINF | NINF) -> Ok NaN
     | _, PINF -> Ok (R 0.0)
     | R 0.0, R x when x >. 0.0 -> Ok (R 0.0)
     | PINF, _ -> Ok (R (Pi.pi_half 8))
@@ -1115,8 +1117,8 @@ module Float = struct
     | R y, R x when y <. 0.0 && x <. 0.0 -> Ok (R ((Trigonometric.arctan (y /. x) 32) -. (Pi.pi 8)))
     | _ -> Error "undefined"
 
-  let internal_arcTan2Alt (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) (y : t) : (t, string) Result.t =
-    let* z = wArcTan2Alt (wDecode f_x x) (wDecode f_y y) in
+  let internal_arcTan2 (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) (y : t) : (t, string) Result.t =
+    let* z = wArcTan2 (wDecode f_x x) (wDecode f_y y) in
     wProject f_z pi z
 
   (** 4.12 Extrema *)
