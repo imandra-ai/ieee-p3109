@@ -1,0 +1,22 @@
+\noindent\Case{\Cer\csname ArcTan2Pi\endcsname (\NaN, \any) \gives  \NaN}\\
+\Case{\Cer\csname ArcTan2Pi\endcsname (\any, \NaN) \gives  \NaN}\\
+\Case{\Cer\csname ArcTan2Pi\endcsname (\zero, \zero) \gives  \NaN}\\
+\Case{\Cer\csname ArcTan2Pi\endcsname (-\infty, \pm\infty) \gives  \NaN}\\
+\Case{\Cer\csname ArcTan2Pi\endcsname (+\infty, \pm\infty) \gives  \NaN}\\
+\Case{\Cer\csname ArcTan2Pi\endcsname (\any, +\infty) \gives  \zero}\\
+\Case{\Cer\csname ArcTan2Pi\endcsname (\zero, X) ~\If X > \zero\gives  \zero}\\
+\Case{\Cer\csname ArcTan2Pi\endcsname (+\infty, \any) \gives  \one / 2}\\
+\Case{\Cer\csname ArcTan2Pi\endcsname (Y, \zero) ~\If Y > \zero\gives  \one / 2}\\
+\Case{\Cer\csname ArcTan2Pi\endcsname (\any, -\infty) \gives  \one}\\
+\Case{\Cer\csname ArcTan2Pi\endcsname (\zero, X) ~\If X < \zero\gives  \one}\\
+\Case{\Cer\csname ArcTan2Pi\endcsname (-\infty, \any) \gives  -\one / 2}\\
+\Case{\Cer\csname ArcTan2Pi\endcsname (Y, \zero) ~\If Y < \zero\gives  -\one / 2}\\
+\Case{\Cer\csname ArcTan2Pi\endcsname (Y, X) ~\If X > \zero\gives  \arctan{
+  (
+  Y / X
+  )}
+/ \pi{ }}\\
+\Case{\Cer\csname ArcTan2Pi\endcsname (Y, X) ~\If Y > \zero \And X < \zero\gives
+ (\arctan{ (Y / X)} + \pi{ }) / \pi{ }}\\
+\Case{\Cer\csname ArcTan2Pi\endcsname (Y, X) ~\If Y < \zero \And X < \zero\gives
+ (\arctan{ (Y / X)} - \pi{ }) / \pi{ }}\\

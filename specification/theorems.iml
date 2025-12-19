@@ -432,6 +432,17 @@ theorem internal_arcTan2Alt_ok (f_x : Format.t) (f_y : Format.t) (f_z : Format.t
   [@@disable Float.wProject, Float.wDecode, Float.wDecodeAux, Float.wRoundToPrecision, Float.wSaturate, Util.pow2, Util.ipow2, Format.parameters, Float.wArcTan2Alt]
   [@@by [%use wArcTan2Alt_ok (Float.wDecode f_x x) (Float.wDecode f_y y) 8] @> auto]
 
+(** [internal_arcTan2Pi] never returns an error *)
+theorem wArcTan2Pi_ok (y : CER.t) (x : CER.t) (p : int) =
+  Result.is_ok (Float.wArcTan2Pi y x)
+  [@@disable Util.pow2, Util.ipow2, Trigonometric.arctan, Trigonometric.arctan2]
+  [@@by auto]
+
+theorem internal_arcTan2Pi_ok (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (pi : Projection.t) (x : Float.t) (y : Float.t) =
+  Result.is_ok (Float.internal_arcTan2Pi f_x f_y f_z pi x y)
+  [@@disable Float.wProject, Float.wDecode, Float.wDecodeAux, Float.wRoundToPrecision, Float.wSaturate, Util.pow2, Util.ipow2, Format.parameters, Float.wArcTan2Pi]
+  [@@by [%use wArcTan2Pi_ok (Float.wDecode f_x x) (Float.wDecode f_y y) 8] @> auto]
+
 
 (** 4.10.1 Minimum and Maximum *)
 

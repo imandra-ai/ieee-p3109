@@ -1121,6 +1121,37 @@ module Float = struct
     let* z = wArcTan2 (wDecode f_x x) (wDecode f_y y) in
     wProject f_z pi z
 
+  let wArcTan2Pi (y : CER.t) (x : CER.t) : (CER.t, string) Result.t =
+    let open CER in
+    let open Trigonometric in
+    match y, x with
+    | NaN, _ -> Ok NaN
+    | _, NaN -> Ok NaN
+    | R 0.0, R 0.0 -> Ok NaN
+    | NINF, (PINF | NINF) -> Ok NaN
+    | PINF, (PINF | NINF) -> Ok NaN
+    | _, PINF -> Ok (R 0.0)
+    | R 0.0, R x when x >. 0.0 -> Ok (R 0.0)
+    | PINF, _ -> Ok (R (1.0 /. 2.0))
+    | R y, R 0.0 when y >. 0.0 -> Ok (R (1.0 /. 2.0))
+    | _, NINF -> Ok (R 1.0)
+    | R 0.0, R x when x <. 0.0 -> Ok (R 1.0)
+    | NINF, _ -> Ok (R (-. 1.0 /. 2.0))
+    | R y, R 0.0 when y <. 0.0 -> Ok (R (-. 1.0 /. 2.0))
+    | R y, R x when x >. 0.0 -> Ok (R ((Trigonometric.arctan (y /. x) 32) /. Pi.pi 8))
+    | R y, R x when y >. 0.0 && x <. 0.0 -> Ok (R (((Trigonometric.arctan (y /. x) 32) +. (Pi.pi 8)) /. Pi.pi 8))
+    | R y, R x when y <. 0.0 && x <. 0.0 -> Ok (R (((Trigonometric.arctan (y /. x) 32) -. (Pi.pi 8)) /. Pi.pi 8))
+    | _ -> Error "undefined"
+
+  let internal_arcTan2Pi (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) (y : t) : (t, string) Result.t =
+    let* z = wArcTan2Pi (wDecode f_x x) (wDecode f_y y) in
+    wProject f_z pi z
+
+  let arcTan2Pi (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (pi : Projection.t) (y : t) (x : t) : t =
+    match internal_arcTan2Pi f_x f_y f_z pi y x with
+    | Ok r -> r
+    | Error _ -> nan f_z (* unreachable by theorem internal_arcTan2Pi_ok *)
+
   (** 4.12 Extrema *)
 
   (** 4.12.1 Minimum and Maximum *)
