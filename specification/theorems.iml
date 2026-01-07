@@ -117,21 +117,21 @@ theorem wProject_ok (f : Format.t) (pi : Projection.t) (x : CER.t) =
 
 theorem pinf_decodes_to_pinf (f : Format.t) (x : Float.t) =
   let open CER in
-  Float.is_pinf f x <==> ((Float.wDecode f x = PINF) [@trigger])
+  Float.is_pinf f x <==> ((Float.wDecode f x = PInf) [@trigger])
   [@@timeout 360]
   [@@by unroll_nonlin 10 10 100]
   [@@fc]
 
 theorem ninf_decodes_to_ninf (f : Format.t) (x : Float.t) =
   let open CER in
-  Float.is_ninf f x <==> ((Float.wDecode f x = NINF) [@trigger])
+  Float.is_ninf f x <==> ((Float.wDecode f x = NInf) [@trigger])
   [@@timeout 360]
   [@@by unroll_nonlin 10 10 100]
   [@@fc]
 
 theorem inf_decodes_to_inf (f : Format.t) (x : Float.t) =
   let open CER in
-  ((Float.is_inf f x) [@trigger]) <==> (Float.wDecode f x = NINF || Float.wDecode f x = PINF)
+  ((Float.is_inf f x) [@trigger]) <==> (Float.wDecode f x = NInf || Float.wDecode f x = PInf)
   [@@by
     [%use pinf_decodes_to_pinf f x] @>
     [%use ninf_decodes_to_ninf f x] @>
@@ -200,8 +200,8 @@ theorem zero_is_zero (f : Format.t) (x : Float.t) =
 
 (* theorem decode_specials (f : Format.t) (x : Float.t) =
   let open CER in
-  ((Float.is_pinf f x) <==> (Float.wDecode f x = PINF)) &&
-  ((Float.is_ninf f x) <==> (Float.wDecode f x = NINF)) &&
+  ((Float.is_pinf f x) <==> (Float.wDecode f x = PInf)) &&
+  ((Float.is_ninf f x) <==> (Float.wDecode f x = NInf)) &&
   ((Float.is_nan f x) <==> (Float.wDecode f x = NaN)) &&
   ((Float.is_zero f x) <==> (Float.wDecode f x = R 0.0)) &&
   ((x = 0) <==> (Float.wDecode f x = R 0.0))
@@ -793,8 +793,8 @@ theorem wExp_is_positive (x : CER.t) =
   let open CER in
   match Float.wExp x with
   | Ok CER.NaN -> true
-  | Ok CER.PINF -> true
-  | Ok CER.NINF -> false
+  | Ok CER.PInf -> true
+  | Ok CER.NInf -> false
   | Ok (R x) -> x >=. 0.0
   | Error _ -> false
   [@@timeout 3600]
