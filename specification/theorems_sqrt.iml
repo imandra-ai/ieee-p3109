@@ -34,9 +34,9 @@ let cer_sqrt_approx (x : CER.t) (over : bool) (n : int) : (CER.t, string) Result
   let open CER in
   match x with
   | NaN -> Ok NaN
-  | NINF -> Ok NaN
+  | NInf -> Ok NaN
   | R x when x <. 0.0 -> Ok NaN
-  | PINF -> Ok PINF
+  | PInf -> Ok PInf
   | R x ->
     (match
     (if over then Sqrt.sqrt_over x n else Sqrt.sqrt_under x n)
@@ -61,7 +61,7 @@ theorem fsqrt_aux_both_ok (prec : int) (bias : int) (rnd : RoundingMode.t) (star
 
 theorem cer_fsqrt_ok (prec : int) (bias : int) (rnd : RoundingMode.t) (start : real -> int -> (Sqrt.state * Sqrt.state)) (x : CER.t) =
   match x with
-  | NaN | PINF | NINF -> true
+  | NaN | PInf | NInf -> true
   | R r when r <. 0.0 -> true
   | R r ->
     Sqrt.inv (snd (start r 1000)) ==>

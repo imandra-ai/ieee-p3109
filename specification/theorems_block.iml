@@ -156,7 +156,7 @@ theorem wBlockProject_map_ok (cs : CER.t) (x : CER.t list) =
           | CER.NaN
           | _ when x_i = CER.NaN -> Ok CER.NaN
           | R 0.0 -> Ok (R 0.0)
-          | (PINF | NINF) -> Ok (R 1.0)
+          | (PInf | NInf) -> Ok (R 1.0)
           | _ -> wDivide x_i cs)
         x))
   [@@disable Float.wDecode, Float.wDivide, List.map]

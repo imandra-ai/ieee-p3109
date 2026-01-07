@@ -50,8 +50,8 @@ let is_r (x : CER.t) (r : CER.t) = x = r [@@macro]
 lemma real_0 = is_r (wDecode f83 Float.zero) (CER.R 0.0) [@@by auto]
 let ninf_f83 = match (Float.ninf f83) with | Ok (x) -> x | _ -> 0
 let pinf_f83 = match (Float.pinf f83) with | Ok (x) -> x | _ -> 0
-lemma real_ninf = is_r (wDecode f83 ninf_f83) CER.NINF [@@by auto]
-lemma real_pinf = is_r (wDecode f83 pinf_f83) CER.PINF [@@by auto]
+lemma real_ninf = is_r (wDecode f83 ninf_f83) CER.NInf [@@by auto]
+lemma real_pinf = is_r (wDecode f83 pinf_f83) CER.PInf [@@by auto]
 
 let p3_pos_one : t = 0x40 [@@macro]
 let p3_neg_one : t = 0xC0[@@macro]

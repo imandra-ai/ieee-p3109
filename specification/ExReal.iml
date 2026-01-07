@@ -6,8 +6,8 @@
 [@@@import Exp, "exp.iml"]
 
 type t =
-  | NINF
-  | PINF
+  | NInf
+  | PInf
   | R of real
 
 let zero = R 0.0 [@@macro]
@@ -16,19 +16,19 @@ let one = R 1.0 [@@macro]
 
 let abs (x : t) : t =
   match x with
-  | NINF | PINF -> PINF
+  | NInf | PInf -> PInf
   | R x -> R (Real.abs x)
   [@@macro]
 
 let is_finite (x : t) =
   match x with
-  | NINF | PINF -> false
+  | NInf | PInf -> false
   | _ -> true
   [@@macro]
 
 let is_inf (x : t) =
   match x with
-  | NINF | PINF -> true
+  | NInf | PInf -> true
   | _ -> false
   [@@macro]
 
@@ -40,52 +40,52 @@ let of_int (x : int) : t =
 
 let sign (x : t) : t =
   match x with
-  | NINF -> R (-1.0)
-  | PINF -> R 1.0
+  | NInf -> R (-1.0)
+  | PInf -> R 1.0
   | R x -> if x <. 0.0 then R (-1.0) else R 1.0
   [@@macro]
 
 let mul (x : t) (y : t) : (t, string) Result.t =
   match x, y with
-  | NINF, R x | PINF, R x
-  | R x, NINF | R x, PINF when x = 0.0 -> Error "invalid"
+  | NInf, R x | PInf, R x
+  | R x, NInf | R x, PInf when x = 0.0 -> Error "invalid"
 
-  | NINF, NINF | PINF, PINF -> Ok PINF
-  | NINF, PINF | PINF, NINF  -> Ok NINF
+  | NInf, NInf | PInf, PInf -> Ok PInf
+  | NInf, PInf | PInf, NInf  -> Ok NInf
 
-  | PINF, R x | R x, PINF when x >. 0.0 -> Ok PINF
-  | PINF, R x | R x, PINF when x <. 0.0 -> Ok NINF
+  | PInf, R x | R x, PInf when x >. 0.0 -> Ok PInf
+  | PInf, R x | R x, PInf when x <. 0.0 -> Ok NInf
 
-  | NINF, R x | R x, NINF when x >. 0.0 -> Ok NINF
-  | NINF, R x | R x, NINF when x <. 0.0 -> Ok PINF
+  | NInf, R x | R x, NInf when x >. 0.0 -> Ok NInf
+  | NInf, R x | R x, NInf when x <. 0.0 -> Ok PInf
 
-  | NINF, R _ | PINF, R _ -> Error "unreachable"
-  | R _, NINF | R _, PINF -> Error "unreachable"
+  | NInf, R _ | PInf, R _ -> Error "unreachable"
+  | R _, NInf | R _, PInf -> Error "unreachable"
 
   | R x, R y -> Ok (R (x *. y))
 
 let div (x : t) (y : t) : (t, string) Result.t =
   match x, y with
-  | NINF, NINF | PINF, PINF -> Error "invalid"
-  | NINF, PINF | PINF, NINF  -> Error "invalid"
+  | NInf, NInf | PInf, PInf -> Error "invalid"
+  | NInf, PInf | PInf, NInf  -> Error "invalid"
   | _, R y when y = 0.0 -> Error "invalid"
 
-  | R _, PINF | R _, NINF -> Ok (R 0.0)
+  | R _, PInf | R _, NInf -> Ok (R 0.0)
 
-  | PINF, R y when y >. 0.0 -> Ok PINF
-  | PINF, R y when y <. 0.0 -> Ok NINF
-  | NINF, R y when y >. 0.0 -> Ok NINF
-  | NINF, R y when y <. 0.0 -> Ok PINF
+  | PInf, R y when y >. 0.0 -> Ok PInf
+  | PInf, R y when y <. 0.0 -> Ok NInf
+  | NInf, R y when y >. 0.0 -> Ok NInf
+  | NInf, R y when y <. 0.0 -> Ok PInf
 
-  | NINF, R _ | PINF, R _ -> Error "unreachable"
+  | NInf, R _ | PInf, R _ -> Error "unreachable"
 
   | R x, R y -> Ok (R (x /. y))
 
 let sqrt (x : t) (p : int) : (t, string) Result.t =
   match x with
-  | NINF -> Error "invalid"
+  | NInf -> Error "invalid"
   | R r when r <. 0.0 -> Error "invalid"
-  | PINF -> Ok PINF
+  | PInf -> Ok PInf
   | R r -> (
     match Sqrt.sqrt r p with
     | Ok r -> Ok (R r)
@@ -93,10 +93,10 @@ let sqrt (x : t) (p : int) : (t, string) Result.t =
 
 let ln (x : t) (p : int) : (t, string) Result.t =
   match x with
-  | NINF -> Error "invalid"
-  | PINF -> Ok PINF
+  | NInf -> Error "invalid"
+  | PInf -> Ok PInf
   | R r when r <. 0.0 -> Error "invalid"
-  | R r when r = 0.0 -> Ok NINF
+  | R r when r = 0.0 -> Ok NInf
   | R r ->
     (match Log.ln r p with
      | Ok l -> Ok (R l)
@@ -104,10 +104,10 @@ let ln (x : t) (p : int) : (t, string) Result.t =
 
 let log2 (x : t) (p : int) : (t, string) Result.t =
   match x with
-  | NINF -> Error "invalid"
-  | PINF -> Ok PINF
+  | NInf -> Error "invalid"
+  | PInf -> Ok PInf
   | R r when r <. 0.0 -> Error "invalid"
-  | R r when r = 0.0 -> Ok NINF
+  | R r when r = 0.0 -> Ok NInf
   | R r ->
     (match Log.log2 r p with
      | Ok l -> Ok (R l)
@@ -115,14 +115,14 @@ let log2 (x : t) (p : int) : (t, string) Result.t =
 
 let exp (x : t) (p : int): (t, string) Result.t =
   match x with
-  | PINF -> Ok PINF
-  | NINF -> Ok (R 0.0)
+  | PInf -> Ok PInf
+  | NInf -> Ok (R 0.0)
   | R r -> Ok (R (Exp.exp r p))
 
 let exp2 (x : t) (p : int) : (t, string) Result.t =
   match x with
-  | PINF -> Ok PINF
-  | NINF -> Ok (R 0.0)
+  | PInf -> Ok PInf
+  | NInf -> Ok (R 0.0)
   | R r ->
     (match Exp.exp2 r p with
     | Ok l -> Ok (R l)
@@ -131,38 +131,38 @@ let exp2 (x : t) (p : int) : (t, string) Result.t =
 let to_string : t -> string =
  fun x ->
   match x with
-  | NINF -> "-oo"
-  | PINF -> "+oo"
+  | NInf -> "-oo"
+  | PInf -> "+oo"
   | R x -> Printf.sprintf "%s" (Q.to_string x)
   [@@program]
 
 let neg (x : t) : t =
   match x with
-  | NINF -> PINF
-  | PINF -> NINF
+  | NInf -> PInf
+  | PInf -> NInf
   | R x -> R (-. x)
   [@@macro]
 
 let add (x : t) (y : t) : (t, string) Result.t =
   match x, y with
-  | NINF, PINF | PINF, NINF -> Error "invalid"
-  | NINF, _ | _, NINF -> Ok NINF
-  | PINF, _ | _, PINF -> Ok PINF
+  | NInf, PInf | PInf, NInf -> Error "invalid"
+  | NInf, _ | _, NInf -> Ok NInf
+  | PInf, _ | _, PInf -> Ok PInf
   | R x, R y -> Ok (R (x +. y))
 
 let sub (x : t) (y : t) : (t, string) Result.t =
   match x, y with
-  | NINF, NINF | PINF, PINF -> Error "invalid"
-  | NINF, _  | _, PINF -> Ok NINF
-  | PINF, _  | _, NINF -> Ok PINF
+  | NInf, NInf | PInf, PInf -> Error "invalid"
+  | NInf, _  | _, PInf -> Ok NInf
+  | PInf, _  | _, NInf -> Ok PInf
   | R x, R y -> Ok (R (x -. y))
 
 let lt (x : t) (y : t) =
   match x, y with
-  | NINF, NINF | PINF, PINF | PINF, NINF -> false
-  | NINF, PINF -> true
-  | NINF, R _ | R _, PINF -> true
-  | PINF, R _ | R _, NINF -> false
+  | NInf, NInf | PInf, PInf | PInf, NInf -> false
+  | NInf, PInf -> true
+  | NInf, R _ | R _, PInf -> true
+  | PInf, R _ | R _, NInf -> false
   | R rx, R ry -> rx <. ry
 
 let min (x : t) (y : t) =
@@ -178,8 +178,8 @@ module Infix = struct
 
   let ( ^ ) (x : t) (y : int) : (t, string) Result.t =
     match x with
-    | NINF -> Error "undefined"
-    | PINF -> Ok PINF
+    | NInf -> Error "undefined"
+    | PInf -> Ok PInf
     | R x -> Ok (R (Util.ripow x y))
 
   let ( <. ) (x : t) (y : t) : bool =

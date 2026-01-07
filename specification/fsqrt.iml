@@ -18,8 +18,8 @@ let fsqrt_aux_both prec bias rnd start (x : real) (p : int) : ((real * int), str
 let cer_fsqrt (prec : int) (bias : int) (rnd : RoundingMode.t) start (x : CER.t) : ((CER.t * int), string) Result.t =
   let open CER in
   match x with
-  | NaN | PINF -> Ok (x, 0)
-  | NINF -> Ok (NaN, 0)
+  | NaN | PInf -> Ok (x, 0)
+  | NInf -> Ok (NaN, 0)
   | R r when r <. 0.0 -> Ok (NaN, 0)
   | R r ->
     (match fsqrt_aux_both prec bias rnd start r 1000 with

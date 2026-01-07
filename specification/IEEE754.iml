@@ -100,8 +100,8 @@ let round_internal (x : CER.t) (fmt : Format.t) (rnd : RoundingMode.t) : (t,  st
   let _, _, emax, bias, _, w, t, _ = Format.parameters fmt in
   match x with
   | NaN -> Ok (nan fmt)
-  | PINF -> Ok (pinf fmt)
-  | NINF -> Ok (ninf fmt)
+  | PInf -> Ok (pinf fmt)
+  | NInf -> Ok (ninf fmt)
   | R r ->
     let is_neg = Real.(r < 0.0) || (r = 0.0 && rnd = RoundingMode.TowardNegative) in
     let sign = if is_neg then [true] else [false] in
@@ -154,9 +154,9 @@ let as_cer (phi : Format.t) (x : t) : (CER.t, string) Result.t =
   if is_nan x phi then
     Ok NaN
   else if is_pinf x phi then
-    Ok PINF
+    Ok PInf
   else if is_ninf x phi then
-    Ok NINF
+    Ok NInf
   else
     let _, _, _, bias, _, w, t, _ = Format.parameters phi in
     let sgn = if List.hd x = false then 1.0 else -1.0 in
@@ -181,7 +181,7 @@ let as_cer (phi : Format.t) (x : t) : (CER.t, string) Result.t =
       if not sig_all_zero then
         Error "cannot convert NaN to extended reals"
       else
-        (if sgn = 1.0 then Ok PINF else Ok NINF)
+        (if sgn = 1.0 then Ok PInf else Ok NInf)
     else
       let open CER.ResultInfix in
       ((r2a sgn) * (2 ^ exp)) ** ((i2a sigd) / (2 ^ t))

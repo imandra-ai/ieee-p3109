@@ -163,8 +163,8 @@ theorem rsqrt_wEx_eq (x : CER.t) =
   t_wEq1 x Float.wRSqrt (fun xe ->
     let open ExReal in
     match xe with
-    | NINF -> Error "undefined"
-    | PINF -> Ok (R 0.0)
+    | NInf -> Error "undefined"
+    | PInf -> Ok (R 0.0)
     | R x when x <=. 0.0 -> Error "undefined"
     | R x ->
       let open ExReal.ResultInfix in
@@ -292,22 +292,22 @@ let old_internal_saturate (m_lo : ExReal.t) (m_hi : ExReal.t) (s : Signedness.t)
   | (SatFinite, _), x when x <=. m_lo -> Ok m_lo
   | (SatFinite, _), x when x >=. m_hi -> Ok m_hi
 
-  | (SatPropagate, _), (PINF | NINF) -> Ok (x)
+  | (SatPropagate, _), (PInf | NInf) -> Ok (x)
   | (SatPropagate, _), x when x <=. m_lo -> Ok m_lo
   | (SatPropagate, _), x when x >=. m_hi -> Ok m_hi
 
-  | (OvfInf, _), (PINF | NINF) -> Ok (x)
+  | (OvfInf, _), (PInf | NInf) -> Ok (x)
   | (OvfInf, _), x when (rnd = TowardZero || rnd = TowardPositive) && x <=. m_lo -> Ok m_lo
   | (OvfInf, _), x when (rnd = TowardZero || rnd = TowardNegative) && x >=. m_hi -> Ok m_hi
 
-  | (OvfInf, _), x when x <=. m_lo -> if s = Signed then Ok ExReal.NINF else Ok m_lo
-  | (OvfInf, _), x when x >=. m_hi -> Ok ExReal.PINF
+  | (OvfInf, _), x when x <=. m_lo -> if s = Signed then Ok ExReal.NInf else Ok m_lo
+  | (OvfInf, _), x when x >=. m_hi -> Ok ExReal.PInf
 
   | _ -> Error "unreachable"
 
 theorem saturate_wEx_eq (m_lo : real) (m_hi : real) (s : Signedness.t) (d : Domain.t) (sat : SaturationMode.t) (rnd : RoundingMode.t) (x : CER.t) =
   let open ExReal.ResultInfix in
-  not (x = CER.NINF && s = Signedness.Unsigned) &&
+  not (x = CER.NInf && s = Signedness.Unsigned) &&
   not (d = Domain.Finite && sat <> SaturationMode.SatFinite) ==>
   t_wEq1 x
     (fun x -> Float.internal_wSaturate m_lo m_hi sat rnd x s d)
