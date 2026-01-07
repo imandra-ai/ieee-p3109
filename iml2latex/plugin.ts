@@ -62,8 +62,8 @@ export const printers = {
 
 function id2latex(id: string) {
   if (id == "NaN") { return ["\\NaN"]; }
-  else if (id == "PINF") { return ["+\\infty"]; }
-  else if (id == "NINF") { return ["-\\infty"]; }
+  else if (id == "PInf") { return ["+\\infty"]; }
+  else if (id == "NInf") { return ["-\\infty"]; }
   else if (id == "true") { return ["\\True"]; }
   else if (id == "false") { return ["\\False"]; }
   else if (
@@ -84,12 +84,12 @@ function id2latex(id: string) {
 
 function is_pm_inf(a0, a1) {
   return a0.ppat_desc[0] == "Ppat_construct" && a1.ppat_desc[0] == "Ppat_construct"
-    && (a0.ppat_desc[1].txt[1] == "PINF" && a1.ppat_desc[1].txt[1] == "NINF");
+    && (a0.ppat_desc[1].txt[1] == "PInf" && a1.ppat_desc[1].txt[1] == "NInf");
 }
 
 function is_mp_inf(a0, a1) {
   return a0.ppat_desc[0] == "Ppat_construct" && a1.ppat_desc[0] == "Ppat_construct"
-    && (a0.ppat_desc[1].txt[1] == "NINF" && a1.ppat_desc[1].txt[1] == "PINF");
+    && (a0.ppat_desc[1].txt[1] == "NInf" && a1.ppat_desc[1].txt[1] == "PInf");
 }
 
 function check_undef(x) {
@@ -625,6 +625,7 @@ function print_pattern_desc(node: AST, options: Options): Doc {
         else
           r = r.replace("_", "_{") + "}";
       }
+      if (r.length > 1) r = "\\mathit{" + r + "}";
       return r;
     }
     case "Ppat_alias":
@@ -1087,6 +1088,7 @@ function print_expression_desc(node: AST, options: Options): Doc {
       }
       else
         r = print_longident_loc(args[0], options);
+      if (r[0].length > 1) r = ["\\mathit{" + r[0] + "}"];
       if (options.move_everything_up && r[0].includes("_"))
         return r[0].replace("_", "^");
       else
