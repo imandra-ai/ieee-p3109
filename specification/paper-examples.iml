@@ -1,0 +1,44 @@
+[@@@import ErrorPropagation, "dune:basic"]
+[@@@import Specification, "specification.iml"]
+[@@@import Theorems, "theorems.iml"]
+
+open Specification
+open Float
+open ErrorPropagation
+
+let wDivide x y =
+  let open CER in
+  match x, y with
+  | NaN, _ -> Ok NaN
+  | _, NaN -> Ok NaN
+  | PInf, (PInf | NInf) -> Ok NaN
+  | NInf, (PInf | NInf) -> Ok NaN
+  | _, R 0.0 -> Ok NaN
+  | PInf, R y when y >. 0.0 -> Ok PInf
+  | PInf, R y when y <. 0.0 -> Ok NInf
+  | NInf, R y when y >. 0.0 -> Ok NInf
+  | NInf, R y when y <. 0.0 -> Ok PInf
+  | _, (PInf | NInf) -> Ok (R 0.0)
+  | R x, R y -> Ok (R (x /. y))
+  | _ -> Error "undefined"
+
+let divide f_x f_y f_r rho x y =
+  let* r = wDivide (wDecode f_x x) (wDecode f_y y) in
+  wProject f_r rho r
+
+(** [divide] never returns an error *)
+theorem divide_ok f_x f_y f_r rho x y  =
+  Result.is_ok (divide f_x f_y f_r rho x y)
+  [@@disable wProject, wDecode]
+  [@@by auto]
+
+let divide_alt f_x f_y f_r rho x y =
+  match wDivide (wDecode f_x x) (wDecode f_y y) with
+  | Ok r -> wProject f_r rho r
+  | Error e -> Error e
+
+(** [divide_alt] never returns an error *)
+theorem divide_lat_ok f_x f_y f_r rho x y  =
+  Result.is_ok (divide_alt f_x f_y f_r rho x y)
+  [@@disable wProject, wDecode]
+  [@@by auto]
