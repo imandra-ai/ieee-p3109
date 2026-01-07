@@ -455,10 +455,10 @@ theorem block_op_map2_log2_elems_ok x1 =
   [@@fc]
 
 theorem block_op_map2_log_elems_ok x1 =
-  match (Float.block_op_map2_wop_unary Float.wLog2 x1) [@trigger] with
+  match (Float.block_op_map2_wop_unary Float.wLog x1) [@trigger] with
   | Ok r -> Result.is_ok (extract_error r)
   | Error _ -> false
-  [@@disable Float.wLog2]
+  [@@disable Float.wLog]
   [@@by auto]
   [@@fc]
 
@@ -665,7 +665,7 @@ theorem block_abs_ok
   [@@timeout 3600]
   [@@disable
     Float.reduce, Float.wAbs, Float.map2_wMultiply,
-    Float.wBlockDecode, Float.wProject, Format.parameters, List.map, List.map2,
+    Float.wBlockDecode, Float.wProject, List.map, List.map2,
     Float.wBlockProject, Float.block_op_map2_wop_unary]
   [@@by induct ~do_not:["gen"; "fert"; "delim"] ()]
 
@@ -683,7 +683,7 @@ theorem block_negate_ok
   [@@timeout 3600]
   [@@disable
     Float.reduce, Float.wNegate, Float.map2_wMultiply,
-    Float.wBlockDecode, Float.wProject, Format.parameters, List.map, List.map2,
+    Float.wBlockDecode, Float.wProject, List.map, List.map2,
     Float.wBlockProject, Float.block_op_map2_wop_unary]
   [@@by induct ~do_not:["gen"; "fert"; "delim"] ()]
 
@@ -701,7 +701,7 @@ theorem block_exp_ok
   [@@timeout 3600]
   [@@disable
     Float.reduce, Float.wExp, Float.map2_wMultiply,
-    Float.wBlockDecode, Float.wProject, Format.parameters, List.map, List.map2,
+    Float.wBlockDecode, Float.wProject, List.map, List.map2,
     Float.wBlockProject, Float.block_op_map2_wop_unary]
   [@@by induct ~do_not:["gen"; "fert"; "delim"] ()]
 
@@ -719,7 +719,7 @@ theorem block_sqrt_ok
   [@@timeout 3600]
   [@@disable
     Float.reduce, Float.wSqrt, Float.map2_wMultiply,
-    Float.wBlockDecode, Float.wProject, Format.parameters, List.map, List.map2,
+    Float.wBlockDecode, Float.wProject, List.map, List.map2,
     Float.wBlockProject, Float.block_op_map2_wop_unary]
   [@@by induct ~do_not:["gen"; "fert"; "delim"] ()]
 
@@ -737,7 +737,7 @@ theorem block_rsqrt_ok
   [@@timeout 3600]
   [@@disable
     Float.reduce, Float.wRSqrt, Float.map2_wMultiply,
-    Float.wBlockDecode, Float.wProject, Format.parameters, List.map, List.map2,
+    Float.wBlockDecode, Float.wProject, List.map, List.map2,
     Float.wBlockProject, Float.block_op_map2_wop_unary]
   [@@by induct ~do_not:["gen"; "fert"; "delim"] ()]
 
@@ -755,7 +755,7 @@ theorem block_exp2_ok
   [@@timeout 3600]
   [@@disable
     Float.reduce, Float.wExp2, Float.map2_wMultiply,
-    Float.wBlockDecode, Float.wProject, Format.parameters, List.map, List.map2,
+    Float.wBlockDecode, Float.wProject, List.map, List.map2,
     Float.wBlockProject, Float.block_op_map2_wop_unary]
   [@@by induct ~do_not:["gen"; "fert"; "delim"] ()]
 
@@ -773,7 +773,7 @@ theorem block_log2_ok
   [@@timeout 3600]
   [@@disable
     Float.reduce, Float.wLog2, Float.map2_wMultiply,
-    Float.wBlockDecode, Float.wProject, Format.parameters, List.map, List.map2,
+    Float.wBlockDecode, Float.wProject, List.map, List.map2,
     Float.wBlockProject, Float.block_op_map2_wop_unary]
   [@@by induct ~do_not:["gen"; "fert"; "delim"] ()]
 
@@ -791,7 +791,7 @@ theorem block_log_ok
   [@@timeout 3600]
   [@@disable
     Float.reduce, Float.wLog, Float.map2_wMultiply,
-    Float.wBlockDecode, Float.wProject, Format.parameters, List.map, List.map2,
+    Float.wBlockDecode, Float.wProject, List.map, List.map2,
     Float.wBlockProject, Float.block_op_map2_wop_unary]
   [@@by induct ~do_not:["gen"; "fert"; "delim"] ()]
 
@@ -809,7 +809,7 @@ theorem block_recip_ok
   [@@timeout 3600]
   [@@disable
     Float.reduce, Float.wRecip, Float.map2_wMultiply,
-    Float.wBlockDecode, Float.wProject, Format.parameters, List.map, List.map2,
+    Float.wBlockDecode, Float.wProject, List.map, List.map2,
     Float.wBlockProject, Float.block_op_map2_wop_unary]
   [@@by induct ~do_not:["gen"; "fert"; "delim"] ()]
 
@@ -849,7 +849,7 @@ theorem block_CopySign_ok
   [@@timeout 3600]
   [@@disable
     Float.reduce, Float.wCopySign, Float.map2_wMultiply,
-    Float.wBlockDecode, Float.wProject, Format.parameters, List.map, List.map2,
+    Float.wBlockDecode, Float.wProject, List.map, List.map2,
     Float.wBlockProject, Float.block_op_map2_wop_binary]
   [@@by induct ~do_not:["gen"; "fert"; "delim"] ()]
 
@@ -869,7 +869,7 @@ theorem block_add_ok
   [@@timeout 3600]
   [@@disable
     Float.reduce, Float.wAdd, Float.map2_wMultiply,
-    Float.wBlockDecode, Float.wProject, Format.parameters, List.map, List.map2,
+    Float.wBlockDecode, Float.wProject, List.map, List.map2,
     Float.wBlockProject, Float.block_op_map2_wop_binary]
   [@@by induct ~do_not:["gen"; "fert"; "delim"] ()]
 
@@ -889,7 +889,7 @@ theorem block_subtract_ok
   [@@timeout 3600]
   [@@disable
     Float.reduce, Float.wSubtract, Float.map2_wMultiply,
-    Float.wBlockDecode, Float.wProject, Format.parameters, List.map, List.map2,
+    Float.wBlockDecode, Float.wProject, List.map, List.map2,
     Float.wBlockProject, Float.block_op_map2_wop_binary]
   [@@by induct ~do_not:["gen"; "fert"; "delim"] ()]
 
@@ -909,7 +909,7 @@ theorem block_multiply_ok
   [@@timeout 3600]
   [@@disable
     Float.reduce, Float.wMultiply, Float.map2_wMultiply,
-    Float.wBlockDecode, Float.wProject, Format.parameters, List.map, List.map2,
+    Float.wBlockDecode, Float.wProject, List.map, List.map2,
     Float.wBlockProject, Float.block_op_map2_wop_binary]
   [@@by induct ~do_not:["gen"; "fert"; "delim"] ()]
 
@@ -929,7 +929,7 @@ theorem block_divide_ok
   [@@timeout 3600]
   [@@disable
     Float.reduce, Float.wDivide, Float.map2_wMultiply,
-    Float.wBlockDecode, Float.wProject, Format.parameters, List.map, List.map2,
+    Float.wBlockDecode, Float.wProject, List.map, List.map2,
     Float.wBlockProject, Float.block_op_map2_wop_binary]
   [@@by induct ~do_not:["gen"; "fert"; "delim"] ()]
 
@@ -950,7 +950,7 @@ theorem block_hypot_ok
   [@@timeout 3600]
   [@@disable
     Float.reduce, Float.wHypot, Float.map2_wMultiply,
-    Float.wBlockDecode, Float.wProject, Format.parameters, List.map, List.map2,
+    Float.wBlockDecode, Float.wProject, List.map, List.map2,
     Float.wBlockProject, Float.block_op_map2_wop_binary]
   [@@by induct ~do_not:["gen"; "fert"; "delim"] ()]
 
@@ -970,7 +970,7 @@ theorem block_minimum_ok
   [@@timeout 3600]
   [@@disable
     Float.reduce, Float.wMinimum, Float.map2_wMultiply,
-    Float.wBlockDecode, Float.wProject, Format.parameters, List.map, List.map2,
+    Float.wBlockDecode, Float.wProject, List.map, List.map2,
     Float.wBlockProject, Float.block_op_map2_wop_binary]
   [@@by induct ~do_not:["gen"; "fert"; "delim"] ()]
 
@@ -990,7 +990,7 @@ theorem block_minimum_number_ok
   [@@timeout 3600]
   [@@disable
     Float.reduce, Float.wMinimumNumber, Float.map2_wMultiply,
-    Float.wBlockDecode, Float.wProject, Format.parameters, List.map, List.map2,
+    Float.wBlockDecode, Float.wProject, List.map, List.map2,
     Float.wBlockProject, Float.block_op_map2_wop_binary]
   [@@by induct ~do_not:["gen"; "fert"; "delim"] ()]
 
@@ -1010,7 +1010,7 @@ theorem block_minimum_magnitude_ok
   [@@timeout 3600]
   [@@disable
     Float.reduce, Float.wMinimumMagnitude, Float.map2_wMultiply,
-    Float.wBlockDecode, Float.wProject, Format.parameters, List.map, List.map2,
+    Float.wBlockDecode, Float.wProject, List.map, List.map2,
     Float.wBlockProject, Float.block_op_map2_wop_binary]
   [@@by induct ~do_not:["gen"; "fert"; "delim"] ()]
 
@@ -1030,7 +1030,7 @@ theorem block_minimum_magnitude_number_ok
   [@@timeout 3600]
   [@@disable
     Float.reduce, Float.wMinimumMagnitudeNumber, Float.map2_wMultiply,
-    Float.wBlockDecode, Float.wProject, Format.parameters, List.map, List.map2,
+    Float.wBlockDecode, Float.wProject, List.map, List.map2,
     Float.wBlockProject, Float.block_op_map2_wop_binary]
   [@@by induct ~do_not:["gen"; "fert"; "delim"] ()]
 
@@ -1050,7 +1050,7 @@ theorem block_maximum_ok
   [@@timeout 3600]
   [@@disable
     Float.reduce, Float.wMaximum, Float.map2_wMultiply,
-    Float.wBlockDecode, Float.wProject, Format.parameters, List.map, List.map2,
+    Float.wBlockDecode, Float.wProject, List.map, List.map2,
     Float.wBlockProject, Float.block_op_map2_wop_binary]
   [@@by induct ~do_not:["gen"; "fert"; "delim"] ()]
 
@@ -1070,7 +1070,7 @@ theorem block_maximum_number_ok
   [@@timeout 3600]
   [@@disable
     Float.reduce, Float.wMaximumNumber, Float.map2_wMultiply,
-    Float.wBlockDecode, Float.wProject, Format.parameters, List.map, List.map2,
+    Float.wBlockDecode, Float.wProject, List.map, List.map2,
     Float.wBlockProject, Float.block_op_map2_wop_binary]
   [@@by induct ~do_not:["gen"; "fert"; "delim"] ()]
 
@@ -1090,7 +1090,7 @@ theorem block_maximum_magnitude_ok
   [@@timeout 3600]
   [@@disable
     Float.reduce, Float.wMaximumMagnitude, Float.map2_wMultiply,
-    Float.wBlockDecode, Float.wProject, Format.parameters, List.map, List.map2,
+    Float.wBlockDecode, Float.wProject, List.map, List.map2,
     Float.wBlockProject, Float.block_op_map2_wop_binary]
   [@@by induct ~do_not:["gen"; "fert"; "delim"] ()]
 
@@ -1110,7 +1110,7 @@ theorem block_maximum_magnitude_number_ok
   [@@timeout 3600]
   [@@disable
     Float.reduce, Float.wMaximumMagnitudeNumber, Float.map2_wMultiply,
-    Float.wBlockDecode, Float.wProject, Format.parameters, List.map, List.map2,
+    Float.wBlockDecode, Float.wProject, List.map, List.map2,
     Float.wBlockProject, Float.block_op_map2_wop_binary]
   [@@by induct ~do_not:["gen"; "fert"; "delim"] ()]
 

@@ -305,12 +305,14 @@ let old_internal_saturate (m_lo : ExReal.t) (m_hi : ExReal.t) (s : Signedness.t)
 
   | _ -> Error "unreachable"
 
-theorem saturate_wEx_eq (m_lo : real) (m_hi : real) (s : Signedness.t) (d : Domain.t) (sat : SaturationMode.t) (rnd : RoundingMode.t) (x : CER.t) =
+theorem saturate_wEx_eq (m_hi : real) (s : Signedness.t) (d : Domain.t) (sat : SaturationMode.t) (rnd : RoundingMode.t) (x : CER.t) =
+  let open Signedness in
+  let m_lo = match s with Signed -> -. m_hi | Unsigned -> 0.0 in
   let open ExReal.ResultInfix in
-  not (x = CER.NInf && s = Signedness.Unsigned) &&
+  not (x = CER.NInf && s = Unsigned) &&
   not (d = Domain.Finite && sat <> SaturationMode.SatFinite) ==>
   t_wEq1 x
-    (fun x -> Float.internal_wSaturate m_lo m_hi sat rnd x s d)
+    (fun x -> Float.internal_wSaturate m_hi sat rnd x s d)
     (old_internal_saturate (ExReal.R m_lo) (ExReal.R m_hi) s sat rnd)
   (* [@@by auto] *)
   [@@by unroll 100]

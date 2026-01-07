@@ -39,8 +39,8 @@ theorem m_lo_lt_m_hi (f : Format.t) =
 
 (** 4.6 Functions *)
 
-theorem internal_wSaturate_ok (m_lo : real) (m_hi : real) (sat : SaturationMode.t) (rnd : RoundingMode.t) (x : CER.t)  (s : Signedness.t) (d : Domain.t) =
-  Result.is_ok (Float.internal_wSaturate m_lo m_hi sat rnd x s d  [@trigger])
+theorem internal_wSaturate_ok (m : real) (sat : SaturationMode.t) (rnd : RoundingMode.t) (x : CER.t)  (s : Signedness.t) (d : Domain.t) =
+  Result.is_ok (Float.internal_wSaturate m sat rnd x s d  [@trigger])
   [@@by auto]
   [@@fc]
 
@@ -56,16 +56,16 @@ theorem wDecodeAux_ok (k : int) (p : int) (b : int) (s: Signedness.t) (d : Domai
 
 (* [decode] always produces numbers within the format range *)
 theorem decode_within_range (f : Format.t) (x : Float.t) =
-  cer_is_within_range f ((Float.wDecode f x) [@trigger])
+  Float.is_within_range f ((Float.wDecode f x) [@trigger])
   [@@timeout 600]
-  [@@disable Float.wDecode, Format.parameters]
+  [@@disable Float.wDecode, Float.maxFiniteOf]
   [@@by [%use Theorems_format_ranges.within_format_range f x] @> auto]
   [@@fc]
 
 (* [wEncode] is ok if the input is within the format range *)
 theorem wEncode_ok_within_range (f : Format.t) (x : CER.t) =
   let encoded = Float.wEncode f x [@@trigger] in
-  if cer_is_within_range f x then
+  if Float.is_within_range f x then
     Result.is_ok encoded
   else
     Result.is_error encoded
@@ -81,21 +81,44 @@ theorem decode_encode_ok (f : Format.t)  (x : Float.t) =
   [@@by [%use Theorems_format_ranges.within_format_range f x] @> auto]
   [@@fc]
 
+theorem maxFinite_is_m_hi (f : Format.t) =
+  let k, p, _, _, m_hi, s, _ = Format.parameters f in
+  (s = Signedness.Unsigned || p < k) ==>
+  CER.R m_hi = Float.wDecode f (Float.maxFiniteOf f)
+  [@@timeout 20]
+  [@@by enumerate ["f"] @> ground_eval ()]
+
+theorem maxFinite_geq_0 (f : Format.t) =
+  let open CER.Infix in
+  Float.wDecode f (Float.maxFiniteOf f) >= CER.R 0.0
+  [@@timeout 20]
+  [@@by enumerate ["f"] @> ground_eval ()]
+
+theorem maxFinite_is_finite (f : Format.t) =
+  match Float.wDecode f (Float.maxFiniteOf f) with
+  | CER.R _ -> true
+  | _ -> false
+  [@@timeout 20]
+  [@@by enumerate ["f"] @> ground_eval ()]
+
 (* [saturate] always produces a number within the format range *)
 theorem wSaturate_is_within_range (f : Format.t) (x : CER.t) (sat : SaturationMode.t) (rnd : RoundingMode.t) =
-  let _, _, _, m_lo, m_hi, _, _ = Format.parameters f in
-  let s = (Float.wSaturate m_lo m_hi sat rnd x f.s f.d [@trigger]) in
-  cer_is_within_range f s
+  match Float.wDecode f (Float.maxFiniteOf f) with
+  | CER.R m ->
+    let s = ((Float.wSaturate m sat rnd x f.s f.d) [@trigger]) in
+    Float.is_within_range f s
+  | _ -> false
   [@@timeout 3600]
-  [@@disable Format.parameters, Util.ipow2, Util.pow2]
-  [@@by auto]
+  [@@disable Float.wDecode, Float.maxFiniteOf, Util.ipow2, Util.pow2]
+  [@@by [%use maxFinite_is_finite f] @> [%use maxFinite_geq_0 f] @> auto]
   [@@fc]
 
 (* Encoding after saturation is always ok *)
 theorem saturate_encode_ok (f : Format.t) (x : CER.t) (sat : SaturationMode.t) (rnd : RoundingMode.t) =
-  let _, _, _, m_lo, m_hi, _, _ = Format.parameters f in
-  Result.is_ok (Float.wEncode f (Float.wSaturate m_lo m_hi sat rnd x f.s f.d) [@trigger])
-  [@@disable Float.wEncode, Float.wSaturate, Format.parameters]
+  match Float.wDecode f (Float.maxFiniteOf f) with
+  | CER.R m -> Result.is_ok (Float.wEncode f (Float.wSaturate m sat rnd x f.s f.d) [@trigger])
+  | _ -> false
+  [@@disable Float.wEncode, Float.wSaturate, Float.wDecode, Float.maxFiniteOf]
   [@@by [%use wSaturate_is_within_range f x sat rnd] @> auto]
   [@@fc]
 
@@ -173,48 +196,6 @@ theorem zero_means_is_zero (f : Format.t) (x : Float.t) =
   [@@by unroll_nonlin 10 10 1000]
   [@@fc]
 
-(* theorem zero_is_zero_fwd (f : Format.t) (x : Float.t) =
-  let open CER in
-  x = 0 ==> ((Float.wDecode f x = R 0.0) [@trigger])
-  [@@timeout 360]
-  [@@by enumerate ["f"] @> auto]
-
-theorem zero_is_zero_bwd (f : Format.t) (x : Float.t) =
-  let open CER in
-  x = 0 <== ((Float.wDecode f x = R 0.0) [@trigger])
-  [@@timeout 1200]
-  (* [@@by enumerate ["f"] @> auto] *)
-  [@@by auto]
-
-
-theorem zero_is_zero (f : Format.t) (x : Float.t) =
-  let open CER in
-  x = 0 <==> ((Float.wDecode f x = R 0.0) [@trigger])
-  [@@timeout 60]
-  [@@disable Float.wDecode]
-  [@@by
-    [%use zero_is_zero_fwd f x] @>
-    [%use zero_is_zero_bwd f x] @>
-    auto]
-  [@@fc] *)
-
-(* theorem decode_specials (f : Format.t) (x : Float.t) =
-  let open CER in
-  ((Float.is_pinf f x) <==> (Float.wDecode f x = PInf)) &&
-  ((Float.is_ninf f x) <==> (Float.wDecode f x = NInf)) &&
-  ((Float.is_nan f x) <==> (Float.wDecode f x = NaN)) &&
-  ((Float.is_zero f x) <==> (Float.wDecode f x = R 0.0)) &&
-  ((x = 0) <==> (Float.wDecode f x = R 0.0))
-  [@@timeout 3600]
-  [@@disable Float.wDecode, Util.pow2, Util.ipow2, Float.is_pinf, Float.is_ninf, Float.is_nan, Float.is_zero]
-  [@@by
-    [%use pinf_decodes_to_pinf f x] @>
-    [%use ninf_decodes_to_ninf f x] @>
-    [%use nan_decodes_to_nan f x] @>
-    [%use zero_decodes_to_zero f x] @>
-    [%use zero_is_zero f x] @>
-    auto] *)
-
 (** 4.7.1 Specification of IEEE Std 754 formats *)
 
 (* (Nothing) *)
@@ -227,7 +208,7 @@ theorem zero_is_zero (f : Format.t) (x : Float.t) =
 (** [internal_convertFromIEEE754] never returns an error *)
 theorem internal_convert_from_ieee754_ok (phi: IEEE754.Format.t) (f : Format.t) (rho : Projection.t) (x : IEEE754.t) =
   Result.is_ok (Float.internal_convertFromIEEE754 phi f rho x)
-  [@@disable Float.wProject, Float.wRoundToPrecision, Float.wSaturate, Util.pow2, Util.ipow2, Format.parameters]
+  [@@disable Float.wProject, Float.wRoundToPrecision, Float.wSaturate, Util.pow2, Util.ipow2]
   [@@by auto]
 
 (** 4.7.3 Conversion from P3109 to IEEE Std 754 *)
@@ -237,13 +218,13 @@ theorem internal_convert_from_ieee754_ok (phi: IEEE754.Format.t) (f : Format.t) 
 (** [internal_abs] never returns an error *)
 theorem internal_abs_ok (f_x : Format.t) (f_r : Format.t) (rho : Projection.t) (x : Float.t) =
   Result.is_ok (Float.internal_abs f_x f_r rho x)
-  [@@disable Float.wProject, Float.wDecode, Util.pow2, Util.ipow2, Format.parameters]
+  [@@disable Float.wProject, Float.wDecode, Util.pow2, Util.ipow2]
   [@@by auto]
 
 (** [internal_negate] never returns an error *)
 theorem internal_negate_ok (f_x : Format.t) (f_r : Format.t) (rho : Projection.t) (x : Float.t) =
   Result.is_ok (Float.internal_negate f_x f_r rho x)
-  [@@disable Float.wProject, Float.wDecode, Util.pow2, Util.ipow2, Format.parameters]
+  [@@disable Float.wProject, Float.wDecode, Util.pow2, Util.ipow2]
   [@@by auto]
 
 
@@ -252,7 +233,7 @@ theorem internal_negate_ok (f_x : Format.t) (f_r : Format.t) (rho : Projection.t
 (** [internal_copy_sign] never returns an error *)
 theorem internal_copySign_ok (f_x : Format.t) (f_y : Format.t) (f_r : Format.t) (rho : Projection.t) (x : Float.t) (y : Float.t) =
   Result.is_ok (Float.internal_copySign f_x f_y f_r rho x y)
-  [@@disable Float.wProject, Float.wDecode, Util.pow2, Util.ipow2, Format.parameters]
+  [@@disable Float.wProject, Float.wDecode, Util.pow2, Util.ipow2]
   [@@by auto]
 
 
@@ -262,7 +243,7 @@ theorem internal_copySign_ok (f_x : Format.t) (f_y : Format.t) (f_r : Format.t) 
 theorem internal_add_ok (f_x : Format.t) (f_y : Format.t) (f_r : Format.t) (rho : Projection.t)
   (x : Float.t) (y : Float.t) =
   Result.is_ok (Float.internal_add f_x f_y f_r rho x y)
-  [@@disable Float.wProject, Float.wDecode, Util.pow2, Util.ipow2, Format.parameters]
+  [@@disable Float.wProject, Float.wDecode, Util.pow2, Util.ipow2]
   [@@timeout 60]
   [@@by auto]
 
@@ -270,21 +251,21 @@ theorem internal_add_ok (f_x : Format.t) (f_y : Format.t) (f_r : Format.t) (rho 
 theorem internal_subtract_ok (f_x : Format.t) (f_y : Format.t) (f_r : Format.t) (rho : Projection.t)
   (x : Float.t) (y : Float.t) =
   Result.is_ok (Float.internal_subtract f_x f_y f_r rho x y)
-  [@@disable Float.wProject, Float.wDecode, Util.pow2, Util.ipow2, Format.parameters]
+  [@@disable Float.wProject, Float.wDecode, Util.pow2, Util.ipow2]
   [@@timeout 60]
   [@@by auto]
 
 (** [internal_multiply] never returns an error *)
 theorem internal_multiply_ok (f_x : Format.t) (f_y : Format.t) (f_r : Format.t) (rho : Projection.t) (x : Float.t) (y : Float.t)  =
   Result.is_ok (Float.internal_multiply f_x f_y f_r rho x y)
-  [@@disable Float.wProject, Float.wDecode, Util.pow2, Util.ipow2, Format.parameters]
+  [@@disable Float.wProject, Float.wDecode, Util.pow2, Util.ipow2]
   [@@timeout 60]
   [@@by auto]
 
 (** [internal_divide] never returns an error *)
 theorem internal_divide_ok (f_x : Format.t) (f_y : Format.t) (f_r : Format.t) (rho : Projection.t) (x : Float.t) (y : Float.t)  =
   Result.is_ok (Float.internal_divide f_x f_y f_r rho x y)
-  [@@disable Float.wProject, Float.wDecode, Util.pow2, Util.ipow2, Format.parameters]
+  [@@disable Float.wProject, Float.wDecode, Util.pow2, Util.ipow2]
   [@@timeout 60]
   [@@by auto]
 
@@ -306,7 +287,7 @@ theorem internal_fma_ok (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (f_r 
 theorem internal_faa_ok (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (f_r : Format.t) (rho : Projection.t)
   (x : Float.t) (y : Float.t) (z : Float.t) =
   Result.is_ok (Float.internal_faa f_x f_y f_z f_r rho x y z)
-  [@@disable Float.wProject, Float.wDecode, Float.wRoundToPrecision, Float.wSaturate, Util.pow2, Util.ipow2, Format.parameters]
+  [@@disable Float.wProject, Float.wDecode, Float.wRoundToPrecision, Float.wSaturate, Util.pow2, Util.ipow2]
   [@@by auto]
 
 (** 4.8.5 Unary mathematical operations *)
@@ -315,21 +296,21 @@ theorem internal_faa_ok (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (f_r 
 theorem internal_recip_ok (f_x : Format.t) (f_r : Format.t) (rho : Projection.t) (x : Float.t) =
   Result.is_ok (Float.internal_recip f_x f_r rho x)
   [@@timeout 60]
-  [@@disable Float.wProject, Float.wDecode, Float.wRoundToPrecision, Float.wSaturate, Util.pow2, Util.ipow2, Format.parameters, Sqrt.sqrt]
+  [@@disable Float.wProject, Float.wDecode, Float.wRoundToPrecision, Float.wSaturate, Util.pow2, Util.ipow2, Sqrt.sqrt]
   [@@by auto]
 
 (** [internal_sqrt] never returns an error *)
 theorem internal_sqrt_ok (f_x : Format.t) (f_r : Format.t) (rho : Projection.t) (x : Float.t) =
   Result.is_ok (Float.internal_sqrt f_x f_r rho x)
   [@@timeout 60]
-  [@@disable Float.wProject, Float.wDecode, Float.wRoundToPrecision, Float.wSaturate, Util.pow2, Util.ipow2, Format.parameters, Sqrt.sqrt]
+  [@@disable Float.wProject, Float.wDecode, Float.wRoundToPrecision, Float.wSaturate, Util.pow2, Util.ipow2, Sqrt.sqrt]
   [@@by auto]
 
 (** [internal_rsqrt] never returns an error *)
 theorem internal_rsqrt_ok (f_x : Format.t) (f_r : Format.t) (rho : Projection.t) (x : Float.t) =
   Result.is_ok (Float.internal_rsqrt f_x f_r rho x)
   [@@timeout 3600]
-  [@@disable Float.wProject, Float.wDecode, Float.wRoundToPrecision, Float.wSaturate, Util.pow2, Util.ipow2, Format.parameters, Sqrt.sqrt]
+  [@@disable Float.wProject, Float.wDecode, Float.wRoundToPrecision, Float.wSaturate, Util.pow2, Util.ipow2, Sqrt.sqrt]
   [@@by auto]
 
 (** [wExp] never returns an error *)
@@ -341,13 +322,13 @@ theorem wExp_ok (x : CER.t) =
 (** [internal_exp] never returns an error *)
 theorem internal_exp_ok (f_x : Format.t) (f_r : Format.t) (rho : Projection.t) (x : Float.t) =
   Result.is_ok (Float.internal_exp f_x f_r rho x)
-  [@@disable Float.wProject, Float.wDecode, Format.parameters]
+  [@@disable Float.wProject, Float.wDecode]
   [@@by auto]
 
 (** [internal_exp2] never returns an error *)
 theorem internal_exp2_ok (f_x : Format.t) (f_r : Format.t) (rho : Projection.t) (x : Float.t) =
   Result.is_ok (Float.internal_exp2 f_x f_r rho x)
-  [@@disable Float.wProject, Float.wDecode, Float.wRoundToPrecision, Float.wSaturate, Exp.exp2, Format.parameters]
+  [@@disable Float.wProject, Float.wDecode, Float.wRoundToPrecision, Float.wSaturate, Exp.exp2]
   [@@by auto]
 
 (** [wLog] never returns an error *)
@@ -359,13 +340,13 @@ theorem wLog_ok (x : CER.t) =
 (** [internal_log] never returns an error *)
 theorem internal_log_ok (f_x : Format.t) (f_r : Format.t) (rho : Projection.t) (x : Float.t) =
   Result.is_ok (Float.internal_log f_x f_r rho x)
-  [@@disable Float.wProject, Float.wDecode, Log.log, Log.ln, Format.parameters]
+  [@@disable Float.wProject, Float.wDecode, Log.log, Log.ln]
   [@@by auto]
 
 (** [internal_log2] never returns an error *)
 theorem internal_log2_ok (f_x : Format.t) (f_r : Format.t) (rho : Projection.t) (x : Float.t) =
   Result.is_ok (Float.internal_log2 f_x f_r rho x)
-  [@@disable Float.wProject, Float.wDecode, Log.log2, Log.log, Log.ln, Format.parameters]
+  [@@disable Float.wProject, Float.wDecode, Log.log2, Log.log, Log.ln]
   [@@by auto]
 
 
@@ -400,7 +381,7 @@ theorem wHypot_ok (x : CER.t) (y : CER.t) =
 (** [hypot] never returns an error *)
 theorem internal_hypot_ok (f_x : Format.t) (f_y : Format.t) (f_r : Format.t) (rho : Projection.t) (x : Float.t) (y : Float.t) =
   Result.is_ok (Float.internal_hypot f_x f_y f_r rho x y)
-  [@@disable Float.wProject, Float.wDecode, Float.wRoundToPrecision, Float.wSaturate, Util.pow2, Util.ipow2, Format.parameters, Float.wHypot]
+  [@@disable Float.wProject, Float.wDecode, Float.wRoundToPrecision, Float.wSaturate, Util.pow2, Util.ipow2, Float.wHypot]
   [@@by [%use wHypot_ok (Float.wDecode f_x x) (Float.wDecode f_y y)] @> auto]
 
 (** [wArcTan2] never returns an error *)
@@ -418,7 +399,7 @@ theorem wArcTan2_ok (y : CER.t) (x : CER.t) (p : int) =
 (** [internal_arcTan2] never returns an error *)
 theorem internal_arcTan2_ok (f_x : Format.t) (f_y : Format.t) (f_r : Format.t) (rho : Projection.t) (x : Float.t) (y : Float.t) =
   Result.is_ok (Float.internal_arcTan2 f_x f_y f_r rho x y)
-  [@@disable Float.wProject, Float.wDecode, Float.wRoundToPrecision, Float.wSaturate, Util.pow2, Util.ipow2, Format.parameters, Float.wArcTan2]
+  [@@disable Float.wProject, Float.wDecode, Float.wRoundToPrecision, Float.wSaturate, Util.pow2, Util.ipow2, Float.wArcTan2]
   [@@by [%use wArcTan2_ok (Float.wDecode f_x x) (Float.wDecode f_y y) 8] @> auto]
 
 theorem wArcTan2Alt_ok (y : CER.t) (x : CER.t) (p : int) =
@@ -429,7 +410,7 @@ theorem wArcTan2Alt_ok (y : CER.t) (x : CER.t) (p : int) =
 (** [internal_arcTan2Alt] never returns an error *)
 theorem internal_arcTan2Alt_ok (f_x : Format.t) (f_y : Format.t) (f_r : Format.t) (rho : Projection.t) (x : Float.t) (y : Float.t) =
   Result.is_ok (Float.internal_arcTan2Alt f_x f_y f_r rho x y)
-  [@@disable Float.wProject, Float.wDecode, Float.wRoundToPrecision, Float.wSaturate, Util.pow2, Util.ipow2, Format.parameters, Float.wArcTan2Alt]
+  [@@disable Float.wProject, Float.wDecode, Float.wRoundToPrecision, Float.wSaturate, Util.pow2, Util.ipow2, Float.wArcTan2Alt]
   [@@by [%use wArcTan2Alt_ok (Float.wDecode f_x x) (Float.wDecode f_y y) 8] @> auto]
 
 (** [internal_arcTan2Pi] never returns an error *)
@@ -440,7 +421,7 @@ theorem wArcTan2Pi_ok (y : CER.t) (x : CER.t) (p : int) =
 
 theorem internal_arcTan2Pi_ok (f_x : Format.t) (f_y : Format.t) (f_r : Format.t) (rho : Projection.t) (x : Float.t) (y : Float.t) =
   Result.is_ok (Float.internal_arcTan2Pi f_x f_y f_r rho x y)
-  [@@disable Float.wProject, Float.wDecode, Float.wRoundToPrecision, Float.wSaturate, Util.pow2, Util.ipow2, Format.parameters, Float.wArcTan2Pi]
+  [@@disable Float.wProject, Float.wDecode, Float.wRoundToPrecision, Float.wSaturate, Util.pow2, Util.ipow2, Float.wArcTan2Pi]
   [@@by [%use wArcTan2Pi_ok (Float.wDecode f_x x) (Float.wDecode f_y y) 8] @> auto]
 
 
@@ -599,7 +580,7 @@ theorem internal_class_ok (f : Format.t) (x : Float.t) =
 (* It's always ok to get minPositiveOf *)
 theorem internal_minPositiveOf_ok (f : Format.t) =
   Result.is_ok ((Float.internal_minPositiveOf f) [@trigger])
-  [@@disable Util.pow2, Util.ipow2, Format.parameters]
+  [@@disable Util.pow2, Util.ipow2]
   [@@by auto]
   [@@fc]
 
@@ -619,134 +600,134 @@ theorem minNormalOf_normal (f : Format.t) =
   | 2, 1, Signed, Extended -> minNormalOf f = (nan f)
   | 2, 2, Unsigned, Extended -> minNormalOf f = (nan f)
   | _ -> isNormal f (minNormalOf f)
-  [@@disable Util.pow2, Util.ipow2, Format.parameters]
+  [@@disable Util.pow2, Util.ipow2]
   [@@timeout 60]
   [@@by enumerate ["f"] @> ground_eval ()]
 
 (** [internal_expMinusOne] never returns an error *)
 theorem internal_expMinusOne_ok (f_x : Format.t) (f_r : Format.t) (rho : Projection.t) (x : Float.t) =
   Result.is_ok (Float.internal_expMinusOne f_x f_r rho x)
-  [@@disable Float.wProject, Float.wDecode, Format.parameters]
+  [@@disable Float.wProject, Float.wDecode]
   [@@by auto]
 
 (** [internal_logOnePlus] never returns an error *)
 theorem internal_logOnePlus_ok (f_x : Format.t) (f_r : Format.t) (rho : Projection.t) (x : Float.t) =
   Result.is_ok (Float.internal_logOnePlus f_x f_r rho x)
-  [@@disable Float.wProject, Float.wDecode, Log.log, Log.ln, Format.parameters]
+  [@@disable Float.wProject, Float.wDecode, Log.log, Log.ln]
   [@@by auto]
 
 (** [internal_sin] never returns an error *)
 theorem internal_sin_ok (f_x : Format.t) (f_r : Format.t) (rho : Projection.t) (x : Float.t) =
   Result.is_ok (Float.internal_sin f_x f_r rho x)
-  [@@disable Float.wProject, Float.wDecode, Format.parameters]
+  [@@disable Float.wProject, Float.wDecode]
   [@@by auto]
 
 (** [internal_cos] never returns an error *)
 theorem internal_cos_ok (f_x : Format.t) (f_r : Format.t) (rho : Projection.t) (x : Float.t) =
   Result.is_ok (Float.internal_cos f_x f_r rho x)
-  [@@disable Float.wProject, Float.wDecode, Format.parameters]
+  [@@disable Float.wProject, Float.wDecode]
   [@@by auto]
 
 (** [internal_tan] never returns an error *)
 theorem internal_tan_ok (f_x : Format.t) (f_r : Format.t) (rho : Projection.t) (x : Float.t) =
   Result.is_ok (Float.internal_tan f_x f_r rho x)
-  [@@disable Float.wProject, Float.wDecode, Format.parameters, Trigonometric.sin, Trigonometric.cos]
+  [@@disable Float.wProject, Float.wDecode, Trigonometric.sin, Trigonometric.cos]
   [@@by auto]
 
 (** [internal_sinh] never returns an error *)
 theorem internal_sinh_ok (f_x : Format.t) (f_r : Format.t) (rho : Projection.t) (x : Float.t) =
   Result.is_ok (Float.internal_sinh f_x f_r rho x)
-  [@@disable Float.wProject, Float.wDecode, Format.parameters]
+  [@@disable Float.wProject, Float.wDecode]
   [@@by auto]
 
 (** [internal_cosh] never returns an error *)
 theorem internal_cosh_ok (f_x : Format.t) (f_r : Format.t) (rho : Projection.t) (x : Float.t) =
   Result.is_ok (Float.internal_cosh f_x f_r rho x)
-  [@@disable Float.wProject, Float.wDecode, Format.parameters]
+  [@@disable Float.wProject, Float.wDecode]
   [@@by auto]
 
 (** [internal_tanh] never returns an error *)
 theorem internal_tanh_ok (f_x : Format.t) (f_r : Format.t) (rho : Projection.t) (x : Float.t) =
   Result.is_ok (Float.internal_tanh f_x f_r rho x)
-  [@@disable Float.wProject, Float.wDecode, Format.parameters]
+  [@@disable Float.wProject, Float.wDecode]
   [@@by auto]
 
 (** [internal_arcsin] never returns an error *)
 theorem internal_arcsin_ok (f_x : Format.t) (f_r : Format.t) (rho : Projection.t) (x : Float.t) =
   Result.is_ok (Float.internal_arcsin f_x f_r rho x)
-  [@@disable Float.wProject, Float.wDecode, Format.parameters]
+  [@@disable Float.wProject, Float.wDecode]
   [@@by auto]
 
 (** [internal_arccos] never returns an error *)
 theorem internal_arccos_ok (f_x : Format.t) (f_r : Format.t) (rho : Projection.t) (x : Float.t) =
   Result.is_ok (Float.internal_arccos f_x f_r rho x)
-  [@@disable Float.wProject, Float.wDecode, Format.parameters]
+  [@@disable Float.wProject, Float.wDecode]
   [@@by auto]
 
 (** [internal_arctan] never returns an error *)
 theorem internal_arctan_ok (f_x : Format.t) (f_r : Format.t) (rho : Projection.t) (x : Float.t) =
   Result.is_ok (Float.internal_arctan f_x f_r rho x)
-  [@@disable Float.wProject, Float.wDecode, Format.parameters, Pi.pi]
+  [@@disable Float.wProject, Float.wDecode, Pi.pi]
   [@@by auto]
 
 (** [internal_arcsinh] never returns an error *)
 theorem internal_arcsinh_ok (f_x : Format.t) (f_r : Format.t) (rho : Projection.t) (x : Float.t) =
   Result.is_ok (Float.internal_arcsinh f_x f_r rho x)
-  [@@disable Float.wProject, Float.wDecode, Format.parameters]
+  [@@disable Float.wProject, Float.wDecode]
   [@@by auto]
 
 (** [internal_arccosh] never returns an error *)
 theorem internal_arccosh_ok (f_x : Format.t) (f_r : Format.t) (rho : Projection.t) (x : Float.t) =
   Result.is_ok (Float.internal_arccosh f_x f_r rho x)
-  [@@disable Float.wProject, Float.wDecode, Format.parameters]
+  [@@disable Float.wProject, Float.wDecode]
   [@@by auto]
 
 (** [internal_arctanh] never returns an error *)
 theorem internal_arctanh_ok (f_x : Format.t) (f_r : Format.t) (rho : Projection.t) (x : Float.t) =
   Result.is_ok (Float.internal_arctanh f_x f_r rho x)
-  [@@disable Float.wProject, Float.wDecode, Format.parameters]
+  [@@disable Float.wProject, Float.wDecode]
   [@@by auto]
 
 (** [internal_sinPi] never returns an error *)
 theorem internal_sinPi_ok (f_x : Format.t) (f_r : Format.t) (rho : Projection.t) (x : Float.t) =
   Result.is_ok (Float.internal_sinPi f_x f_r rho x)
-  [@@disable Float.wProject, Float.wDecode, Format.parameters]
+  [@@disable Float.wProject, Float.wDecode]
   [@@by auto]
 
 (** [internal_cosPi] never returns an error *)
 theorem internal_cosPi_ok (f_x : Format.t) (f_r : Format.t) (rho : Projection.t) (x : Float.t) =
   Result.is_ok (Float.internal_cosPi f_x f_r rho x)
-  [@@disable Float.wProject, Float.wDecode, Format.parameters]
+  [@@disable Float.wProject, Float.wDecode]
   [@@by auto]
 
 (** [internal_tanPi] never returns an error *)
 theorem internal_tanPi_ok (f_x : Format.t) (f_r : Format.t) (rho : Projection.t) (x : Float.t) =
   Result.is_ok (Float.internal_tanPi f_x f_r rho x)
-  [@@disable Float.wProject, Float.wDecode, Format.parameters, Trigonometric.sin, Trigonometric.cos, Trigonometric.tan]
+  [@@disable Float.wProject, Float.wDecode, Trigonometric.sin, Trigonometric.cos, Trigonometric.tan]
   [@@by auto]
 
 (** [internal_arcSinPi] never returns an error *)
 theorem internal_arcSinPi_ok (f_x : Format.t) (f_r : Format.t) (rho : Projection.t) (x : Float.t) =
   Result.is_ok (Float.internal_arcSinPi f_x f_r rho x)
-  [@@disable Float.wProject, Float.wDecode, Format.parameters]
+  [@@disable Float.wProject, Float.wDecode]
   [@@by auto]
 
 (** [internal_arcCosPi] never returns an error *)
 theorem internal_arcCosPi_ok (f_x : Format.t) (f_r : Format.t) (rho : Projection.t) (x : Float.t) =
   Result.is_ok (Float.internal_arcCosPi f_x f_r rho x)
-  [@@disable Float.wProject, Float.wDecode, Format.parameters]
+  [@@disable Float.wProject, Float.wDecode]
   [@@by auto]
 
 (** [internal_arcTanPi] never returns an error *)
 theorem internal_arcTanPi_ok (f_x : Format.t) (f_r : Format.t) (rho : Projection.t) (x : Float.t) =
   Result.is_ok (Float.internal_arcTanPi f_x f_r rho x)
-  [@@disable Float.wProject, Float.wDecode, Format.parameters, Pi.pi]
+  [@@disable Float.wProject, Float.wDecode, Pi.pi]
   [@@by auto]
 
 (** [internal_softplus] never returns an error *)
 theorem internal_softplus_ok (f_x : Format.t) (f_r : Format.t) (rho : Projection.t) (x : Float.t) =
   Result.is_ok (Float.internal_softplus f_x f_r rho x)
-  [@@disable Float.wProject, Float.wDecode, Format.parameters, Log.log, Log.ln, Exp.exp]
+  [@@disable Float.wProject, Float.wDecode, Log.log, Log.ln, Exp.exp]
   [@@by auto]
 
 (** [internal_softmax] never returns an error *)
@@ -758,7 +739,7 @@ theorem map_project_ok f rho x =
 
 theorem internal_softmax_ok (f_x : Format.t) (f_r : Format.t) (rho : Projection.t) (xs : Float.t list) =
   Result.is_ok (Float.internal_softmax f_x f_r rho xs)
-  [@@disable Float.wProject, Float.wDecode, Format.parameters, Float.map_decode, Float.map_project]
+  [@@disable Float.wProject, Float.wDecode, Float.map_decode, Float.map_project]
   [@@timeout 3600]
   [@@by induct ~do_not:["gen"; "fert"; "delim"] ()]
 
@@ -771,20 +752,20 @@ theorem map_wLog_ok x =
 
 theorem internal_logsoftmax_ok (f_x : Format.t) (f_r : Format.t) (rho : Projection.t) (xs : Float.t list) =
   Result.is_ok (Float.internal_logSoftmax f_x f_r rho xs)
-  [@@disable Float.wProject, Float.wDecode, Format.parameters, Float.map_decode, Float.map_project, Float.map_wLog]
+  [@@disable Float.wProject, Float.wDecode, Float.map_decode, Float.map_project, Float.map_wLog]
   [@@timeout 3600]
   [@@by induct ~do_not:["gen"; "fert"; "delim"] ()]
 
 (** [internal_nextGreaterThan] never returns an error *)
 theorem internal_nextGreaterThan_ok (f : Format.t) (x : Float.t) =
   Result.is_ok (Float.internal_nextGreaterThan f x)
-  [@@disable Format.parameters, Float.minFiniteOf, Float.maxFiniteOf]
+  [@@disable Float.minFiniteOf, Float.maxFiniteOf, Float.minPositiveOf]
   [@@by auto]
 
 (** [internal_nextLessThan] never returns an error *)
 theorem internal_nextLessThan_ok (f : Format.t) (x : Float.t) =
   Result.is_ok (Float.internal_nextLessThan f x)
-  [@@disable Format.parameters, Float.minFiniteOf, Float.maxFiniteOf]
+  [@@disable Float.minFiniteOf, Float.maxFiniteOf, Float.minPositiveOf]
   [@@by auto]
 
 (* Some extras *)
@@ -808,11 +789,11 @@ theorem wRoundToPrecision_preserves_positivity (p : int) (b : int) (rnd : Roundi
   [@@by auto]
   [@@fc]
 
-theorem wSaturate_preserves_positivity (m_lo : real) (m_hi : real) (sat : SaturationMode.t) (rnd : RoundingMode.t) (x : CER.t) (s : Signedness.t) (d : Domain.t) =
+theorem wSaturate_preserves_positivity (m : real) (sat : SaturationMode.t) (rnd : RoundingMode.t) (x : CER.t) (s : Signedness.t) (d : Domain.t) =
   let open CER.Infix in
-  m_lo <=. 0.0 && m_hi >. 0.0 ==>
-  x >= CER.zero ==> (Float.wSaturate m_lo m_hi sat rnd x s d) [@trigger] >= CER.zero
-  [@@disable Float.wDecode, Format.parameters, Util.pow2, Util.ipow2, Util.floor_log2_abs, Util.floor, Util.ifloor]
+  m >. 0.0 ==>
+  x >= CER.zero ==> (Float.wSaturate m sat rnd x s d) [@trigger] >= CER.zero
+  [@@disable Float.wDecode, Float.maxFiniteOf, Util.pow2, Util.ipow2, Util.floor_log2_abs, Util.floor, Util.ifloor]
   [@@by auto]
   [@@fc]
 

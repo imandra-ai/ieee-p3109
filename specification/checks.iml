@@ -24,21 +24,24 @@ lemma fmt_prec_p3 (f : Format.t) = (f = f83) ==> (Format.precision f) = 3
 lemma fmt_params_p3 (f : Format.t) =
   (f = f83) ==>
     let k, p, b, _, max, _, _ = Format.parameters f in
-    k = 8 && p = 3 && b = 16 && max = 49152.0
+    k = 8 && p = 3 && b = 16 && max = 49152.0 &&
+    bitWidthOf f = k && precisionOf f = p && exponentBiasOf f = b && wDecode f (maxFiniteOf f) = CER.R max
   [@@by auto]
 
 (** Check that the format parameters for B8P2 are as expected *)
 lemma fmt_params_p2 (f : Format.t) =
   (f = f82) ==>
     let k, p, b, _, max, _, _ = Format.parameters f in
-    k = 8 && p = 2 && b = 32 && max = 2147483648.0
+    k = 8 && p = 2 && b = 32 && max = 2147483648.0 &&
+    bitWidthOf f = k && precisionOf f = p && exponentBiasOf f = b && wDecode f (maxFiniteOf f) = CER.R max
   [@@by auto]
 
 (** Check that the format parameters for B8P1 are as expected *)
 lemma fmt_params_p1 (f : Format.t) =
   (f = f81) ==>
     let k, p, b, _, max, _, _ = Format.parameters f in
-    k = 8 && p = 1 && b = 64 && max = 4611686018427387904.0
+    k = 8 && p = 1 && b = 64 && max = 4611686018427387904.0 &&
+    bitWidthOf f = k && precisionOf f = p && exponentBiasOf f = b && wDecode f (maxFiniteOf f) = CER.R max
   [@@by auto]
 
 (** Sanity check of bitwise int conversion *)
