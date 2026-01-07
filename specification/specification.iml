@@ -347,24 +347,24 @@ module Float = struct
 
   (** 4.9.1 Decode *)
 
-  let rec wDecodeAux (k : int) (p : int) (b : int) (s: Signedness.t) (d : Domain.t) (x : t) : (CER.t, string) Result.t =
+  let rec wDecodeAux (k : int) (p : int) (b : int) (sigma: Signedness.t) (delta : Domain.t) (x : t) : (CER.t, string) Result.t =
     let open Util in
     let open Signedness in
     let open Domain in
     (* if k > 15 then Error "invalid format" else (* Note: termination checks go off the rails if k is unbounded *) *)
-    match to_int_repr_k k x s with
-    | x when x = ipow2 (k - 1)     && s = Signed -> Ok NaN
-    | x when x = ipow2  k      - 1 && s = Unsigned -> Ok NaN
+    match sigma, delta, to_int_repr_k k x sigma with
+    | Signed, _, x when x = ipow2 (k - 1) -> Ok NaN
+    | Unsigned, _, x when x = ipow2 k - 1 -> Ok NaN
 
-    | x when x = ipow2 (k - 1) - 1 && d = Extended && s = Signed -> Ok PInf
-    | x when x = ipow2  k      - 1 && d = Extended && s = Signed -> Ok NInf
-    | x when x = ipow2  k      - 2 && d = Extended && s = Unsigned -> Ok PInf
+    | Signed, Extended, x when x = ipow2 (k - 1) - 1 -> Ok PInf
+    | Signed, Extended, x when x = ipow2 k - 1 -> Ok NInf
+    | Unsigned, Extended, x when x = ipow2 k - 2 -> Ok PInf
 
-    | x when ipow2 (k - 1) < x && x < ipow2 k && s = Signed ->
-      let* r = wDecodeAux k p b s d (of_int_repr_k k s (x - ipow2 (k - 1))) in
+    | Signed, delta, x when ipow2 (k - 1) < x && x < ipow2 k ->
+      let* r = wDecodeAux k p b sigma delta (of_int_repr_k k sigma (x - ipow2 (k - 1))) in
       Ok CER.(~- r)
 
-    | x ->
+    | _, _, x ->
       let t = Real.of_int (x mod (ipow2 (p - 1))) in
       let e = Int.(Util.machine_idiv x (ipow2 (p - 1))) in
 
@@ -379,8 +379,7 @@ module Float = struct
     [@@by auto]
 
   let wDecode (f : Format.t) (x : t) : CER.t =
-    let k, p, b, _, _, s, d = Format.parameters f in
-    match wDecodeAux k p b s d x with
+    match wDecodeAux (bitWidthOf f) (precisionOf f) (exponentBiasOf f) (signednessOf f) (domainOf f) x with
     | Ok r -> r
     | Error _ -> NaN (* unreachable by theorem_decode_ok *)
 
