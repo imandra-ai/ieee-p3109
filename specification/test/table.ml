@@ -38,8 +38,8 @@ let cer_to_string (x : CER.t) : string =
   let open CER in
   match x with
   | NaN -> "NaN"
-  | PINF -> "+oo"
-  | NINF -> "-oo"
+  | PInf -> "+oo"
+  | NInf -> "-oo"
   | R r -> Q.to_string r
 
 let rat_to_string_dec (x : Q.t) : string =
@@ -52,8 +52,8 @@ let rat_to_string_dec (x : Q.t) : string =
 let cer_to_string_dec (x : CER.t) : string =
   match x with
   | NaN -> "NaN"
-  | PINF -> "+oo"
-  | NINF -> "-oo"
+  | PInf -> "+oo"
+  | NInf -> "-oo"
   | R r -> Printf.sprintf "%s" (rat_to_string_dec r)
 
 let print_cer_dec (x : CER.t) =

@@ -174,7 +174,7 @@ let sprefix (s : string) (i : int) = String.sub s 0 (min i (String.length s))
 
 let cer_dec (x : CER.t) : string =
   match x with
-  | NaN | PINF | NINF -> CER.to_string x
+  | NaN | PInf | NInf -> CER.to_string x
   | R r -> rat_to_string_dec r
 
 let r_of_aug (x : CER.t) =
@@ -349,7 +349,7 @@ let forall_projections (fn : Projection.t -> unit) : unit =
 let print_closest (f_z : Format.t) (di : CER.t) =
   let open CER in
   match di with
-  | NaN | NINF | PINF -> ()
+  | NaN | NInf | PInf -> ()
   | R s when Q.lt s Q.zero -> ()
   | R s ->
     (match Fsqrt.find_closest_sqrt_floats f_z di with
