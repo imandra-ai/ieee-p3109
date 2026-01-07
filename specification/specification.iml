@@ -580,9 +580,9 @@ module Float = struct
 
   (** 4.10 Interconverting formats *)
 
-  (** Convert [x] (in [f_x]) to [f_z] with projection specification [pi] *)
-  let convert (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) : (t, string) Result.t =
-    wProject f_z pi (wDecode f_x x)
+  (** Convert [x] (in [f_x]) to [f_r] with projection specification [pi] *)
+  let convert (f_x : Format.t) (f_r : Format.t) (pi : Projection.t) (x : t) : (t, string) Result.t =
+    wProject f_r pi (wDecode f_x x)
 
 
   (** 4.11 Arithmetic operations *)
@@ -671,15 +671,15 @@ module Float = struct
     | R x, R y -> Ok (R (x +. y))
     | _ -> Error "undefined"
 
-  let internal_add (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) (y : t)  : (t, string) Result.t =
+  let internal_add (f_x : Format.t) (f_y : Format.t) (f_r : Format.t) (pi : Projection.t) (x : t) (y : t)  : (t, string) Result.t =
     let* r = wAdd (wDecode f_x x) (wDecode f_y y) in
-    wProject f_z pi r
+    wProject f_r pi r
 
-  (** Add [x] (in [f_x]) to [y] (in [f_y]), and return in [f_z] under projection specification [pi] *)
-  let add (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) (y : t)  : t =
-    match internal_add f_x f_y f_z pi x y with
+  (** Add [x] (in [f_x]) to [y] (in [f_y]), and return in [f_r] under projection specification [pi] *)
+  let add (f_x : Format.t) (f_y : Format.t) (f_r : Format.t) (pi : Projection.t) (x : t) (y : t)  : t =
+    match internal_add f_x f_y f_r pi x y with
     | Ok z -> z
-    | Error _ -> nan f_z (* unreachable by theorem internal_add_ok *)
+    | Error _ -> nan f_r (* unreachable by theorem internal_add_ok *)
 
   let wSubtract (x : CER.t) (y : CER.t) : (CER.t, string) Result.t =
     let open CER in
@@ -695,18 +695,18 @@ module Float = struct
     | R x, R y -> Ok (R (x -. y))
     | _ -> Error "undefined"
 
-  let internal_subtract (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) (y : t) : (t, string) Result.t =
+  let internal_subtract (f_x : Format.t) (f_y : Format.t) (f_r : Format.t) (pi : Projection.t) (x : t) (y : t) : (t, string) Result.t =
     let* r = wSubtract (wDecode f_x x) (wDecode f_y y) in
-    wProject f_z pi r
+    wProject f_r pi r
 
-  (** For [x] (in [f_x]), [y] (in [f_y]) compute [x-y] and return in [f_z],
+  (** For [x] (in [f_x]), [y] (in [f_y]) compute [x-y] and return in [f_r],
       with projection specification [pi] *)
   let subtract (f_x : Format.t) (f_y : Format.t) (x : t) (y : t)
-      (f_z : Format.t) (pi : Projection.t) :
+      (f_r : Format.t) (pi : Projection.t) :
       t =
-    match internal_subtract f_x f_y f_z pi x y with
+    match internal_subtract f_x f_y f_r pi x y with
     | Ok x -> x
-    | Error _ -> nan f_z (* unreachable by theorem internal_subtract_ok *)
+    | Error _ -> nan f_r (* unreachable by theorem internal_subtract_ok *)
 
 
     (** 4.11.4 Multiplication *)
@@ -735,16 +735,16 @@ module Float = struct
     | R x, R y -> Ok (R (x *. y))
     | _ -> Error "undefined"
 
-  let internal_multiply (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) (y : t) : (t, string) Result.t =
+  let internal_multiply (f_x : Format.t) (f_y : Format.t) (f_r : Format.t) (pi : Projection.t) (x : t) (y : t) : (t, string) Result.t =
     let* r = wMultiply (wDecode f_x x) (wDecode f_y y) in
-    wProject f_z pi r
+    wProject f_r pi r
 
-  (** For [x] (in [f_x]), [y] (in [f_y]) compute x * y and return in [f_z],
+  (** For [x] (in [f_x]), [y] (in [f_y]) compute x * y and return in [f_r],
       with rounding mode [rnd] and saturation mode [ovf] *)
-  let multiply (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) (y : t) : t =
-    match internal_multiply f_x f_y f_z pi x y with
+  let multiply (f_x : Format.t) (f_y : Format.t) (f_r : Format.t) (pi : Projection.t) (x : t) (y : t) : t =
+    match internal_multiply f_x f_y f_r pi x y with
     | Ok x -> x
-    | Error _ -> nan f_z (* unreachable by theorem internal_multiply_ok *)
+    | Error _ -> nan f_r (* unreachable by theorem internal_multiply_ok *)
 
 
   (** 4.11.5 Division *)
@@ -765,16 +765,16 @@ module Float = struct
     | R x, R y -> Ok (R (x /. y))
     | _ -> Error "undefined"
 
-  let internal_divide (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) (y : t) : (t, string) Result.t =
+  let internal_divide (f_x : Format.t) (f_y : Format.t) (f_r : Format.t) (pi : Projection.t) (x : t) (y : t) : (t, string) Result.t =
     let* r = wDivide (wDecode f_x x) (wDecode f_y y) in
-    wProject f_z pi r
+    wProject f_r pi r
 
-  (** For [x] (in [f_x]), [y] (in [f_y]) compute x / y and return in [f_z],
+  (** For [x] (in [f_x]), [y] (in [f_y]) compute x / y and return in [f_r],
       with rounding mode [rnd] and saturation mode [ovf] *)
-  let divide (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) (y : t) : t =
-  match internal_divide f_x f_y  f_z pi x y with
+  let divide (f_x : Format.t) (f_y : Format.t) (f_r : Format.t) (pi : Projection.t) (x : t) (y : t) : t =
+  match internal_divide f_x f_y  f_r pi x y with
   | Ok x -> x
-  | Error _ -> nan f_z (* unreachable by theorem internal_divide_ok *)
+  | Error _ -> nan f_r (* unreachable by theorem internal_divide_ok *)
 
 
   (** 4.11.6 Fused Multiply-Add *)
@@ -893,14 +893,14 @@ module Float = struct
       | Error e -> Error e)
     | _ -> Error "undefined"
 
-  let internal_sqrt (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) : (t, string) Result.t =
+  let internal_sqrt (f_x : Format.t) (f_r : Format.t) (pi : Projection.t) (x : t) : (t, string) Result.t =
     let* r = wSqrt (wDecode f_x x) in
-    wProject f_z pi r
+    wProject f_r pi r
 
-  let sqrt (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) : t =
-    match internal_sqrt f_x f_z pi x with
+  let sqrt (f_x : Format.t) (f_r : Format.t) (pi : Projection.t) (x : t) : t =
+    match internal_sqrt f_x f_r pi x with
     | Ok x -> x
-    | Error _ -> (nan f_z) (* unreachable by theorem internal_sqrt_ok *)
+    | Error _ -> (nan f_r) (* unreachable by theorem internal_sqrt_ok *)
 
   let wRSqrt (x : CER.t) : (CER.t, string) Result.t =
     let open CER in
@@ -915,14 +915,14 @@ module Float = struct
       | Error e -> Error e)
     | _ -> Error "undefined"
 
-  let internal_rsqrt (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) : (t, string) Result.t =
+  let internal_rsqrt (f_x : Format.t) (f_r : Format.t) (pi : Projection.t) (x : t) : (t, string) Result.t =
     let* r = wRSqrt (wDecode f_x x) in
-    wProject f_z pi r
+    wProject f_r pi r
 
-  let rsqrt (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) : t =
-  match internal_rsqrt f_x f_z pi x with
+  let rsqrt (f_x : Format.t) (f_r : Format.t) (pi : Projection.t) (x : t) : t =
+  match internal_rsqrt f_x f_r pi x with
   | Ok x -> x
-  | Error _ -> (nan f_z) (* unreachable by theorem internal_rsqrt_ok *)
+  | Error _ -> (nan f_r) (* unreachable by theorem internal_rsqrt_ok *)
 
   let wExp (x : CER.t) : (CER.t, string) Result.t =
     match x with
@@ -932,14 +932,14 @@ module Float = struct
     | R x -> Ok (R (Exp.exp x 9)) (* TODO: Proof that 9 is enough *)
     | _ -> Error "undefined"
 
-  let internal_exp (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) : (t, string) Result.t =
+  let internal_exp (f_x : Format.t) (f_r : Format.t) (pi : Projection.t) (x : t) : (t, string) Result.t =
     let* z = wExp (wDecode f_x x) in
-    wProject f_z pi z
+    wProject f_r pi z
 
-  let exp (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) : t =
-    match internal_exp f_x f_z pi x with
+  let exp (f_x : Format.t) (f_r : Format.t) (pi : Projection.t) (x : t) : t =
+    match internal_exp f_x f_r pi x with
     | Ok x -> x
-    | Error _ -> (nan f_z) (* unreachable by theorem internal_exp_ok *)
+    | Error _ -> (nan f_r) (* unreachable by theorem internal_exp_ok *)
 
   let wLog (x : CER.t) : (CER.t, string) Result.t =
     match x with
@@ -954,14 +954,14 @@ module Float = struct
       | Error e -> Error e)
     | _ -> Error "undefined"
 
-  let internal_log (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) : (t, string) Result.t =
+  let internal_log (f_x : Format.t) (f_r : Format.t) (pi : Projection.t) (x : t) : (t, string) Result.t =
     let* z = wLog (wDecode f_x x) in
-    wProject f_z pi z
+    wProject f_r pi z
 
-  let log (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) : t =
-    match internal_log f_x f_z pi x with
+  let log (f_x : Format.t) (f_r : Format.t) (pi : Projection.t) (x : t) : t =
+    match internal_log f_x f_r pi x with
     | Ok x -> x
-    | Error _ -> nan f_z (* unreachable by theorem internal_log_ok *)
+    | Error _ -> nan f_r (* unreachable by theorem internal_log_ok *)
 
   let wExp2 (x : CER.t) : (CER.t, string) Result.t =
     match x with
@@ -974,14 +974,14 @@ module Float = struct
       | Error e -> Error e)
     | _ -> Error "undefined"
 
-  let internal_exp2 (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) : (t, string) Result.t =
+  let internal_exp2 (f_x : Format.t) (f_r : Format.t) (pi : Projection.t) (x : t) : (t, string) Result.t =
     let* z = wExp2 (wDecode f_x x) in
-    wProject f_z pi z
+    wProject f_r pi z
 
-  let exp2 (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) : t =
-    match internal_exp2 f_x f_z pi x with
+  let exp2 (f_x : Format.t) (f_r : Format.t) (pi : Projection.t) (x : t) : t =
+    match internal_exp2 f_x f_r pi x with
     | Ok x -> x
-    | Error _ -> nan f_z (* unreachable by theorem internal_exp2_ok *)
+    | Error _ -> nan f_r (* unreachable by theorem internal_exp2_ok *)
 
   let wLog2 (x : CER.t) : (CER.t, string) Result.t =
     match x with
@@ -996,14 +996,14 @@ module Float = struct
       | Error e -> Error e)
     | _ -> Error "undefined"
 
-  let internal_log2 (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) : (t, string) Result.t =
+  let internal_log2 (f_x : Format.t) (f_r : Format.t) (pi : Projection.t) (x : t) : (t, string) Result.t =
     let* z = wLog2 (wDecode f_x x) in
-    wProject f_z pi z
+    wProject f_r pi z
 
-  let log2 (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) : t =
-    match internal_log2 f_x f_z pi x with
+  let log2 (f_x : Format.t) (f_r : Format.t) (pi : Projection.t) (x : t) : t =
+    match internal_log2 f_x f_r pi x with
     | Ok x -> x
-    | Error _ -> nan f_z (* unreachable by theorem internal_log2_ok *)
+    | Error _ -> nan f_r (* unreachable by theorem internal_log2_ok *)
 
   let wRecip (x : CER.t) : (CER.t, string) Result.t =
     let open CER in
@@ -1014,14 +1014,14 @@ module Float = struct
     | R x -> Ok (R (1.0 /. x))
     | _ -> Error "undefined"
 
-  let internal_recip  (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) : (t, string) Result.t =
+  let internal_recip  (f_x : Format.t) (f_r : Format.t) (pi : Projection.t) (x : t) : (t, string) Result.t =
     let* r = wRecip (wDecode f_x x) in
-    wProject f_z pi r
+    wProject f_r pi r
 
-  let recip (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) : t =
-    match internal_recip f_x f_z pi x with
+  let recip (f_x : Format.t) (f_r : Format.t) (pi : Projection.t) (x : t) : t =
+    match internal_recip f_x f_r pi x with
     | Ok x -> x
-    | Error _ -> (nan f_z) (* unreachable by theorem internal_recip_ok *)
+    | Error _ -> (nan f_r) (* unreachable by theorem internal_recip_ok *)
 
 
   (** 4.11.9 Hypotenuse *)
@@ -1039,14 +1039,14 @@ module Float = struct
       | Error e -> Error e)
     | _ -> Error "undefined"
 
-  let internal_hypot (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) (y : t) : (t, string) Result.t =
+  let internal_hypot (f_x : Format.t) (f_y : Format.t) (f_r : Format.t) (pi : Projection.t) (x : t) (y : t) : (t, string) Result.t =
     let* z = wHypot (wDecode f_x x) (wDecode f_y y) in
-    wProject f_z pi z
+    wProject f_r pi z
 
-  let hypot (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) (y : t): t =
-    match internal_hypot f_x f_y f_z pi x y with
+  let hypot (f_x : Format.t) (f_y : Format.t) (f_r : Format.t) (pi : Projection.t) (x : t) (y : t): t =
+    match internal_hypot f_x f_y f_r pi x y with
     | Ok r -> r
-    | Error _ -> nan f_z (* unreachable by theorem internal_hypot_ok *)
+    | Error _ -> nan f_r (* unreachable by theorem internal_hypot_ok *)
 
   let wArcTan2Alt (y : CER.t) (x : CER.t) : (CER.t, string) Result.t =
     let open CER in
@@ -1086,14 +1086,14 @@ module Float = struct
     | R y, R x when y <. 0.0 && x <. 0.0 -> Ok (R ((Trigonometric.arctan (y /. x) 32) -. (Pi.pi 8)))
     | _ -> Error "undefined"
 
-  let internal_arcTan2Alt (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) (y : t) : (t, string) Result.t =
+  let internal_arcTan2Alt (f_x : Format.t) (f_y : Format.t) (f_r : Format.t) (pi : Projection.t) (x : t) (y : t) : (t, string) Result.t =
     let* z = wArcTan2Alt (wDecode f_x x) (wDecode f_y y) in
-    wProject f_z pi z
+    wProject f_r pi z
 
-  let arcTan2Alt (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (pi : Projection.t) (y : t) (x : t) : t =
-    match internal_arcTan2Alt f_x f_y f_z pi y x with
+  let arcTan2Alt (f_x : Format.t) (f_y : Format.t) (f_r : Format.t) (pi : Projection.t) (y : t) (x : t) : t =
+    match internal_arcTan2Alt f_x f_y f_r pi y x with
     | Ok r -> r
-    | Error _ -> nan f_z (* unreachable by theorem internal_arcTan2_ok *)
+    | Error _ -> nan f_r (* unreachable by theorem internal_arcTan2_ok *)
 
   let wArcTan2 (y : CER.t) (x : CER.t) : (CER.t, string) Result.t =
     let open CER in
@@ -1117,9 +1117,9 @@ module Float = struct
     | R y, R x when y <. 0.0 && x <. 0.0 -> Ok (R ((Trigonometric.arctan (y /. x) 32) -. (Pi.pi 8)))
     | _ -> Error "undefined"
 
-  let internal_arcTan2 (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) (y : t) : (t, string) Result.t =
+  let internal_arcTan2 (f_x : Format.t) (f_y : Format.t) (f_r : Format.t) (pi : Projection.t) (x : t) (y : t) : (t, string) Result.t =
     let* z = wArcTan2 (wDecode f_x x) (wDecode f_y y) in
-    wProject f_z pi z
+    wProject f_r pi z
 
   let wArcTan2Pi (y : CER.t) (x : CER.t) : (CER.t, string) Result.t =
     let open CER in
@@ -1143,14 +1143,14 @@ module Float = struct
     | R y, R x when y <. 0.0 && x <. 0.0 -> Ok (R (((Trigonometric.arctan (y /. x) 32) -. (Pi.pi 8)) /. Pi.pi 8))
     | _ -> Error "undefined"
 
-  let internal_arcTan2Pi (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) (y : t) : (t, string) Result.t =
+  let internal_arcTan2Pi (f_x : Format.t) (f_y : Format.t) (f_r : Format.t) (pi : Projection.t) (x : t) (y : t) : (t, string) Result.t =
     let* z = wArcTan2Pi (wDecode f_x x) (wDecode f_y y) in
-    wProject f_z pi z
+    wProject f_r pi z
 
-  let arcTan2Pi (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (pi : Projection.t) (y : t) (x : t) : t =
-    match internal_arcTan2Pi f_x f_y f_z pi y x with
+  let arcTan2Pi (f_x : Format.t) (f_y : Format.t) (f_r : Format.t) (pi : Projection.t) (y : t) (x : t) : t =
+    match internal_arcTan2Pi f_x f_y f_r pi y x with
     | Ok r -> r
-    | Error _ -> nan f_z (* unreachable by theorem internal_arcTan2Pi_ok *)
+    | Error _ -> nan f_r (* unreachable by theorem internal_arcTan2Pi_ok *)
 
   (** 4.12 Extrema *)
 
@@ -1721,7 +1721,7 @@ module Float = struct
 
   let wBlockProject
     (b : int)
-    (f_s : Format.t) (f_z : Format.t) (pi_z : Projection.t)
+    (f_s : Format.t) (f_r : Format.t) (pi_z : Projection.t)
     (s, x : t * CER.t list) :
     (t list, string) Result.t =
     if b < 0 || b <> List.length x then
@@ -1730,7 +1730,7 @@ module Float = struct
       let open CER in
       let cs = wDecode f_s s in
       let@ cz = wBlockProject_map_cz cs x in
-      let@ z = map_project f_z pi_z cz in
+      let@ z = map_project f_r pi_z cz in
       Ok z
 
 
@@ -1740,7 +1740,7 @@ module Float = struct
 
   let convertFromBlock
     (b : int)
-    (f_s : Format.t) (f_x : Format.t) (f_z : Format.t)
+    (f_s : Format.t) (f_x : Format.t) (f_r : Format.t)
     (pi_s : Projection.t) (pi_z : Projection.t)
     (s, x : t * t list) :
     (t list, string) Result.t =
@@ -1748,7 +1748,7 @@ module Float = struct
       Error "invalid block size"
     else
       let* cz = wBlockDecode b f_s f_x (s, x) in
-      let@ z = map_project f_z pi_z cz in
+      let@ z = map_project f_r pi_z cz in
       Ok z
 
 
@@ -1758,11 +1758,11 @@ module Float = struct
 
   let convertToBlock
     (b : int)
-    (f_s : Format.t) (f_x : Format.t) (f_z : Format.t) (pi_z : Projection.t)
+    (f_s : Format.t) (f_x : Format.t) (f_r : Format.t) (pi_z : Projection.t)
     (x, s : t list * t) :
     (t * t list, string) Result.t =
     let cx = map_decode f_x x in
-    let* z = wBlockProject b f_s f_z pi_z (s, cx) in
+    let* z = wBlockProject b f_s f_r pi_z (s, cx) in
     Ok (s, z)
 
 
@@ -1778,7 +1778,7 @@ module Float = struct
 
   let convertToBlockMaxAbsFinite
     (b : int)
-    (f_s : Format.t) (f_x : Format.t) (f_z : Format.t)
+    (f_s : Format.t) (f_x : Format.t) (f_r : Format.t)
     (pi_s : Projection.t) (pi_z : Projection.t)
     (x : t list) :
     (t * t list, string) Result.t =
@@ -1791,7 +1791,7 @@ module Float = struct
       let* s = wProject f_s pi_s cs in
       let s' = wDecode f_s s in
       let@ cz = map_convert_maf s' cx in
-      let@ z = map_project f_z pi_z cz in
+      let@ z = map_project f_r pi_z cz in
       Ok (s, z)
 
 
@@ -1805,12 +1805,12 @@ module Float = struct
   let blockReduceAdd
     (b : int)
     (f_sx : Format.t) (f_x : Format.t)
-    (f_z : Format.t) (pi_z : Projection.t)
+    (f_r : Format.t) (pi_z : Projection.t)
     (s_x, x : t * t list) :
     (t, string) Result.t =
     let* cx = wBlockDecode b f_sx f_x (s_x, x) in
     let* cz = reduce_wAdd cx in
-    let z = wProject f_z pi_z cz in
+    let z = wProject f_r pi_z cz in
     z
 
   let reduce_wMultiply (cp : CER.t list) : (CER.t, string) Result.t =
@@ -1819,12 +1819,12 @@ module Float = struct
   let blockReduceMultiply
     (b : int)
     (f_sx : Format.t) (f_x : Format.t)
-    (f_z : Format.t) (pi_z : Projection.t)
+    (f_r : Format.t) (pi_z : Projection.t)
     (s_x, x : t * t list) :
     (t, string) Result.t =
     let* cx = wBlockDecode b f_sx f_x (s_x, x) in
     let* cz = reduce_wMultiply cx in
-    let z = wProject f_z pi_z cz in
+    let z = wProject f_r pi_z cz in
     z
 
 
@@ -1837,7 +1837,7 @@ module Float = struct
     (b : int)
     (f_sx : Format.t) (f_x : Format.t)
     (f_sy : Format.t) (f_y : Format.t)
-    (f_z : Format.t)
+    (f_r : Format.t)
     (pi_z : Projection.t)
     (s_x, x : t * t list)
     (s_y, y : t * t list) :
@@ -1846,7 +1846,7 @@ module Float = struct
     let* cy = wBlockDecode b f_sy f_y (s_y, y) in
     let*@ cp = map2_wMultiply cx cy in
     let* cz = reduce_wAdd cp in
-    let* z = wProject f_z pi_z cz in
+    let* z = wProject f_r pi_z cz in
     Ok z
 
 
@@ -1907,7 +1907,7 @@ module Float = struct
     (b : int)
     (params : block_op_parameter list)
     (f_s : Format.t)
-    (f_z : Format.t)
+    (f_r : Format.t)
     (s_z : t)
     (pi_z : Projection.t)
     (args: block_op_argument list)
@@ -1923,7 +1923,7 @@ module Float = struct
       let*@ cxs = block_op_map2_wBlockDecode b params args in
       let* x1 = nth_r 0 cxs in
       let*@ cz = block_op_map2_wop_unary wOp x1 in
-      let* z = wBlockProject b f_s f_z pi_z (s_z, cz) in
+      let* z = wBlockProject b f_s f_r pi_z (s_z, cz) in
       Ok (s_z, z)
     )
     (* [@@macro] *)
@@ -1932,7 +1932,7 @@ module Float = struct
     (b : int)
     (params : block_op_parameter list)
     (f_s : Format.t)
-    (f_z : Format.t)
+    (f_r : Format.t)
     (s_z : t)
     (pi_z : Projection.t)
     (args: block_op_argument list)
@@ -1949,7 +1949,7 @@ module Float = struct
       let* x1 = nth_r 0 cxs in
       let* x2 = nth_r 1 cxs in
       let*@ cz = block_op_map2_wop_binary wOp x1 x2 in
-      let* z = wBlockProject b f_s f_z pi_z (s_z, cz) in
+      let* z = wBlockProject b f_s f_r pi_z (s_z, cz) in
       Ok (s_z, z)
     )
     (* [@@macro] *)
@@ -1958,7 +1958,7 @@ module Float = struct
     (b : int)
     (params : block_op_parameter list)
     (f_s : Format.t)
-    (f_z : Format.t)
+    (f_r : Format.t)
     (s_z : t)
     (pi_z : Projection.t)
     (args: block_op_argument list)
@@ -1976,184 +1976,184 @@ module Float = struct
       let* x2 = nth_r 1 cxs in
       let* x3 = nth_r 2 cxs in
       let*@ cz = block_op_map2_wop_ternary wOp x1 x2 x3 in
-      let* z = wBlockProject b f_s f_z pi_z (s_z, cz) in
+      let* z = wBlockProject b f_s f_r pi_z (s_z, cz) in
       Ok (s_z, z)
     )
     (* [@@macro] *)
 
-  let blockAbs b f_sx f_x f_s f_z pi_s pi_z (s_x, x) s_z =
+  let blockAbs b f_sx f_x f_s f_r pi_s pi_z (s_x, x) s_z =
     block_op_unary b
       [{f_s = f_sx; f_x}]
-      f_s f_z s_z pi_z
+      f_s f_r s_z pi_z
       [{s = s_x; x}]
       wAbs
 
-  let blockNegate b f_sx f_x f_s f_z pi_s pi_z (s_x, x) s_z =
+  let blockNegate b f_sx f_x f_s f_r pi_s pi_z (s_x, x) s_z =
     block_op_unary b
       [{f_s = f_sx; f_x}]
-      f_s f_z s_z pi_z
+      f_s f_r s_z pi_z
       [{s = s_x; x}]
       wNegate
 
-  let blockExp b f_sx f_x f_s f_z pi_s pi_z (s_x, x) s_z =
+  let blockExp b f_sx f_x f_s f_r pi_s pi_z (s_x, x) s_z =
     block_op_unary b
       [{f_s = f_sx; f_x}]
-      f_s f_z s_z pi_z
+      f_s f_r s_z pi_z
       [{s = s_x; x}]
       wExp
 
-  let blockSqrt b f_sx f_x f_s f_z pi_s pi_z (s_x, x) s_z =
+  let blockSqrt b f_sx f_x f_s f_r pi_s pi_z (s_x, x) s_z =
     block_op_unary b
       [{f_s = f_sx; f_x}]
-      f_s f_z s_z pi_z
+      f_s f_r s_z pi_z
       [{s = s_x; x}]
       wSqrt
 
-  let blockRSqrt b f_sx f_x f_s f_z pi_s pi_z (s_x, x) s_z =
+  let blockRSqrt b f_sx f_x f_s f_r pi_s pi_z (s_x, x) s_z =
     block_op_unary b
       [{f_s = f_sx; f_x}]
-      f_s f_z s_z pi_z
+      f_s f_r s_z pi_z
       [{s = s_x; x}]
       wRSqrt
 
-  let blockExp2 b f_sx f_x f_s f_z pi_s pi_z (s_x, x) s_z =
+  let blockExp2 b f_sx f_x f_s f_r pi_s pi_z (s_x, x) s_z =
     block_op_unary b
       [{f_s = f_sx; f_x}]
-      f_s f_z s_z pi_z
+      f_s f_r s_z pi_z
       [{s = s_x; x}]
       wExp2
 
-  let blockLog2 b f_sx f_x f_s f_z pi_s pi_z (s_x, x) s_z =
+  let blockLog2 b f_sx f_x f_s f_r pi_s pi_z (s_x, x) s_z =
     block_op_unary b
       [{f_s = f_sx; f_x}]
-      f_s f_z s_z pi_z
+      f_s f_r s_z pi_z
       [{s = s_x; x}]
       wLog2
 
-  let blockLog b f_sx f_x f_s f_z pi_s pi_z (s_x, x) s_z =
+  let blockLog b f_sx f_x f_s f_r pi_s pi_z (s_x, x) s_z =
     block_op_unary b
       [{f_s = f_sx; f_x}]
-      f_s f_z s_z pi_z
+      f_s f_r s_z pi_z
       [{s = s_x; x}]
       wLog
 
-  let blockRecip b f_sx f_x f_s f_z pi_s pi_z (s_x, x) s_z =
+  let blockRecip b f_sx f_x f_s f_r pi_s pi_z (s_x, x) s_z =
     block_op_unary b
       [{f_s = f_sx; f_x}]
-      f_s f_z s_z pi_z
+      f_s f_r s_z pi_z
       [{s = s_x; x}]
       wRecip
 
 
-  let blockCopySign b f_sx1 f_x1 f_sx2 f_x2 f_s f_z pi_s pi_z (s_x1, x1) (s_x2, x2) s_z =
+  let blockCopySign b f_sx1 f_x1 f_sx2 f_x2 f_s f_r pi_s pi_z (s_x1, x1) (s_x2, x2) s_z =
     block_op_binary b
       [{f_s = f_sx1; f_x = f_x1}; {f_s = f_sx2; f_x = f_x2}]
-      f_s f_z s_z pi_z
+      f_s f_r s_z pi_z
       [{s=s_x1; x = x1}; {s=s_x2; x = x2}]
       wCopySign
 
-  let blockAdd b f_sx1 f_x1 f_sx2 f_x2 f_s f_z pi_s pi_z (s_x1, x1) (s_x2, x2) s_z =
+  let blockAdd b f_sx1 f_x1 f_sx2 f_x2 f_s f_r pi_s pi_z (s_x1, x1) (s_x2, x2) s_z =
     block_op_binary b
       [{f_s = f_sx1; f_x = f_x1}; {f_s = f_sx2; f_x = f_x2}]
-      f_s f_z s_z pi_z
+      f_s f_r s_z pi_z
       [{s=s_x1; x = x1}; {s=s_x2; x = x2}]
       wAdd
 
-  let blockSubtract b f_sx1 f_x1 f_sx2 f_x2 f_s f_z pi_s pi_z (s_x1, x1) (s_x2, x2) s_z =
+  let blockSubtract b f_sx1 f_x1 f_sx2 f_x2 f_s f_r pi_s pi_z (s_x1, x1) (s_x2, x2) s_z =
     block_op_binary b
       [{f_s = f_sx1; f_x = f_x1}; {f_s = f_sx2; f_x = f_x2}]
-      f_s f_z s_z pi_z
+      f_s f_r s_z pi_z
       [{s=s_x1; x = x1}; {s=s_x2; x = x2}]
       wSubtract
 
-  let blockMultiply b f_sx1 f_x1 f_sx2 f_x2 f_s f_z pi_s pi_z (s_x1, x1) (s_x2, x2) s_z =
+  let blockMultiply b f_sx1 f_x1 f_sx2 f_x2 f_s f_r pi_s pi_z (s_x1, x1) (s_x2, x2) s_z =
     block_op_binary b
       [{f_s = f_sx1; f_x = f_x1}; {f_s = f_sx2; f_x = f_x2}]
-      f_s f_z s_z pi_z
+      f_s f_r s_z pi_z
       [{s=s_x1; x = x1}; {s=s_x2; x = x2}]
       wMultiply
 
-  let blockDivide b f_sx1 f_x1 f_sx2 f_x2 f_s f_z pi_s pi_z (s_x1, x1) (s_x2, x2) s_z =
+  let blockDivide b f_sx1 f_x1 f_sx2 f_x2 f_s f_r pi_s pi_z (s_x1, x1) (s_x2, x2) s_z =
     block_op_binary b
       [{f_s = f_sx1; f_x = f_x1}; {f_s = f_sx2; f_x = f_x2}]
-      f_s f_z s_z pi_z
+      f_s f_r s_z pi_z
       [{s=s_x1; x = x1}; {s=s_x2; x = x2}]
       wDivide
 
-  let blockHypot b f_sx1 f_x1 f_sx2 f_x2 f_s f_z pi_s pi_z (s_x1, x1) (s_x2, x2) s_z =
+  let blockHypot b f_sx1 f_x1 f_sx2 f_x2 f_s f_r pi_s pi_z (s_x1, x1) (s_x2, x2) s_z =
     block_op_binary b
       [{f_s = f_sx1; f_x = f_x1}; {f_s = f_sx2; f_x = f_x2}]
-      f_s f_z s_z pi_z
+      f_s f_r s_z pi_z
       [{s=s_x1; x = x1}; {s=s_x2; x = x2}]
       wHypot
 
-  let blockMinimum b f_sx1 f_x1 f_sx2 f_x2 f_s f_z pi_s pi_z (s_x1, x1) (s_x2, x2) s_z =
+  let blockMinimum b f_sx1 f_x1 f_sx2 f_x2 f_s f_r pi_s pi_z (s_x1, x1) (s_x2, x2) s_z =
     block_op_binary b
       [{f_s = f_sx1; f_x = f_x1}; {f_s = f_sx2; f_x = f_x2}]
-      f_s f_z s_z pi_z
+      f_s f_r s_z pi_z
       [{s=s_x1; x = x1}; {s=s_x2; x = x2}]
       wMinimum
 
-  let blockMinimumNumber b f_sx1 f_x1 f_sx2 f_x2 f_s f_z pi_s pi_z (s_x1, x1) (s_x2, x2) s_z =
+  let blockMinimumNumber b f_sx1 f_x1 f_sx2 f_x2 f_s f_r pi_s pi_z (s_x1, x1) (s_x2, x2) s_z =
     block_op_binary b
       [{f_s = f_sx1; f_x = f_x1}; {f_s = f_sx2; f_x = f_x2}]
-      f_s f_z s_z pi_z
+      f_s f_r s_z pi_z
       [{s=s_x1; x = x1}; {s=s_x2; x = x2}]
       wMinimumNumber
 
-  let blockMinimumMagnitude b f_sx1 f_x1 f_sx2 f_x2 f_s f_z pi_s pi_z (s_x1, x1) (s_x2, x2) s_z =
+  let blockMinimumMagnitude b f_sx1 f_x1 f_sx2 f_x2 f_s f_r pi_s pi_z (s_x1, x1) (s_x2, x2) s_z =
     block_op_binary b
       [{f_s = f_sx1; f_x = f_x1}; {f_s = f_sx2; f_x = f_x2}]
-      f_s f_z s_z pi_z
+      f_s f_r s_z pi_z
       [{s=s_x1; x = x1}; {s=s_x2; x = x2}]
       wMinimumMagnitude
 
-  let blockMinimumMagnitudeNumber b f_sx1 f_x1 f_sx2 f_x2 f_s f_z pi_s pi_z (s_x1, x1) (s_x2, x2) s_z =
+  let blockMinimumMagnitudeNumber b f_sx1 f_x1 f_sx2 f_x2 f_s f_r pi_s pi_z (s_x1, x1) (s_x2, x2) s_z =
     block_op_binary b
       [{f_s = f_sx1; f_x = f_x1}; {f_s = f_sx2; f_x = f_x2}]
-      f_s f_z s_z pi_z
+      f_s f_r s_z pi_z
       [{s=s_x1; x = x1}; {s=s_x2; x = x2}]
       wMinimumMagnitudeNumber
 
-  let blockMaximum b f_sx1 f_x1 f_sx2 f_x2 f_s f_z pi_s pi_z (s_x1, x1) (s_x2, x2) s_z =
+  let blockMaximum b f_sx1 f_x1 f_sx2 f_x2 f_s f_r pi_s pi_z (s_x1, x1) (s_x2, x2) s_z =
     block_op_binary b
       [{f_s = f_sx1; f_x = f_x1}; {f_s = f_sx2; f_x = f_x2}]
-      f_s f_z s_z pi_z
+      f_s f_r s_z pi_z
       [{s=s_x1; x = x1}; {s=s_x2; x = x2}]
       wMaximum
 
-  let blockMaximumNumber b f_sx1 f_x1 f_sx2 f_x2 f_s f_z pi_s pi_z (s_x1, x1) (s_x2, x2) s_z =
+  let blockMaximumNumber b f_sx1 f_x1 f_sx2 f_x2 f_s f_r pi_s pi_z (s_x1, x1) (s_x2, x2) s_z =
     block_op_binary b
       [{f_s = f_sx1; f_x = f_x1}; {f_s = f_sx2; f_x = f_x2}]
-      f_s f_z s_z pi_z
+      f_s f_r s_z pi_z
       [{s=s_x1; x = x1}; {s=s_x2; x = x2}]
       wMaximumNumber
 
-  let blockMaximumMagnitude b f_sx1 f_x1 f_sx2 f_x2 f_s f_z pi_s pi_z (s_x1, x1) (s_x2, x2) s_z =
+  let blockMaximumMagnitude b f_sx1 f_x1 f_sx2 f_x2 f_s f_r pi_s pi_z (s_x1, x1) (s_x2, x2) s_z =
     block_op_binary b
       [{f_s = f_sx1; f_x = f_x1}; {f_s = f_sx2; f_x = f_x2}]
-      f_s f_z s_z pi_z
+      f_s f_r s_z pi_z
       [{s=s_x1; x = x1}; {s=s_x2; x = x2}]
       wMaximumMagnitude
 
-  let blockMaximumMagnitudeNumber b f_sx1 f_x1 f_sx2 f_x2 f_s f_z pi_s pi_z (s_x1, x1) (s_x2, x2) s_z =
+  let blockMaximumMagnitudeNumber b f_sx1 f_x1 f_sx2 f_x2 f_s f_r pi_s pi_z (s_x1, x1) (s_x2, x2) s_z =
     block_op_binary b
       [{f_s = f_sx1; f_x = f_x1}; {f_s = f_sx2; f_x = f_x2}]
-      f_s f_z s_z pi_z
+      f_s f_r s_z pi_z
       [{s=s_x1; x=x1}; {s=s_x2; x=x2}]
       wMaximumMagnitudeNumber
 
-  let blockFMA b f_sx1 f_x1 f_sx2 f_x2 f_sx3 f_x3 f_s f_z pi_s pi_z (s_x1, x1) (s_x2, x2) (s_x3, x3) s_z =
+  let blockFMA b f_sx1 f_x1 f_sx2 f_x2 f_sx3 f_x3 f_s f_r pi_s pi_z (s_x1, x1) (s_x2, x2) (s_x3, x3) s_z =
     block_op_ternary b
       [{f_s = f_sx1; f_x = f_x1}; {f_s = f_sx2; f_x = f_x2}; {f_s = f_sx3; f_x = f_x3}]
-      f_s f_z s_z pi_z
+      f_s f_r s_z pi_z
       [{s = s_x1; x = x1}; {s = s_x2; x = x2}; {s = s_x3; x = x3}]
       wFMA
 
-  let blockFAA b f_sx1 f_x1 f_sx2 f_x2 f_sx3 f_x3 f_s f_z pi_s pi_z (s_x1, x1) (s_x2, x2) (s_x3, x3) s_z =
+  let blockFAA b f_sx1 f_x1 f_sx2 f_x2 f_sx3 f_x3 f_s f_r pi_s pi_z (s_x1, x1) (s_x2, x2) (s_x3, x3) s_z =
     block_op_ternary b
       [{f_s = f_sx1; f_x = f_x1}; {f_s = f_sx2; f_x = f_x2}; {f_s = f_sx3; f_x = f_x3}]
-      f_s f_z s_z pi_z
+      f_s f_r s_z pi_z
       [{s = s_x1; x = x1}; {s = s_x2; x = x2}; {s = s_x3; x = x3}]
       wFAA
 
@@ -2161,46 +2161,46 @@ module Float = struct
   (** Extra: Show how to do ScaledAdd, ScaledFMA, ScaledMultiply with B=1 *)
 
   (** For [x, s_x] (in [f_x]), [y, s_y] (in [f_y]),
-      compute [x] * [s_x] + [y] * [s_y] and return in [f_z],
+      compute [x] * [s_x] + [y] * [s_y] and return in [f_r],
       with projection specification [pi] *)
-  let internal_scaledAdd f_x f_y f_z pi x s_x y s_y =
-    let* s_z = wEncode f_z CER.one in (* Note: 1 is not in all formats, e.g. binary2p1se *)
-    let* (_, r) = blockAdd 1 f_x f_x f_y f_y f_z f_z pi pi (s_x, [x]) (s_y, [y]) s_z in
+  let internal_scaledAdd f_x f_y f_r pi x s_x y s_y =
+    let* s_z = wEncode f_r CER.one in (* Note: 1 is not in all formats, e.g. binary2p1se *)
+    let* (_, r) = blockAdd 1 f_x f_x f_y f_y f_r f_r pi pi (s_x, [x]) (s_y, [y]) s_z in
     Ok (List.hd r)
 
-  let scaledAdd (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) (s_x : t) (y : t) (s_y : t) : t =
-    match internal_scaledAdd f_x f_y f_z pi x s_x y s_y with
+  let scaledAdd (f_x : Format.t) (f_y : Format.t) (f_r : Format.t) (pi : Projection.t) (x : t) (s_x : t) (y : t) (s_y : t) : t =
+    match internal_scaledAdd f_x f_y f_r pi x s_x y s_y with
     | Ok r -> r
-    | Error _ -> nan f_z (* unreachable by theorem internal_scaled_add_ok *)
+    | Error _ -> nan f_r (* unreachable by theorem internal_scaled_add_ok *)
 
   (** For [x, s_x] (in [f_x]), [y, s_y] (in [f_y]),
-      compute [x] * [y] * [s] and return in [f_z],
+      compute [x] * [y] * [s] and return in [f_r],
       with projection specification [pi] *)
-  let internal_scaledMultiply f_x f_y f_z pi x s_x y s_y =
-    let* s_z = wEncode f_z CER.one in (* Note: 1 is not in all formats, e.g. binary2p1se *)
-    let* (_, r) = blockMultiply 1 f_x f_x f_y f_y f_z f_z pi pi (s_x, [x]) (s_y, [y]) s_z in
+  let internal_scaledMultiply f_x f_y f_r pi x s_x y s_y =
+    let* s_z = wEncode f_r CER.one in (* Note: 1 is not in all formats, e.g. binary2p1se *)
+    let* (_, r) = blockMultiply 1 f_x f_x f_y f_y f_r f_r pi pi (s_x, [x]) (s_y, [y]) s_z in
     Ok (List.hd r)
 
-  let scaledMultiply (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) (s_x : t) (y : t) (s_y : t) : t =
-    match internal_scaledMultiply f_x f_y f_z pi x s_x y s_y with
+  let scaledMultiply (f_x : Format.t) (f_y : Format.t) (f_r : Format.t) (pi : Projection.t) (x : t) (s_x : t) (y : t) (s_y : t) : t =
+    match internal_scaledMultiply f_x f_y f_r pi x s_x y s_y with
     | Ok r -> r
-    | Error _ -> nan f_z (* unreachable by theorem internal_scaled_multiply_ok *)
+    | Error _ -> nan f_r (* unreachable by theorem internal_scaled_multiply_ok *)
 
   (** For [x] (in [f_x]), [y] (in [f_y]), [s_xy] (in [f_sxy]),
-      [z] (in [f_z]) and [s_z] (in [f_sz]), compute
+      [z] (in [f_r]) and [s_z] (in [f_sz]), compute
       [x] * [y] * [s_xy] + [z] * [s_z] and return in [f_r],
       with projection specification [pi] *)
-  let internal_scaledFMA f_x f_y f_sxy f_z f_sz f_r pi x y s_xy z s_z =
+  let internal_scaledFMA f_x f_y f_sxy f_r f_sz f_r pi x y s_xy z s_z =
     let* s_r = wEncode f_r CER.one in
-    let* (_, r) = blockFMA 1 f_sxy f_x f_sxy f_y f_z f_sz f_r f_r pi pi (s_xy, [x]) (s_xy, [y]) (s_z, [z]) s_r in
+    let* (_, r) = blockFMA 1 f_sxy f_x f_sxy f_y f_r f_sz f_r f_r pi pi (s_xy, [x]) (s_xy, [y]) (s_z, [z]) s_r in
     Ok (List.hd r)
 
   let scaledFMA
-    (f_x : Format.t) (f_y : Format.t) (f_sxy : Format.t) (f_z : Format.t) (f_sz : Format.t) (f_r : Format.t) (pi : Projection.t)
+    (f_x : Format.t) (f_y : Format.t) (f_sxy : Format.t) (f_r : Format.t) (f_sz : Format.t) (f_r : Format.t) (pi : Projection.t)
     (x : t) (y : t) (s_xy : t) (z : t) (s_z : t) : t =
-    match internal_scaledFMA f_x f_y f_sxy f_z f_sz f_r pi x y s_xy z s_z with
+    match internal_scaledFMA f_x f_y f_sxy f_r f_sz f_r pi x y s_xy z s_z with
     | Ok r -> r
-    | Error _ -> nan f_z (* unreachable by theorem internal_scaled_fma_ok *)
+    | Error _ -> nan f_r (* unreachable by theorem internal_scaled_fma_ok *)
 
 
   (** New operations *)
@@ -2220,14 +2220,14 @@ module Float = struct
     | x -> wSubtract (wExp x) (R 1.0)
     | _ -> Error "undefined"
 
-  let internal_expMinusOne (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) : (t, string) Result.t =
+  let internal_expMinusOne (f_x : Format.t) (f_r : Format.t) (pi : Projection.t) (x : t) : (t, string) Result.t =
     let* z = wExpMinusOne (wDecode f_x x) in
-    wProject f_z pi z
+    wProject f_r pi z
 
-  let expMinusOne (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) : t =
-    match internal_expMinusOne f_x f_z pi x with
+  let expMinusOne (f_x : Format.t) (f_r : Format.t) (pi : Projection.t) (x : t) : t =
+    match internal_expMinusOne f_x f_r pi x with
     | Ok x -> x
-    | Error _ -> (nan f_z) (* unreachable by theorem internal_expm1_ok *)
+    | Error _ -> (nan f_r) (* unreachable by theorem internal_expm1_ok *)
 
   let wLogOnePlus (x : CER.t) : (CER.t, string) Result.t =
     let open CER in
@@ -2242,14 +2242,14 @@ module Float = struct
     | x -> wLog (wAdd (R 1.0) x)
     | _ -> Error "undefined"
 
-  let internal_logOnePlus(f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) : (t, string) Result.t =
+  let internal_logOnePlus(f_x : Format.t) (f_r : Format.t) (pi : Projection.t) (x : t) : (t, string) Result.t =
     let* z = wLogOnePlus (wDecode f_x x) in
-    wProject f_z pi z
+    wProject f_r pi z
 
-  let logOnePlus (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) : t =
-    match internal_logOnePlus f_x f_z pi x with
+  let logOnePlus (f_x : Format.t) (f_r : Format.t) (pi : Projection.t) (x : t) : t =
+    match internal_logOnePlus f_x f_r pi x with
     | Ok x -> x
-    | Error _ -> (nan f_z) (* unreachable by theorem internal_log1p_ok *)
+    | Error _ -> (nan f_r) (* unreachable by theorem internal_log1p_ok *)
 
   let wSin (x : CER.t) : (CER.t, string) Result.t =
     let open CER in
@@ -2261,14 +2261,14 @@ module Float = struct
     | R x -> Ok (R (sin x 15)) (* TODO: prove that 15 is enough *)
     | _ -> Error "undefined"
 
-  let internal_sin (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) : (t, string) Result.t =
+  let internal_sin (f_x : Format.t) (f_r : Format.t) (pi : Projection.t) (x : t) : (t, string) Result.t =
     let* z = wSin (wDecode f_x x) in
-    wProject f_z pi z
+    wProject f_r pi z
 
-  let sin (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) : t =
-    match internal_sin f_x f_z pi x with
+  let sin (f_x : Format.t) (f_r : Format.t) (pi : Projection.t) (x : t) : t =
+    match internal_sin f_x f_r pi x with
     | Ok x -> x
-    | Error _ -> (nan f_z) (* unreachable by theorem internal_sin_ok *)
+    | Error _ -> (nan f_r) (* unreachable by theorem internal_sin_ok *)
 
   let wCos (x : CER.t) : (CER.t, string) Result.t =
     let open CER in
@@ -2280,14 +2280,14 @@ module Float = struct
     | R x -> Ok (R (cos x 15)) (* TODO: prove that 15 is enough *)
     | _ -> Error "undefined"
 
-  let internal_cos (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) : (t, string) Result.t =
+  let internal_cos (f_x : Format.t) (f_r : Format.t) (pi : Projection.t) (x : t) : (t, string) Result.t =
     let* z = wCos (wDecode f_x x) in
-    wProject f_z pi z
+    wProject f_r pi z
 
-  let cos (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) : t =
-    match internal_cos f_x f_z pi x with
+  let cos (f_x : Format.t) (f_r : Format.t) (pi : Projection.t) (x : t) : t =
+    match internal_cos f_x f_r pi x with
     | Ok x -> x
-    | Error _ -> (nan f_z) (* unreachable by theorem internal_cos_ok *)
+    | Error _ -> (nan f_r) (* unreachable by theorem internal_cos_ok *)
 
   let wTan (x : CER.t) : (CER.t, string) Result.t =
     let open CER in
@@ -2303,14 +2303,14 @@ module Float = struct
       | Error e -> Error e)
     | _ -> Error "undefined"
 
-  let internal_tan (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) : (t, string) Result.t =
+  let internal_tan (f_x : Format.t) (f_r : Format.t) (pi : Projection.t) (x : t) : (t, string) Result.t =
     let* z = wTan (wDecode f_x x) in
-    wProject f_z pi z
+    wProject f_r pi z
 
-  let tan (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) : t =
-    match internal_tan f_x f_z pi x with
+  let tan (f_x : Format.t) (f_r : Format.t) (pi : Projection.t) (x : t) : t =
+    match internal_tan f_x f_r pi x with
     | Ok x -> x
-    | Error _ -> (nan f_z) (* unreachable by theorem internal_tan_ok *)
+    | Error _ -> (nan f_r) (* unreachable by theorem internal_tan_ok *)
 
   let wSinh (x : CER.t) : (CER.t, string) Result.t =
     let open CER in
@@ -2322,14 +2322,14 @@ module Float = struct
     | R x -> Ok (R (sinh x 15)) (* TODO: prove that 15 is enough *)
     | _ -> Error "undefined"
 
-  let internal_sinh (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) : (t, string) Result.t =
+  let internal_sinh (f_x : Format.t) (f_r : Format.t) (pi : Projection.t) (x : t) : (t, string) Result.t =
     let* z = wSinh (wDecode f_x x) in
-    wProject f_z pi z
+    wProject f_r pi z
 
-  let sinh (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) : t =
-    match internal_sinh f_x f_z pi x with
+  let sinh (f_x : Format.t) (f_r : Format.t) (pi : Projection.t) (x : t) : t =
+    match internal_sinh f_x f_r pi x with
     | Ok x -> x
-    | Error _ -> (nan f_z) (* unreachable by theorem internal_sinh_ok *)
+    | Error _ -> (nan f_r) (* unreachable by theorem internal_sinh_ok *)
 
   let wCosh (x : CER.t) : (CER.t, string) Result.t =
     let open CER in
@@ -2341,14 +2341,14 @@ module Float = struct
     | R x -> Ok (R (cosh x 15)) (* TODO: prove that 15 is enough *)
     | _ -> Error "undefined"
 
-  let internal_cosh (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) : (t, string) Result.t =
+  let internal_cosh (f_x : Format.t) (f_r : Format.t) (pi : Projection.t) (x : t) : (t, string) Result.t =
     let* z = wCosh (wDecode f_x x) in
-    wProject f_z pi z
+    wProject f_r pi z
 
-  let cosh (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) : t =
-    match internal_cosh f_x f_z pi x with
+  let cosh (f_x : Format.t) (f_r : Format.t) (pi : Projection.t) (x : t) : t =
+    match internal_cosh f_x f_r pi x with
     | Ok x -> x
-    | Error _ -> (nan f_z) (* unreachable by theorem internal_cosh_ok *)
+    | Error _ -> (nan f_r) (* unreachable by theorem internal_cosh_ok *)
 
   let wTanh (x : CER.t) : (CER.t, string) Result.t =
     let open CER in
@@ -2360,14 +2360,14 @@ module Float = struct
     | R x -> Ok (R (tanh x 15))  (* TODO: prove that 15 is enough *)
     | _ -> Error "undefined"
 
-  let internal_tanh (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) : (t, string) Result.t =
+  let internal_tanh (f_x : Format.t) (f_r : Format.t) (pi : Projection.t) (x : t) : (t, string) Result.t =
     let* z = wTanh (wDecode f_x x) in
-    wProject f_z pi z
+    wProject f_r pi z
 
-  let tanh (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) : t =
-    match internal_tanh f_x f_z pi x with
+  let tanh (f_x : Format.t) (f_r : Format.t) (pi : Projection.t) (x : t) : t =
+    match internal_tanh f_x f_r pi x with
     | Ok x -> x
-    | Error _ -> (nan f_z) (* unreachable by theorem internal_tanh_ok *)
+    | Error _ -> (nan f_r) (* unreachable by theorem internal_tanh_ok *)
 
   let wArcSin (x : CER.t) : (CER.t, string) Result.t =
     let open CER in
@@ -2383,14 +2383,14 @@ module Float = struct
       | Error e -> Error e)
     | _ -> Error "undefined"
 
-  let internal_arcsin (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) : (t, string) Result.t =
+  let internal_arcsin (f_x : Format.t) (f_r : Format.t) (pi : Projection.t) (x : t) : (t, string) Result.t =
     let* z = wArcSin (wDecode f_x x) in
-    wProject f_z pi z
+    wProject f_r pi z
 
-  let arcsin (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) : t =
-    match internal_arcsin f_x f_z pi x with
+  let arcsin (f_x : Format.t) (f_r : Format.t) (pi : Projection.t) (x : t) : t =
+    match internal_arcsin f_x f_r pi x with
     | Ok x -> x
-    | Error _ -> (nan f_z) (* unreachable by theorem internal_arcsin_ok *)
+    | Error _ -> (nan f_r) (* unreachable by theorem internal_arcsin_ok *)
 
   let wArcCos (x : CER.t) : (CER.t, string) Result.t =
     let open CER in
@@ -2406,14 +2406,14 @@ module Float = struct
        | Error e -> Error e)
     | _ -> Error "undefined"
 
-  let internal_arccos (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) : (t, string) Result.t =
+  let internal_arccos (f_x : Format.t) (f_r : Format.t) (pi : Projection.t) (x : t) : (t, string) Result.t =
     let* z = wArcCos (wDecode f_x x) in
-    wProject f_z pi z
+    wProject f_r pi z
 
-  let cos (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) : t =
-    match internal_arccos f_x f_z pi x with
+  let cos (f_x : Format.t) (f_r : Format.t) (pi : Projection.t) (x : t) : t =
+    match internal_arccos f_x f_r pi x with
     | Ok x -> x
-    | Error _ -> (nan f_z) (* unreachable by theorem internal_arccos_ok *)
+    | Error _ -> (nan f_r) (* unreachable by theorem internal_arccos_ok *)
 
   let wArcTan (x : CER.t) : (CER.t, string) Result.t =
     let open CER in
@@ -2425,14 +2425,14 @@ module Float = struct
     | R x -> Ok (R (arctan x 15)) (* TODO: prove that 15 is enough *)
     | _ -> Error "undefined"
 
-  let internal_arctan (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) : (t, string) Result.t =
+  let internal_arctan (f_x : Format.t) (f_r : Format.t) (pi : Projection.t) (x : t) : (t, string) Result.t =
     let* z = wArcTan (wDecode f_x x) in
-    wProject f_z pi z
+    wProject f_r pi z
 
-  let arctan (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) : t =
-    match internal_arctan f_x f_z pi x with
+  let arctan (f_x : Format.t) (f_r : Format.t) (pi : Projection.t) (x : t) : t =
+    match internal_arctan f_x f_r pi x with
     | Ok x -> x
-    | Error _ -> (nan f_z) (* unreachable by theorem internal_arctan_ok *)
+    | Error _ -> (nan f_r) (* unreachable by theorem internal_arctan_ok *)
 
   let wArcSinh (x : CER.t) : (CER.t, string) Result.t =
     let open CER in
@@ -2447,14 +2447,14 @@ module Float = struct
        | Error e -> Error e)
     | _ -> Error "undefined"
 
-  let internal_arcsinh (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) : (t, string) Result.t =
+  let internal_arcsinh (f_x : Format.t) (f_r : Format.t) (pi : Projection.t) (x : t) : (t, string) Result.t =
     let* z = wArcSinh (wDecode f_x x) in
-    wProject f_z pi z
+    wProject f_r pi z
 
-  let sinh (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) : t =
-    match internal_arcsinh f_x f_z pi x with
+  let sinh (f_x : Format.t) (f_r : Format.t) (pi : Projection.t) (x : t) : t =
+    match internal_arcsinh f_x f_r pi x with
     | Ok x -> x
-    | Error _ -> (nan f_z) (* unreachable by theorem internal_arcsinh_ok *)
+    | Error _ -> (nan f_r) (* unreachable by theorem internal_arcsinh_ok *)
 
   let wArcCosh (x : CER.t) : (CER.t, string) Result.t =
     let open CER in
@@ -2470,14 +2470,14 @@ module Float = struct
       | Error e -> Error e)
     | _ -> Error "undefined"
 
-  let internal_arccosh (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) : (t, string) Result.t =
+  let internal_arccosh (f_x : Format.t) (f_r : Format.t) (pi : Projection.t) (x : t) : (t, string) Result.t =
     let* z = wArcCosh (wDecode f_x x) in
-    wProject f_z pi z
+    wProject f_r pi z
 
-  let arccosh (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) : t =
-    match internal_arccosh f_x f_z pi x with
+  let arccosh (f_x : Format.t) (f_r : Format.t) (pi : Projection.t) (x : t) : t =
+    match internal_arccosh f_x f_r pi x with
     | Ok x -> x
-    | Error _ -> (nan f_z) (* unreachable by theorem internal_cosh_ok *)
+    | Error _ -> (nan f_r) (* unreachable by theorem internal_cosh_ok *)
 
   let wArcTanh (x : CER.t) : (CER.t, string) Result.t =
     let open CER in
@@ -2495,14 +2495,14 @@ module Float = struct
       | Error e -> Error e)
     | _ -> Error "undefined"
 
-  let internal_arctanh (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) : (t, string) Result.t =
+  let internal_arctanh (f_x : Format.t) (f_r : Format.t) (pi : Projection.t) (x : t) : (t, string) Result.t =
     let* z = wArcTanh (wDecode f_x x) in
-    wProject f_z pi z
+    wProject f_r pi z
 
-  let arctanh (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) : t =
-    match internal_arctanh f_x f_z pi x with
+  let arctanh (f_x : Format.t) (f_r : Format.t) (pi : Projection.t) (x : t) : t =
+    match internal_arctanh f_x f_r pi x with
     | Ok x -> x
-    | Error _ -> (nan f_z) (* unreachable by theorem internal_arctanh_ok *)
+    | Error _ -> (nan f_r) (* unreachable by theorem internal_arctanh_ok *)
 
   let wSinPi (x : CER.t) : (CER.t, string) Result.t =
     let open CER in
@@ -2514,14 +2514,14 @@ module Float = struct
     | R x -> Ok (R (Trigonometric.sin (x *. (Pi.pi 32)) 32)) (* TODO: prove that 32 is enough *)
     | _ -> Error "undefined"
 
-  let internal_sinPi (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) : (t, string) Result.t =
+  let internal_sinPi (f_x : Format.t) (f_r : Format.t) (pi : Projection.t) (x : t) : (t, string) Result.t =
     let* z = wSinPi (wDecode f_x x) in
-    wProject f_z pi z
+    wProject f_r pi z
 
-  let sinPi (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) : t =
-    match internal_sinPi f_x f_z pi x with
+  let sinPi (f_x : Format.t) (f_r : Format.t) (pi : Projection.t) (x : t) : t =
+    match internal_sinPi f_x f_r pi x with
     | Ok x -> x
-    | Error _ -> (nan f_z) (* unreachable by theorem internal_sinPi_ok *)
+    | Error _ -> (nan f_r) (* unreachable by theorem internal_sinPi_ok *)
 
   let wCosPi (x : CER.t) : (CER.t, string) Result.t =
     let open CER in
@@ -2533,14 +2533,14 @@ module Float = struct
     | R x -> Ok (R (Trigonometric.cos (x *. (Pi.pi 32)) 32)) (* TODO: prove that 32 is enough *)
     | _ -> Error "undefined"
 
-  let internal_cosPi (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) : (t, string) Result.t =
+  let internal_cosPi (f_x : Format.t) (f_r : Format.t) (pi : Projection.t) (x : t) : (t, string) Result.t =
     let* z = wCosPi (wDecode f_x x) in
-    wProject f_z pi z
+    wProject f_r pi z
 
-  let cosPi (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) : t =
-    match internal_cosPi f_x f_z pi x with
+  let cosPi (f_x : Format.t) (f_r : Format.t) (pi : Projection.t) (x : t) : t =
+    match internal_cosPi f_x f_r pi x with
     | Ok x -> x
-    | Error _ -> (nan f_z) (* unreachable by theorem internal_cosPi_ok *)
+    | Error _ -> (nan f_r) (* unreachable by theorem internal_cosPi_ok *)
 
   let wTanPi (x : CER.t) : (CER.t, string) Result.t =
     let open CER in
@@ -2556,14 +2556,14 @@ module Float = struct
       | Error e -> Error e)
     | _ -> Error "undefined"
 
-  let internal_tanPi (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) : (t, string) Result.t =
+  let internal_tanPi (f_x : Format.t) (f_r : Format.t) (pi : Projection.t) (x : t) : (t, string) Result.t =
     let* z = wTanPi (wDecode f_x x) in
-    wProject f_z pi z
+    wProject f_r pi z
 
-  let tanPi (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) : t =
-    match internal_tanPi f_x f_z pi x with
+  let tanPi (f_x : Format.t) (f_r : Format.t) (pi : Projection.t) (x : t) : t =
+    match internal_tanPi f_x f_r pi x with
     | Ok x -> x
-    | Error _ -> (nan f_z) (* unreachable by theorem internal_tanPi_ok *)
+    | Error _ -> (nan f_r) (* unreachable by theorem internal_tanPi_ok *)
 
   let wArcSinPi (x : CER.t) : (CER.t, string) Result.t =
     let open CER in
@@ -2578,14 +2578,14 @@ module Float = struct
       | Error e -> Error e)
     | _ -> Error "undefined"
 
-  let internal_arcSinPi (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) : (t, string) Result.t =
+  let internal_arcSinPi (f_x : Format.t) (f_r : Format.t) (pi : Projection.t) (x : t) : (t, string) Result.t =
     let* z = wArcSinPi (wDecode f_x x) in
-    wProject f_z pi z
+    wProject f_r pi z
 
-  let arcSinPi (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) : t =
-    match internal_arcSinPi f_x f_z pi x with
+  let arcSinPi (f_x : Format.t) (f_r : Format.t) (pi : Projection.t) (x : t) : t =
+    match internal_arcSinPi f_x f_r pi x with
     | Ok x -> x
-    | Error _ -> (nan f_z) (* unreachable by theorem internal_arcSinPi_ok *)
+    | Error _ -> (nan f_r) (* unreachable by theorem internal_arcSinPi_ok *)
 
   let wArcCosPi (x : CER.t) : (CER.t, string) Result.t =
     let open CER in
@@ -2600,14 +2600,14 @@ module Float = struct
       | Error e -> Error e)
     | _ -> Error "undefined"
 
-  let internal_arcCosPi (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) : (t, string) Result.t =
+  let internal_arcCosPi (f_x : Format.t) (f_r : Format.t) (pi : Projection.t) (x : t) : (t, string) Result.t =
     let* z = wArcCosPi (wDecode f_x x) in
-    wProject f_z pi z
+    wProject f_r pi z
 
-  let arcCosPi (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) : t =
-    match internal_arcCosPi f_x f_z pi x with
+  let arcCosPi (f_x : Format.t) (f_r : Format.t) (pi : Projection.t) (x : t) : t =
+    match internal_arcCosPi f_x f_r pi x with
     | Ok x -> x
-    | Error _ -> (nan f_z) (* unreachable by theorem internal_arcCosPi_ok *)
+    | Error _ -> (nan f_r) (* unreachable by theorem internal_arcCosPi_ok *)
 
   let wArcTanPi (x : CER.t) : (CER.t, string) Result.t =
     let open CER in
@@ -2618,14 +2618,14 @@ module Float = struct
     | R x -> Ok (R (Trigonometric.arctan_pi x 32)) (* TODO: prove that 32 is enough *)
     | _ -> Error "undefined"
 
-  let internal_arcTanPi (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) : (t, string) Result.t =
+  let internal_arcTanPi (f_x : Format.t) (f_r : Format.t) (pi : Projection.t) (x : t) : (t, string) Result.t =
     let* z = wArcTanPi (wDecode f_x x) in
-    wProject f_z pi z
+    wProject f_r pi z
 
-  let arcTanPi (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) : t =
-    match internal_arcTanPi f_x f_z pi x with
+  let arcTanPi (f_x : Format.t) (f_r : Format.t) (pi : Projection.t) (x : t) : t =
+    match internal_arcTanPi f_x f_r pi x with
     | Ok x -> x
-    | Error _ -> (nan f_z) (* unreachable by theorem internal_arcTanPi_ok *)
+    | Error _ -> (nan f_r) (* unreachable by theorem internal_arcTanPi_ok *)
 
   let wSoftplus (x : CER.t) : (CER.t, string) Result.t =
     let open CER in
@@ -2639,14 +2639,14 @@ module Float = struct
       | Error e -> Error e)
     | _ -> Error "undefined"
 
-  let internal_softplus (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) : (t, string) Result.t =
+  let internal_softplus (f_x : Format.t) (f_r : Format.t) (pi : Projection.t) (x : t) : (t, string) Result.t =
     let* z = wSoftplus (wDecode f_x x) in
-    wProject f_z pi z
+    wProject f_r pi z
 
-  let softplus (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : t) : t =
-    match internal_softplus f_x f_z pi x with
+  let softplus (f_x : Format.t) (f_r : Format.t) (pi : Projection.t) (x : t) : t =
+    match internal_softplus f_x f_r pi x with
     | Ok x -> x
-    | Error _ -> (nan f_z) (* unreachable by theorem internal_softplus_ok *)
+    | Error _ -> (nan f_r) (* unreachable by theorem internal_softplus_ok *)
 
   let softmax_denom (xs : CER.t list) : CER.t =
     let open CER in

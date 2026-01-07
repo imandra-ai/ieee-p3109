@@ -259,31 +259,31 @@ theorem internal_copySign_ok (f_x : Format.t) (f_y : Format.t) (f_r : Format.t) 
 (** 4.8.3 Binary arithmetic operations *)
 
 (** [internal_add] never returns an error *)
-theorem internal_add_ok (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (pi : Projection.t)
+theorem internal_add_ok (f_x : Format.t) (f_y : Format.t) (f_r : Format.t) (pi : Projection.t)
   (x : Float.t) (y : Float.t) =
-  Result.is_ok (Float.internal_add f_x f_y f_z pi x y)
+  Result.is_ok (Float.internal_add f_x f_y f_r pi x y)
   [@@disable Specification.Float.wProject, Float.wDecodeAux, Util.pow2, Util.ipow2, Format.parameters]
   [@@timeout 60]
   [@@by auto]
 
 (** [internal_subtract] never returns an error *)
-theorem internal_subtract_ok (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (pi : Projection.t)
+theorem internal_subtract_ok (f_x : Format.t) (f_y : Format.t) (f_r : Format.t) (pi : Projection.t)
   (x : Float.t) (y : Float.t) =
-  Result.is_ok (Float.internal_subtract f_x f_y f_z pi x y)
+  Result.is_ok (Float.internal_subtract f_x f_y f_r pi x y)
   [@@disable Specification.Float.wProject, Float.wDecodeAux, Util.pow2, Util.ipow2, Format.parameters]
   [@@timeout 3600]
   [@@by auto]
 
 (** [internal_multiply] never returns an error *)
-theorem internal_multiply_ok (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (pi : Projection.t) (x : Float.t) (y : Float.t)  =
-  Result.is_ok (Float.internal_multiply f_x f_y f_z pi x y)
+theorem internal_multiply_ok (f_x : Format.t) (f_y : Format.t) (f_r : Format.t) (pi : Projection.t) (x : Float.t) (y : Float.t)  =
+  Result.is_ok (Float.internal_multiply f_x f_y f_r pi x y)
   [@@disable Specification.Float.wProject, Float.wDecodeAux, Util.pow2, Util.ipow2, Format.parameters]
   [@@timeout 60]
   [@@by auto]
 
 (** [internal_divide] never returns an error *)
-theorem internal_divide_ok (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (pi : Projection.t) (x : Float.t) (y : Float.t)  =
-  Result.is_ok (Float.internal_divide f_x f_y f_z pi x y)
+theorem internal_divide_ok (f_x : Format.t) (f_y : Format.t) (f_r : Format.t) (pi : Projection.t) (x : Float.t) (y : Float.t)  =
+  Result.is_ok (Float.internal_divide f_x f_y f_r pi x y)
   [@@disable Specification.Float.wProject, Specification.Float.wDecode, Float.wDecodeAux, Util.pow2, Util.ipow2, Format.parameters]
   [@@timeout 60]
   [@@by auto]
@@ -312,22 +312,22 @@ theorem internal_faa_ok (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (f_r 
 (** 4.8.5 Unary mathematical operations *)
 
 (** [internal_recip] never returns an error *)
-theorem internal_recip_ok (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : Float.t) =
-  Result.is_ok (Float.internal_recip f_x f_z pi x)
+theorem internal_recip_ok (f_x : Format.t) (f_r : Format.t) (pi : Projection.t) (x : Float.t) =
+  Result.is_ok (Float.internal_recip f_x f_r pi x)
   [@@timeout 60]
   [@@disable Float.wProject, Float.wDecode, Float.wDecodeAux, Float.wRoundToPrecision, Float.wSaturate, Util.pow2, Util.ipow2, Format.parameters, Sqrt.sqrt]
   [@@by auto]
 
 (** [internal_sqrt] never returns an error *)
-theorem internal_sqrt_ok (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : Float.t) =
-  Result.is_ok (Float.internal_sqrt f_x f_z pi x)
+theorem internal_sqrt_ok (f_x : Format.t) (f_r : Format.t) (pi : Projection.t) (x : Float.t) =
+  Result.is_ok (Float.internal_sqrt f_x f_r pi x)
   [@@timeout 60]
   [@@disable Float.wProject, Float.wDecode, Float.wDecodeAux, Float.wRoundToPrecision, Float.wSaturate, Util.pow2, Util.ipow2, Format.parameters, Sqrt.sqrt]
   [@@by auto]
 
 (** [internal_rsqrt] never returns an error *)
-theorem internal_rsqrt_ok (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : Float.t) =
-  Result.is_ok (Float.internal_rsqrt f_x f_z pi x)
+theorem internal_rsqrt_ok (f_x : Format.t) (f_r : Format.t) (pi : Projection.t) (x : Float.t) =
+  Result.is_ok (Float.internal_rsqrt f_x f_r pi x)
   [@@timeout 3600]
   [@@disable Float.wProject, Float.wDecode, Float.wDecodeAux, Float.wRoundToPrecision, Float.wSaturate, Util.pow2, Util.ipow2, Format.parameters, Sqrt.sqrt]
   [@@by auto]
@@ -339,14 +339,14 @@ theorem wExp_ok (x : CER.t) =
   [@@by auto]
 
 (** [internal_exp] never returns an error *)
-theorem internal_exp_ok (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : Float.t) =
-  Result.is_ok (Float.internal_exp f_x f_z pi x)
+theorem internal_exp_ok (f_x : Format.t) (f_r : Format.t) (pi : Projection.t) (x : Float.t) =
+  Result.is_ok (Float.internal_exp f_x f_r pi x)
   [@@disable Specification.Float.wProject, Specification.Float.wDecode, Float.wDecodeAux, Format.parameters]
   [@@by auto]
 
 (** [internal_exp2] never returns an error *)
-theorem internal_exp2_ok (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : Float.t) =
-  Result.is_ok (Float.internal_exp2 f_x f_z pi x)
+theorem internal_exp2_ok (f_x : Format.t) (f_r : Format.t) (pi : Projection.t) (x : Float.t) =
+  Result.is_ok (Float.internal_exp2 f_x f_r pi x)
   [@@disable Float.wProject, Float.wDecode, Float.wDecodeAux, Float.wRoundToPrecision, Float.wSaturate, Exp.exp2, Format.parameters]
   [@@by auto]
 
@@ -357,14 +357,14 @@ theorem wLog_ok (x : CER.t) =
   [@@by auto]
 
 (** [internal_log] never returns an error *)
-theorem internal_log_ok (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : Float.t) =
-  Result.is_ok (Float.internal_log f_x f_z pi x)
+theorem internal_log_ok (f_x : Format.t) (f_r : Format.t) (pi : Projection.t) (x : Float.t) =
+  Result.is_ok (Float.internal_log f_x f_r pi x)
   [@@disable Float.wProject, Float.wDecode, Float.wDecodeAux, Log.log, Log.ln, Format.parameters]
   [@@by auto]
 
 (** [internal_log2] never returns an error *)
-theorem internal_log2_ok (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : Float.t) =
-  Result.is_ok (Float.internal_log2 f_x f_z pi x)
+theorem internal_log2_ok (f_x : Format.t) (f_r : Format.t) (pi : Projection.t) (x : Float.t) =
+  Result.is_ok (Float.internal_log2 f_x f_r pi x)
   [@@disable Float.wProject, Float.wDecode, Float.wDecodeAux, Log.log2, Log.log, Log.ln, Format.parameters]
   [@@by auto]
 
@@ -398,8 +398,8 @@ theorem wHypot_ok (x : CER.t) (y : CER.t) =
   [@@by auto]
 
 (** [hypot] never returns an error *)
-theorem internal_hypot_ok (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (pi : Projection.t) (x : Float.t) (y : Float.t) =
-  Result.is_ok (Float.internal_hypot f_x f_y f_z pi x y)
+theorem internal_hypot_ok (f_x : Format.t) (f_y : Format.t) (f_r : Format.t) (pi : Projection.t) (x : Float.t) (y : Float.t) =
+  Result.is_ok (Float.internal_hypot f_x f_y f_r pi x y)
   [@@disable Float.wProject, Float.wDecode, Float.wDecodeAux, Float.wRoundToPrecision, Float.wSaturate, Util.pow2, Util.ipow2, Format.parameters, Float.wHypot]
   [@@by [%use wHypot_ok (Float.wDecode f_x x) (Float.wDecode f_y y)] @> auto]
 
@@ -416,8 +416,8 @@ theorem wArcTan2_ok (y : CER.t) (x : CER.t) (p : int) =
   [@@by auto]
 
 (** [internal_arcTan2] never returns an error *)
-theorem internal_arcTan2_ok (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (pi : Projection.t) (x : Float.t) (y : Float.t) =
-  Result.is_ok (Float.internal_arcTan2 f_x f_y f_z pi x y)
+theorem internal_arcTan2_ok (f_x : Format.t) (f_y : Format.t) (f_r : Format.t) (pi : Projection.t) (x : Float.t) (y : Float.t) =
+  Result.is_ok (Float.internal_arcTan2 f_x f_y f_r pi x y)
   [@@disable Float.wProject, Float.wDecode, Float.wDecodeAux, Float.wRoundToPrecision, Float.wSaturate, Util.pow2, Util.ipow2, Format.parameters, Float.wArcTan2]
   [@@by [%use wArcTan2_ok (Float.wDecode f_x x) (Float.wDecode f_y y) 8] @> auto]
 
@@ -427,8 +427,8 @@ theorem wArcTan2Alt_ok (y : CER.t) (x : CER.t) (p : int) =
   [@@by auto]
 
 (** [internal_arcTan2Alt] never returns an error *)
-theorem internal_arcTan2Alt_ok (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (pi : Projection.t) (x : Float.t) (y : Float.t) =
-  Result.is_ok (Float.internal_arcTan2Alt f_x f_y f_z pi x y)
+theorem internal_arcTan2Alt_ok (f_x : Format.t) (f_y : Format.t) (f_r : Format.t) (pi : Projection.t) (x : Float.t) (y : Float.t) =
+  Result.is_ok (Float.internal_arcTan2Alt f_x f_y f_r pi x y)
   [@@disable Float.wProject, Float.wDecode, Float.wDecodeAux, Float.wRoundToPrecision, Float.wSaturate, Util.pow2, Util.ipow2, Format.parameters, Float.wArcTan2Alt]
   [@@by [%use wArcTan2Alt_ok (Float.wDecode f_x x) (Float.wDecode f_y y) 8] @> auto]
 
@@ -438,8 +438,8 @@ theorem wArcTan2Pi_ok (y : CER.t) (x : CER.t) (p : int) =
   [@@disable Util.pow2, Util.ipow2, Trigonometric.arctan, Trigonometric.arctan2]
   [@@by auto]
 
-theorem internal_arcTan2Pi_ok (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (pi : Projection.t) (x : Float.t) (y : Float.t) =
-  Result.is_ok (Float.internal_arcTan2Pi f_x f_y f_z pi x y)
+theorem internal_arcTan2Pi_ok (f_x : Format.t) (f_y : Format.t) (f_r : Format.t) (pi : Projection.t) (x : Float.t) (y : Float.t) =
+  Result.is_ok (Float.internal_arcTan2Pi f_x f_y f_r pi x y)
   [@@disable Float.wProject, Float.wDecode, Float.wDecodeAux, Float.wRoundToPrecision, Float.wSaturate, Util.pow2, Util.ipow2, Format.parameters, Float.wArcTan2Pi]
   [@@by [%use wArcTan2Pi_ok (Float.wDecode f_x x) (Float.wDecode f_y y) 8] @> auto]
 
@@ -624,128 +624,128 @@ theorem minNormalOf_normal (f : Format.t) =
   [@@by enumerate ["f"] @> ground_eval ()]
 
 (** [internal_expMinusOne] never returns an error *)
-theorem internal_expMinusOne_ok (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : Float.t) =
-  Result.is_ok (Float.internal_expMinusOne f_x f_z pi x)
+theorem internal_expMinusOne_ok (f_x : Format.t) (f_r : Format.t) (pi : Projection.t) (x : Float.t) =
+  Result.is_ok (Float.internal_expMinusOne f_x f_r pi x)
   [@@disable Specification.Float.wProject, Specification.Float.wDecode, Float.wDecodeAux, Format.parameters]
   [@@by auto]
 
 (** [internal_logOnePlus] never returns an error *)
-theorem internal_logOnePlus_ok (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : Float.t) =
-  Result.is_ok (Float.internal_logOnePlus f_x f_z pi x)
+theorem internal_logOnePlus_ok (f_x : Format.t) (f_r : Format.t) (pi : Projection.t) (x : Float.t) =
+  Result.is_ok (Float.internal_logOnePlus f_x f_r pi x)
   [@@disable Float.wProject, Float.wDecode, Float.wDecodeAux, Log.log, Log.ln, Format.parameters]
   [@@by auto]
 
 (** [internal_sin] never returns an error *)
-theorem internal_sin_ok (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : Float.t) =
-  Result.is_ok (Float.internal_sin f_x f_z pi x)
+theorem internal_sin_ok (f_x : Format.t) (f_r : Format.t) (pi : Projection.t) (x : Float.t) =
+  Result.is_ok (Float.internal_sin f_x f_r pi x)
   [@@disable Specification.Float.wProject, Specification.Float.wDecode, Float.wDecodeAux, Format.parameters]
   [@@by auto]
 
 (** [internal_cos] never returns an error *)
-theorem internal_cos_ok (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : Float.t) =
-  Result.is_ok (Float.internal_cos f_x f_z pi x)
+theorem internal_cos_ok (f_x : Format.t) (f_r : Format.t) (pi : Projection.t) (x : Float.t) =
+  Result.is_ok (Float.internal_cos f_x f_r pi x)
   [@@disable Specification.Float.wProject, Specification.Float.wDecode, Float.wDecodeAux, Format.parameters]
   [@@by auto]
 
 (** [internal_tan] never returns an error *)
-theorem internal_tan_ok (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : Float.t) =
-  Result.is_ok (Float.internal_tan f_x f_z pi x)
+theorem internal_tan_ok (f_x : Format.t) (f_r : Format.t) (pi : Projection.t) (x : Float.t) =
+  Result.is_ok (Float.internal_tan f_x f_r pi x)
   [@@disable Specification.Float.wProject, Specification.Float.wDecode, Float.wDecodeAux, Format.parameters, Trigonometric.sin, Trigonometric.cos]
   [@@by auto]
 
 (** [internal_sinh] never returns an error *)
-theorem internal_sinh_ok (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : Float.t) =
-  Result.is_ok (Float.internal_sinh f_x f_z pi x)
+theorem internal_sinh_ok (f_x : Format.t) (f_r : Format.t) (pi : Projection.t) (x : Float.t) =
+  Result.is_ok (Float.internal_sinh f_x f_r pi x)
   [@@disable Specification.Float.wProject, Specification.Float.wDecode, Float.wDecodeAux, Format.parameters]
   [@@by auto]
 
 (** [internal_cosh] never returns an error *)
-theorem internal_cosh_ok (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : Float.t) =
-  Result.is_ok (Float.internal_cosh f_x f_z pi x)
+theorem internal_cosh_ok (f_x : Format.t) (f_r : Format.t) (pi : Projection.t) (x : Float.t) =
+  Result.is_ok (Float.internal_cosh f_x f_r pi x)
   [@@disable Specification.Float.wProject, Specification.Float.wDecode, Float.wDecodeAux, Format.parameters]
   [@@by auto]
 
 (** [internal_tanh] never returns an error *)
-theorem internal_tanh_ok (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : Float.t) =
-  Result.is_ok (Float.internal_tanh f_x f_z pi x)
+theorem internal_tanh_ok (f_x : Format.t) (f_r : Format.t) (pi : Projection.t) (x : Float.t) =
+  Result.is_ok (Float.internal_tanh f_x f_r pi x)
   [@@disable Specification.Float.wProject, Specification.Float.wDecode, Float.wDecodeAux, Format.parameters]
   [@@by auto]
 
 (** [internal_arcsin] never returns an error *)
-theorem internal_arcsin_ok (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : Float.t) =
-  Result.is_ok (Float.internal_arcsin f_x f_z pi x)
+theorem internal_arcsin_ok (f_x : Format.t) (f_r : Format.t) (pi : Projection.t) (x : Float.t) =
+  Result.is_ok (Float.internal_arcsin f_x f_r pi x)
   [@@disable Specification.Float.wProject, Specification.Float.wDecode, Float.wDecodeAux, Format.parameters]
   [@@by auto]
 
 (** [internal_arccos] never returns an error *)
-theorem internal_arccos_ok (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : Float.t) =
-  Result.is_ok (Float.internal_arccos f_x f_z pi x)
+theorem internal_arccos_ok (f_x : Format.t) (f_r : Format.t) (pi : Projection.t) (x : Float.t) =
+  Result.is_ok (Float.internal_arccos f_x f_r pi x)
   [@@disable Specification.Float.wProject, Specification.Float.wDecode, Float.wDecodeAux, Format.parameters]
   [@@by auto]
 
 (** [internal_arctan] never returns an error *)
-theorem internal_arctan_ok (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : Float.t) =
-  Result.is_ok (Float.internal_arctan f_x f_z pi x)
+theorem internal_arctan_ok (f_x : Format.t) (f_r : Format.t) (pi : Projection.t) (x : Float.t) =
+  Result.is_ok (Float.internal_arctan f_x f_r pi x)
   [@@disable Specification.Float.wProject, Specification.Float.wDecode, Float.wDecodeAux, Format.parameters, Pi.pi]
   [@@by auto]
 
 (** [internal_arcsinh] never returns an error *)
-theorem internal_arcsinh_ok (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : Float.t) =
-  Result.is_ok (Float.internal_arcsinh f_x f_z pi x)
+theorem internal_arcsinh_ok (f_x : Format.t) (f_r : Format.t) (pi : Projection.t) (x : Float.t) =
+  Result.is_ok (Float.internal_arcsinh f_x f_r pi x)
   [@@disable Specification.Float.wProject, Specification.Float.wDecode, Float.wDecodeAux, Format.parameters]
   [@@by auto]
 
 (** [internal_arccosh] never returns an error *)
-theorem internal_arccosh_ok (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : Float.t) =
-  Result.is_ok (Float.internal_arccosh f_x f_z pi x)
+theorem internal_arccosh_ok (f_x : Format.t) (f_r : Format.t) (pi : Projection.t) (x : Float.t) =
+  Result.is_ok (Float.internal_arccosh f_x f_r pi x)
   [@@disable Specification.Float.wProject, Specification.Float.wDecode, Float.wDecodeAux, Format.parameters]
   [@@by auto]
 
 (** [internal_arctanh] never returns an error *)
-theorem internal_arctanh_ok (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : Float.t) =
-  Result.is_ok (Float.internal_arctanh f_x f_z pi x)
+theorem internal_arctanh_ok (f_x : Format.t) (f_r : Format.t) (pi : Projection.t) (x : Float.t) =
+  Result.is_ok (Float.internal_arctanh f_x f_r pi x)
   [@@disable Specification.Float.wProject, Specification.Float.wDecode, Float.wDecodeAux, Format.parameters]
   [@@by auto]
 
 (** [internal_sinPi] never returns an error *)
-theorem internal_sinPi_ok (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : Float.t) =
-  Result.is_ok (Float.internal_sinPi f_x f_z pi x)
+theorem internal_sinPi_ok (f_x : Format.t) (f_r : Format.t) (pi : Projection.t) (x : Float.t) =
+  Result.is_ok (Float.internal_sinPi f_x f_r pi x)
   [@@disable Specification.Float.wProject, Specification.Float.wDecode, Float.wDecodeAux, Format.parameters]
   [@@by auto]
 
 (** [internal_cosPi] never returns an error *)
-theorem internal_cosPi_ok (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : Float.t) =
-  Result.is_ok (Float.internal_cosPi f_x f_z pi x)
+theorem internal_cosPi_ok (f_x : Format.t) (f_r : Format.t) (pi : Projection.t) (x : Float.t) =
+  Result.is_ok (Float.internal_cosPi f_x f_r pi x)
   [@@disable Specification.Float.wProject, Specification.Float.wDecode, Float.wDecodeAux, Format.parameters]
   [@@by auto]
 
 (** [internal_tanPi] never returns an error *)
-theorem internal_tanPi_ok (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : Float.t) =
-  Result.is_ok (Float.internal_tanPi f_x f_z pi x)
+theorem internal_tanPi_ok (f_x : Format.t) (f_r : Format.t) (pi : Projection.t) (x : Float.t) =
+  Result.is_ok (Float.internal_tanPi f_x f_r pi x)
   [@@disable Specification.Float.wProject, Specification.Float.wDecode, Float.wDecodeAux, Format.parameters, Trigonometric.sin, Trigonometric.cos, Trigonometric.tan]
   [@@by auto]
 
 (** [internal_arcSinPi] never returns an error *)
-theorem internal_arcSinPi_ok (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : Float.t) =
-  Result.is_ok (Float.internal_arcSinPi f_x f_z pi x)
+theorem internal_arcSinPi_ok (f_x : Format.t) (f_r : Format.t) (pi : Projection.t) (x : Float.t) =
+  Result.is_ok (Float.internal_arcSinPi f_x f_r pi x)
   [@@disable Specification.Float.wProject, Specification.Float.wDecode, Float.wDecodeAux, Format.parameters]
   [@@by auto]
 
 (** [internal_arcCosPi] never returns an error *)
-theorem internal_arcCosPi_ok (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : Float.t) =
-  Result.is_ok (Float.internal_arcCosPi f_x f_z pi x)
+theorem internal_arcCosPi_ok (f_x : Format.t) (f_r : Format.t) (pi : Projection.t) (x : Float.t) =
+  Result.is_ok (Float.internal_arcCosPi f_x f_r pi x)
   [@@disable Specification.Float.wProject, Specification.Float.wDecode, Float.wDecodeAux, Format.parameters]
   [@@by auto]
 
 (** [internal_arcTanPi] never returns an error *)
-theorem internal_arcTanPi_ok (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : Float.t) =
-  Result.is_ok (Float.internal_arcTanPi f_x f_z pi x)
+theorem internal_arcTanPi_ok (f_x : Format.t) (f_r : Format.t) (pi : Projection.t) (x : Float.t) =
+  Result.is_ok (Float.internal_arcTanPi f_x f_r pi x)
   [@@disable Specification.Float.wProject, Specification.Float.wDecode, Float.wDecodeAux, Format.parameters, Pi.pi]
   [@@by auto]
 
 (** [internal_softplus] never returns an error *)
-theorem internal_softplus_ok (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : Float.t) =
-  Result.is_ok (Float.internal_softplus f_x f_z pi x)
+theorem internal_softplus_ok (f_x : Format.t) (f_r : Format.t) (pi : Projection.t) (x : Float.t) =
+  Result.is_ok (Float.internal_softplus f_x f_r pi x)
   [@@disable Specification.Float.wProject, Specification.Float.wDecode, Float.wDecodeAux, Format.parameters, Log.log, Log.ln, Exp.exp]
   [@@by auto]
 
