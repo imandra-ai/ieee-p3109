@@ -342,7 +342,7 @@ module Float = struct
 
   let satOf (pi : Projection.t) : SaturationMode.t = fst pi
 
-  let rndOf (pi : Projection.t) : RoundingMode.t = snd pi
+  let roundOf (pi : Projection.t) : RoundingMode.t = snd pi
 
 
   (** 4.9.1 Decode *)
@@ -533,8 +533,8 @@ module Float = struct
   (** wProject extended real value [x] to P3109 format [f]. *)
   let wProject (f : Format.t) (pi : Projection.t) (x : CER.t) : (t, string) Result.t =
     let _, _, _, m_lo, m_hi, _, _ = Format.parameters f in
-    let r : CER.t = wRoundToPrecision (precisionOf f) (exponentBiasOf f) (rndOf pi) x in
-    let s : CER.t = wSaturate m_lo m_hi (satOf pi) (rndOf pi) r f.s f.d in
+    let r : CER.t = wRoundToPrecision (precisionOf f) (exponentBiasOf f) (roundOf pi) x in
+    let s : CER.t = wSaturate m_lo m_hi (satOf pi) (roundOf pi) r f.s f.d in
     wEncode f s
 
 
