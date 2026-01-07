@@ -173,9 +173,9 @@ theorem wBlockProject_map_cz_ok cs x =
   [@@by auto]
   [@@fc]
 
-theorem wBlockProject_ok (b : int) (f_s : Format.t) (f_z : Format.t) (pi_z : Projection.t) (s : t) (x : CER.t list) =
+theorem wBlockProject_ok (b : int) (f_s : Format.t) (f_z : Format.t) (rho_z : Projection.t) (s : t) (x : CER.t list) =
   b = List.length x ==>
-  Result.is_ok ((Float.wBlockProject b f_s f_z pi_z (s, x)) [@trigger])
+  Result.is_ok ((Float.wBlockProject b f_s f_z rho_z (s, x)) [@trigger])
   [@@timeout 60]
   [@@disable Float.wDecode, Float.wDivide, Float.wProject, List.map, Float.map_project]
   [@@by induct ~do_not:["gen"; "fert"; "delim"] ()]
@@ -186,10 +186,10 @@ theorem wBlockProject_ok (b : int) (f_s : Format.t) (f_z : Format.t) (pi_z : Pro
 theorem convertFromBlock_ok
   (b : int)
   (f_s : Format.t) (f_x : Format.t) (f_z : Format.t)
-  (pi_s : Projection.t) (pi_z : Projection.t)
+  (rho_s : Projection.t) (rho_z : Projection.t)
   (s, x : t * t list) =
   b = List.length x && b >= 1 ==>
-  Result.is_ok (Float.convertFromBlock b f_s f_x f_z pi_s pi_z (s, x))
+  Result.is_ok (Float.convertFromBlock b f_s f_x f_z rho_s rho_z (s, x))
   [@@timeout 10]
   [@@disable Float.wDecode, Float.map_project, Float.wBlockDecode]
   [@@by auto]
@@ -198,10 +198,10 @@ theorem convertFromBlock_ok
 
 theorem convertToBlock_ok
   (b : int)
-  (f_s : Format.t) (f_x : Format.t) (f_z : Format.t) (pi_z : Projection.t)
+  (f_s : Format.t) (f_x : Format.t) (f_z : Format.t) (rho_z : Projection.t)
   (x, s : t list * t) =
   b = List.length x ==>
-  Result.is_ok (Float.convertToBlock b f_s f_x f_z pi_z (x, s))
+  Result.is_ok (Float.convertToBlock b f_s f_x f_z rho_z (x, s))
   [@@disable Float.wDecode, Float.map_project, Float.map_decode, Float.wBlockProject]
   [@@by auto]
 
@@ -228,10 +228,10 @@ theorem map_convert_maf_ok s' (x : CER.t list) =
 theorem convert_to_block_max_abs_finite_ok
   (b : int)
   (f_s : Format.t) (f_x : Format.t) (f_z : Format.t)
-  (pi_s : Projection.t) (pi_z : Projection.t)
+  (rho_s : Projection.t) (rho_z : Projection.t)
   (x : t list) =
   b >= 1 && b = List.length x ==>
-  Result.is_ok (convertToBlockMaxAbsFinite b f_s f_x f_z pi_s pi_z x)
+  Result.is_ok (convertToBlockMaxAbsFinite b f_s f_x f_z rho_s rho_z x)
   [@@disable Float.reduce, Float.wMaximumFinite, Float.wDivide, Float.wProject, Float.wDecode,
     Float.map_wabs, Float.map_decode, Float.map_project, Float.reduce_wMaximumFinite,
     Float.map_convert_maf, List.length, Format.parameters]
@@ -280,11 +280,11 @@ theorem block_dot_product_ok
   (f_sx : Format.t) (f_x : Format.t)
   (f_sy : Format.t) (f_y : Format.t)
   (f_z : Format.t)
-  (pi_z : Projection.t)
+  (rho_z : Projection.t)
   (s_x, x : Float.t * Float.t list)
   (s_y, y : Float.t * Float.t list) =
   b = List.length x && b = List.length y && b >= 1 ==>
-  Result.is_ok (Float.blockDotProduct b f_sx f_x f_sy f_y f_z pi_z (s_x, x) (s_y, y))
+  Result.is_ok (Float.blockDotProduct b f_sx f_x f_sy f_y f_z rho_z (s_x, x) (s_y, y))
   [@@disable Float.wAdd, Float.reduce_wAdd, Float.map2_wMultiply, Float.wBlockDecode, Float.wProject, Format.parameters]
   [@@by auto]
 
@@ -642,7 +642,7 @@ theorem block_op_map2_wop_ternary_preserves_length wop x1 x2 x3 =
   [@@by auto]
   [@@fc]
 
-let block_preconditions_unary b f_sx f_x f_s f_z pi_s pi_z (s_x, x) s_z =
+let block_preconditions_unary b f_sx f_x f_s f_z rho_s rho_z (s_x, x) s_z =
   let params = [{f_s = f_sx; f_x}] in
   let args = [{s = s_x; x}] in
   b >= 1 &&
@@ -656,12 +656,12 @@ theorem block_abs_ok
   (f_sx : Format.t) (f_x : Format.t)
   (f_s : Format.t)
   (f_z : Format.t)
-  (pi_s : Projection.t)
-  (pi_z : Projection.t)
+  (rho_s : Projection.t)
+  (rho_z : Projection.t)
   (s_x, x : Float.t * Float.t list)
   (s_z : Float.t) =
-  block_preconditions_unary b f_sx f_x f_s f_z pi_s pi_z (s_x, x) s_z ==>
-  Result.is_ok (Float.blockAbs b f_sx f_x f_s f_z pi_s pi_z (s_x, x) s_z)
+  block_preconditions_unary b f_sx f_x f_s f_z rho_s rho_z (s_x, x) s_z ==>
+  Result.is_ok (Float.blockAbs b f_sx f_x f_s f_z rho_s rho_z (s_x, x) s_z)
   [@@timeout 3600]
   [@@disable
     Float.reduce, Float.wAbs, Float.map2_wMultiply,
@@ -674,12 +674,12 @@ theorem block_negate_ok
   (f_sx : Format.t) (f_x : Format.t)
   (f_s : Format.t)
   (f_z : Format.t)
-  (pi_s : Projection.t)
-  (pi_z : Projection.t)
+  (rho_s : Projection.t)
+  (rho_z : Projection.t)
   (s_x, x : Float.t * Float.t list)
   (s_z : Float.t) =
-  block_preconditions_unary b f_sx f_x f_s f_z pi_s pi_z (s_x, x) s_z ==>
-  Result.is_ok (Float.blockNegate b f_sx f_x f_s f_z pi_s pi_z (s_x, x) s_z)
+  block_preconditions_unary b f_sx f_x f_s f_z rho_s rho_z (s_x, x) s_z ==>
+  Result.is_ok (Float.blockNegate b f_sx f_x f_s f_z rho_s rho_z (s_x, x) s_z)
   [@@timeout 3600]
   [@@disable
     Float.reduce, Float.wNegate, Float.map2_wMultiply,
@@ -692,12 +692,12 @@ theorem block_exp_ok
   (f_sx : Format.t) (f_x : Format.t)
   (f_s : Format.t)
   (f_z : Format.t)
-  (pi_s : Projection.t)
-  (pi_z : Projection.t)
+  (rho_s : Projection.t)
+  (rho_z : Projection.t)
   (s_x, x : Float.t * Float.t list)
   (s_z : Float.t) =
-  block_preconditions_unary b f_sx f_x f_s f_z pi_s pi_z (s_x, x) s_z ==>
-  Result.is_ok (Float.blockExp b f_sx f_x f_s f_z pi_s pi_z (s_x, x) s_z)
+  block_preconditions_unary b f_sx f_x f_s f_z rho_s rho_z (s_x, x) s_z ==>
+  Result.is_ok (Float.blockExp b f_sx f_x f_s f_z rho_s rho_z (s_x, x) s_z)
   [@@timeout 3600]
   [@@disable
     Float.reduce, Float.wExp, Float.map2_wMultiply,
@@ -710,12 +710,12 @@ theorem block_sqrt_ok
   (f_sx : Format.t) (f_x : Format.t)
   (f_s : Format.t)
   (f_z : Format.t)
-  (pi_s : Projection.t)
-  (pi_z : Projection.t)
+  (rho_s : Projection.t)
+  (rho_z : Projection.t)
   (s_x, x : Float.t * Float.t list)
   (s_z : Float.t) =
-  block_preconditions_unary b f_sx f_x f_s f_z pi_s pi_z (s_x, x) s_z ==>
-  Result.is_ok (Float.blockSqrt b f_sx f_x f_s f_z pi_s pi_z (s_x, x) s_z)
+  block_preconditions_unary b f_sx f_x f_s f_z rho_s rho_z (s_x, x) s_z ==>
+  Result.is_ok (Float.blockSqrt b f_sx f_x f_s f_z rho_s rho_z (s_x, x) s_z)
   [@@timeout 3600]
   [@@disable
     Float.reduce, Float.wSqrt, Float.map2_wMultiply,
@@ -728,12 +728,12 @@ theorem block_rsqrt_ok
   (f_sx : Format.t) (f_x : Format.t)
   (f_s : Format.t)
   (f_z : Format.t)
-  (pi_s : Projection.t)
-  (pi_z : Projection.t)
+  (rho_s : Projection.t)
+  (rho_z : Projection.t)
   (s_x, x : Float.t * Float.t list)
   (s_z : Float.t) =
-  block_preconditions_unary b f_sx f_x f_s f_z pi_s pi_z (s_x, x) s_z ==>
-  Result.is_ok (Float.blockRSqrt b f_sx f_x f_s f_z pi_s pi_z (s_x, x) s_z)
+  block_preconditions_unary b f_sx f_x f_s f_z rho_s rho_z (s_x, x) s_z ==>
+  Result.is_ok (Float.blockRSqrt b f_sx f_x f_s f_z rho_s rho_z (s_x, x) s_z)
   [@@timeout 3600]
   [@@disable
     Float.reduce, Float.wRSqrt, Float.map2_wMultiply,
@@ -746,12 +746,12 @@ theorem block_exp2_ok
   (f_sx : Format.t) (f_x : Format.t)
   (f_s : Format.t)
   (f_z : Format.t)
-  (pi_s : Projection.t)
-  (pi_z : Projection.t)
+  (rho_s : Projection.t)
+  (rho_z : Projection.t)
   (s_x, x : Float.t * Float.t list)
   (s_z : Float.t) =
-  block_preconditions_unary b f_sx f_x f_s f_z pi_s pi_z (s_x, x) s_z ==>
-  Result.is_ok (Float.blockExp2 b f_sx f_x f_s f_z pi_s pi_z (s_x, x) s_z)
+  block_preconditions_unary b f_sx f_x f_s f_z rho_s rho_z (s_x, x) s_z ==>
+  Result.is_ok (Float.blockExp2 b f_sx f_x f_s f_z rho_s rho_z (s_x, x) s_z)
   [@@timeout 3600]
   [@@disable
     Float.reduce, Float.wExp2, Float.map2_wMultiply,
@@ -764,12 +764,12 @@ theorem block_log2_ok
   (f_sx : Format.t) (f_x : Format.t)
   (f_s : Format.t)
   (f_z : Format.t)
-  (pi_s : Projection.t)
-  (pi_z : Projection.t)
+  (rho_s : Projection.t)
+  (rho_z : Projection.t)
   (s_x, x : Float.t * Float.t list)
   (s_z : Float.t) =
-  block_preconditions_unary b f_sx f_x f_s f_z pi_s pi_z (s_x, x) s_z ==>
-  Result.is_ok (Float.blockLog2 b f_sx f_x f_s f_z pi_s pi_z (s_x, x) s_z)
+  block_preconditions_unary b f_sx f_x f_s f_z rho_s rho_z (s_x, x) s_z ==>
+  Result.is_ok (Float.blockLog2 b f_sx f_x f_s f_z rho_s rho_z (s_x, x) s_z)
   [@@timeout 3600]
   [@@disable
     Float.reduce, Float.wLog2, Float.map2_wMultiply,
@@ -782,12 +782,12 @@ theorem block_log_ok
   (f_sx : Format.t) (f_x : Format.t)
   (f_s : Format.t)
   (f_z : Format.t)
-  (pi_s : Projection.t)
-  (pi_z : Projection.t)
+  (rho_s : Projection.t)
+  (rho_z : Projection.t)
   (s_x, x : Float.t * Float.t list)
   (s_z : Float.t) =
-  block_preconditions_unary b f_sx f_x f_s f_z pi_s pi_z (s_x, x) s_z ==>
-  Result.is_ok (Float.blockLog b f_sx f_x f_s f_z pi_s pi_z (s_x, x) s_z)
+  block_preconditions_unary b f_sx f_x f_s f_z rho_s rho_z (s_x, x) s_z ==>
+  Result.is_ok (Float.blockLog b f_sx f_x f_s f_z rho_s rho_z (s_x, x) s_z)
   [@@timeout 3600]
   [@@disable
     Float.reduce, Float.wLog, Float.map2_wMultiply,
@@ -800,12 +800,12 @@ theorem block_recip_ok
   (f_sx : Format.t) (f_x : Format.t)
   (f_s : Format.t)
   (f_z : Format.t)
-  (pi_s : Projection.t)
-  (pi_z : Projection.t)
+  (rho_s : Projection.t)
+  (rho_z : Projection.t)
   (s_x, x : Float.t * Float.t list)
   (s_z : Float.t) =
-  block_preconditions_unary b f_sx f_x f_s f_z pi_s pi_z (s_x, x) s_z ==>
-  Result.is_ok (Float.blockRecip b f_sx f_x f_s f_z pi_s pi_z (s_x, x) s_z)
+  block_preconditions_unary b f_sx f_x f_s f_z rho_s rho_z (s_x, x) s_z ==>
+  Result.is_ok (Float.blockRecip b f_sx f_x f_s f_z rho_s rho_z (s_x, x) s_z)
   [@@timeout 3600]
   [@@disable
     Float.reduce, Float.wRecip, Float.map2_wMultiply,
@@ -813,7 +813,7 @@ theorem block_recip_ok
     Float.wBlockProject, Float.block_op_map2_wop_unary]
   [@@by induct ~do_not:["gen"; "fert"; "delim"] ()]
 
-let block_preconditions_binary b f_sx1 f_x1 f_sx2 f_x2 f_s f_z pi_s pi_z (s_x1, x1) (s_x2, x2) s_z =
+let block_preconditions_binary b f_sx1 f_x1 f_sx2 f_x2 f_s f_z rho_s rho_z (s_x1, x1) (s_x2, x2) s_z =
   let params = [{f_s = f_sx1; f_x = f_x1}; {f_s = f_sx2; f_x = f_x2}] in
   let args = [{s = s_x1; x = x1}; {s = s_x2; x = x2}] in
   b >= 1 &&
@@ -823,7 +823,7 @@ let block_preconditions_binary b f_sx1 f_x1 f_sx2 f_x2 f_s f_z pi_s pi_z (s_x1, 
   equal_block_sizes b args
   [@@macro]
 
-let block_preconditions_ternary b f_sx1 f_x1 f_sx2 f_x2 f_sx3 f_x3 f_s f_z pi_s pi_z (s_x1, x1) (s_x2, x2) (s_x3, x3) s_z =
+let block_preconditions_ternary b f_sx1 f_x1 f_sx2 f_x2 f_sx3 f_x3 f_s f_z rho_s rho_z (s_x1, x1) (s_x2, x2) (s_x3, x3) s_z =
   let params = [{f_s = f_sx1; f_x = f_x1}; {f_s = f_sx2; f_x = f_x2}; {f_s = f_sx3; f_x = f_x3}] in
   let args = [{s = s_x1; x = x1}; {s = s_x2; x = x2}; {s = s_x3; x = x3}] in
   b >= 1 &&
@@ -839,13 +839,13 @@ theorem block_CopySign_ok
   (f_sx2 : Format.t) (f_x2 : Format.t)
   (f_s : Format.t)
   (f_z : Format.t)
-  (pi_s : Projection.t)
-  (pi_z : Projection.t)
+  (rho_s : Projection.t)
+  (rho_z : Projection.t)
   (s_x1, x1 : Float.t * Float.t list)
   (s_x2, x2 : Float.t * Float.t list)
   (s_z : Float.t) =
-  block_preconditions_binary b f_sx1 f_x1 f_sx2 f_x2 f_s f_z pi_s pi_z (s_x1, x1) (s_x2, x2) s_z ==>
-  Result.is_ok (Float.blockCopySign b f_sx1 f_x1 f_sx2 f_x2 f_s f_z pi_s pi_z (s_x1, x1) (s_x2, x2) s_z)
+  block_preconditions_binary b f_sx1 f_x1 f_sx2 f_x2 f_s f_z rho_s rho_z (s_x1, x1) (s_x2, x2) s_z ==>
+  Result.is_ok (Float.blockCopySign b f_sx1 f_x1 f_sx2 f_x2 f_s f_z rho_s rho_z (s_x1, x1) (s_x2, x2) s_z)
   [@@timeout 3600]
   [@@disable
     Float.reduce, Float.wCopySign, Float.map2_wMultiply,
@@ -859,13 +859,13 @@ theorem block_add_ok
   (f_sx2 : Format.t) (f_x2 : Format.t)
   (f_s : Format.t)
   (f_z : Format.t)
-  (pi_s : Projection.t)
-  (pi_z : Projection.t)
+  (rho_s : Projection.t)
+  (rho_z : Projection.t)
   (s_x1, x1 : Float.t * Float.t list)
   (s_x2, x2 : Float.t * Float.t list)
   (s_z : Float.t) =
-  block_preconditions_binary b f_sx1 f_x1 f_sx2 f_x2 f_s f_z pi_s pi_z (s_x1, x1) (s_x2, x2) s_z ==>
-  Result.is_ok (Float.blockAdd b f_sx1 f_x1 f_sx2 f_x2 f_s f_z pi_s pi_z (s_x1, x1) (s_x2, x2) s_z)
+  block_preconditions_binary b f_sx1 f_x1 f_sx2 f_x2 f_s f_z rho_s rho_z (s_x1, x1) (s_x2, x2) s_z ==>
+  Result.is_ok (Float.blockAdd b f_sx1 f_x1 f_sx2 f_x2 f_s f_z rho_s rho_z (s_x1, x1) (s_x2, x2) s_z)
   [@@timeout 3600]
   [@@disable
     Float.reduce, Float.wAdd, Float.map2_wMultiply,
@@ -879,13 +879,13 @@ theorem block_subtract_ok
   (f_sx2 : Format.t) (f_x2 : Format.t)
   (f_s : Format.t)
   (f_z : Format.t)
-  (pi_s : Projection.t)
-  (pi_z : Projection.t)
+  (rho_s : Projection.t)
+  (rho_z : Projection.t)
   (s_x1, x1 : Float.t * Float.t list)
   (s_x2, x2 : Float.t * Float.t list)
   (s_z : Float.t) =
-  block_preconditions_binary b f_sx1 f_x1 f_sx2 f_x2 f_s f_z pi_s pi_z (s_x1, x1) (s_x2, x2) s_z ==>
-  Result.is_ok (Float.blockSubtract b f_sx1 f_x1 f_sx2 f_x2 f_s f_z pi_s pi_z (s_x1, x1) (s_x2, x2) s_z)
+  block_preconditions_binary b f_sx1 f_x1 f_sx2 f_x2 f_s f_z rho_s rho_z (s_x1, x1) (s_x2, x2) s_z ==>
+  Result.is_ok (Float.blockSubtract b f_sx1 f_x1 f_sx2 f_x2 f_s f_z rho_s rho_z (s_x1, x1) (s_x2, x2) s_z)
   [@@timeout 3600]
   [@@disable
     Float.reduce, Float.wSubtract, Float.map2_wMultiply,
@@ -899,13 +899,13 @@ theorem block_multiply_ok
   (f_sx2 : Format.t) (f_x2 : Format.t)
   (f_s : Format.t)
   (f_z : Format.t)
-  (pi_s : Projection.t)
-  (pi_z : Projection.t)
+  (rho_s : Projection.t)
+  (rho_z : Projection.t)
   (s_x1, x1 : Float.t * Float.t list)
   (s_x2, x2 : Float.t * Float.t list)
   (s_z : Float.t) =
-  block_preconditions_binary b f_sx1 f_x1 f_sx2 f_x2 f_s f_z pi_s pi_z (s_x1, x1) (s_x2, x2) s_z ==>
-  Result.is_ok (Float.blockMultiply b f_sx1 f_x1 f_sx2 f_x2 f_s f_z pi_s pi_z (s_x1, x1) (s_x2, x2) s_z)
+  block_preconditions_binary b f_sx1 f_x1 f_sx2 f_x2 f_s f_z rho_s rho_z (s_x1, x1) (s_x2, x2) s_z ==>
+  Result.is_ok (Float.blockMultiply b f_sx1 f_x1 f_sx2 f_x2 f_s f_z rho_s rho_z (s_x1, x1) (s_x2, x2) s_z)
   [@@timeout 3600]
   [@@disable
     Float.reduce, Float.wMultiply, Float.map2_wMultiply,
@@ -919,13 +919,13 @@ theorem block_divide_ok
   (f_sx2 : Format.t) (f_x2 : Format.t)
   (f_s : Format.t)
   (f_z : Format.t)
-  (pi_s : Projection.t)
-  (pi_z : Projection.t)
+  (rho_s : Projection.t)
+  (rho_z : Projection.t)
   (s_x1, x1 : Float.t * Float.t list)
   (s_x2, x2 : Float.t * Float.t list)
   (s_z : Float.t) =
-  block_preconditions_binary b f_sx1 f_x1 f_sx2 f_x2 f_s f_z pi_s pi_z (s_x1, x1) (s_x2, x2) s_z ==>
-  Result.is_ok (Float.blockDivide b f_sx1 f_x1 f_sx2 f_x2 f_s f_z pi_s pi_z (s_x1, x1) (s_x2, x2) s_z)
+  block_preconditions_binary b f_sx1 f_x1 f_sx2 f_x2 f_s f_z rho_s rho_z (s_x1, x1) (s_x2, x2) s_z ==>
+  Result.is_ok (Float.blockDivide b f_sx1 f_x1 f_sx2 f_x2 f_s f_z rho_s rho_z (s_x1, x1) (s_x2, x2) s_z)
   [@@timeout 3600]
   [@@disable
     Float.reduce, Float.wDivide, Float.map2_wMultiply,
@@ -940,13 +940,13 @@ theorem block_hypot_ok
   (f_sx2 : Format.t) (f_x2 : Format.t)
   (f_s : Format.t)
   (f_z : Format.t)
-  (pi_s : Projection.t)
-  (pi_z : Projection.t)
+  (rho_s : Projection.t)
+  (rho_z : Projection.t)
   (s_x1, x1 : Float.t * Float.t list)
   (s_x2, x2 : Float.t * Float.t list)
   (s_z : Float.t) =
-  block_preconditions_binary b f_sx1 f_x1 f_sx2 f_x2 f_s f_z pi_s pi_z (s_x1, x1) (s_x2, x2) s_z ==>
-  Result.is_ok (Float.blockHypot b f_sx1 f_x1 f_sx2 f_x2 f_s f_z pi_s pi_z (s_x1, x1) (s_x2, x2) s_z)
+  block_preconditions_binary b f_sx1 f_x1 f_sx2 f_x2 f_s f_z rho_s rho_z (s_x1, x1) (s_x2, x2) s_z ==>
+  Result.is_ok (Float.blockHypot b f_sx1 f_x1 f_sx2 f_x2 f_s f_z rho_s rho_z (s_x1, x1) (s_x2, x2) s_z)
   [@@timeout 3600]
   [@@disable
     Float.reduce, Float.wHypot, Float.map2_wMultiply,
@@ -960,13 +960,13 @@ theorem block_minimum_ok
   (f_sx2 : Format.t) (f_x2 : Format.t)
   (f_s : Format.t)
   (f_z : Format.t)
-  (pi_s : Projection.t)
-  (pi_z : Projection.t)
+  (rho_s : Projection.t)
+  (rho_z : Projection.t)
   (s_x1, x1 : Float.t * Float.t list)
   (s_x2, x2 : Float.t * Float.t list)
   (s_z : Float.t) =
-  block_preconditions_binary b f_sx1 f_x1 f_sx2 f_x2 f_s f_z pi_s pi_z (s_x1, x1) (s_x2, x2) s_z ==>
-  Result.is_ok (Float.blockMinimum b f_sx1 f_x1 f_sx2 f_x2 f_s f_z pi_s pi_z (s_x1, x1) (s_x2, x2) s_z)
+  block_preconditions_binary b f_sx1 f_x1 f_sx2 f_x2 f_s f_z rho_s rho_z (s_x1, x1) (s_x2, x2) s_z ==>
+  Result.is_ok (Float.blockMinimum b f_sx1 f_x1 f_sx2 f_x2 f_s f_z rho_s rho_z (s_x1, x1) (s_x2, x2) s_z)
   [@@timeout 3600]
   [@@disable
     Float.reduce, Float.wMinimum, Float.map2_wMultiply,
@@ -980,13 +980,13 @@ theorem block_minimum_number_ok
   (f_sx2 : Format.t) (f_x2 : Format.t)
   (f_s : Format.t)
   (f_z : Format.t)
-  (pi_s : Projection.t)
-  (pi_z : Projection.t)
+  (rho_s : Projection.t)
+  (rho_z : Projection.t)
   (s_x1, x1 : Float.t * Float.t list)
   (s_x2, x2 : Float.t * Float.t list)
   (s_z : Float.t) =
-  block_preconditions_binary b f_sx1 f_x1 f_sx2 f_x2 f_s f_z pi_s pi_z (s_x1, x1) (s_x2, x2) s_z ==>
-  Result.is_ok (Float.blockMinimumNumber b f_sx1 f_x1 f_sx2 f_x2 f_s f_z pi_s pi_z (s_x1, x1) (s_x2, x2) s_z)
+  block_preconditions_binary b f_sx1 f_x1 f_sx2 f_x2 f_s f_z rho_s rho_z (s_x1, x1) (s_x2, x2) s_z ==>
+  Result.is_ok (Float.blockMinimumNumber b f_sx1 f_x1 f_sx2 f_x2 f_s f_z rho_s rho_z (s_x1, x1) (s_x2, x2) s_z)
   [@@timeout 3600]
   [@@disable
     Float.reduce, Float.wMinimumNumber, Float.map2_wMultiply,
@@ -1000,13 +1000,13 @@ theorem block_minimum_magnitude_ok
   (f_sx2 : Format.t) (f_x2 : Format.t)
   (f_s : Format.t)
   (f_z : Format.t)
-  (pi_s : Projection.t)
-  (pi_z : Projection.t)
+  (rho_s : Projection.t)
+  (rho_z : Projection.t)
   (s_x1, x1 : Float.t * Float.t list)
   (s_x2, x2 : Float.t * Float.t list)
   (s_z : Float.t) =
-  block_preconditions_binary b f_sx1 f_x1 f_sx2 f_x2 f_s f_z pi_s pi_z (s_x1, x1) (s_x2, x2) s_z ==>
-  Result.is_ok (Float.blockMinimumMagnitude b f_sx1 f_x1 f_sx2 f_x2 f_s f_z pi_s pi_z (s_x1, x1) (s_x2, x2) s_z)
+  block_preconditions_binary b f_sx1 f_x1 f_sx2 f_x2 f_s f_z rho_s rho_z (s_x1, x1) (s_x2, x2) s_z ==>
+  Result.is_ok (Float.blockMinimumMagnitude b f_sx1 f_x1 f_sx2 f_x2 f_s f_z rho_s rho_z (s_x1, x1) (s_x2, x2) s_z)
   [@@timeout 3600]
   [@@disable
     Float.reduce, Float.wMinimumMagnitude, Float.map2_wMultiply,
@@ -1020,13 +1020,13 @@ theorem block_minimum_magnitude_number_ok
   (f_sx2 : Format.t) (f_x2 : Format.t)
   (f_s : Format.t)
   (f_z : Format.t)
-  (pi_s : Projection.t)
-  (pi_z : Projection.t)
+  (rho_s : Projection.t)
+  (rho_z : Projection.t)
   (s_x1, x1 : Float.t * Float.t list)
   (s_x2, x2 : Float.t * Float.t list)
   (s_z : Float.t) =
-  block_preconditions_binary b f_sx1 f_x1 f_sx2 f_x2 f_s f_z pi_s pi_z (s_x1, x1) (s_x2, x2) s_z ==>
-  Result.is_ok (Float.blockMinimumMagnitudeNumber b f_sx1 f_x1 f_sx2 f_x2 f_s f_z pi_s pi_z (s_x1, x1) (s_x2, x2) s_z)
+  block_preconditions_binary b f_sx1 f_x1 f_sx2 f_x2 f_s f_z rho_s rho_z (s_x1, x1) (s_x2, x2) s_z ==>
+  Result.is_ok (Float.blockMinimumMagnitudeNumber b f_sx1 f_x1 f_sx2 f_x2 f_s f_z rho_s rho_z (s_x1, x1) (s_x2, x2) s_z)
   [@@timeout 3600]
   [@@disable
     Float.reduce, Float.wMinimumMagnitudeNumber, Float.map2_wMultiply,
@@ -1040,13 +1040,13 @@ theorem block_maximum_ok
   (f_sx2 : Format.t) (f_x2 : Format.t)
   (f_s : Format.t)
   (f_z : Format.t)
-  (pi_s : Projection.t)
-  (pi_z : Projection.t)
+  (rho_s : Projection.t)
+  (rho_z : Projection.t)
   (s_x1, x1 : Float.t * Float.t list)
   (s_x2, x2 : Float.t * Float.t list)
   (s_z : Float.t) =
-  block_preconditions_binary b f_sx1 f_x1 f_sx2 f_x2 f_s f_z pi_s pi_z (s_x1, x1) (s_x2, x2) s_z ==>
-  Result.is_ok (Float.blockMaximum b f_sx1 f_x1 f_sx2 f_x2 f_s f_z pi_s pi_z (s_x1, x1) (s_x2, x2) s_z)
+  block_preconditions_binary b f_sx1 f_x1 f_sx2 f_x2 f_s f_z rho_s rho_z (s_x1, x1) (s_x2, x2) s_z ==>
+  Result.is_ok (Float.blockMaximum b f_sx1 f_x1 f_sx2 f_x2 f_s f_z rho_s rho_z (s_x1, x1) (s_x2, x2) s_z)
   [@@timeout 3600]
   [@@disable
     Float.reduce, Float.wMaximum, Float.map2_wMultiply,
@@ -1060,13 +1060,13 @@ theorem block_maximum_number_ok
   (f_sx2 : Format.t) (f_x2 : Format.t)
   (f_s : Format.t)
   (f_z : Format.t)
-  (pi_s : Projection.t)
-  (pi_z : Projection.t)
+  (rho_s : Projection.t)
+  (rho_z : Projection.t)
   (s_x1, x1 : Float.t * Float.t list)
   (s_x2, x2 : Float.t * Float.t list)
   (s_z : Float.t) =
-  block_preconditions_binary b f_sx1 f_x1 f_sx2 f_x2 f_s f_z pi_s pi_z (s_x1, x1) (s_x2, x2) s_z ==>
-  Result.is_ok (Float.blockMaximumNumber b f_sx1 f_x1 f_sx2 f_x2 f_s f_z pi_s pi_z (s_x1, x1) (s_x2, x2) s_z)
+  block_preconditions_binary b f_sx1 f_x1 f_sx2 f_x2 f_s f_z rho_s rho_z (s_x1, x1) (s_x2, x2) s_z ==>
+  Result.is_ok (Float.blockMaximumNumber b f_sx1 f_x1 f_sx2 f_x2 f_s f_z rho_s rho_z (s_x1, x1) (s_x2, x2) s_z)
   [@@timeout 3600]
   [@@disable
     Float.reduce, Float.wMaximumNumber, Float.map2_wMultiply,
@@ -1080,13 +1080,13 @@ theorem block_maximum_magnitude_ok
   (f_sx2 : Format.t) (f_x2 : Format.t)
   (f_s : Format.t)
   (f_z : Format.t)
-  (pi_s : Projection.t)
-  (pi_z : Projection.t)
+  (rho_s : Projection.t)
+  (rho_z : Projection.t)
   (s_x1, x1 : Float.t * Float.t list)
   (s_x2, x2 : Float.t * Float.t list)
   (s_z : Float.t) =
-  block_preconditions_binary b f_sx1 f_x1 f_sx2 f_x2 f_s f_z pi_s pi_z (s_x1, x1) (s_x2, x2) s_z ==>
-  Result.is_ok (Float.blockMaximumMagnitude b f_sx1 f_x1 f_sx2 f_x2 f_s f_z pi_s pi_z (s_x1, x1) (s_x2, x2) s_z)
+  block_preconditions_binary b f_sx1 f_x1 f_sx2 f_x2 f_s f_z rho_s rho_z (s_x1, x1) (s_x2, x2) s_z ==>
+  Result.is_ok (Float.blockMaximumMagnitude b f_sx1 f_x1 f_sx2 f_x2 f_s f_z rho_s rho_z (s_x1, x1) (s_x2, x2) s_z)
   [@@timeout 3600]
   [@@disable
     Float.reduce, Float.wMaximumMagnitude, Float.map2_wMultiply,
@@ -1100,13 +1100,13 @@ theorem block_maximum_magnitude_number_ok
   (f_sx2 : Format.t) (f_x2 : Format.t)
   (f_s : Format.t)
   (f_z : Format.t)
-  (pi_s : Projection.t)
-  (pi_z : Projection.t)
+  (rho_s : Projection.t)
+  (rho_z : Projection.t)
   (s_x1, x1 : Float.t * Float.t list)
   (s_x2, x2 : Float.t * Float.t list)
   (s_z : Float.t) =
-  block_preconditions_binary b f_sx1 f_x1 f_sx2 f_x2 f_s f_z pi_s pi_z (s_x1, x1) (s_x2, x2) s_z ==>
-  Result.is_ok (Float.blockMaximumMagnitudeNumber b f_sx1 f_x1 f_sx2 f_x2 f_s f_z pi_s pi_z (s_x1, x1) (s_x2, x2) s_z)
+  block_preconditions_binary b f_sx1 f_x1 f_sx2 f_x2 f_s f_z rho_s rho_z (s_x1, x1) (s_x2, x2) s_z ==>
+  Result.is_ok (Float.blockMaximumMagnitudeNumber b f_sx1 f_x1 f_sx2 f_x2 f_s f_z rho_s rho_z (s_x1, x1) (s_x2, x2) s_z)
   [@@timeout 3600]
   [@@disable
     Float.reduce, Float.wMaximumMagnitudeNumber, Float.map2_wMultiply,
@@ -1200,7 +1200,7 @@ theorem op_block_ternary_fma_encode_ok
   (params : Specification.Float.block_op_parameter list)
   (args : Specification.Float.block_op_argument list)
   (f_s : Format.t) (f_z : Format.t)
-  (pi_z : Projection.t)
+  (rho_z : Projection.t)
   (s_z : Float.t) =
   b >= 1 &&
   List.length params = List.length args &&
@@ -1213,7 +1213,7 @@ theorem op_block_ternary_fma_encode_ok
     let* x2 = nth_r 1 cxs in
     let* x3 = nth_r 2 cxs in
     let*@ cz = block_op_map2_wop_ternary wFMA x1 x2 x3 in
-    let* z = wBlockProject b f_s f_z pi_z (s_z, cz) in
+    let* z = wBlockProject b f_s f_z rho_z (s_z, cz) in
     Ok (s_z, z)
   )
   [@@disable extract_error, block_op_map2_wBlockDecode, nth_r, List.length, block_op_map2_wop_ternary, wBlockProject]
@@ -1238,21 +1238,21 @@ theorem block_fma_ok
   (f_sx3 : Format.t) (f_x3 : Format.t)
   (f_s : Format.t)
   (f_z : Format.t)
-  (pi_s : Projection.t)
-  (pi_z : Projection.t)
+  (rho_s : Projection.t)
+  (rho_z : Projection.t)
   (s_x1, x1 : Float.t * Float.t list)
   (s_x2, x2 : Float.t * Float.t list)
   (s_x3, x3 : Float.t * Float.t list)
   (s_z : Float.t) =
-  block_preconditions_ternary b f_sx1 f_x1 f_sx2 f_x2 f_sx3 f_x3 f_s f_z pi_s pi_z (s_x1, x1) (s_x2, x2) (s_x3, x3) s_z ==>
-  Result.is_ok (Float.blockFMA b f_sx1 f_x1 f_sx2 f_x2 f_sx3 f_x3 f_s f_z pi_s pi_z (s_x1, x1) (s_x2, x2) (s_x3, x3) s_z)
+  block_preconditions_ternary b f_sx1 f_x1 f_sx2 f_x2 f_sx3 f_x3 f_s f_z rho_s rho_z (s_x1, x1) (s_x2, x2) (s_x3, x3) s_z ==>
+  Result.is_ok (Float.blockFMA b f_sx1 f_x1 f_sx2 f_x2 f_sx3 f_x3 f_s f_z rho_s rho_z (s_x1, x1) (s_x2, x2) (s_x3, x3) s_z)
   [@@timeout 3600]
   [@@disable extract_error, block_op_map2_wBlockDecode, nth_r, List.length, block_op_map2_wop_ternary, wBlockProject]
   [@@by
     [%use op_block_ternary_fma_encode_ok b
       [{f_s = f_sx1; f_x = f_x1}; {f_s = f_sx2; f_x = f_x2}; {f_s = f_sx3; f_x = f_x3}]
       [{s = s_x1; x = x1}; {s = s_x2; x = x2}; {s = s_x3; x = x3}]
-      f_s f_z pi_z s_z
+      f_s f_z rho_z s_z
     ] @>
     induct ~do_not:["gen"; "fert"; "delim"] ()
   ]
@@ -1262,7 +1262,7 @@ theorem op_block_ternary_faa_encode_ok
   (params : Specification.Float.block_op_parameter list)
   (args : Specification.Float.block_op_argument list)
   (f_s : Format.t) (f_z : Format.t)
-  (pi_z : Projection.t)
+  (rho_z : Projection.t)
   (s_z : Float.t) =
   b >= 1 &&
   List.length params = List.length args &&
@@ -1275,7 +1275,7 @@ theorem op_block_ternary_faa_encode_ok
     let* x2 = nth_r 1 cxs in
     let* x3 = nth_r 2 cxs in
     let*@ cz = block_op_map2_wop_ternary wFAA x1 x2 x3 in
-    let* z = wBlockProject b f_s f_z pi_z (s_z, cz) in
+    let* z = wBlockProject b f_s f_z rho_z (s_z, cz) in
     Ok (s_z, z)
   )
   [@@disable extract_error, block_op_map2_wBlockDecode, nth_r, List.length, block_op_map2_wop_ternary, wBlockProject]
@@ -1299,28 +1299,28 @@ theorem block_faa_ok
   (f_sx3 : Format.t) (f_x3 : Format.t)
   (f_s : Format.t)
   (f_z : Format.t)
-  (pi_s : Projection.t)
-  (pi_z : Projection.t)
+  (rho_s : Projection.t)
+  (rho_z : Projection.t)
   (s_x1, x1 : Float.t * Float.t list)
   (s_x2, x2 : Float.t * Float.t list)
   (s_x3, x3 : Float.t * Float.t list)
   (s_z : Float.t) =
-  block_preconditions_ternary b f_sx1 f_x1 f_sx2 f_x2 f_sx3 f_x3 f_s f_z pi_s pi_z (s_x1, x1) (s_x2, x2) (s_x3, x3) s_z ==>
-  Result.is_ok (Float.blockFAA b f_sx1 f_x1 f_sx2 f_x2 f_sx3 f_x3 f_s f_z pi_s pi_z (s_x1, x1) (s_x2, x2) (s_x3, x3) s_z)
+  block_preconditions_ternary b f_sx1 f_x1 f_sx2 f_x2 f_sx3 f_x3 f_s f_z rho_s rho_z (s_x1, x1) (s_x2, x2) (s_x3, x3) s_z ==>
+  Result.is_ok (Float.blockFAA b f_sx1 f_x1 f_sx2 f_x2 f_sx3 f_x3 f_s f_z rho_s rho_z (s_x1, x1) (s_x2, x2) (s_x3, x3) s_z)
   [@@timeout 3600]
   [@@disable extract_error, block_op_map2_wBlockDecode, nth_r, List.length, block_op_map2_wop_ternary, wBlockProject]
   [@@by
     [%use op_block_ternary_faa_encode_ok b
       [{f_s = f_sx1; f_x = f_x1}; {f_s = f_sx2; f_x = f_x2}; {f_s = f_sx3; f_x = f_x3}]
       [{s = s_x1; x = x1}; {s = s_x2; x = x2}; {s = s_x3; x = x3}]
-      f_s f_z pi_z s_z
+      f_s f_z rho_z s_z
     ] @>
     induct ~do_not:["gen"; "fert"; "delim"] ()
   ]
 
-theorem block_reduce_add_ok (b : int) (f_sx : Format.t) (f_x : Format.t) (f_z : Format.t) (pi_z : Projection.t) (s_x, x : t * t list) =
+theorem block_reduce_add_ok (b : int) (f_sx : Format.t) (f_x : Format.t) (f_z : Format.t) (rho_z : Projection.t) (s_x, x : t * t list) =
   b >= 1 && List.length x = b ==>
-  Result.is_ok (Float.blockReduceAdd b f_sx f_x f_z pi_z (s_x, x))
+  Result.is_ok (Float.blockReduceAdd b f_sx f_x f_z rho_z (s_x, x))
   [@@timeout 3600]
   [@@disable extract_error, wBlockDecode, nth_r, wBlockProject, wAdd, List.length, wProject, reduce_wAdd]
   [@@by induct ~do_not:["gen"; "fert"; "delim"] ()]
@@ -1335,9 +1335,9 @@ theorem reduce_wMultiply_confl_ok (x : CER.t list) =
   [@@by auto]
   [@@fc]
 
-theorem block_reduce_multiply_ok (b : int) (f_sx : Format.t) (f_x : Format.t) (f_z : Format.t) (pi_z : Projection.t) (s_x, x : t * t list) =
+theorem block_reduce_multiply_ok (b : int) (f_sx : Format.t) (f_x : Format.t) (f_z : Format.t) (rho_z : Projection.t) (s_x, x : t * t list) =
   b >= 1 && List.length x = b ==>
-  Result.is_ok (Float.blockReduceMultiply b f_sx f_x f_z pi_z (s_x, x))
+  Result.is_ok (Float.blockReduceMultiply b f_sx f_x f_z rho_z (s_x, x))
   [@@timeout 3600]
   [@@disable extract_error, wBlockDecode, nth_r, wBlockProject, wMultiply, List.length, wProject, reduce_wMultiply]
   [@@by induct ~do_not:["gen"; "fert"; "delim"] ()]
@@ -1363,7 +1363,7 @@ theorem block_op_binary_preserves_block_size
   (f_s : Format.t)
   (f_z : Format.t)
   (s_z : t)
-  (pi_z : Projection.t)
+  (rho_z : Projection.t)
   (args: block_op_argument list)
   (wOp : CER.t -> CER.t -> (CER.t, string) Result.t) =
   b >= 1 &&
@@ -1371,7 +1371,7 @@ theorem block_op_binary_preserves_block_size
   List.length args = 2 &&
   List.for_all (fun a_i -> List.length a_i.x = b) args
   ==>
-  match ((Float.block_op_binary b params f_s f_z s_z pi_z args wOp) [@trigger]) with
+  match ((Float.block_op_binary b params f_s f_z s_z rho_z args wOp) [@trigger]) with
   | Ok (_, r) -> List.length r = b
   | _ -> true
   [@@timeout 3600]
@@ -1441,7 +1441,7 @@ theorem block_op_ternary_preserves_block_size
   (f_s : Format.t)
   (f_z : Format.t)
   (s_z : t)
-  (pi_z : Projection.t)
+  (rho_z : Projection.t)
   (args: block_op_argument list)
   (wOp : CER.t -> CER.t -> CER.t -> (CER.t, string) Result.t) =
   b >= 1 &&
@@ -1449,7 +1449,7 @@ theorem block_op_ternary_preserves_block_size
   List.length args = 3 &&
   List.for_all (fun a_i -> List.length a_i.x = b) args
   ==>
-  match ((Float.block_op_ternary b params f_s f_z s_z pi_z args wOp) [@trigger]) with
+  match ((Float.block_op_ternary b params f_s f_z s_z rho_z args wOp) [@trigger]) with
   | Ok (_, r) -> List.length r = b
   | _ -> true
   [@@timeout 3600]
