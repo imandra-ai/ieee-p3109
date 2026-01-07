@@ -433,16 +433,17 @@ module Float = struct
     (m : real) (sat : SaturationMode.t) (rnd : RoundingMode.t)
     (x : CER.t) (sigma : Signedness.t) (delta : Domain.t)
     : (CER.t, string) Result.t =
-    let m_lo =
-      match sigma with
-      | Signed -> -. m
-      | Unsigned -> 0.0
-    in
-    let m_hi = m in
     let open RoundingMode in
     let open SaturationMode in
     let open Signedness in
     let open Domain in
+    let m_lo =
+      match sigma with
+      | Signed -> -. m
+      | Unsigned -> 0.0
+      [@@ocaml.doc "nolatex"]
+    in
+    let m_hi = m [@@ocaml.doc "nolatex"] in
     match sat, rnd, x, sigma, delta with
     | _, _, NaN, _, _ -> Ok NaN
 
