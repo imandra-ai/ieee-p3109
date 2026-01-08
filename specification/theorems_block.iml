@@ -162,8 +162,8 @@ theorem wBlockProject_map_ok (cs : CER.t) (x : CER.t list) =
   [@@disable Float.wDecode, Float.wDivide, List.map]
   [@@by auto]
 
-theorem map_project_ok f pi x =
-  Result.is_ok (extract_error ((Float.map_project f pi x) [@trigger]))
+theorem map_project_ok f rho x =
+  Result.is_ok (extract_error ((Float.map_project f rho x) [@trigger]))
   [@@disable Float.wProject]
   [@@by induct ~do_not:["gen"; "fert"; "delim"] ()]
   [@@fc]
@@ -823,7 +823,7 @@ let block_preconditions_binary b f_sx1 f_x1 f_sx2 f_x2 f_s f_z rho_s rho_z (s_x1
   equal_block_sizes b args
   [@@macro]
 
-let block_preconditions_ternary b f_sx1 f_x1 f_sx2 f_x2 f_sx3 f_x3 f_s f_z rho_s rho_z (s_x1, x1) (s_x2, x2) (s_x3, x3) s_z =
+let block_preconditions_ternary b f_sx1 f_x1 f_sx2 f_x2 f_sx3 f_x3 f_s f_r rho_s rho_z (s_x1, x1) (s_x2, x2) (s_x3, x3) s_z =
   let params = [{f_s = f_sx1; f_x = f_x1}; {f_s = f_sx2; f_x = f_x2}; {f_s = f_sx3; f_x = f_x3}] in
   let args = [{s = s_x1; x = x1}; {s = s_x2; x = x2}; {s = s_x3; x = x3}] in
   b >= 1 &&
@@ -1237,22 +1237,22 @@ theorem block_fma_ok
   (f_sx2 : Format.t) (f_x2 : Format.t)
   (f_sx3 : Format.t) (f_x3 : Format.t)
   (f_s : Format.t)
-  (f_z : Format.t)
+  (f_r : Format.t)
   (rho_s : Projection.t)
   (rho_z : Projection.t)
   (s_x1, x1 : Float.t * Float.t list)
   (s_x2, x2 : Float.t * Float.t list)
   (s_x3, x3 : Float.t * Float.t list)
   (s_z : Float.t) =
-  block_preconditions_ternary b f_sx1 f_x1 f_sx2 f_x2 f_sx3 f_x3 f_s f_z rho_s rho_z (s_x1, x1) (s_x2, x2) (s_x3, x3) s_z ==>
-  Result.is_ok (Float.blockFMA b f_sx1 f_x1 f_sx2 f_x2 f_sx3 f_x3 f_s f_z rho_s rho_z (s_x1, x1) (s_x2, x2) (s_x3, x3) s_z)
+  block_preconditions_ternary b f_sx1 f_x1 f_sx2 f_x2 f_sx3 f_x3 f_s f_r rho_s rho_z (s_x1, x1) (s_x2, x2) (s_x3, x3) s_z ==>
+  Result.is_ok (Float.blockFMA b f_sx1 f_x1 f_sx2 f_x2 f_sx3 f_x3 f_s f_r rho_s rho_z (s_x1, x1) (s_x2, x2) (s_x3, x3) s_z)
   [@@timeout 3600]
   [@@disable extract_error, block_op_map2_wBlockDecode, nth_r, List.length, block_op_map2_wop_ternary, wBlockProject]
   [@@by
     [%use op_block_ternary_fma_encode_ok b
       [{f_s = f_sx1; f_x = f_x1}; {f_s = f_sx2; f_x = f_x2}; {f_s = f_sx3; f_x = f_x3}]
       [{s = s_x1; x = x1}; {s = s_x2; x = x2}; {s = s_x3; x = x3}]
-      f_s f_z rho_z s_z
+      f_s f_r rho_z s_z
     ] @>
     induct ~do_not:["gen"; "fert"; "delim"] ()
   ]
@@ -1342,47 +1342,6 @@ theorem block_reduce_multiply_ok (b : int) (f_sx : Format.t) (f_x : Format.t) (f
   [@@disable extract_error, wBlockDecode, nth_r, wBlockProject, wMultiply, List.length, wProject, reduce_wMultiply]
   [@@by induct ~do_not:["gen"; "fert"; "delim"] ()]
 
-theorem block_op_map2_wop_binary_preserves_block_size
-  (wOp : CER.t -> CER.t -> (CER.t, string) Result.t)
-  (x : CER.t list)
-  (y : CER.t list) =
-  List.length x = List.length y
-  ==>
-  match (block_op_map2_wop_binary wOp x y) [@trigger] with
-  | Ok r -> (
-    match extract_error r with
-    | Ok mapped -> List.length mapped = List.length x
-    | Error _ -> true)
-  | Error _ -> false
-  [@@by induct ~do_not:["gen"; "fert"; "delim"] ()]
-  [@@fc]
-
-theorem block_op_binary_preserves_block_size
-  (b : int)
-  (params : block_op_parameter list)
-  (f_s : Format.t)
-  (f_z : Format.t)
-  (s_z : t)
-  (rho_z : Projection.t)
-  (args: block_op_argument list)
-  (wOp : CER.t -> CER.t -> (CER.t, string) Result.t) =
-  b >= 1 &&
-  List.length params = List.length args &&
-  List.length args = 2 &&
-  List.for_all (fun a_i -> List.length a_i.x = b) args
-  ==>
-  match ((Float.block_op_binary b params f_s f_z s_z rho_z args wOp) [@trigger]) with
-  | Ok (_, r) -> List.length r = b
-  | _ -> true
-  [@@timeout 3600]
-  [@@disable
-    wProject, Format.parameters, List.map, List.map2,
-    reduce, wBlockDecode, wBlockProject, block_op_map2_wop_binary,
-    block_op_map2_wBlockDecode]
-  (* nondet? *)
-  [@@by induct ~do_not:["gen"; "fert"; "delim"] ()]
-  [@@fc]
-
 let one (f : Format.t) = match wEncode f CER.one with Ok r -> r | _ -> nan f
 
 let is_in_value_set (f : Format.t) (x : CER.t) =
@@ -1406,9 +1365,9 @@ theorem one_in_value_set (f : Format.t) =
   [@@by enumerate ["f"] @> ground_eval ()]
 
 (* Scaled addition via a block of size 1 is okay as long as the output format has 1.0 in it's value set. *)
-theorem internal_scaled_add_ok f_x f_y f_z pi x s_x y s_y =
-  is_in_value_set f_z CER.one ==>
-  Result.is_ok (Float.internal_scaledAdd f_x f_y f_z pi x s_x y s_y)
+theorem internal_scaled_add_ok f_x f_y f_r rho x s_x y s_y =
+  is_in_value_set f_r CER.one ==>
+  Result.is_ok (Float.internal_scaledAdd f_x f_y f_r rho x s_x y s_y)
   [@@timeout 3600]
   [@@disable
     wProject, Format.parameters, List.map, List.map2,
@@ -1416,14 +1375,14 @@ theorem internal_scaled_add_ok f_x f_y f_z pi x s_x y s_y =
     block_op_map2_wBlockDecode,
     wEncode, wDecode, Util.pow2, Util.ipow2, blockAdd]
   [@@by
-    [%use block_add_ok 1 f_x f_x f_y f_y f_z f_z pi pi (s_x, [x]) (s_y, [y]) (one f_z)] @>
+    [%use block_add_ok 1 f_x f_x f_y f_y f_r f_r rho rho (s_x, [x]) (s_y, [y]) (one f_r)] @>
     induct ~do_not:["gen"; "fert"; "delim"] ()
   ]
 
 (* Scaled multiplication via a block of size 1 is okay as long as the output format has 1.0 in it's value set. *)
-theorem internal_scaled_multiply_ok f_x f_y f_z pi x s_x y s_y =
-  is_in_value_set f_z CER.one ==>
-  Result.is_ok (Float.internal_scaledMultiply f_x f_y f_z pi x s_x y s_y)
+theorem internal_scaled_multiply_ok f_x f_y f_r rho x s_x y s_y =
+  is_in_value_set f_r CER.one ==>
+  Result.is_ok (Float.internal_scaledMultiply f_x f_y f_r rho x s_x y s_y)
   [@@timeout 3600]
   [@@disable
     wProject, Format.parameters, List.map, List.map2,
@@ -1431,40 +1390,14 @@ theorem internal_scaled_multiply_ok f_x f_y f_z pi x s_x y s_y =
     block_op_map2_wBlockDecode,
     wEncode, wDecode, Util.pow2, Util.ipow2, blockMultiply]
   [@@by
-    [%use block_multiply_ok 1 f_x f_x f_y f_y f_z f_z pi pi (s_x, [x]) (s_y, [y]) (one f_z)] @>
+    [%use block_multiply_ok 1 f_x f_x f_y f_y f_r f_r rho rho (s_x, [x]) (s_y, [y]) (one f_r)] @>
     induct ~do_not:["gen"; "fert"; "delim"] ()
   ]
 
-theorem block_op_ternary_preserves_block_size
-  (b : int)
-  (params : block_op_parameter list)
-  (f_s : Format.t)
-  (f_z : Format.t)
-  (s_z : t)
-  (rho_z : Projection.t)
-  (args: block_op_argument list)
-  (wOp : CER.t -> CER.t -> CER.t -> (CER.t, string) Result.t) =
-  b >= 1 &&
-  List.length params = List.length args &&
-  List.length args = 3 &&
-  List.for_all (fun a_i -> List.length a_i.x = b) args
-  ==>
-  match ((Float.block_op_ternary b params f_s f_z s_z rho_z args wOp) [@trigger]) with
-  | Ok (_, r) -> List.length r = b
-  | _ -> true
-  [@@timeout 3600]
-  [@@disable
-    wProject, Format.parameters, List.map, List.map2,
-    reduce, wBlockDecode, wBlockProject, block_op_map2_wop_ternary,
-    block_op_map2_wBlockDecode]
-  (* nondet? *)
-  [@@by induct ~do_not:["gen"; "fert"; "delim"] ()]
-  [@@fc]
-
 (* Scaled FMA via a block of size 1 is okay as long as the output format has 1.0 in it's value set. *)
-theorem internal_scaled_fma_ok f_x f_y f_sxy f_z f_sz f_r pi x y s_xy z s_z =
+theorem internal_scaled_fma_ok f_x f_y f_sxy f_z f_sz f_r rho x y s_xy z s_z =
   is_in_value_set f_r CER.one ==>
-  Result.is_ok (Float.internal_scaledFMA f_x f_y f_sxy f_z f_sz f_r pi x y s_xy z s_z)
+  Result.is_ok (Float.internal_scaledFMA f_x f_y f_sxy f_z f_sz f_r rho x y s_xy z s_z)
   [@@timeout 3600]
   [@@disable
     wProject, Format.parameters, List.map, List.map2,
@@ -1473,6 +1406,6 @@ theorem internal_scaled_fma_ok f_x f_y f_sxy f_z f_sz f_r pi x y s_xy z s_z =
     wEncode, wDecode, Util.pow2, Util.ipow2, blockFMA]
   (* nondet? *)
   [@@by
-    [%use block_fma_ok 1 f_sxy f_x f_sxy f_y f_sz f_z f_r f_r pi pi (s_xy, [x]) (s_xy, [y]) (s_z, [z]) (one f_r)] @>
+    [%use block_fma_ok 1 f_sxy f_x f_sxy f_y f_z f_sz f_r f_r rho rho (s_xy, [x]) (s_xy, [y]) (s_z, [z]) (one f_r)] @>
     induct ~do_not:["gen"; "fert"; "delim"] ()
   ]
