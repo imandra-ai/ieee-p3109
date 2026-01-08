@@ -760,12 +760,14 @@ theorem internal_logsoftmax_ok (f_x : Format.t) (f_r : Format.t) (rho : Projecti
 (** [internal_nextGreaterThan] never returns an error *)
 theorem internal_nextGreaterThan_ok (f : Format.t) (x : Float.t) =
   Result.is_ok (Float.internal_nextGreaterThan f x)
+  [@@timeout 60]
   [@@disable Float.minFiniteOf, Float.maxFiniteOf, Float.minPositiveOf]
   [@@by auto]
 
 (** [internal_nextLessThan] never returns an error *)
 theorem internal_nextLessThan_ok (f : Format.t) (x : Float.t) =
   Result.is_ok (Float.internal_nextLessThan f x)
+  [@@timeout 60]
   [@@disable Float.minFiniteOf, Float.maxFiniteOf, Float.minPositiveOf]
   [@@by auto]
 
