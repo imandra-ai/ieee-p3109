@@ -48,9 +48,10 @@ theorem internal_wRoundToPrecision_ok (p : int) (b : int) (rnd : RoundingMode.t)
   Result.is_ok (Float.internal_wRoundToPrecision p b rnd x)
 
 (* [decode_aux] never throws an error *)
-theorem wDecodeAux_ok (k : int) (p : int) (b : int) (s: Signedness.t) (d : Domain.t) (x : Float.t) =
-  Result.is_ok ((Float.wDecodeAux k p b s d x) [@trigger])
+theorem wDecodeAux_ok (f : Format.t) (s: Signedness.t) (d : Domain.t) (x : Float.t) =
+  Result.is_ok ((Float.wDecodeAux f s d x) [@trigger])
   [@@timeout 240]
+  [@@disable Float.bitWidthOf, Float.precisionOf, Float.exponentBiasOf]
   [@@by auto]
   [@@fc]
 
