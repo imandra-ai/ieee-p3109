@@ -41,6 +41,92 @@ theorem wfr_above (kp : Format.kpt) (x : Float.t) =
   [@@by enumerate ["kp"] @> auto]
   [@@fc]
 
+theorem wfr_16p1_mid = forall_in_range (is_within B16P1) 0 (ipow2 16) [@@by ground_eval ()] [@@timeout 360]
+theorem wfr_16p2_mid = forall_in_range (is_within B16P2) 0 (ipow2 16) [@@by ground_eval ()] [@@timeout 360]
+theorem wfr_16p3_mid = forall_in_range (is_within B16P3) 0 (ipow2 16) [@@by ground_eval ()] [@@timeout 360]
+theorem wfr_16p4_mid = forall_in_range (is_within B16P4) 0 (ipow2 16) [@@by ground_eval ()] [@@timeout 360]
+theorem wfr_16p5_mid = forall_in_range (is_within B16P5) 0 (ipow2 16) [@@by ground_eval ()] [@@timeout 360]
+theorem wfr_16p6_mid = forall_in_range (is_within B16P6) 0 (ipow2 16) [@@by ground_eval ()] [@@timeout 360]
+theorem wfr_16p7_mid = forall_in_range (is_within B16P7) 0 (ipow2 16) [@@by ground_eval ()] [@@timeout 360]
+theorem wfr_16p8_mid = forall_in_range (is_within B16P8) 0 (ipow2 16) [@@by ground_eval ()] [@@timeout 360]
+theorem wfr_16p9_mid = forall_in_range (is_within B16P9) 0 (ipow2 16) [@@by ground_eval ()] [@@timeout 360]
+theorem wfr_16p10_mid = forall_in_range (is_within B16P10) 0 (ipow2 16) [@@by ground_eval ()] [@@timeout 360]
+theorem wfr_16p11_mid = forall_in_range (is_within B16P11) 0 (ipow2 16) [@@by ground_eval ()] [@@timeout 360]
+theorem wfr_16p12_mid = forall_in_range (is_within B16P12) 0 (ipow2 16) [@@by ground_eval ()] [@@timeout 360]
+theorem wfr_16p13_mid = forall_in_range (is_within B16P13) 0 (ipow2 16) [@@by ground_eval ()] [@@timeout 360]
+theorem wfr_16p14_mid = forall_in_range (is_within B16P14) 0 (ipow2 16) [@@by ground_eval ()] [@@timeout 360]
+theorem wfr_16p15_mid = forall_in_range (is_within B16P15) 0 (ipow2 16) [@@by ground_eval ()] [@@timeout 360]
+theorem wfr_16p16_mid = forall_in_range (is_within B16P16) 0 (ipow2 16) [@@by ground_eval ()] [@@timeout 360]
+
+theorem wfr_16 (x : Float.t) =
+  is_within B16P1 x &&
+  is_within B16P2 x &&
+  is_within B16P3 x &&
+  is_within B16P4 x &&
+  is_within B16P5 x &&
+  is_within B16P6 x &&
+  is_within B16P7 x &&
+  is_within B16P8 x &&
+  is_within B16P9 x &&
+  is_within B16P10 x &&
+  is_within B16P11 x &&
+  is_within B16P12 x &&
+  is_within B16P13 x &&
+  is_within B16P14 x &&
+  is_within B16P15 x &&
+  is_within B16P16 x
+  [@@disable is_within]
+  [@@by
+    [%use wfr_above B16P1 x] @>
+    [%use wfr_above B16P2 x] @>
+    [%use wfr_above B16P3 x] @>
+    [%use wfr_above B16P4 x] @>
+    [%use wfr_above B16P5 x] @>
+    [%use wfr_above B16P6 x] @>
+    [%use wfr_above B16P7 x] @>
+    [%use wfr_above B16P8 x] @>
+    [%use wfr_above B16P9 x] @>
+    [%use wfr_above B16P10 x] @>
+    [%use wfr_above B16P11 x] @>
+    [%use wfr_above B16P12 x] @>
+    [%use wfr_above B16P13 x] @>
+    [%use wfr_above B16P14 x] @>
+    [%use wfr_above B16P15 x] @>
+    [%use wfr_above B16P16 x] @>
+    [%use wfr_16p1_mid] @>
+    [%use wfr_16p2_mid] @>
+    [%use wfr_16p3_mid] @>
+    [%use wfr_16p4_mid] @>
+    [%use wfr_16p5_mid] @>
+    [%use wfr_16p6_mid] @>
+    [%use wfr_16p7_mid] @>
+    [%use wfr_16p8_mid] @>
+    [%use wfr_16p9_mid] @>
+    [%use wfr_16p10_mid] @>
+    [%use wfr_16p11_mid] @>
+    [%use wfr_16p12_mid] @>
+    [%use wfr_16p13_mid] @>
+    [%use wfr_16p14_mid] @>
+    [%use wfr_16p15_mid] @>
+    [%use wfr_16p16_mid] @>
+    [%use forall_elim (is_within B16P1) 0 (ipow2 16) x] @>
+    [%use forall_elim (is_within B16P2) 0 (ipow2 16) x] @>
+    [%use forall_elim (is_within B16P3) 0 (ipow2 16) x] @>
+    [%use forall_elim (is_within B16P4) 0 (ipow2 16) x] @>
+    [%use forall_elim (is_within B16P5) 0 (ipow2 16) x] @>
+    [%use forall_elim (is_within B16P6) 0 (ipow2 16) x] @>
+    [%use forall_elim (is_within B16P7) 0 (ipow2 16) x] @>
+    [%use forall_elim (is_within B16P8) 0 (ipow2 16) x] @>
+    [%use forall_elim (is_within B16P9) 0 (ipow2 16) x] @>
+    [%use forall_elim (is_within B16P10) 0 (ipow2 16) x] @>
+    [%use forall_elim (is_within B16P11) 0 (ipow2 16) x] @>
+    [%use forall_elim (is_within B16P12) 0 (ipow2 16) x] @>
+    [%use forall_elim (is_within B16P13) 0 (ipow2 16) x] @>
+    [%use forall_elim (is_within B16P14) 0 (ipow2 16) x] @>
+    [%use forall_elim (is_within B16P15) 0 (ipow2 16) x] @>
+    [%use forall_elim (is_within B16P16) 0 (ipow2 16) x] @>
+    auto]
+
 theorem wfr_15p1_mid = forall_in_range (is_within B15P1) 0 (ipow2 15) [@@by ground_eval ()] [@@timeout 240]
 theorem wfr_15p2_mid = forall_in_range (is_within B15P2) 0 (ipow2 15) [@@by ground_eval ()] [@@timeout 240]
 theorem wfr_15p3_mid = forall_in_range (is_within B15P3) 0 (ipow2 15) [@@by ground_eval ()] [@@timeout 240]
@@ -735,6 +821,7 @@ theorem wfr_2 (x : Float.t) =
 theorem within_format_range_kp (kp : Format.kpt) (x : Float.t) =
   is_within kp x
   [@@by
+    [%use wfr_16 x] @>
     [%use wfr_15 x] @>
     [%use wfr_14 x] @>
     [%use wfr_13 x] @>

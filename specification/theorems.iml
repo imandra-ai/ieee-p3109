@@ -16,8 +16,8 @@ let unroll_nonlin qt nqt steps = Tactic.unroll ~smt:"z3-full-nonlinear" ~query_t
 
 theorem format_parameter_limits (f : Format.t) =
   let k, p, b, _, _, s, d = (Format.parameters f [@trigger]) in
-  0 < k && k <= 15 &&
-  0 < p && p <= 15 &&
+  0 < k && k <= 16 &&
+  0 < p && p <= 16 &&
   b <= Util.ipow2 (k - p)
   [@@timeout 600]
   [@@by unroll_nonlin 20 10 100]

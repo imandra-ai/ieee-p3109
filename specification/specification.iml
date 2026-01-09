@@ -36,6 +36,7 @@ module Format = struct
     | B13P1 | B13P2 | B13P3 | B13P4 | B13P5 | B13P6 | B13P7 | B13P8 | B13P9 | B13P10 | B13P11 | B13P12 | B13P13
     | B14P1 | B14P2 | B14P3 | B14P4 | B14P5 | B14P6 | B14P7 | B14P8 | B14P9 | B14P10 | B14P11 | B14P12 | B14P13 | B14P14
     | B15P1 | B15P2 | B15P3 | B15P4 | B15P5 | B15P6 | B15P7 | B15P8 | B15P9 | B15P10 | B15P11 | B15P12 | B15P13 | B15P14 | B15P15
+    | B16P1 | B16P2 | B16P3 | B16P4 | B16P5 | B16P6 | B16P7 | B16P8 | B16P9 | B16P10 | B16P11 | B16P12 | B16P13 | B16P14 | B16P15 | B16P16
 
   type t = {
     kp: kpt;
@@ -45,21 +46,22 @@ module Format = struct
 
   let precision (f : t) : int =
     match f.kp with
-    | B15P1  | B14P1  | B13P1  | B12P1  | B11P1  | B10P1 | B9P1 | B8P1 | B7P1 | B6P1 | B5P1 | B4P1 | B3P1 | B2P1 -> 1
-    | B15P2  | B14P2  | B13P2  | B12P2  | B11P2  | B10P2 | B9P2 | B8P2 | B7P2 | B6P2 | B5P2 | B4P2 | B3P2 | B2P2 -> 2
-    | B15P3  | B14P3  | B13P3  | B12P3  | B11P3  | B10P3 | B9P3 | B8P3 | B7P3 | B6P3 | B5P3 | B4P3 | B3P3 -> 3
-    | B15P4  | B14P4  | B13P4  | B12P4  | B11P4  | B10P4 | B9P4 | B8P4 | B7P4 | B6P4 | B5P4 | B4P4 -> 4
-    | B15P5  | B14P5  | B13P5  | B12P5  | B11P5  | B10P5 | B9P5 | B8P5 | B7P5 | B6P5 | B5P5-> 5
-    | B15P6  | B14P6  | B13P6  | B12P6  | B11P6  | B10P6 | B9P6 | B8P6 | B7P6 | B6P6 -> 6
-    | B15P7  | B14P7  | B13P7  | B12P7  | B11P7  | B10P7 | B9P7 | B8P7 | B7P7-> 7
-    | B15P8  | B14P8  | B13P8  | B12P8  | B11P8  | B10P8 | B9P8 | B8P8 -> 8
-    | B15P9  | B14P9  | B13P9  | B12P9  | B11P9  | B10P9 | B9P9 -> 9
-    | B15P10 | B14P10 | B13P10 | B12P10 | B11P10 | B10P10 -> 10
-    | B15P11 | B14P11 | B13P11 | B12P11 | B11P11-> 11
-    | B15P12 | B14P12 | B13P12 | B12P12 -> 12
-    | B15P13 | B14P13 | B13P13 -> 13
-    | B15P14 | B14P14 -> 14
-    | B15P15 -> 15
+    | B16P1 | B15P1  | B14P1  | B13P1  | B12P1  | B11P1  | B10P1 | B9P1 | B8P1 | B7P1 | B6P1 | B5P1 | B4P1 | B3P1 | B2P1 -> 1
+    | B16P2 | B15P2  | B14P2  | B13P2  | B12P2  | B11P2  | B10P2 | B9P2 | B8P2 | B7P2 | B6P2 | B5P2 | B4P2 | B3P2 | B2P2 -> 2
+    | B16P3 | B15P3  | B14P3  | B13P3  | B12P3  | B11P3  | B10P3 | B9P3 | B8P3 | B7P3 | B6P3 | B5P3 | B4P3 | B3P3 -> 3
+    | B16P4 | B15P4  | B14P4  | B13P4  | B12P4  | B11P4  | B10P4 | B9P4 | B8P4 | B7P4 | B6P4 | B5P4 | B4P4 -> 4
+    | B16P5 | B15P5  | B14P5  | B13P5  | B12P5  | B11P5  | B10P5 | B9P5 | B8P5 | B7P5 | B6P5 | B5P5-> 5
+    | B16P6 | B15P6  | B14P6  | B13P6  | B12P6  | B11P6  | B10P6 | B9P6 | B8P6 | B7P6 | B6P6 -> 6
+    | B16P7 | B15P7  | B14P7  | B13P7  | B12P7  | B11P7  | B10P7 | B9P7 | B8P7 | B7P7-> 7
+    | B16P8 | B15P8  | B14P8  | B13P8  | B12P8  | B11P8  | B10P8 | B9P8 | B8P8 -> 8
+    | B16P9 | B15P9  | B14P9  | B13P9  | B12P9  | B11P9  | B10P9 | B9P9 -> 9
+    | B16P10 | B15P10 | B14P10 | B13P10 | B12P10 | B11P10 | B10P10 -> 10
+    | B16P11 | B15P11 | B14P11 | B13P11 | B12P11 | B11P11-> 11
+    | B16P12 | B15P12 | B14P12 | B13P12 | B12P12 -> 12
+    | B16P13 | B15P13 | B14P13 | B13P13 -> 13
+    | B16P14 | B15P14 | B14P14 -> 14
+    | B16P15 | B15P15 -> 15
+    | B16P16 -> 16
     [@@macro]
 
   let k_of_kp (kp : kpt) =
@@ -78,6 +80,7 @@ module Format = struct
     | B13P1 | B13P2 | B13P3 | B13P4 | B13P5 | B13P6 | B13P7 | B13P8 | B13P9 | B13P10 | B13P11 | B13P12 | B13P13 -> 13
     | B14P1 | B14P2 | B14P3 | B14P4 | B14P5 | B14P6 | B14P7 | B14P8 | B14P9 | B14P10 | B14P11 | B14P12 | B14P13 | B14P14-> 14
     | B15P1 | B15P2 | B15P3 | B15P4 | B15P5 | B15P6 | B15P7 | B15P8 | B15P9 | B15P10 | B15P11 | B15P12 | B15P13 | B15P14 | B15P15 -> 15
+    | B16P1 | B16P2 | B16P3 | B16P4 | B16P5 | B16P6 | B16P7 | B16P8 | B16P9 | B16P10 | B16P11 | B16P12 | B16P13 | B16P14 | B16P15 | B16P16-> 16
   [@@macro]
 
   let width (f : t) : int = k_of_kp f.kp [@@macro]
@@ -102,6 +105,7 @@ module Format = struct
     | 13 -> (match p with 1 -> Ok B13P1 | 2 -> Ok B13P2 | 3 -> Ok B13P3 | 4 -> Ok B13P4 | 5 -> Ok B13P5 | 6 -> Ok B13P6 | 7 -> Ok B13P7 | 8 -> Ok B13P8 | 9 -> Ok B13P9 | 10 -> Ok B13P10 | 11 -> Ok B13P11 | 12 -> Ok B13P12 | 13 -> Ok B13P13 | _ -> Error "invalid precision")
     | 14 -> (match p with 1 -> Ok B14P1 | 2 -> Ok B14P2 | 3 -> Ok B14P3 | 4 -> Ok B14P4 | 5 -> Ok B14P5 | 6 -> Ok B14P6 | 7 -> Ok B14P7 | 8 -> Ok B14P8 | 9 -> Ok B14P9 | 10 -> Ok B14P10 | 11 -> Ok B14P11 | 12 -> Ok B14P12 | 13 -> Ok B14P13 | 14 -> Ok B14P14 | _ -> Error "invalid precision")
     | 15 -> (match p with 1 -> Ok B15P1 | 2 -> Ok B15P2 | 3 -> Ok B15P3 | 4 -> Ok B15P4 | 5 -> Ok B15P5 | 6 -> Ok B15P6 | 7 -> Ok B15P7 | 8 -> Ok B15P8 | 9 -> Ok B15P9 | 10 -> Ok B15P10 | 11 -> Ok B15P11 | 12 -> Ok B15P12 | 13 -> Ok B15P13 | 14 -> Ok B15P14 | 15 -> Ok B15P15 | _ -> Error "invalid precision")
+    | 16 -> (match p with 1 -> Ok B16P1 | 2 -> Ok B16P2 | 3 -> Ok B16P3 | 4 -> Ok B16P4 | 5 -> Ok B16P5 | 6 -> Ok B16P6 | 7 -> Ok B16P7 | 8 -> Ok B16P8 | 9 -> Ok B16P9 | 10 -> Ok B16P10 | 11 -> Ok B16P11 | 12 -> Ok B16P12 | 13 -> Ok B16P13 | 14 -> Ok B16P14 | 15 -> Ok B16P15 | 16 -> Ok B16P16 | _ -> Error "invalid precision")
     | _ -> Error "invalid width"
 
   let of_parts (k : int) (p : int) (s : Signedness.t) (d : Domain.t) : (t, string) Result.t =
