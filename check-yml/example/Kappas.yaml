@@ -1,0 +1,91 @@
+Metadata:
+  conformance: "IEEE SA P3109"
+  version: "3.2.0"
+  provider: "Provider"
+  contact:
+    email: "info@implementer.site"
+    uri: >
+      https://implementer.site
+  implementation:
+    name: "release name"
+    version: "1.0.0"
+    date: 2026-01-11
+  Configurations:
+    uri: >
+      https://implementer.site/P3109/Implementation/v1.0.0/Configurations.yaml
+  Kappas:
+    uri: >
+      https://implementer.site/P3109/Implementation/v1.0.0/Kappas.yaml
+
+SqrtFast:
+  Approximates: "Sqrt"
+  Kappa:
+    - intervals: "([-Inf, Inf])"
+      kappa: 1
+  Projections:
+    RoundingModes:
+      ["NearestTiesToAway", "AllDirected", StochasticB: [bits: "(16)"]]
+    SaturationModes: "All"
+  Notes: |
+    Exhaustive testing performed for all supported formats.
+    Reference: "https://implementer.site/P3109/Kappas/SqrtFast.c"
+
+SinFast:
+  Approximates: "Sin"
+  Kappa:
+    - intervals: "([-π, π])"
+      kappa: 1
+    - intervals: ["([-Inf, -π))", "(π, Inf]"]
+      kappa: 2
+  Projections:
+    RoundingModes:
+      ["NearestTiesToEven", "TowardZero", ["StochasticA": "(Bits = 16)"]]
+    SaturationModes: "All"
+  Notes: |
+    CORDIC algorithm used with adaptive iteration count based on input range.
+  Verification:
+    method: "formal proof"
+    note: |
+      Mathematical proof of maximum error bound using Coq.
+      Files available at 'https://implementer.site/P3109/Kappas/SinFast.coq'.
+    reference:
+      uri: "https://implementer.site/P3109/Kappas/SinFast.ocaml"
+# A function approximation entry may be either a single mapping or a list
+#   of mappings when multiple signature-dependent variants are provided.
+ExpFast: # two approximations, signature dependent
+  # first approximation signature
+  - Approximates: "Exp{Binary8p3se, Binary8p3se, ρ}"
+    With:
+      - "Round{ρ} in {ToOdd, StochasticA}"
+      - "Sat{ρ} in {SatPropagate}"
+    Kappa:
+      - intervals: "[-1, 1]"
+        kappa: 0
+      - intervals: ["[-10, -1)", "(1, 12]"]
+        kappa: 1
+      - intervals: ["(-Inf, -10)", "(12, Inf)"]
+        kappa: 2
+    Verification:
+      method: "statistical"
+      note: "10 million random samples per range, all special cases verified"
+      reference:
+        uri: "https://implementer.site/P3109/Kappas/ExpFast.jl"
+  # second approximation signature
+  - Approximates: "Exp{Binary8p3se, Binary8p4se, ρ}"
+    With:
+      - "(Round(ρ) in {}ToOdd, StochasticA})"
+      - StochasticA:
+          bits: "16"
+      - "Sat{ρ} in {SatPropagate}"
+    Kappa:
+      - intervals: "[-1, 1]"
+        kappa: 0
+      - intervals: ["[-11, -1)", "(1, 13]"]
+        kappa: 2
+      - intervals: ["(-Inf, -11)", "(13, Inf)"]
+        kappa: 3
+    Verification:
+      method: "statistical"
+      note: "10 million random samples per range, all special cases verified"
+      reference:
+        uri: "https://implementer.site/P3109/Kappas/ExpFast.jl"

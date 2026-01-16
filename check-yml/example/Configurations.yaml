@@ -1,0 +1,48 @@
+Metadata:
+    conformance: "IEEE SA P3109"
+    version: "3.2.0"
+    provider: "Provider"
+    contact:
+        email: "info@implementer.site"
+        uri: >
+            https://implementer.site
+    implementation:
+        name: "release name"
+        version: "1.0.0"
+        date: 2026-01-11
+    Configurations:
+        uri: >
+            https://implementer.site/P3109/Implementation/v1.0.0/Configurations.yaml
+    Profiles:
+        uri: >
+            https://implementer.site/P3109/Implementation/v1.0.0/Profiles.yaml
+    Constraints:
+        uri: >
+            https://implementer.site/P3109/Implementation/v1.0.0/Constraints.yaml
+    Kappas:
+        uri: >
+            https://implementer.site/P3109/Implementation/v1.0.0/Kappas.yaml
+
+Core32:
+    - "Add{fx, fy, fr}":
+          - "(fx == fy && fy == fr)"
+    - "Multiply{fx, fy, fr}":
+          - "(fx == fy)"
+          - "(BitwidthOf(fr) >= BitwidthOf(fx))"
+          - "(PrecisionOf(fr) >= PrecisionOf(fx))"
+    - "SqrtFast{fx, fr, ρ}":
+          - "(fx in {Binary8p3se})"
+          - "(fr in {Binary8p3se, Binary8p4se})"
+
+Core64:
+    - "Add{fx, fy, fr, ρ}":
+          - "(fx == fy)"
+          - "(PrecisionOf(fr) > PrecisionOf(fx))"
+          - "(ExponentBitsOf(fr) >= ExponentBitsOf(fx))"
+          - "([fx, fy] in {Binary8p3se, Binary8p4se})"
+          - "(fr in {Binary10p6se})"
+    - "FMA{fx, fy, fz, fr, ρ}":
+          - "(fx == fy)"
+          - "(fz == fr)"
+          - "(BitwidthOf(fr) >= BitwidthOf(fx))"
+          - "(PrecisionOf(fr) >= PrecisionOf(fx))"
