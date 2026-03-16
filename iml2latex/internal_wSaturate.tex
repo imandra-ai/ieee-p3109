@@ -27,6 +27,8 @@ X \geq \mathit{{M^{hi}}}\gives  \mathit{{M^{hi}}}}\\
 \Case{\Cer\Saturate(\OvfInf, \any, -\infty, \Signed, \Extended) \gives  -\infty}\\
 \Case{\Cer\Saturate(\OvfInf, \any, -\infty, \any, \any) \gives
  \mathit{{M^{lo}}}}\\
+\Case{\Cer\Saturate(\OvfInf, \ToOdd, X, \Unsigned, \any) ~\If
+X \geq \mathit{{M^{hi}}}\gives  \mathit{{M^{hi}}}}\\
 \Case{\Cer\Saturate(\OvfInf, \TowardZero \vee \TowardPositive, X, \any, \any)
 ~\If X \leq \mathit{{M^{lo}}}\gives  \mathit{{M^{lo}}}}\\
 \Case{\Cer\Saturate(\OvfInf, \TowardZero \vee \TowardNegative, X, \any, \any)

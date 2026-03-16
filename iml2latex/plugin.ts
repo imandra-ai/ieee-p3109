@@ -71,7 +71,8 @@ function id2latex(id: string) {
       "Signed", "Unsigned",
       "TowardZero",
       "TowardPositive", "TowardNegative",
-      "NearestTiesToEven", "NearestTiesToAway"].includes(id)
+      "NearestTiesToEven", "NearestTiesToAway",
+      "ToOdd",].includes(id)
   ) {
     return ["\\" + id];
   }

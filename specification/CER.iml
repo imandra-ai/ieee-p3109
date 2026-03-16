@@ -40,6 +40,11 @@ let ( ~- ) (x : t): t =
 
 let pow2 (x : int) : t = R (Util.pow2 x) [@@macro]
 
+let is_inf (x : t) : bool =
+  match x with
+  | PInf | NInf -> true
+  | NaN | R _ -> false
+
 module Infix = struct
   let ( + ) (x : t) (y : t) : t =
     match x, y with

@@ -186,7 +186,7 @@ module RoundingMode = struct
     | StochasticBiased1 of int
     | StochasticBiased2 of int
 
-    (** String representation *)
+  (** String representation *)
   let to_string (x : t) : string =
     match x with
     | TowardZero -> "TowardZero"
@@ -472,6 +472,7 @@ module Float = struct
     | OvfInf, _, PInf, _, _ -> Ok (R m_hi)
     | OvfInf, _, NInf, Signed, Extended -> Ok NInf
     | OvfInf, _, NInf, _, _ -> Ok (R m_lo)
+    | OvfInf, ToOdd, R x, Unsigned, _ when x >=. m_hi -> Ok (R m_hi)
     | OvfInf, (TowardZero | TowardPositive), R x, _, _ when x <=. m_lo -> Ok (R m_lo)
     | OvfInf, (TowardZero | TowardNegative), R x, _, _ when x >=. m_hi -> Ok (R m_hi)
     | OvfInf, _, R x, Signed, Extended when x <=. m_lo -> Ok NInf
