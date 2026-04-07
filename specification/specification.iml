@@ -2725,7 +2725,7 @@ module Float = struct
     | Error e -> [] (* unreachable by theorem internal_logSoftmax_ok *)
 
 
-  let nextGreaterThanAux (f : Format.t) (d : Domain.t) (s : Signedness.t) (x : t) : (t, string) Result.t =
+  let nextGreaterThanAux (f : Format.t) (s : Signedness.t) (d : Domain.t) (x : t) : (t, string) Result.t =
     let open Signedness in
     let open Domain in
     let open RoundingMode in
@@ -2746,27 +2746,27 @@ module Float = struct
     let maxFinite = maxFiniteOf f in
     let minFinite = minFiniteOf f in
     let smallestNegative = negate f f (SatPropagate, NearestTiesToEven) (minPositiveOf f) in
-    match d, s, to_int_repr f x with
+    match s, d, to_int_repr f x with
     | _, _, nan -> Ok nan
-    | Extended, _, pinf -> Ok nan
-    | Finite, _, x when x = maxFinite -> Ok nan
-    | Extended, _, x when x = maxFinite -> Ok pinf
-    | Extended, Signed, ninf -> Ok minFinite
-    | _, Signed, x when x = smallestNegative -> Ok zero
-    | _, Signed, x when isSignMinus f x -> Ok (x - 1)
+    | _, Extended, pinf -> Ok nan
+    | _, Finite, x when x = maxFinite -> Ok nan
+    | _, Extended, x when x = maxFinite -> Ok pinf
+    | Signed, Extended, ninf -> Ok minFinite
+    | Signed, _,  x when x = smallestNegative -> Ok zero
+    | Signed, _,  x when isSignMinus f x -> Ok (x - 1)
     | _, _, x -> Ok (x + 1)
 
   let internal_nextGreaterThan (f : Format.t) (x : t) : (t, string) Result.t =
     let open RoundingMode in
     let open SaturationMode in
-    nextGreaterThanAux f (domainOf f) (signednessOf f) x
+    nextGreaterThanAux f (signednessOf f) (domainOf f) x
 
   let nextGreaterThan (f : Format.t) (x : t) : t =
     match internal_nextGreaterThan f x with
     | Ok r -> r
     | _ -> 0 (* unreachable by internal_nextGreaterThan_ok *)
 
-  let nextLessThanAux (f : Format.t) (d : Domain.t) (s : Signedness.t) (x : t) : (t, string) Result.t =
+  let nextLessThanAux (f : Format.t) (s : Signedness.t) (d : Domain.t) (x : t) : (t, string) Result.t =
     let open Signedness in
     let open Domain in
     let open RoundingMode in
@@ -2787,19 +2787,19 @@ module Float = struct
     let maxFinite = maxFiniteOf f in
     let minFinite = minFiniteOf f in
     let smallestNegative = negate f f (SatPropagate, NearestTiesToEven) (minPositiveOf f) in
-    match d, s, to_int_repr f x with
+    match s, d, to_int_repr f x with
     | _, _, nan -> Ok nan
-    | Finite, _, x when x = minFinite -> Ok nan
-    | _, Unsigned, zero -> Ok nan
-    | Extended, Signed, ninf -> Ok nan
-    | Extended, Signed, x when x = minFinite -> Ok ninf
-    | Extended, _, pinf -> Ok maxFinite
-    | _, Signed, zero -> Ok smallestNegative
-    | _, Signed, x when isSignMinus f x -> Ok (x + 1)
+    | _, Finite, x when x = minFinite -> Ok nan
+    | Unsigned, _, zero -> Ok nan
+    | Signed, Extended, ninf -> Ok nan
+    | Signed, Extended, x when x = minFinite -> Ok ninf
+    | _, Extended, pinf -> Ok maxFinite
+    | Signed, _, zero -> Ok smallestNegative
+    | Signed, _, x when isSignMinus f x -> Ok (x + 1)
     | _, _, x -> Ok (x - 1)
 
   let internal_nextLessThan (f : Format.t) (x : t) : (t, string) Result.t =
-    nextLessThanAux f (domainOf f) (signednessOf f) x
+    nextLessThanAux f (signednessOf f) (domainOf f) x
 
   let nextLessThan (f : Format.t) (x : t) : t =
     match internal_nextLessThan f x with
