@@ -455,11 +455,13 @@ module Float = struct
     | _, _, NaN, _, _ -> Ok NaN
 
     | _, _, R x, _, _ when m_lo <=. x && x <=. m_hi -> Ok (R x)
+    [@ocaml.doc "latex: \\\\"]
 
     | SatFinite, _, PInf, _, _ -> Ok (R m_hi)
     | SatFinite, _, NInf, _, _ -> Ok (R m_lo)
     | SatFinite, _, R x, _, _ when x <=. m_lo -> Ok (R m_lo)
     | SatFinite, _, R x, _, _ when x >=. m_hi -> Ok (R m_hi)
+    [@ocaml.doc "latex: \\\\"]
 
     | SatPropagate, _, PInf, _, Extended -> Ok PInf
     | SatPropagate, _, PInf, _, _ -> Ok (R m_hi)
@@ -467,6 +469,7 @@ module Float = struct
     | SatPropagate, _, NInf, _, _ -> Ok (R m_lo)
     | SatPropagate, _, R x, _, _ when x <=. m_lo -> Ok (R m_lo)
     | SatPropagate, _, R x, _, _ when x >=. m_hi -> Ok (R m_hi)
+    [@ocaml.doc "latex: \\\\"]
 
     | OvfInf, _, PInf, _, Extended -> Ok PInf
     | OvfInf, _, PInf, _, _ -> Ok (R m_hi)

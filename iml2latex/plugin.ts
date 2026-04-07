@@ -5,6 +5,7 @@ const { group, indent, dedent, join, ifBreak, breakParent, line, hardline, softl
 
 const iml2json = require('./iml2json.bc').iml2json;
 import { assert } from 'node:console';
+import console from "node:console";
 
 var PREFIX = "Cer";
 var function_names: string[] | undefined = undefined;
@@ -792,6 +793,17 @@ function has_latexpar(attrs): boolean {
   });
 };
 
+function get_latex(attrs): string | undefined {
+  attrs.forEach((x) => {
+    if (x.attr_name.txt == "ocaml.doc" || x.attr_name.txt == "ocaml.text") {
+      const pl = get_attr_payload_string(x);
+      if (pl && pl.startsWith("latex:"))
+        return pl.substring(6);
+    }
+  });
+  return undefined;
+};
+
 function print_value_binding(node: AST, options: Options): Doc {
   // {
   //   pvb_pat: pattern;
@@ -820,10 +832,11 @@ function print_expression(node: AST, options: Options): Doc[] {
   // 	pexp_loc_stack: location_stack;
   // 	pexp_attributes: attributes;  (** [... [\@id1] [\@id2]] *)
   //  }
-  return [
+  let r = [
     par_if(has_latexpar(node.pexp_attributes),
       [print_expression_desc(node.pexp_desc, options),
       ...ifnonempty(line, print_attributes(node.pexp_attributes, 1, options))])];
+  return r;
 }
 
 function print_function_param_desc(node: AST, options: Options): Doc {
@@ -1649,7 +1662,7 @@ function print_module_binding(node: AST, options: Options): Doc {
   return [print_module_expr(node.pmb_expr, options)];
 }
 
-function get_attr_payload_string(node: AST): Doc {
+function get_attr_payload_string(node: AST): string {
   // Comments have special string payloads without quotes. Sigh.
   return node.attr_payload[1][0].pstr_desc[1].pexp_desc[1].pconst_desc[1];
 }
@@ -1695,7 +1708,11 @@ function print_attribute(node: AST, level: number, options: Options): Doc[] {
       switch (node.attr_name.txt) {
         case "ocaml.doc": {
           const str = get_attr_payload_string(node);
-          return ["(", "*".repeat(level), indent(str), "*)"];
+          if (str && str.startsWith("latex: "))
+            return [str.substring(7)];
+          else {
+            return ["(", "*".repeat(level), indent(str), "*)"];
+          }
         }
         case "ocaml.text": {
           const str = get_attr_payload_string(node);

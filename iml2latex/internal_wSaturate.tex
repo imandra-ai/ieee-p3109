@@ -1,6 +1,6 @@
 \noindent\Case{\Cer\Saturate(\any, \any, \NaN, \any, \any) \gives  \NaN}\\
 \Case{\Cer\Saturate(\any, \any, X, \any, \any) ~\If
-\mathit{{M^{lo}}} \leq X \And X \leq \mathit{{M^{hi}}}\gives  X}\\
+\mathit{{M^{lo}}} \leq X \And X \leq \mathit{{M^{hi}}}\gives  X \\}\\
 \Case{\Cer\Saturate(\SatFinite, \any, +\infty, \any, \any) \gives
  \mathit{{M^{hi}}}}\\
 \Case{\Cer\Saturate(\SatFinite, \any, -\infty, \any, \any) \gives
@@ -8,7 +8,7 @@
 \Case{\Cer\Saturate(\SatFinite, \any, X, \any, \any) ~\If
 X \leq \mathit{{M^{lo}}}\gives  \mathit{{M^{lo}}}}\\
 \Case{\Cer\Saturate(\SatFinite, \any, X, \any, \any) ~\If
-X \geq \mathit{{M^{hi}}}\gives  \mathit{{M^{hi}}}}\\
+X \geq \mathit{{M^{hi}}}\gives  \mathit{{M^{hi}}} \\}\\
 \Case{\Cer\Saturate(\SatPropagate, \any, +\infty, \any, \Extended) \gives
  +\infty}\\
 \Case{\Cer\Saturate(\SatPropagate, \any, +\infty, \any, \any) \gives
@@ -20,7 +20,7 @@ X \geq \mathit{{M^{hi}}}\gives  \mathit{{M^{hi}}}}\\
 \Case{\Cer\Saturate(\SatPropagate, \any, X, \any, \any) ~\If
 X \leq \mathit{{M^{lo}}}\gives  \mathit{{M^{lo}}}}\\
 \Case{\Cer\Saturate(\SatPropagate, \any, X, \any, \any) ~\If
-X \geq \mathit{{M^{hi}}}\gives  \mathit{{M^{hi}}}}\\
+X \geq \mathit{{M^{hi}}}\gives  \mathit{{M^{hi}}} \\}\\
 \Case{\Cer\Saturate(\OvfInf, \any, +\infty, \any, \Extended) \gives  +\infty}\\
 \Case{\Cer\Saturate(\OvfInf, \any, +\infty, \any, \any) \gives
  \mathit{{M^{hi}}}}\\
