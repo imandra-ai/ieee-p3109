@@ -68,7 +68,8 @@ let _ =
   in
   List.iter
     (fun f ->
-      let k, p, _, _ = Format.parameters f in
+      let k = Float.bitWidthOf f in
+      let p = Float.precisionOf f in
       Printf.printf "B%sP%s\n%!" (Z.to_string k) (Z.to_string p);
       for i = 0 to 2 lsl Z.to_int k do
         let q =
@@ -268,7 +269,7 @@ let rec find_closest_floats_aux_ml (f : Format.t) (x : CER.t) (l : Float.t)
     | Error e -> Error e)
 
 let find_closest_floats_ml (f : Format.t) (x : CER.t) =
-  let k, p, bias, m_lo, m_hi, _, _ = Format.parameters f in
+  let k = Float.bitWidthOf f in
   find_closest_floats_aux_ml f x Z.zero
     (if f.s = Signedness.Signed then
        if f.d = Domain.Extended then Z.sub (Util.ipow2 (Z.sub k Z.one)) Z.one
@@ -284,7 +285,9 @@ let find_closest_floats_ml (f : Format.t) (x : CER.t) =
       d = Specification.Domain.Extended;
     }
   in
-  let k, p, bias, _, _, _, _ = Format.parameters f in
+  let k = Float.bitWidthOf f in
+  let p = Float.precisionOf f in
+  let bias = Float.exponentBiasOf f in
   for i = 0 to (2 lsl (Z.to_int k - 2)) - 2 do
     Printf.printf "%02x: " i;
     let di = Float.decode f (Float.of_int_repr f (Z.of_int i)) in
@@ -372,7 +375,9 @@ let run_sqrt () =
               Printf.printf "%s\n" star_line;
               Printf.printf "%s -> %s, %s\n%!" (Format.to_string f_x)
                 (Format.to_string f_z) (Projection.to_string pi);
-              let k, _, _, _, _, s, d = Format.parameters f_x in
+              let k = Float.bitWidthOf f_x in
+              let s = Float.signednessOf f_x in
+              let d = Float.domainOf f_x in
               let max =
                 match s, d with
                 | Signed, Extended -> (2 lsl (Z.to_int k - 1)) - 2

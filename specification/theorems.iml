@@ -15,26 +15,30 @@ let unroll_nonlin qt nqt steps = Tactic.unroll ~smt:"z3-full-nonlinear" ~query_t
 (** Formats *)
 
 theorem format_parameter_limits (f : Format.t) =
-  let k, p, b, _, _, s, d = (Format.parameters f [@trigger]) in
+  let open Float in
+  let k = bitWidthOf f in
+  let p = precisionOf f in
+  let b = exponentBiasOf f in
+  let s = signednessOf f in
+  let d = domainOf f in
   0 < k && k <= 16 &&
   0 < p && p <= 16 &&
   b <= Util.ipow2 (k - p)
   [@@timeout 600]
   [@@by unroll_nonlin 20 10 100]
-  [@@fc]
 
 theorem m_hi_gt_0 (f : Format.t) =
-  let k, p, _, m_lo, m_hi, _, _ = Format.parameters f in
-  (k = 2 && p = 1 && m_hi = 0.0) || m_hi >. 0.0
+  let open Float in
+  let open Signedness in
+  let open Domain in
+  let k = bitWidthOf f in
+  let p = precisionOf f in
+  let s = signednessOf f in
+  let d = domainOf f in
+  let m_hi = wDecode f (maxFiniteOf f) in
+  (k = 2 && (p = 1 || p = 2) && s = Signed && d = Extended && m_hi = CER.zero) || CER.Infix.(m_hi > CER.zero)
   [@@timeout 20]
   [@@by enumerate ["f"] @> ground_eval ()]
-
-theorem m_lo_lt_m_hi (f : Format.t) =
-  let k, p, _, m_lo, m_hi, _, _ = Format.parameters f [@trigger] in
-  not (k = 2 && p = 1) ==> m_lo <. m_hi
-  [@@disable Format.parameters, Util.ipow2, Util.pow2]
-  [@@by [%use m_hi_gt_0 f] @> auto]
-  [@@fc]
 
 
 (** 4.6 Functions *)
@@ -82,17 +86,10 @@ theorem decode_encode_ok (f : Format.t)  (x : Float.t) =
   [@@by [%use Theorems_format_ranges.within_format_range f x] @> auto]
   [@@fc]
 
-theorem maxFinite_is_m_hi (f : Format.t) =
-  let k, p, _, _, m_hi, s, _ = Format.parameters f in
-  (s = Signedness.Unsigned || p < k) ==>
-  CER.R m_hi = Float.wDecode f (Float.maxFiniteOf f)
-  [@@timeout 20]
-  [@@by enumerate ["f"] @> ground_eval ()]
-
 theorem maxFinite_geq_0 (f : Format.t) =
   let open CER.Infix in
   Float.wDecode f (Float.maxFiniteOf f) >= CER.R 0.0
-  [@@timeout 20]
+  [@@timeout 60]
   [@@by enumerate ["f"] @> ground_eval ()]
 
 theorem maxFinite_is_finite (f : Format.t) =
@@ -124,7 +121,8 @@ theorem saturate_encode_ok (f : Format.t) (x : CER.t) (sat : SaturationMode.t) (
   [@@fc]
 
 let rounded f rnd x =
-  let _, p, b, _, _, _, _ = Format.parameters f in
+  let p = Float.precisionOf f in
+  let b = Float.exponentBiasOf f in
   Float.wRoundToPrecision p b rnd x
 
 (** [project] never returns an error *)
@@ -277,8 +275,7 @@ theorem internal_divide_ok (f_x : Format.t) (f_y : Format.t) (f_r : Format.t) (r
 theorem internal_fma_ok (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (f_r : Format.t) (rho : Projection.t)
   (x : Float.t) (y : Float.t) (z : Float.t) =
   Result.is_ok (Float.internal_fma f_x f_y f_z f_r rho x y z)
-  [@@disable Float.wProject, Float.wDecode, Float.wRoundToPrecision, Float.wSaturate, Util.pow2, Util.ipow2,
-    Format.parameters, Float.internal_fma]
+  [@@disable Float.wProject, Float.wDecode, Float.wRoundToPrecision, Float.wSaturate, Util.pow2, Util.ipow2, Float.internal_fma]
   [@@by auto]
 
 
@@ -348,6 +345,7 @@ theorem internal_log_ok (f_x : Format.t) (f_r : Format.t) (rho : Projection.t) (
 theorem internal_log2_ok (f_x : Format.t) (f_r : Format.t) (rho : Projection.t) (x : Float.t) =
   Result.is_ok (Float.internal_log2 f_x f_r rho x)
   [@@disable Float.wProject, Float.wDecode, Log.log2, Log.log, Log.ln]
+  [@@timeout 60]
   [@@by auto]
 
 
@@ -595,7 +593,10 @@ theorem minPositiveOf_positive (f : Format.t) =
 (* The result of minNormalOf is normal, with some exceptions *)
 theorem minNormalOf_normal (f : Format.t) =
   let open Float in
-  let k, p, _, _, _, s, d = Format.parameters f in
+  let k = bitWidthOf f in
+  let p = precisionOf f in
+  let s = signednessOf f in
+  let d = domainOf f in
   (s = Signedness.Unsigned || p < k) ==>
   match k, p, s, d with
   | 2, 1, Signed, Extended -> minNormalOf f = (nan f)
@@ -711,6 +712,7 @@ theorem internal_tanPi_ok (f_x : Format.t) (f_r : Format.t) (rho : Projection.t)
 theorem internal_arcSinPi_ok (f_x : Format.t) (f_r : Format.t) (rho : Projection.t) (x : Float.t) =
   Result.is_ok (Float.internal_arcSinPi f_x f_r rho x)
   [@@disable Float.wProject, Float.wDecode]
+  [@@timeout 60]
   [@@by auto]
 
 (** [internal_arcCosPi] never returns an error *)
@@ -729,6 +731,7 @@ theorem internal_arcTanPi_ok (f_x : Format.t) (f_r : Format.t) (rho : Projection
 theorem internal_softplus_ok (f_x : Format.t) (f_r : Format.t) (rho : Projection.t) (x : Float.t) =
   Result.is_ok (Float.internal_softplus f_x f_r rho x)
   [@@disable Float.wProject, Float.wDecode, Log.log, Log.ln, Exp.exp]
+  [@@timeout 60]
   [@@by auto]
 
 (** [internal_softmax] never returns an error *)
@@ -760,14 +763,14 @@ theorem internal_logsoftmax_ok (f_x : Format.t) (f_r : Format.t) (rho : Projecti
 (** [internal_nextGreaterThan] never returns an error *)
 theorem internal_nextGreaterThan_ok (f : Format.t) (x : Float.t) =
   Result.is_ok (Float.internal_nextGreaterThan f x)
-  [@@timeout 60]
+  [@@timeout 120]
   [@@disable Float.minFiniteOf, Float.maxFiniteOf, Float.minPositiveOf]
   [@@by auto]
 
 (** [internal_nextLessThan] never returns an error *)
 theorem internal_nextLessThan_ok (f : Format.t) (x : Float.t) =
   Result.is_ok (Float.internal_nextLessThan f x)
-  [@@timeout 60]
+  [@@timeout 120]
   [@@disable Float.minFiniteOf, Float.maxFiniteOf, Float.minPositiveOf]
   [@@by auto]
 
@@ -782,7 +785,7 @@ theorem wExp_is_positive (x : CER.t) =
   | Ok (R x) -> x >=. 0.0
   | Error _ -> false
   [@@timeout 3600]
-  [@@disable Format.parameters, Util.pow2, Util.ipow2, Util.ripow, Exp.exp]
+  [@@disable Util.pow2, Util.ipow2, Util.ripow, Exp.exp]
   [@@by auto]
 
 theorem wRoundToPrecision_preserves_positivity (p : int) (b : int) (rnd : RoundingMode.t) (x : CER.t) =

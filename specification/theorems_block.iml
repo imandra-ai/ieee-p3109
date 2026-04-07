@@ -234,7 +234,7 @@ theorem convert_to_block_max_abs_finite_ok
   Result.is_ok (convertToBlockMaxAbsFinite b f_s f_x f_z rho_s rho_z x)
   [@@disable Float.reduce, Float.wMaximumFinite, Float.wDivide, Float.wProject, Float.wDecode,
     Float.map_wabs, Float.map_decode, Float.map_project, Float.reduce_wMaximumFinite,
-    Float.map_convert_maf, List.length, Format.parameters]
+    Float.map_convert_maf, List.length]
   [@@by induct ~do_not:["gen"; "fert"; "delim"] ()]
 
 (** 6.0.3 DotBlock *)
@@ -285,7 +285,7 @@ theorem block_dot_product_ok
   (s_y, y : Float.t * Float.t list) =
   b = List.length x && b = List.length y && b >= 1 ==>
   Result.is_ok (Float.blockDotProduct b f_sx f_x f_sy f_y f_z rho_z (s_x, x) (s_y, y))
-  [@@disable Float.wAdd, Float.reduce_wAdd, Float.map2_wMultiply, Float.wBlockDecode, Float.wProject, Format.parameters]
+  [@@disable Float.wAdd, Float.reduce_wAdd, Float.map2_wMultiply, Float.wBlockDecode, Float.wProject]
   [@@by auto]
 
 let rec equal_block_sizes (b : int) (args : block_op_argument list) : bool =
@@ -1355,7 +1355,10 @@ let is_in_value_set (f : Format.t) (x : CER.t) =
 
 (* All except a few of our formats have 1.0 in their value set. *)
 theorem one_in_value_set (f : Format.t) =
-  let k, p, _, _, _, s, d = Format.parameters f in
+  let k = bitWidthOf f in
+  let p = precisionOf f in
+  let s = signednessOf f in
+  let d = domainOf f in
   match k, p, d, s with
   | 2, 1, Extended, _ -> true
   | 2, 2, Extended, _ -> true
@@ -1370,7 +1373,7 @@ theorem internal_scaled_add_ok f_x f_y f_r rho x s_x y s_y =
   Result.is_ok (Float.internal_scaledAdd f_x f_y f_r rho x s_x y s_y)
   [@@timeout 3600]
   [@@disable
-    wProject, Format.parameters, List.map, List.map2,
+    wProject, List.map, List.map2,
     reduce, wBlockDecode, wBlockProject, block_op_map2_wop_binary,
     block_op_map2_wBlockDecode,
     wEncode, wDecode, Util.pow2, Util.ipow2, blockAdd]
@@ -1385,7 +1388,7 @@ theorem internal_scaled_multiply_ok f_x f_y f_r rho x s_x y s_y =
   Result.is_ok (Float.internal_scaledMultiply f_x f_y f_r rho x s_x y s_y)
   [@@timeout 3600]
   [@@disable
-    wProject, Format.parameters, List.map, List.map2,
+    wProject, List.map, List.map2,
     reduce, wBlockDecode, wBlockProject, block_op_map2_wop_binary,
     block_op_map2_wBlockDecode,
     wEncode, wDecode, Util.pow2, Util.ipow2, blockMultiply]
@@ -1400,7 +1403,7 @@ theorem internal_scaled_fma_ok f_x f_y f_sxy f_z f_sz f_r rho x y s_xy z s_z =
   Result.is_ok (Float.internal_scaledFMA f_x f_y f_sxy f_z f_sz f_r rho x y s_xy z s_z)
   [@@timeout 3600]
   [@@disable
-    wProject, Format.parameters, List.map, List.map2,
+    wProject, List.map, List.map2,
     reduce, wBlockDecode, wBlockProject, block_op_map2_wop_ternary,
     block_op_map2_wBlockDecode,
     wEncode, wDecode, Util.pow2, Util.ipow2, blockFMA]

@@ -112,7 +112,7 @@ module Format = struct
     let* kp = of_kp k p in
     Ok { kp; s; d }
 
-  let parameters (f : t) : int * int * int * real * real * Signedness.t * Domain.t =
+  (* let parameters (f : t) : int * int * int * real * real * Signedness.t * Domain.t =
     let open Util in
     let open Signedness in
     let open Domain in
@@ -146,7 +146,7 @@ module Format = struct
         | Unsigned, Finite ->   pow2 (ipow2 (k - p + 1) - bias - 1) *. (2. -. pow2 (2 - p))
       in
     let m_lo = if f.s = Signed then -. m_hi else 0.0 in
-    k, p, bias, m_lo, m_hi, f.s, f.d
+    k, p, bias, m_lo, m_hi, f.s, f.d *)
 
   (** String representation *)
   let to_string (f : t) : string =
