@@ -1,0 +1,19 @@
+\newcommand{\wdeclop}[1]{%
+    \expandafter\def\csname w#1\endcsname{\runop{\omega#1}}}
+\newcommand{\wdeclops}[1]{\forcsvlist{\wdeclop}{#1}}
+
+\wdeclops{Abs,Negate,CopySign,Add,Subtract,Multiply,Divide}
+\wdeclops{FMA,FAA,Recip,Sqrt,RSqrt,Hypot,Exp,Exp2,Log,Log2,ScaledAdd,ScaledMultiply,ScaledFMA}
+\wdeclops{Minimum,Maximum,MinimumMagnitude,MaximumMagnitude,Clamp}
+\wdeclops{MinimumNumber,MaximumNumber}
+\wdeclops{CompareLess,CompareLessEqual,CompareEqual,CompareGreater,CompareGreaterEqual}
+\wdeclops{IsZero,IsOne,IsSignMinus}
+\wdeclops{Saturate}
+\wdeclops{MinimumFinite,MaximumFinite}
+\wdeclops{Sin,Cos,Tan,Sinh,Cosh,Tanh,ExpMinusOne,LogOnePlus,Softplus}
+\wdeclops{ArcSin,ArcCos,ArcTan,ArcSinh,ArcCosh,ArcTanh,ArcTan2}
+\wdeclops{SinPi,CosPi,TanPi,ArcSinPi,ArcCosPi,ArcTanPi,ArcTan2Pi}
+
+\declops{SatPropagate,SatFinite,OvfInf,Signed,Unsigned,Extended,Finite}
+\declops{TowardZero,TowardPositive,TowardNegative,NearestTiesToEven,NearestTiesToAway,ToOdd}
+\declops{arcsin,arccos,arctan,arcsinh,arccosh,arctanh}

@@ -1,12 +1,12 @@
-\noindent\Case{\Cer\MinimumMagnitude(\NaN, \any) \gives  \NaN}\\
-\Case{\Cer\MinimumMagnitude(\any, \NaN) \gives  \NaN}\\
-\Case{\Cer\MinimumMagnitude(+\infty, +\infty) \gives  +\infty}\\
-\Case{\Cer\MinimumMagnitude(-\infty, -\infty) \gives  -\infty}\\
-\Case{\Cer\MinimumMagnitude(+\infty, -\infty) \gives  -\infty}\\
-\Case{\Cer\MinimumMagnitude(-\infty, +\infty) \gives  -\infty}\\
-\Case{\Cer\MinimumMagnitude(\pm\infty, Y) \gives  Y}\\
-\Case{\Cer\MinimumMagnitude(X, \pm\infty) \gives  X}\\
-\Case{\Cer\MinimumMagnitude(X, Y) ~\If | X| < | Y|\gives  X}\\
-\Case{\Cer\MinimumMagnitude(X, Y) ~\If | X| > | Y|\gives  Y}\\
-\Case{\Cer\MinimumMagnitude(X, Y) ~\If | X| = | Y|\gives \\\phantom{\qquad\Cer\MinimumMagnitude(X,
+\noindent\Case{\wMinimumMagnitude(\NaN, \any) \gives  \NaN}\\
+\Case{\wMinimumMagnitude(\any, \NaN) \gives  \NaN}\\
+\Case{\wMinimumMagnitude(+\infty, +\infty) \gives  +\infty}\\
+\Case{\wMinimumMagnitude(-\infty, -\infty) \gives  -\infty}\\
+\Case{\wMinimumMagnitude(+\infty, -\infty) \gives  -\infty}\\
+\Case{\wMinimumMagnitude(-\infty, +\infty) \gives  -\infty}\\
+\Case{\wMinimumMagnitude(\pm\infty, Y) \gives  Y}\\
+\Case{\wMinimumMagnitude(X, \pm\infty) \gives  X}\\
+\Case{\wMinimumMagnitude(X, Y) ~\If | X| < | Y|\gives  X}\\
+\Case{\wMinimumMagnitude(X, Y) ~\If | X| > | Y|\gives  Y}\\
+\Case{\wMinimumMagnitude(X, Y) ~\If | X| = | Y|\gives \\\phantom{\qquad\wMinimumMagnitude(X,
 Y) } \If X < Y \Then X \Else Y}\\

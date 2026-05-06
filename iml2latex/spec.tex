@@ -4,22 +4,7 @@
 \def\zero{\parameter{0}}
 \def\one{\parameter{1}}
 
-\def\Cer{\omega}
-\newops{Abs,Negate,CopySign,Add,Subtract,Multiply,Divide}
-\newops{FMA,FAA,Recip,Sqrt,RSqrt,Hypot,ArcTan2,Exp,Exp2,Log,Log2,ScaledAdd,ScaledMultiply,ScaledFMA}
-\newops{Minimum,Maximum,MinimumMagnitude,MaximumMagnitude,Clamp}
-\newops{MinimumNumber,MaximumNumber}
-\newops{CompareLess,CompareLessEqual,CompareEqual,CompareGreater,CompareGreaterEqual}
-\newops{IsZero,IsOne,IsSignMinus}
-\newops{Saturate,SatPropagate,SatFinite,OvfInf,Signed,Unsigned,Extended,Finite}
-\newops{TowardZero,TowardPositive,TowardNegative,NearestTiesToEven,NearestTiesToAway,ToOdd}
-\newops{MinimumFinite,MaximumFinite}
-\newops{SaturateAlt}
-\newops{Sin,Cos,Tan,Sinh,Cosh,Tanh,ExpMinusOne,LogOnePlus,Softplus}
-\newops{ArcSin,ArcCos,ArcTan,ArcSinh,ArcCosh,ArcTanh}
-\newops{arcsin,arccos,arctan,arcsinh,arccosh,arctanh}
-\newops{SinPi,CosPi,TanPi,ArcSinPi,ArcCosPi,ArcTanPi}
-\newops{ArcTan2Alt,ArcTan2Pi}
+\input{woperators}
 
 \begin{document}
 \input{wAbs}
@@ -36,7 +21,6 @@
 \input{wRsqrt}
 \input{wHypot}
 \input{wArcTan2}
-\input{wArcTan2Alt}
 \input{wArcTan2Pi}
 \input{wExp}
 \input{wExp2}

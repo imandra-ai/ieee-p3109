@@ -7,7 +7,7 @@ const iml2json = require('./iml2json.bc').iml2json;
 import { assert } from 'node:console';
 import console from "node:console";
 
-var PREFIX = "Cer";
+var PREFIX = "w";
 var function_names: string[] | undefined = undefined;
 
 function fun_filter(name: string, options: Options) {
@@ -1187,9 +1187,9 @@ function print_expression_desc(node: AST, options: Options): Doc {
       op_info.name = op_info.name.replace("*.", "\\times");
       op_info.name = op_info.name.replace(/^Trigonometric./, "");
 
-      if (op_info.name.startsWith("w")) {
-        op_info.name = "\\" + PREFIX + "\\" + op_info.name.substring(1);
-      }
+      // if (op_info.name.startsWith("w")) {
+      //   op_info.name = "\\" + PREFIX + op_info.name.substring(1);
+      // }
 
       switch (op_info.notation) {
         case Notation.Infix: {
@@ -1272,7 +1272,11 @@ function print_expression_desc(node: AST, options: Options): Doc {
             opname = "\\" + opname;
             want_par = false;
           }
-          if (opname.startsWith("\\Cer")) {
+          if (opname.startsWith("\\" + PREFIX)) {
+            want_par = true;
+          }
+          else if (opname.startsWith("w")) {
+            opname = "\\" + opname;
             want_par = true;
           }
           if (opname == "arcsin_pi" || opname == "arccos_pi" || opname == "arctan_pi")
@@ -1815,10 +1819,10 @@ function print_structure_item_desc(node: AST, options: Options): Doc {
           if (/\d/.test(fname)) {
             // Latex commands can't have digits in their name; needs \\csname.
             fname = fname.replace(/^w/, "");
-            fname = `\\${PREFIX}\\csname ${fname}\\endcsname `;
+            fname = `\\csname w${fname}\\endcsname`;
           }
           else
-            fname = fname.replace(/^w/, "\\" + PREFIX + "\\");
+            fname = fname.replace(/^w/, "\\" + PREFIX);
           fname = fname.replace(/Fma/, "FMA");
           fname = fname.replace(/Faa/, "FAA");
           fname = fname.replace(/Rsqrt/, "RSqrt");
@@ -1831,11 +1835,11 @@ function print_structure_item_desc(node: AST, options: Options): Doc {
             fundef = fundef.pexp_desc[2];
 
           if (fname == "\\WSaturate") {
-            fname = "\\" + PREFIX + "\\Saturate"
+            fname = "\\" + PREFIX + "Saturate"
             options.move_everything_up = true;
           }
 
-          if (fname == "\\Cer\\MaximumNumber" || fname == "\\Cer\\MinimumNumber")
+          if (fname == "\\" + PREFIX + "MaximumNumber" || fname == "\\" + PREFIX + "MinimumNumber")
             options.move_everything_up = true;
 
 

@@ -401,17 +401,6 @@ theorem internal_arcTan2_ok (f_x : Format.t) (f_y : Format.t) (f_r : Format.t) (
   [@@disable Float.wProject, Float.wDecode, Float.wRoundToPrecision, Float.wSaturate, Util.pow2, Util.ipow2, Float.wArcTan2]
   [@@by [%use wArcTan2_ok (Float.wDecode f_x x) (Float.wDecode f_y y) 8] @> auto]
 
-theorem wArcTan2Alt_ok (y : CER.t) (x : CER.t) (p : int) =
-  Result.is_ok (Float.wArcTan2Alt y x)
-  [@@disable Util.pow2, Util.ipow2, Trigonometric.arctan, Trigonometric.arctan2]
-  [@@by auto]
-
-(** [internal_arcTan2Alt] never returns an error *)
-theorem internal_arcTan2Alt_ok (f_x : Format.t) (f_y : Format.t) (f_r : Format.t) (rho : Projection.t) (x : Float.t) (y : Float.t) =
-  Result.is_ok (Float.internal_arcTan2Alt f_x f_y f_r rho x y)
-  [@@disable Float.wProject, Float.wDecode, Float.wRoundToPrecision, Float.wSaturate, Util.pow2, Util.ipow2, Float.wArcTan2Alt]
-  [@@by [%use wArcTan2Alt_ok (Float.wDecode f_x x) (Float.wDecode f_y y) 8] @> auto]
-
 (** [internal_arcTan2Pi] never returns an error *)
 theorem wArcTan2Pi_ok (y : CER.t) (x : CER.t) (p : int) =
   Result.is_ok (Float.wArcTan2Pi y x)

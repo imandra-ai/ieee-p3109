@@ -1,53 +1,79 @@
 \usepackage{times}
 \usepackage{etoolbox}
-\usepackage[left=1in,right=1in,letterpaper]{geometry}
+%\usepackage[left=1in,right=1in,top=1in,bottom=1in,letterpaper]{geometry}
+\usepackage[left=1in,right=1in,top=1in,bottom=1.45in,letterpaper]{geometry}
 \usepackage{alltt}
+\usepackage{amssymb}
 \usepackage{amsmath}
 \usepackage{amsfonts}
-\usepackage{amssymb}
+\usepackage{amsthm}
 \usepackage{array}
 \usepackage{commonunicode}
 \usepackage{mathtools}
 \usepackage{listings}
-\usepackage[section]{minted}
-\usemintedstyle[julia]{bw} % stata-light 
+% \usepackage[section]{minted}
+% \usemintedstyle[julia]{bw} % stata-light
 %\setminted{fontsize=\normalsize}
-\usepackage{appendix}
+% \ifieeetrans\else
+%     \usepackage{appendix}
+% \fi
 \usepackage{threeparttable}
 \usepackage{booktabs}
 \usepackage{tabularray} % table without lines
 \usepackage{enumitem}
 \usepackage{multicol}
+\usepackage{ragged2e}
 
+% \ifieeetrans
+%     % \usepackage{fontspec}  % requires XeLaTeX or LuaLaTeX
+%     % \newfontfamily\headingfont{Georgia}
+% \fi
 \usepackage{xspace}
 \usepackage{fvextra}
 \usepackage{graphicx}
 \usepackage{soul}
 \usepackage{microtype}
 \usepackage{fancyhdr}
+\usepackage{caption}
+\DeclareCaptionLabelSeparator{emdash}{\textemdash}
+\usepackage{etoolbox}
 \usepackage{parskip}
 \usepackage{float}
 \usepackage{comment}
 \usepackage{colortbl}
-\usepackage[font=sf,labelfont=sf]{caption}
 \usepackage{csquotes}
 \usepackage[svgnames]{xcolor}
-\usepackage[hidelinks]{hyperref}
+% https://c7.alamy.com/comp/3A53X8G/color-palette-26-plum-and-deep-violet-shades-3d-light-soft-to-deep-dark-purple-tones-with-hex-codes-and-names-colour-swatches-scheme-3A53X8G.jpg
+\definecolor{DarkWisteria}{RGB}{37,13,49}
+\definecolor{BlackViolet}{RGB}{22,15,26}
+%\usepackage[hidelinks]{hyperref}
+\usepackage{hyperref}
+\hypersetup{
+    colorlinks=true, % Replaces default red boxes with colored text
+    linkcolor=BlackViolet,  % color for internal links (includes Operator names)
+    urlcolor=DarkGreen,     % color for external web links
+    citecolor=DarkBlue,     % color for bibliography citations
+    anchorcolor=Olive
+}
 \usepackage{pdflscape}
 \usepackage{afterpage}
 \usepackage{adjustbox}
 \usepackage{forloop}
+\usepackage{pgffor}
 \usepackage{datetime2}
-\usepackage{titlesec}
-\titleformat{\section}
-  {\normalfont\sffamily\Large\bfseries\color{CadetBlue}}
-  {\thesection}{1em}{}
-\titleformat{\subsection}
-  {\normalfont\sffamily\large\bfseries\color{black}}
-  {\thesubsection}{1em}{}
-\titleformat{\subsubsection}
-  {\normalfont\sffamily\large\color{black}}
-  {\thesubsubsection}{1em}{}
+\usepackage{listings}
+% \ifieeetrans\else
+%     \usepackage{titlesec}
+%     \titleformat{\section}
+%     {\normalfont\sffamily\Large\bfseries\color{CadetBlue}}
+%     {\thesection}{1em}{}
+%     \titleformat{\subsection}
+%     {\normalfont\sffamily\large\bfseries\color{black}}
+%     {\thesubsection}{1em}{}
+%     \titleformat{\subsubsection}
+%     {\normalfont\sffamily\large\color{black}}
+%     {\thesubsubsection}{1em}{}
+% \fi
 
 \setcounter{secnumdepth}{8}
 
@@ -55,10 +81,18 @@
 % Be more consistent with use of \val, includign for zero
 \usepackage{bbm}
 
+\usepackage{titling}
+\pretitle{\begin{flushleft}\Large\bfseries}
+        \posttitle{\par\end{flushleft}}
+\preauthor{\begin{flushleft}}
+        \postauthor{\end{flushleft}}
+\predate{\begin{flushleft}}
+        \postdate{\end{flushleft}}
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Document-specific macros
 
- % for \shortminus def
+% for \shortminus def
 \DeclareMathSymbol{\shortminus}{\mathbin}{AMSa}{"39}
 \def\sminus{\ensuremath{\mathord{\shortminus}}} % looks better in tables
 
@@ -66,6 +100,19 @@
 \def\val#1{$\mathsf{#1}$}
 \def\code#1{$\mathtt{#1}$}
 
+% \def\Aug#1{#1{\bar{\mathbb R}}}
+\def\Aug{\omega}
+\def\Cer{\Aug}
+\def\zero{0}
+\def\one{1}
+
+\def\arctanh{\mathrm{arctanh}}
+\def\arcsinh{\mathrm{arcsinh}}
+\def\arccosh{\mathrm{arccosh}}
+
+\def\negskip{\vspace*{-\baselineskip}}
+
+\def\fmt{\parameter{fmt}}
 \def\emax{\parameter{emax}}
 \def\emin{\parameter{emin}}
 \def\bias{\parameter{bias}}
@@ -80,42 +127,151 @@
 \def\minusZero{$\sminus{0}$}
 
 \makeatletter
+\def\BinaryK#1#2#3#4{\ensuremath{\mathsf{Binary}\{#1,#2,#3,#4\}}}
+\def\binarystring{Binary}
 \def\binarypptailp p{\ensuremath{\mathsf{pP}}}
 \def\binarypptail#1#2#3{\ensuremath{\mathsf{p#1#2#3}}}
 \def\binaryptail p{\@ifnextchar p\binarypptailp\binarypptail}
 \def\binarytail{\xspace}
-\def\binary#1{\ensuremath{\mathsf{binary#1}}\@ifnextchar p\binaryptail\binarytail}
+\def\binary#1{\ensuremath{\mathsf{\binarystring#1}}\@ifnextchar p\binaryptail\binarytail}
+\def\binaryplain{\ensuremath{\mathsf{\binarystring}}}
 \makeatother
 
-\def\Binary#1#2{\ensuremath{\mathsf{Binary#1#2}}}
-
+\def\IEEEBinaryLong#1#2{\ieeestd\ensuremath{\mathsf{binary#1#2}}}
+\def\IEEEBinary#1#2{\ensuremath{\mathsf{binary#1#2}}}
+\def\IEEEBinaryK{\ensuremath{\mathsf{binary}\{K\}}}
+\def\BFloat16{\ensuremath{\mathsf{BFloat16}}}
 
 \makeatletter
+\def\renderop#1{\mathsf{#1}}
 \def\runopnormal{}
 \def\runopangle<#1>{\textcolor{darkgray}{_{#1}}}
 \def\runopnormalQ{}
 \def\runopangleQ<#1>{}
+% \def\runopnormalA{}
+\def\runopangleA<#1>{\langle#1\rangle}
+\def\runopangleA<#1>{{\mathtt{<}}#1{\mathtt{>}}}
 \def\runoptail{\@ifnextchar<\runopangle\runopnormal}
 \def\runoptailQ*{\@ifnextchar<\runopangleQ\runopnormalQ}
-\def\runoptailstar{\@ifnextchar*\runoptailQ\runoptail}
-\def\runop#1{\mathsf{#1}\runoptailstar}
+\def\runoptailA+{\@ifnextchar<\runopangleA\runopnormalA}
+\def\runoptailstar{%
+    \@ifnextchar*\runoptailQ%
+    {\@ifnextchar+\runoptailA\runoptail}}
+\def\runop#1{\hyperlink{sym:#1}{\renderop{#1}}\runoptailstar}
+\def\runaugop#1{\hyperlink{sym:#1}{\Aug\renderop{#1}}\runoptailstar}
 \makeatother
 
-\newcommand{\newop}[1]{\expandafter\def\csname #1\endcsname{\runop{#1}}}
-\newcommand{\newops}[1]{\forcsvlist{\newop}{#1}}
+\def\anchorop#1{\hypertarget{sym:#1}{}}
+\newcommand{\anchorops}[1]{\forcsvlist{\anchorop}{#1}}
+
+\newcommand{\declop}[1]{%
+    \expandafter\def\csname #1\endcsname{\runop{#1}}}
+\newcommand{\declops}[1]{\forcsvlist{\declop}{#1}}
+
+% \newcommand{\newop}[1]{%
+%     \anchorop{#1}%
+%     \declop{#1}%
+% }
+% \newcommand{\newops}[1]{\forcsvlist{\newop}{#1}}
+
+% Generic macro to build operation lists
+% Creates four macros for managing lists of operations:
+%   \<listname> - the raw list with leading comma
+%   \declop<singular> - adds a single operation to the list
+%   \declop<listname> - adds multiple operations (CSV) to the list
+%   \use<listname> - outputs the list without the leading comma
+\makeatletter
+\newcommand{\defoplist}[2]{% #1 = list name, #2 = singular name
+    % Initialize empty list
+    \expandafter\def\csname #1\endcsname{}%
+    % Define \declop<singular> to add one operation
+    \expandafter\newcommand\csname declop#2\endcsname[1]{%
+        \declop{##1}%
+        % Append to list: preserve existing content, add comma and new operation in math mode
+        \expandafter\edef\csname #1\endcsname{%
+            \unexpanded\expandafter\expandafter\expandafter{\csname #1\endcsname},
+            \noexpand$\expandafter\noexpand\csname ##1\endcsname\noexpand$}%
+    }%
+    % Define \declop<listname> to add multiple operations from CSV
+    \expandafter\newcommand\csname declop#1\endcsname[1]{%
+        \forcsvlist{\csname declop#2\endcsname}{##1}}%
+    % Define \use<listname> to output list without leading comma
+    \expandafter\newcommand\csname use#1\endcsname{%
+        \expandafter\expandafter\expandafter\@gobble\csname #1\endcsname}%
+}
+\makeatother
+
+% Define lists for different kinds of operations
+\defoplist{blkunaries}{blkunary}
+\defoplist{blkbinaries}{blkbinary}
+
+
+% start of new opearation declarations
+
+\declop{RoundAway}
+\declop{CodeIsOdd}
+\declop{FMA}
+\declop{FAA}
+\declop{Clamp}
+\declop{Class}
+\declop{reduce}
+\declop{ConvertFromBlock}
+\declop{ConvertToBlock}
+\declop{ConvertToBlockMaxAbsFinite}
+\declop{logsumexp}
+%
+\declops{Extended,Finite,Signed,Unsigned}
+%
+\declops{True,False}
+\declops{IsOdd,IsEven}
+\declops{NearestTiesToEven,NearestTiesToAway,TowardPositive,TowardNegative,TowardZero,ToOdd,StochasticA,StochasticB,StochasticC}
+\declops{SatFinite,SatPropagate,SatInf}
+\let\OvfInf=\SatInf
+\declops{PrecisionOf,BitwidthOf,SignednessOf,DomainOf,MaxFiniteOf,MinFiniteOf,MinPositiveOf,MinNormalOf,ExponentBiasOf,ExponentBitsOf,TrailingBitsOf,RoundOf,SatOf}
+\declops{CompareLess,CompareLessEqual,CompareEqual,CompareGreaterEqual,CompareGreater}
+\declops{IsZero,IsOne,IsInfinite,IsNaN,IsSignMinus,IsNormal,IsSubnormal,IsFinite}
+\declops{NextGreaterThan,NextLessThan}
+\declops{NextGreaterThanAux,NextLessThanAux}
+\declops{BlockReduceAdd,BlockReduceMultiply}
+\declops{BlockDotProduct}
+%
+\declopblkunaries{Convert,Abs,Negate}
+\declopblkunaries{Sqrt, RSqrt, Recip}
+\declopblkunaries{Exp,Log,ExpMinusOne,LogOnePlus,Exp2,Log2}
+\declopblkunaries{Sin,Cos,Tan,ArcSin,ArcCos,ArcTan}
+\declopblkunaries{Sinh,Cosh,Tanh,ArcSinh,ArcCosh,ArcTanh}
+\declopblkunaries{SinPi,CosPi,TanPi,ArcSinPi,ArcCosPi,ArcTanPi}
+\declopblkunaries{Softplus}
+%
+\declopblkbinary{CopySign}
+\declopblkbinaries{Add,Subtract,Multiply,Divide}
+\declopblkbinaries{Hypot}
+\declopblkbinaries{ArcTan2,ArcTan2Pi}
+\declopblkbinaries{Maximum,Minimum,MaximumNumber,MinimumNumber}
+\declopblkbinaries{MaximumMagnitude,MinimumMagnitude,MaximumMagnitudeNumber,MinimumMagnitudeNumber}
+\declopblkbinaries{MinimumFinite,MaximumFinite}
+
+% end of new operation declarations
+
 
 \def\ssec#1{{\bf #1}\\[2pt]}
-\def\Opnd#1#2{\parbox{1cm}{\hfill {#1} :}~#2}
+\def\Opnd#1#2{\parbox{12mm}{\hfill {#1} :}~#2}
+\def\OpndWide#1#2{{{#1} :}~#2}
 %\def\opnd#1:#2;{\Opnd{#1}{#2}}
 \def\Case#1{${}\qquad #1$}
 %\def\case #1;{\Case{#1}}
-\def\comment#1{\hfill\mbox{\textcolor{blue}{\quad ---#1}}}
+\def\commenttext#1{\textcolor{blue}{#1}}
+\def\comment#1{\hfill\mbox{\commenttext{\quad ---#1}}}
+\def\comment#1{\hfill\mbox{\quad (#1)}}
+
+\def\domain{\Delta}
+\def\signedness{\Sigma}
+
+\def\dedent{\hspace*{-1em}}
+
 
 \def\any{\ast}
 \def\sign{\operatorname{sign}}
-\def\Or{\vee}
-\def\And{\wedge}
-\def\Not{\neg}
 \def\OneFromBool#1{\mathbbm 1\!\left[#1\right]}
 \def\gives{\rightarrow\,\xspace}
 \def\bool{\operatorname{Boolean}}
@@ -142,16 +298,12 @@
 \def\NaNin{\@ifnextchar*\NaNinStar\NaNinNormal}
 \makeatother
 
-\newops{compareLess,compareLessEqual,compareEqual,compareGreaterEqual,compareGreater}
+\newcommand{\newkeyword}[1]{\expandafter\def\csname #1\endcsname{\operatorname{\mathbf{\lowercase{#1}}}}}
 
-\newop{Encode}
-\newop{Decode}
-\newops{True,False}
-\newops{Max,Min,Add,BitwiseAnd,BitShiftRight}
-
-\newcommand{\newkeyword}[1]{\expandafter\def\csname #1\endcsname{\mathop{\mathbf{\lowercase{#1}}}}}
-
-\forcsvlist{\newkeyword}{If,Then,Else,End,Where}
+\forcsvlist{\newkeyword}{If,Then,Else,End,And,Or,Not,Otherwise}
+% \def\Or{\operatorname{\mathbf{or}}}
+% \def\And{\operatorname{\mathbf{and}}}
+% \def\Not{\operatorname{\mathbf{not}}}
 
 \makeatletter
 \def\WhereStar*{\mathbf{where}\quad}
@@ -159,8 +311,15 @@
 \def\Where{\@ifnextchar*\WhereStar\WhereNormal}
 \makeatother
 
+\newcommand\ieeestdtm{IEEE Std 754\texttrademark\xspace}
 \newcommand\ieeestd{IEEE Std 754\xspace}
-\newcommand\ieeenew{IEEE Std 754-2019\xspace}
+% \newcommand\ieeenew{IEEE Std 754-2019\xspace}
+\newcommand\ieeenew{IEEE Std 754\texttrademark\xspace}
+
+\def\classnormal#1{#1}
+\def\classsubnormal#1{\textcolor{RoyalBlue}{#1}}\def\classsubnormalname{blue}
+\def\classinfnan#1{\textcolor{Sienna}{#1}}\def\classinfnanname{brown}
+\def\classzero#1{\classinfnan{#1}}
 
 
 % Blue-underlined url in heading font
@@ -168,6 +327,8 @@
 
 % Print a float as M \times 2^{E}, with E width fixed to that of "-88"
 \def\binaryfloat#1#2{\ensuremath{#1 \times 2^{\mathrlap{#2}\phantom{-88}}}}
+
+\def\binaryfloatinline#1#2{\ensuremath{#1 \times 2^{\mathrlap{#2}}}}
 
 
 \newcommand{\spec}[1]{{\bf \boldmath  #1}}
@@ -178,13 +339,68 @@
 %  \def\stuff{...}
 %  use \stuff here
 % \end{scope}
-\newenvironment{scope}{}{} 
+\newenvironment{scope}{}{}
 
-% enable line numbers, if desired
+% % enable line numbers, if desired
 % \usepackage{lineno}
 % \linenumbers
 % \pagewiselinenumbers
 
-\newops{isSignMinus,isNormal,isPositive,isInfinite,isFinite,isSubnormal,isNaN,totalOrder,isSignaling,isCanonical}
-
 \newcommand{\cmw}[1]{\marginpar{\color{red}#1}}
+
+
+% IEEE SA draft page style and caption formatting
+\setlength{\headheight}{28pt}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[C]{\footnotesize IEEE P3109/D1. March 2026\\Draft Standard for Arithmetic Formats for Machine Learning}
+\fancyfoot[C]{\footnotesize \thepage\\Copyright © 2026 IEEE. All rights reserved.\\This is an unapproved IEEE Standards Draft, subject to change.}
+\renewcommand{\headrulewidth}{0pt}
+\renewcommand{\footrulewidth}{0pt}
+
+\captionsetup[table]{position=above,justification=centering,singlelinecheck=false,labelsep=emdash,textfont=normalfont}
+\captionsetup[figure]{position=bottom,justification=centering,singlelinecheck=false,labelsep=emdash,textfont=normalfont}
+
+% Notes formatting
+\newcommand{\notetext}[1]{\par\noindent\textbf{NOTE—} #1\par}
+\newcommand{\notenumbered}[2]{\par\noindent\textbf{NOTE #1—} #2\par}
+\newcommand{\notesfootnote}{\footnote{Notes to text, tables, and figures are for information only and do not contain requirements needed to implement the standard.}}
+
+% Cross-reference helpers
+\newcommand{\clauseref}[1]{Clause~\ref{#1}}
+\newcommand{\annexref}[1]{Annex~\ref{#1}}
+
+\def\projspec{\rho}
+
+\def\inputaug#1{\input{ieee-p3109/iml2latex/w#1}\negskip}
+
+\def\Project{\runaugop{Project}}
+\def\RoundToPrecision{\runaugop{RoundToPrecision}}
+\def\Saturate{\runop{Saturate}}
+\def\wSaturate{\runaugop{Saturate}}
+
+\def\ConvertWithin{\runop{Convert}}
+\def\ConvertIn{\runop{ConvertFromIEEE754}}
+\def\ConvertOut{\runop{ConvertToIEEE754}}
+
+%
+% IEEE Typography conformance
+
+%   fonts
+\usepackage[T1]{fontenc}
+\usepackage{tgtermes}
+\usepackage{tgheros}
+
+%   customizing
+\usepackage{titlesec}
+\usepackage{caption}
+\usepackage{tocloft}
+
+%   headings
+\titleformat*{\section}{\sffamily\fontsize{12pt}{14pt}\selectfont\bfseries}
+\titleformat*{\subsection}{\sffamily\fontsize{11pt}{13pt}\selectfont\bfseries}
+%% !!FIXME!! (Andrew have you done some redefining of \subsubsection?)
+%\titleformat*{\subsubsection}{\sffamily\fontsize{10pt}{12pt}\selectfont\bfseries}
+
+% Caption setup
+\captionsetup{font=normalsize} % 10pt in a 10pt document

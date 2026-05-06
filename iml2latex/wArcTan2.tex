@@ -1,28 +1,24 @@
-\noindent\Case{\Cer\csname ArcTan2\endcsname (\NaN, \any) \gives  \NaN}\\
-\Case{\Cer\csname ArcTan2\endcsname (\any, \NaN) \gives  \NaN}\\
-\Case{\Cer\csname ArcTan2\endcsname (\zero, \zero) \gives  \NaN}\\
-\Case{\Cer\csname ArcTan2\endcsname (-\infty, \pm\infty) \gives  \NaN}\\
-\Case{\Cer\csname ArcTan2\endcsname (+\infty, \pm\infty) \gives  \NaN}\\
-\Case{\Cer\csname ArcTan2\endcsname (\any, +\infty) \gives  \zero}\\
-\Case{\Cer\csname ArcTan2\endcsname (\zero, X) ~\If X > \zero\gives  \zero}\\
-\Case{\Cer\csname ArcTan2\endcsname (+\infty, \any) \gives  \frac{\pi}{2}{ }}\\
-\Case{\Cer\csname ArcTan2\endcsname (Y, \zero) ~\If Y > \zero\gives  \frac{\pi}{2}{
-  }}\\
-\Case{\Cer\csname ArcTan2\endcsname (\any, -\infty) \gives  \pi{ }}\\
-\Case{\Cer\csname ArcTan2\endcsname (\zero, X) ~\If X < \zero\gives  \pi{ }}\\
-\Case{\Cer\csname ArcTan2\endcsname (-\infty, \any) \gives  -{ \frac{\pi}{2}{ }}}\\
-\Case{\Cer\csname ArcTan2\endcsname (Y, \zero) ~\If Y < \zero\gives  -{
+\noindent\Case{\csname wArcTan2\endcsname(\NaN, \any) \gives  \NaN}\\
+\Case{\csname wArcTan2\endcsname(\any, \NaN) \gives  \NaN}\\
+\Case{\csname wArcTan2\endcsname(\zero, \zero) \gives  \NaN}\\
+\Case{\csname wArcTan2\endcsname(-\infty, \pm\infty) \gives  \NaN}\\
+\Case{\csname wArcTan2\endcsname(+\infty, \pm\infty) \gives  \NaN}\\
+\Case{\csname wArcTan2\endcsname(\any, +\infty) \gives  \zero}\\
+\Case{\csname wArcTan2\endcsname(\zero, X) ~\If X > \zero\gives  \zero}\\
+\Case{\csname wArcTan2\endcsname(+\infty, \any) \gives  \frac{\pi}{2}{ }}\\
+\Case{\csname wArcTan2\endcsname(Y, \zero) ~\If Y > \zero\gives  \frac{\pi}{2}{ }}\\
+\Case{\csname wArcTan2\endcsname(\any, -\infty) \gives  \pi{ }}\\
+\Case{\csname wArcTan2\endcsname(\zero, X) ~\If X < \zero\gives  \pi{ }}\\
+\Case{\csname wArcTan2\endcsname(-\infty, \any) \gives  -{ \frac{\pi}{2}{ }}}\\
+\Case{\csname wArcTan2\endcsname(Y, \zero) ~\If Y < \zero\gives  -{
   \frac{\pi}{2}{ }}}\\
-\Case{\Cer\csname ArcTan2\endcsname (Y, X) ~\If X > \zero\gives  \arctan{
-  (
-  Y / X
-  )}}\\
-\Case{\Cer\csname ArcTan2\endcsname (Y, X) ~\If Y > \zero \And X < \zero\gives  \arctan{
+\Case{\csname wArcTan2\endcsname(Y, X) ~\If X > \zero\gives  \arctan{ (Y / X)}}\\
+\Case{\csname wArcTan2\endcsname(Y, X) ~\If Y > \zero \And X < \zero\gives  \arctan{
   (
   Y / X
   )}
 + \pi{ }}\\
-\Case{\Cer\csname ArcTan2\endcsname (Y, X) ~\If Y < \zero \And X < \zero\gives  \arctan{
+\Case{\csname wArcTan2\endcsname(Y, X) ~\If Y < \zero \And X < \zero\gives  \arctan{
   (
   Y / X
   )}
