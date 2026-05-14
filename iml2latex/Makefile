@@ -1,4 +1,4 @@
-NOEXTRACT=width wBlockDecode wBlockProject wDecode wRoundToPrecision wSaturate wBlockProject_map_cz wSoftmax wLogSoftmax wProject
+NOEXTRACT=width wBlockDecode wBlockProject wDecode wDecodeAuxExternal wEncodeExternal wRoundToPrecision wSaturate wBlockProject_map_cz wSoftmax wLogSoftmax wProject
 FUNS=$(shell grep "let w" ../specification/specification.iml | cut -d " " -f 4) internal_wSaturate
 TEXS=$(patsubst %,%.tex,$(filter-out $(NOEXTRACT),$(FUNS)))
 

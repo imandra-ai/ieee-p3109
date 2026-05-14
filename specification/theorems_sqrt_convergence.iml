@@ -1,4 +1,3 @@
-
 [@@@import Specification, "dune:specification"]
 [@@@import Fsqrt, "fsqrt.iml"]
 
@@ -1435,8 +1434,9 @@ theorem fsqrt_converges_in_range (f_x : Format.t) (f_r :  Format.t) (rho : Proje
     [%use fsqrt_converges_15_15 f_x f_z pi] @>
     auto] *)
 
-
+(* The enumeration above is way to expensive to run through imandrax.
+   It ran for about 2.5 CPU weeks when extracted to OCaml. *)
 theorem fsqrt_converges_in_range (f_x : Format.t) (f_r :  Format.t) (rho : Projection.t) =
-  forall_in_range fsqrt_converges (f_x, f_r, rho) 0 (Util.ipow2 (Format.k f_x))
+  forall_in_range fsqrt_converges (f_x, f_r, rho) 0 (Util.ipow2 (Format.width f_x))
   [@@timeout 10]
   [@@by auto]

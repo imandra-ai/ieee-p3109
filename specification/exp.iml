@@ -16,10 +16,12 @@ let rec exp_refine (i : int) (p : int) (x : real) (f : int) (f_acc : int) (r_acc
     [@@measure Ordinal.of_int (p - i)]
 
 let exp (x : real) (p : int) : real =
-  if x >=. 0.0 then
-    exp_refine 0 p x 0 1 1.0
+  if x = 0.0 then
+    1.0
+else if x >. 0.0 then
+    exp_refine 0 p x 1 1 1.0
   else
-    let q = (exp_refine 0 p (-. x) 0 1 1.0) in
+    let q = (exp_refine 0 p (-. x) 1 1 1.0) in
     if q = 0.0 then 0.0 else 1.0 /. q
 
 let exp2 (x : real) (p : int) : (real, string) Result.t =

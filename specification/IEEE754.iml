@@ -19,6 +19,19 @@ module Format = struct
     | Binary32 -> 32, 24, 127, 127, 1, 8, 23, max_finite 23 127
     | Binary64 -> 64, 53, 1023, 1023, 1, 11, 52, max_finite 52 1023
     | Binary128 -> 128, 113, 16383, 16383, 1, 15, 112, max_finite 112 16383
+
+  let k (phi : t) = let k, _, _, _, _, _, _, _ = parameters phi in k [@@macro]
+  let p (phi : t) = let _, p, _, _, _, _, _, _ = parameters phi in p [@@macro]
+  let bias (phi : t) = let _, _, _, bias, _, _, _, _ = parameters phi in bias [@@macro]
+  let max_finite (phi : t) = let _, _, _, _, _, _, _, m = parameters phi in m [@@macro]
+
+  let to_string (phi : t) : string =
+    match phi with
+    | Binary16 -> "binary16"
+    | Binary32 -> "binary32"
+    | Binary64 -> "binary64"
+    | Binary128 -> "binary128"
+  [@@program]
 end
 
 type t = bool list
@@ -38,18 +51,22 @@ let canonical_nan (fmt : Format.t) : t = nan fmt
 
 let inf (fmt : Format.t) (neg : bool) =
   let _, _, _, _, _, w, t, _ = Format.parameters fmt in
-  if neg then [true] else [false] @
-  nlist w true @ nlist t false
+  let sgn = if neg then [true] else [false] in
+  sgn @ nlist w true @ nlist t false
 
-let pinf (fmt : Format.t) = inf fmt false
+let pinf (fmt : Format.t) : t = inf fmt false
 
-let ninf (fmt : Format.t) = inf fmt true
+let ninf (fmt : Format.t) : t = inf fmt true
 
-let zero (fmt : Format.t) =
+let pzero (fmt : Format.t) : t =
   let k, _, _, _, _, _, _, _ = Format.parameters fmt in
   nlist k false
 
-let is_nan (x : t) (fmt : Format.t) : bool =
+let max_finite_t (fmt : Format.t) : t =
+  let _, _, _, _, _, w, t, _ = Format.parameters fmt in
+  [false] @ nlist (w - 1) true @ [false] @ nlist t true
+
+let is_nan (fmt : Format.t) (x : t) : bool =
   let _, _, _, _, _, w, _, _ = Format.parameters fmt in
   let tail = List.tl x in
   let biased_exp = List.take w tail in
@@ -58,15 +75,15 @@ let is_nan (x : t) (fmt : Format.t) : bool =
   let sig_all_zero = not (List.mem true sig_bits) in
   biased_exp_is_all_ones && not sig_all_zero
 
-let is_pinf (x : t) (fmt : Format.t) : bool = x = (pinf fmt)
+let is_pinf (fmt : Format.t) (x : t) : bool = x = (pinf fmt)
 
-let is_ninf (x : t) (fmt : Format.t) : bool = x = (ninf fmt)
+let is_ninf (fmt : Format.t) (x : t) : bool = x = (ninf fmt)
 
-let is_inf (x : t) (fmt : Format.t) : bool = x = (pinf fmt) || x = (ninf fmt)
+let is_inf (fmt : Format.t) (x : t) : bool = x = (pinf fmt) || x = (ninf fmt)
 
 let is_zero (x : t) : bool =
   match x with
-  | [] -> false
+  | [] -> true
   | _ :: xs -> not (List.mem true xs)
 
 let is_pzero (x : t): bool =
@@ -79,13 +96,28 @@ let is_nzero (x : t) : bool =
   | [] -> false
   | sgn :: _ -> is_zero x && sgn = true
 
-let rec to_binary_bits x =
+let rec to_binary_bits (x : int) : bool list =
   let x = Int.abs x in
   if x = 0 then [] else
     to_binary_bits (x/2) @ [x mod 2 = 1]
   [@@measure (Ordinal.of_int (Int.abs x))]
 
-let to_binary (x : int) (digits : int) =
+let decode (phi: Format.t) (x : int) : t =
+  let b = to_binary_bits x in
+  if List.length b < Format.k phi then
+    nlist (Format.k phi - List.length b) false @ b
+  else if List.length b > Format.k phi then
+    canonical_nan phi
+  else
+    b
+
+let rec encode (x : t) : int =
+  match x with
+  | [] -> 0
+  | true :: xs -> Util.ipow2 (List.length xs) + encode xs
+  | false :: xs -> encode xs
+
+let to_binary (x : int) (digits : int) : bool list =
   let r = to_binary_bits x in
   let lr = List.length r in
   if lr < digits then
@@ -93,7 +125,7 @@ let to_binary (x : int) (digits : int) =
   else
     r
 
-let round_internal (x : CER.t) (fmt : Format.t) (rnd : RoundingMode.t) : (t,  string) Result.t =
+let round_internal (fmt : Format.t) (rnd : RoundingMode.t) (x : CER.t) : (t,  string) Result.t =
   let open RoundingMode in
   let open CER in
   let open CER.ResultInfix in
@@ -136,11 +168,11 @@ let round_internal (x : CER.t) (fmt : Format.t) (rnd : RoundingMode.t) : (t,  st
         Ok (sign @ to_binary biased_exp w @ List.tl fsig)
     | _ -> Error "invalid")
 
-theorem round_internal_ok (x : CER.t) (fmt : Format.t) (rnd : RoundingMode.t) =
-  Result.is_ok (round_internal x fmt rnd)
+theorem round_internal_ok (fmt : Format.t) (rnd : RoundingMode.t) (x : CER.t)  =
+  Result.is_ok (round_internal fmt rnd x)
 
-let round (x : CER.t) (fmt : Format.t) (rnd : RoundingMode.t) : t =
-  match round_internal x fmt rnd with
+let round (fmt : Format.t) (rnd : RoundingMode.t) (x : CER.t) : t =
+  match round_internal fmt rnd x  with
   | Ok r -> r
   | Error _ -> nan fmt (* unreachable by theorem round_internal_ok *)
 
@@ -150,22 +182,28 @@ let rec from_binary (x : bool list) : int =
   | x :: xs ->
     (if x then Util.ipow2 (List.length xs) else 0) + (from_binary xs)
 
+let biased_exponent (phi : Format.t) (x : t) : bool list =
+  let _, _, _, _, _, w, _, _ = Format.parameters phi in
+  List.take w (List.tl x)
+
+let is_all_ones (xs : bool list) : bool = not (List.mem false xs)
+
+let is_all_zeroes (xs : bool list) : bool = not (List.mem true xs)
+
 let as_cer (phi : Format.t) (x : t) : (CER.t, string) Result.t =
-  if is_nan x phi then
+  if is_nan phi x then
     Ok NaN
-  else if is_pinf x phi then
+  else if is_pinf phi x then
     Ok PInf
-  else if is_ninf x phi then
+  else if is_ninf phi x then
     Ok NInf
   else
     let _, _, _, bias, _, w, t, _ = Format.parameters phi in
     let sgn = if List.hd x = false then 1.0 else -1.0 in
     let tail = List.tl x in
-    let biased_exp = List.take w tail in
-    let biased_exp_is_all_zeroes = not (List.mem true biased_exp) in
-    let biased_exp_is_all_ones = not (List.mem false biased_exp) in
+    let biased_exp = biased_exponent phi x in
+    let biased_exp_is_all_zeroes = is_all_zeroes biased_exp in
     let sig_bits = List.drop w tail in
-    let sig_all_zero = not (List.mem true sig_bits) in
 
     let sigd, exp =
       if biased_exp_is_all_zeroes then
@@ -177,14 +215,8 @@ let as_cer (phi : Format.t) (x : t) : (CER.t, string) Result.t =
     in
 
     let open CER in
-    if biased_exp_is_all_ones then
-      if not sig_all_zero then
-        Error "cannot convert NaN to extended reals"
-      else
-        (if sgn = 1.0 then Ok PInf else Ok NInf)
-    else
-      let open CER.ResultInfix in
-      ((r2a sgn) * (2 ^ exp)) ** ((i2a sigd) / (2 ^ t))
+    let open CER.ResultInfix in
+    ((r2a sgn) * (2 ^ exp)) ** ((i2a sigd) / (2 ^ t))
 
 let bd acc b = acc ^ if b then "1" else "0"
 

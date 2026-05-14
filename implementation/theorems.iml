@@ -7,64 +7,70 @@ open Util
 
 let unroll_nonlin qt nqt steps = Tactic.unroll ~smt:"z3-full-nonlinear" ~query_timeout:qt ~no_asm_query_timeout:nqt steps
 
+(** Some examples of how one might approach proving conformance of an
+    implementation to the specification. *)
+
 let i2s = Implementation.Float.i2s
 
 let format_supported (f : Specification.Format.t) : bool =
   let open Specification in
-  f.s = Signedness.Signed &&
-  f.d = Domain.Extended &&
-  Format.k f = 8
+  match f with
+  | Internal {s; d; _} ->
+    s = Signedness.Signed &&
+    d = Domain.Extended &&
+    Float.bitWidthOf f = 8
+  | _ -> false
 
-(** Proof that our implementation of [abs] is correct *)
-theorem correct_abs (f : Specification.Format.t) (x : Float.t) =
-  format_supported f ==>
-  i2s (Implementation.Float.abs f x) = Specification.Float.abs f (i2s x)
-  [@@by enumerate ["f"] @> repeat split_and @>>| auto]
+(** Proof that our implementation of [abs] conforms to the specification *)
+theorem correct_abs (f_x : Format.t) (f_r : Format.t) (rho : Projection.t) (x : Float.t) =
+  format_supported f_x && f_r = f_x ==>
+  i2s (Implementation.Float.abs f_x f_r rho x) = Specification.Float.abs f_x f_r rho (i2s x)
+  [@@by unroll_nonlin 10 10 1000]
   [@@timeout 3600]
 
-(** Proof that our implementation of [negate] is correct *)
-theorem correct_negate (f : Format.t) (x : Float.t) =
-  format_supported f ==>
-  i2s (Implementation.Float.negate f x) = Specification.Float.negate f (i2s x)
-  [@@by enumerate ["f"] @> repeat split_and @>>| auto]
+(** Proof that our implementation of [negate] conforms to the specification *)
+theorem correct_negate (f_x : Format.t) (f_r : Format.t) (rho : Projection.t) (x : Float.t) =
+  format_supported f_x && f_r = f_x ==>
+  i2s (Implementation.Float.negate f_x f_r rho x) = Specification.Float.negate f_x f_r rho (i2s x)
+  [@@by enumerate ["f_x"; "f_r"] @> repeat split_and @>>| unroll 100]
   [@@timeout 3600]
 
-(** Proof that our implementation of [isZero] is correct *)
+(** Proof that our implementation of [isZero] conforms to the specification *)
 theorem correct_isZero (f : Format.t) (x : Float.t) =
   format_supported f ==>
   Implementation.Float.isZero f x = Specification.Float.isZero f (i2s x)
   [@@by enumerate ["f"] @> auto]
   [@@timeout 60]
 
-(** Proof that our implementation of [isOne] is correct *)
+(** Proof that our implementation of [isOne] conforms to the specification *)
 theorem correct_isOne (f : Format.t) (x : Float.t) =
   format_supported f ==>
   Implementation.Float.isOne f x = Specification.Float.isOne f (i2s x)
   [@@by enumerate ["f"] @> auto]
   [@@timeout 60]
 
-(** Proof that our implementation of [is_nan] is correct *)
+(** Proof that our implementation of [is_nan] conforms to the specification *)
 theorem correct_isNaN (f : Format.t) (x : Float.t) =
   format_supported f ==>
   Implementation.Float.isNaN f x = Specification.Float.is_nan f (i2s x)
   [@@by enumerate ["f"] @> auto]
   [@@timeout 60]
 
-(** Proof that our implementation of [isSignMinus] is correct *)
+(** Proof that our implementation of [isSignMinus] conforms to the specification *)
 theorem correct_isSignMinus (f : Format.t) (x : Float.t) =
   format_supported f ==>
   Implementation.Float.isSignMinus f x = Specification.Float.isSignMinus f (i2s x)
   [@@by enumerate ["f"] @> auto]
   [@@timeout 60]
 
-(** Proof that our implementation of [isNormal] is correct *)
+(** Proof that our implementation of [isNormal] conforms to the specification *)
 theorem correct_is_normal (f : Format.t) (x : Float.t) =
   format_supported f ==>
   Implementation.Float.isNormal f x = Specification.Float.isNormal f (i2s x)
   [@@by enumerate ["f"] @> auto]
   [@@timeout 60]
 
-(** Proof that our implementation of [isSubnormal] is correct *)
+(** Proof that our implementation of [isSubnormal] conforms to the specification *)
 theorem correct_is_subnormal (f : Format.t) (x : Float.t) =
   format_supported f ==>
   Implementation.Float.isSubnormal f x = Specification.Float.isSubnormal f (i2s x)

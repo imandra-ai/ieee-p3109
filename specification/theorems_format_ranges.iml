@@ -13,10 +13,10 @@ let is_within_f (f : Format.t) (x : Float.t) : bool =
   Float.is_within_range f (Float.wDecode f x)
 
 let is_within (kp : Format.kpt) (x : Float.t) : bool =
-  is_within_f { kp = kp; s = Signed; d = Extended } x &&
-  is_within_f { kp = kp; s = Signed; d = Finite } x &&
-  is_within_f { kp = kp; s = Unsigned; d = Extended } x &&
-  is_within_f { kp = kp; s = Unsigned; d = Finite } x
+  is_within_f (Internal { kp = kp; s = Signed; d = Extended }) x &&
+  is_within_f (Internal { kp = kp; s = Signed; d = Finite }) x &&
+  is_within_f (Internal { kp = kp; s = Unsigned; d = Extended }) x &&
+  is_within_f (Internal { kp = kp; s = Unsigned; d = Finite }) x
 
 let rec forall_in_range (p : int -> bool) (l : int) (u : int) =
   if l > u then
@@ -840,7 +840,15 @@ theorem within_format_range_kp (kp : Format.kpt) (x : Float.t) =
   [@@disable is_within]
   [@@fc]
 
+let kp_of_f (f : Format.t) =
+  match f with
+  | Internal {kp; _} -> kp
+  | External _ -> B2P1 (* we don't care *)
+
 theorem within_format_range (f : Format.t) (x : Float.t) =
-  is_within_f f x
-  [@@by [%use within_format_range_kp f.kp x] @> unroll 0]
+  match f with
+  | Internal _ ->
+    is_within_f f x
+  | _ -> true (* we don't care *)
+  [@@by [%use within_format_range_kp (kp_of_f f) x] @> unroll 0]
   [@@fc]

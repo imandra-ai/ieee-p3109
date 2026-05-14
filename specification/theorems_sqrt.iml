@@ -11,8 +11,8 @@ open Theorems_sqrt_convergence
 
 let unroll_nonlin qt nqt steps = Tactic.unroll ~smt:"z3-full-nonlinear" ~query_timeout:qt ~no_asm_query_timeout:nqt steps [@@no_extract]
 
-let f81 = {Format.kp = Format.B8P1; s = Signedness.Signed; d = Domain.Extended}
-let f83 = {Format.kp = Format.B8P3; s = Signedness.Signed; d = Domain.Extended}
+let f81 = Format.Internal {kp = Format.B8P1; s = Signedness.Signed; d = Domain.Extended}
+let f83 = Format.Internal {kp = Format.B8P3; s = Signedness.Signed; d = Domain.Extended}
 
 let fmt = f83 [@@macro]
 let enc (r : real) = match Float.wEncode fmt (CER.R r) with | Ok e -> e | _ -> Float.nan f83
@@ -123,7 +123,7 @@ theorem fsqrt_ok_below (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x 
   [@@fc]
 
 theorem fsqrt_ok_above (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : Float.t) =
-  (x >= Util.ipow2 (Format.k f_z)) ==> ((fsqrt_converges (f_x, f_z, pi) x) [@trigger])
+  (x >= Util.ipow2 (Format.width f_z)) ==> ((fsqrt_converges (f_x, f_z, pi) x) [@trigger])
   [@@timeout 3600]
   [@@by unroll 1000]
   [@@fc]

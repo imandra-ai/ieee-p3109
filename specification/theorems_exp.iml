@@ -11,6 +11,12 @@ open Exp
 
 let unroll_nonlin qt nqt steps = Tactic.unroll ~smt:"z3-full-nonlinear" ~query_timeout:qt ~no_asm_query_timeout:nqt steps
 
+verify (exp 0.0 16 = 1.0) [@@by ground_eval ()]
+
+verify (
+  let r = exp 1.0 16 in
+  2.718 <=. r && r <=. 2.719) [@@by ground_eval ()]
+
 theorem e_gt_0 (p : int) = Log.e p >. 0.0 [@@by auto]
 
 theorem ln2_gt0_ok (p : int) =
@@ -29,14 +35,14 @@ theorem exp2_ok (x : real) (p : int) =
   [@@by auto]
   [@@fc]
 
-theorem h1 (x : real) =
+theorem ripow_abs_2_gt0 (x : real) =
   ((Util.ripow (Real.abs x) 2) [@trigger]) >=. 0.0
   [@@by auto]
   [@@fc]
 
 theorem ripow_gt0 (x : real) (n : int) =
   x >=. 0.0 ==> (Util.ripow x n) [@trigger] >=. 0.0
-  [@@by auto]
+  [@@by [%use ripow_abs_2_gt0 x] @> auto]
   [@@fc]
 
 theorem int_real_gt0 (x : int) =

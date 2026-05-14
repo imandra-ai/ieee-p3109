@@ -17,7 +17,7 @@ let one_down (f : Format.t) (x : Float.t) : Float.t =
 let only_exponent (f : Format.t) (x : Float.t) : Float.t =
   let open SaturationMode in
   let open RoundingMode in
-  let _, p, _, _, _, _, _ = Format.parameters f in
+  let p = Float.precisionOf f in
   let x = Float.abs f f (OvfInf, NearestTiesToEven) x in
   let pwr = Util.ipow2 (p - 1) in
   (Util.machine_idiv x pwr) * pwr

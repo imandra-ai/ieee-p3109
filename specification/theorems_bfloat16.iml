@@ -1,0 +1,32 @@
+[@@@import Util, "dune:math"]
+[@@@import BFloat16, "BFloat16.iml"]
+
+open BFloat16
+
+[@@@import Theorems_pow2, "theorems_pow2.iml"]
+
+let unroll_nonlin qt nqt steps = Tactic.unroll ~smt:"z3-full-nonlinear" ~query_timeout:qt ~no_asm_query_timeout:nqt steps
+
+theorem as_cer_ok (x : t) =
+  Result.is_ok (as_cer x)
+  [@@timeout 3600]
+  [@@disable Util.pow2, Util.ipow2]
+  [@@by auto]
+
+theorem is_nan_eq_cer_nan (x : t) =
+  let open CER in
+  is_nan x <==> as_cer x = Ok NaN
+  [@@timeout 60]
+  [@@by unroll 0]
+
+theorem is_pinf_eq_cer_pinf (x : t) =
+  let open CER in
+  is_pinf x <==> as_cer x = Ok PInf
+  [@@timeout 60]
+  [@@by unroll 0]
+
+theorem is_ninf_eq_cer_ninf (x : t) =
+  let open CER in
+  is_ninf x <==> as_cer x = Ok NInf
+  [@@timeout 60]
+  [@@by unroll 0]

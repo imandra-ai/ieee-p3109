@@ -10,7 +10,7 @@ open Specification
 (* Let's use the spec-extracted library.*)
 
 let fse (kp : Specification.Format.kpt) : Specification.Format.t =
-  { kp; s = Specification.Signedness.Signed; d = Specification.Domain.Extended }
+  Internal { kp; s = Specification.Signedness.Signed; d = Specification.Domain.Extended }
 
 let f = fse Specification.Format.B8P3
 

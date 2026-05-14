@@ -7,7 +7,7 @@ let some_check = Float.nan = Float.ninf;;
 Printf.printf "NaN = -oo: %b\n" some_check
 
 let fse (kp : Specification.Format.kpt) : Specification.Format.t =
-  { kp; s = Specification.Signedness.Signed; d = Specification.Domain.Extended }
+  Internal { kp; s = Specification.Signedness.Signed; d = Specification.Domain.Extended }
 
 let f = fse Specification.Format.B8P3
 

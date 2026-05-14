@@ -398,6 +398,14 @@ theorem block_op_map2_wop_ternary_ok wop x1 x2 x3 =
   Result.is_ok ((Float.block_op_map2_wop_ternary wop x1 x2 x3) [@trigger])
   [@@by auto]
 
+theorem block_op_map2_convert_elems_ok x1 =
+  match (Float.block_op_map2_wop_unary Float.wConvert x1) [@trigger] with
+  | Ok r -> Result.is_ok (extract_error r)
+  | Error _ -> false
+  [@@disable Float.wConvert]
+  [@@by auto]
+  [@@fc]
+
 theorem block_op_map2_abs_elems_ok x1 =
   match (Float.block_op_map2_wop_unary Float.wAbs x1) [@trigger] with
   | Ok r -> Result.is_ok (extract_error r)
@@ -650,6 +658,24 @@ let block_preconditions_unary b f_sx f_x f_s f_z rho_s rho_z (s_x, x) s_z =
   List.length x = b &&
   equal_block_sizes b args
   [@@macro]
+
+theorem block_convert_ok
+  (b : int)
+  (f_sx : Format.t) (f_x : Format.t)
+  (f_s : Format.t)
+  (f_z : Format.t)
+  (rho_s : Projection.t)
+  (rho_z : Projection.t)
+  (s_x, x : Float.t * Float.t list)
+  (s_z : Float.t) =
+  block_preconditions_unary b f_sx f_x f_s f_z rho_s rho_z (s_x, x) s_z ==>
+  Result.is_ok (Float.blockConvert b f_sx f_x f_s f_z rho_s rho_z (s_x, x) s_z)
+  [@@timeout 3600]
+  [@@disable
+    Float.reduce, Float.wConvert, Float.map2_wMultiply,
+    Float.wBlockDecode, Float.wProject, List.map, List.map2,
+    Float.wBlockProject, Float.block_op_map2_wop_unary]
+  [@@by induct ~do_not:["gen"; "fert"; "delim"] ()]
 
 theorem block_abs_ok
   (b : int)

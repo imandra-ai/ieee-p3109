@@ -1,0 +1,30 @@
+[@@@import BFloat16, "BFloat16.iml"]
+
+open BFloat16
+open CER
+
+verify(as_cer (BFloat16.decode 0xFFC1) = Ok CER.NaN) [@@by ground_eval ()]
+verify(as_cer (BFloat16.decode 0x0000) = Ok (CER.R 0.0)) [@@by ground_eval ()]
+
+verify(as_cer (BFloat16.decode 0x8000) = Ok (CER.R 0.0)) [@@by ground_eval ()]
+verify(as_cer (BFloat16.decode 0x3F80) = Ok (CER.R 1.0)) [@@by ground_eval ()]
+verify(as_cer (BFloat16.decode 0xC000) = Ok (CER.R (-2.0))) [@@by ground_eval ()]
+verify(as_cer (BFloat16.decode 0x7F80) = Ok (CER.PInf)) [@@by ground_eval ()]
+verify(as_cer (BFloat16.decode 0xFF80) = Ok (CER.NInf)) [@@by ground_eval ()]
+verify(as_cer (BFloat16.decode 0x4049) = Ok (CER.R 3.140625)) [@@by ground_eval ()]
+verify(as_cer (BFloat16.decode 0x3EAB) = Ok (CER.R 0.333984375)) [@@by ground_eval ()]
+
+verify(Ok { v = 0xFFC1 } = round_internal RoundingMode.TiesToEven CER.NaN) [@@by ground_eval ()]
+verify(Ok { v = 0x7F80 } = round_internal RoundingMode.TiesToEven CER.PInf) [@@by ground_eval ()]
+verify(Ok { v = 0xFF80 } = round_internal RoundingMode.TiesToEven CER.NInf) [@@by ground_eval ()]
+verify(Ok { v = 0x0000 } = round_internal RoundingMode.TiesToEven (CER.R 0.0)) [@@by ground_eval ()]
+verify(Ok { v = 0x3F80 } = round_internal RoundingMode.TiesToEven (CER.R 1.0)) [@@by ground_eval ()]
+verify(Ok { v = 0xC000 } = round_internal RoundingMode.TiesToEven (CER.R (-2.0))) [@@by ground_eval ()]
+verify(Ok { v = 0x4049 } = round_internal RoundingMode.TiesToEven (CER.R 3.140625)) [@@by ground_eval ()]
+verify(Ok { v = 0x3EAB } = round_internal RoundingMode.TiesToEven (CER.R 0.333984375)) [@@by ground_eval ()]
+
+theorem thm1 rm =
+  (Ok { v = 0x3F80 } = round_internal rm (CER.R 1.0)) &&
+  (Ok { v = 0x4049 } = round_internal rm (CER.R 3.140625)) &&
+  (Ok { v = 0x3EAB } = round_internal rm (CER.R 0.333984375))
+  [@@by enumerate ["rm"] @> ground_eval ()]

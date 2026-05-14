@@ -38,21 +38,17 @@ let tan (x : real) (p : int) : (real, string) Result.t =
 
 let sinh (x : real) (p : int) : real =
   let open Exp in
-  (1.0 -. exp (-. (2.0 *. x)) p)
-  /.
-  (2.0 *. exp (-. x) p)
+  ((exp x p) -. (exp (-. x) p)) /. 2.0
 
 let cosh (x : real) (p : int) : real =
   let open Exp in
-  (1.0 +. exp (-. (2.0 *. x)) p)
-  /.
-  (2.0 *. exp (-. x) p)
+  ((exp x p) +. (exp (-. x) p)) /. 2.0
 
 let tanh (x : real) (p : int) : real =
   let open Exp in
-  (exp (2.0 *. x) p -. 1.0)
+  ((exp x p) -. (exp (-. x) p))
   /.
-  (exp (2.0 *. x) p +. 1.0)
+  ((exp x p) +. (exp (-. x) p))
 
 
 let arcsin (x : real) (p : int) : (real, string) Result.t =
@@ -182,14 +178,14 @@ verify (cosh 0.0 prec = 1.0)
 
 verify (
   let r = cosh 1.0 prec in
-  1.543080631 <=. r && r <=. 1.543080632)
+  1.543080631 <=. r && r <=. 1.543080635)
   [@@by auto]
 
 verify (tanh 0.0 prec = 0.0)
 
 verify (
   let r = tanh 1.0 prec in
-  0.76159415580 <=. r && r <=. 0.76159415586)
+  0.76159415590 <=. r && r <=. 0.76159415596)
   [@@by auto]
 
 

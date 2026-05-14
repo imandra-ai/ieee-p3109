@@ -14,6 +14,10 @@ module RoundingMode = struct
   type t = Specification.RoundingMode.t
 end
 
+module Projection = struct
+  type t = Specification.Projection.t
+end
+
 (** 8-bit Floating-point numbers *)
 
 module Float = struct
@@ -35,9 +39,12 @@ module Float = struct
   let isOne (f : Format.t) (x : t) : bool =
     let open Specification.Format in
     not x.b7 &&
-    match f.kp with
-    | B8P1 -> not x.b6 && x.b5 && x.b4 && x.b3 && x.b2 && x.b1 && x.b0
-    | _ -> x.b6 && not x.b5 && not x.b4 && not x.b3 && not x.b2 && not x.b1 && not x.b0
+    match f with
+    | Internal {kp; _} ->
+      (match kp with
+      | B8P1 -> not x.b6 && x.b5 && x.b4 && x.b3 && x.b2 && x.b1 && x.b0
+      | _ -> x.b6 && not x.b5 && not x.b4 && not x.b3 && not x.b2 && not x.b1 && not x.b0)
+    | _ -> false (* don't care *)
 
   let isNaN (_f : Format.t) (x : t) : bool =
     x.b7 && not x.b6 && not x.b5 && not x.b4 && not x.b3 && not x.b2 && not x.b1 && not x.b0 [@@macro]
@@ -50,29 +57,35 @@ module Float = struct
     let open Specification.Format in
     isFinite f x
     &&
-    match f.kp with
-    | B8P1 -> x.b6 || x.b5 || x.b4 || x.b3 || x.b2 || x.b1 || x.b0
-    | B8P2 -> x.b6 || x.b5 || x.b4 || x.b3 || x.b2 || x.b1
-    | B8P3 -> x.b6 || x.b5 || x.b4 || x.b3 || x.b2
-    | B8P4 -> x.b6 || x.b5 || x.b4 || x.b3
-    | B8P5 -> x.b6 || x.b5 || x.b4
-    | B8P6 -> x.b6 || x.b5
-    | B8P7 -> x.b6
-    | _ -> false
+    match f with
+    | Internal {kp; _} ->
+      (match kp with
+      | B8P1 -> x.b6 || x.b5 || x.b4 || x.b3 || x.b2 || x.b1 || x.b0
+      | B8P2 -> x.b6 || x.b5 || x.b4 || x.b3 || x.b2 || x.b1
+      | B8P3 -> x.b6 || x.b5 || x.b4 || x.b3 || x.b2
+      | B8P4 -> x.b6 || x.b5 || x.b4 || x.b3
+      | B8P5 -> x.b6 || x.b5 || x.b4
+      | B8P6 -> x.b6 || x.b5
+      | B8P7 -> x.b6
+      | _ -> false)
+    | _ -> false (* don't care *)
 
   let isSubnormal (f : Format.t)  (x : t) : bool =
     let open Specification.Format in
     isFinite f x && not (isZero f x)
     &&
-    match f.kp with
-    | B8P1 -> not x.b6 && not x.b5 && not x.b4 && not x.b3 && not x.b2 && not x.b1 && not x.b0
-    | B8P2 -> not x.b6 && not x.b5 && not x.b4 && not x.b3 && not x.b2 && not x.b1
-    | B8P3 -> not x.b6 && not x.b5 && not x.b4 && not x.b3 && not x.b2
-    | B8P4 -> not x.b6 && not x.b5 && not x.b4 && not x.b3
-    | B8P5 -> not x.b6 && not x.b5 && not x.b4
-    | B8P6 -> not x.b6 && not x.b5
-    | B8P7 -> not x.b6
-    | _ -> false
+    match f with
+    | Internal {kp; _} ->
+      (match kp with
+      | B8P1 -> not x.b6 && not x.b5 && not x.b4 && not x.b3 && not x.b2 && not x.b1 && not x.b0
+      | B8P2 -> not x.b6 && not x.b5 && not x.b4 && not x.b3 && not x.b2 && not x.b1
+      | B8P3 -> not x.b6 && not x.b5 && not x.b4 && not x.b3 && not x.b2
+      | B8P4 -> not x.b6 && not x.b5 && not x.b4 && not x.b3
+      | B8P5 -> not x.b6 && not x.b5 && not x.b4
+      | B8P6 -> not x.b6 && not x.b5
+      | B8P7 -> not x.b6
+      | _ -> false)
+    | _ -> false (* don't care *)
 
   let isSignMinus (_f : Format.t) (x : t) : bool = x.b7
 
@@ -93,8 +106,8 @@ module Float = struct
 
   (** Operations *)
 
-  let abs (f : Format.t) (x : t) : t =
-    if isNaN f x then x
+  let abs (f_x : Format.t) (f_r : Format.t) (rho : Projection.t) (x : t) : t =
+    if isNaN f_x x then x
     else
       {
         b7 = false;
@@ -107,8 +120,8 @@ module Float = struct
         b0 = x.b0;
       }
 
-  let negate (f : Format.t) (x : t) : t =
-    if isNaN f x || isZero f x then x
+  let negate (f_x : Format.t) (f_r : Format.t) (rho : Projection.t) (x : t): t =
+    if isNaN f_x x || isZero f_x x then x
     else
       {
         b7 = not x.b7;

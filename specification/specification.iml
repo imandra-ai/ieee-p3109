@@ -7,6 +7,8 @@
 [@@@import Trigonometric, "dune:math"]
 [@@@import ErrorPropagation, "dune:basic"]
 [@@@import IEEE754, "IEEE754.iml"]
+[@@@import BFloat16, "BFloat16.iml"]
+[@@@import Theorems_pow2, "theorems_pow2.iml"]
 
 open ErrorPropagation
 
@@ -21,6 +23,20 @@ module Domain = struct
 end
 
 module Format = struct
+  module External = struct
+    type t = IEEE754 of IEEE754.Format.t | BFloat16
+
+    let is_ieee754 (f : t) : bool =
+      match f with
+      | IEEE754 _ -> true
+      | _ -> false
+
+    let is_bfloat16 (f : t) : bool =
+      match f with
+      | BFloat16 -> true
+      | _ -> false
+  end
+
   type kpt =
     | B2P1 | B2P2
     | B3P1 | B3P2 | B3P3
@@ -38,30 +54,49 @@ module Format = struct
     | B15P1 | B15P2 | B15P3 | B15P4 | B15P5 | B15P6 | B15P7 | B15P8 | B15P9 | B15P10 | B15P11 | B15P12 | B15P13 | B15P14 | B15P15
     | B16P1 | B16P2 | B16P3 | B16P4 | B16P5 | B16P6 | B16P7 | B16P8 | B16P9 | B16P10 | B16P11 | B16P12 | B16P13 | B16P14 | B16P15 | B16P16
 
-  type t = {
-    kp: kpt;
-    s: Signedness.t;
-    d: Domain.t;
-  }
+  type t =
+  | Internal of {
+      kp: kpt;
+      s: Signedness.t;
+      d: Domain.t;
+    }
+  | External of External.t
+
+  let is_internal (f : t) : bool =
+    match f with
+    | Internal _ -> true
+    | _ -> false
+
+  let is_external (f : t) : bool =
+    match f with
+    | External _ -> true
+    | _ -> false
 
   let precision (f : t) : int =
-    match f.kp with
-    | B16P1 | B15P1  | B14P1  | B13P1  | B12P1  | B11P1  | B10P1 | B9P1 | B8P1 | B7P1 | B6P1 | B5P1 | B4P1 | B3P1 | B2P1 -> 1
-    | B16P2 | B15P2  | B14P2  | B13P2  | B12P2  | B11P2  | B10P2 | B9P2 | B8P2 | B7P2 | B6P2 | B5P2 | B4P2 | B3P2 | B2P2 -> 2
-    | B16P3 | B15P3  | B14P3  | B13P3  | B12P3  | B11P3  | B10P3 | B9P3 | B8P3 | B7P3 | B6P3 | B5P3 | B4P3 | B3P3 -> 3
-    | B16P4 | B15P4  | B14P4  | B13P4  | B12P4  | B11P4  | B10P4 | B9P4 | B8P4 | B7P4 | B6P4 | B5P4 | B4P4 -> 4
-    | B16P5 | B15P5  | B14P5  | B13P5  | B12P5  | B11P5  | B10P5 | B9P5 | B8P5 | B7P5 | B6P5 | B5P5-> 5
-    | B16P6 | B15P6  | B14P6  | B13P6  | B12P6  | B11P6  | B10P6 | B9P6 | B8P6 | B7P6 | B6P6 -> 6
-    | B16P7 | B15P7  | B14P7  | B13P7  | B12P7  | B11P7  | B10P7 | B9P7 | B8P7 | B7P7-> 7
-    | B16P8 | B15P8  | B14P8  | B13P8  | B12P8  | B11P8  | B10P8 | B9P8 | B8P8 -> 8
-    | B16P9 | B15P9  | B14P9  | B13P9  | B12P9  | B11P9  | B10P9 | B9P9 -> 9
-    | B16P10 | B15P10 | B14P10 | B13P10 | B12P10 | B11P10 | B10P10 -> 10
-    | B16P11 | B15P11 | B14P11 | B13P11 | B12P11 | B11P11-> 11
-    | B16P12 | B15P12 | B14P12 | B13P12 | B12P12 -> 12
-    | B16P13 | B15P13 | B14P13 | B13P13 -> 13
-    | B16P14 | B15P14 | B14P14 -> 14
-    | B16P15 | B15P15 -> 15
-    | B16P16 -> 16
+    match f with
+    | Internal { kp; s; d} ->
+      (match kp with
+      | B16P1 | B15P1  | B14P1  | B13P1  | B12P1  | B11P1  | B10P1 | B9P1 | B8P1 | B7P1 | B6P1 | B5P1 | B4P1 | B3P1 | B2P1 -> 1
+      | B16P2 | B15P2  | B14P2  | B13P2  | B12P2  | B11P2  | B10P2 | B9P2 | B8P2 | B7P2 | B6P2 | B5P2 | B4P2 | B3P2 | B2P2 -> 2
+      | B16P3 | B15P3  | B14P3  | B13P3  | B12P3  | B11P3  | B10P3 | B9P3 | B8P3 | B7P3 | B6P3 | B5P3 | B4P3 | B3P3 -> 3
+      | B16P4 | B15P4  | B14P4  | B13P4  | B12P4  | B11P4  | B10P4 | B9P4 | B8P4 | B7P4 | B6P4 | B5P4 | B4P4 -> 4
+      | B16P5 | B15P5  | B14P5  | B13P5  | B12P5  | B11P5  | B10P5 | B9P5 | B8P5 | B7P5 | B6P5 | B5P5-> 5
+      | B16P6 | B15P6  | B14P6  | B13P6  | B12P6  | B11P6  | B10P6 | B9P6 | B8P6 | B7P6 | B6P6 -> 6
+      | B16P7 | B15P7  | B14P7  | B13P7  | B12P7  | B11P7  | B10P7 | B9P7 | B8P7 | B7P7-> 7
+      | B16P8 | B15P8  | B14P8  | B13P8  | B12P8  | B11P8  | B10P8 | B9P8 | B8P8 -> 8
+      | B16P9 | B15P9  | B14P9  | B13P9  | B12P9  | B11P9  | B10P9 | B9P9 -> 9
+      | B16P10 | B15P10 | B14P10 | B13P10 | B12P10 | B11P10 | B10P10 -> 10
+      | B16P11 | B15P11 | B14P11 | B13P11 | B12P11 | B11P11-> 11
+      | B16P12 | B15P12 | B14P12 | B13P12 | B12P12 -> 12
+      | B16P13 | B15P13 | B14P13 | B13P13 -> 13
+      | B16P14 | B15P14 | B14P14 -> 14
+      | B16P15 | B15P15 -> 15
+      | B16P16 -> 16)
+    | External f ->
+      let open External in
+      (match f with
+      | IEEE754 f -> IEEE754.Format.p f
+      | BFloat16 -> BFloat16.Format.p)
     [@@macro]
 
   let k_of_kp (kp : kpt) =
@@ -83,11 +118,14 @@ module Format = struct
     | B16P1 | B16P2 | B16P3 | B16P4 | B16P5 | B16P6 | B16P7 | B16P8 | B16P9 | B16P10 | B16P11 | B16P12 | B16P13 | B16P14 | B16P15 | B16P16-> 16
   [@@macro]
 
-  let width (f : t) : int = k_of_kp f.kp [@@macro]
-
-  let k (f : t) : int = width f [@@macro]
-
-  let p (f : t) : int = precision f [@@macro]
+  let width (f : t) : int =
+    match f with
+    | Internal { kp; _ } -> k_of_kp kp
+    | External f ->
+      (match f with
+       | IEEE754 f -> IEEE754.Format.k f
+       | BFloat16 -> BFloat16.Format.k)
+    [@@macro]
 
   let of_kp (k : int) (p : int) : (kpt, string) Result.t =
     match k with
@@ -110,50 +148,19 @@ module Format = struct
 
   let of_parts (k : int) (p : int) (s : Signedness.t) (d : Domain.t) : (t, string) Result.t =
     let* kp = of_kp k p in
-    Ok { kp; s; d }
-
-  (* let parameters (f : t) : int * int * int * real * real * Signedness.t * Domain.t =
-    let open Util in
-    let open Signedness in
-    let open Domain in
-    let k : int = k f in
-    let p : int = precision f in
-    let bias : int =
-      match f.s with
-      | Signed -> if k = p then -1 else ipow2 (k - p - 1) (* Error for k = p? *)
-      | Unsigned -> ipow2 (k - p) in
-    let m_hi : real =
-      if p = 1 then
-        match f.s, f.d with
-        | Signed, Extended -> (
-          match k with
-          | 2 -> 0.0
-          | _ -> pow2 (ipow2 (k - 1) - bias - 2)
-        )
-        | Signed, Finite ->     pow2 (ipow2 (k - 1) - bias - 1)
-        | Unsigned, Extended -> pow2 (ipow2 k       - bias - 3)
-        | Unsigned, Finite ->   pow2 (ipow2 k       - bias - 2)
-      else
-        match f.s, f.d with
-        | Signed, Extended ->   pow2 (ipow2 (k - p) - bias - 1) *. (2. -. pow2 (2 - p))
-        | Signed, Finite ->     pow2 (ipow2 (k - p) - bias - 1) *. (2. -. pow2 (2 - p - 1))
-        | Unsigned, Extended -> (
-          match p with
-          | 2 when k = 2->      pow2 (ipow2 (k - p + 1) - bias - 2) *. (2. -. pow2 (2 - p))
-          | 2 ->                pow2 (ipow2 (k - p + 1) - bias - 2) *. (2. -. pow2 (2 - p - 1))
-          | _ ->                pow2 (ipow2 (k - p + 1) - bias - 1) *. (2. -. pow2 (2 - p) -. pow2 (2 - p - 1))
-        )
-        | Unsigned, Finite ->   pow2 (ipow2 (k - p + 1) - bias - 1) *. (2. -. pow2 (2 - p))
-      in
-    let m_lo = if f.s = Signed then -. m_hi else 0.0 in
-    k, p, bias, m_lo, m_hi, f.s, f.d *)
+    Ok (Internal { kp; s; d })
 
   (** String representation *)
   let to_string (f : t) : string =
-    "binary" ^ (Int.to_string (k f)) ^ "p" ^
-    (Int.to_string (p f)) ^
-    (if f.s == Signed then "s" else "u") ^
-    (if f.d = Extended then "e" else "f")
+    let open IEEE754.Format in
+    match f with
+    | Internal {kp; s; d} ->
+      "Binary" ^ (Int.to_string (width f)) ^ "p" ^
+      (Int.to_string (precision f)) ^
+      (if s == Signed then "s" else "u") ^
+      (if d = Extended then "e" else "f")
+    | External IEEE754 phi -> IEEE754.Format.to_string phi
+    | External BFloat16 -> BFloat16.Format.to_string
     [@@program]
 end
 
@@ -222,10 +229,20 @@ module Float = struct
 
   (** 4.5 Format-level operations *)
 
-  let bitWidthOf (f : Format.t) : int = Format.k f
-  let precisionOf (f : Format.t) : int = Format.p f
-  let signednessOf (f : Format.t) : Signedness.t = f.s
-  let domainOf (f : Format.t) : Domain.t = f.d
+  let bitWidthOf (f : Format.t) : int = Format.width f
+  let precisionOf (f : Format.t) : int = Format.precision f
+
+  let signednessOf (f : Format.t) : Signedness.t =
+    let open Signedness in
+    match f with
+    | Internal {s; _} -> s
+    | External _ -> Signed
+
+    let domainOf (f : Format.t) : Domain.t =
+    let open Domain in
+    match f with
+    | Internal {d; _} -> d
+    | External _ -> Extended
 
   (* Some constants *)
 
@@ -236,7 +253,10 @@ module Float = struct
     | Unsigned -> Util.ipow2 k - 1
 
   let nan (f : Format.t): t =
-    nan_ks (bitWidthOf f) (signednessOf f)
+    match f with
+    | Internal _ -> nan_ks (bitWidthOf f) (signednessOf f)
+    | External IEEE754 phi -> IEEE754.encode (IEEE754.canonical_nan phi)
+    | External BFloat16 -> BFloat16.encode (BFloat16.canonical_nan)
 
   let ninf (f : Format.t) : (t, string) Result.t =
     let open Signedness in
@@ -259,38 +279,51 @@ module Float = struct
   let exponentBitsOf (f : Format.t) : int =
     let k = bitWidthOf f in
     let p = precisionOf f in
-    match f.s with
+    (match signednessOf f with
     | Signed -> k - p - 1
-    | Unsigned -> k - p
+    | Unsigned -> k - p)
 
   let trailingBitsOf (f : Format.t) : int =
     precisionOf f - 1
 
   let exponentBiasOf (f : Format.t) : int =
-    let k = bitWidthOf f in
-    let p = precisionOf f in
-    match f.s with
-    | Signed -> if k = p then -1 else Util.ipow2 (k - p - 1)
-    | Unsigned -> Util.ipow2 (k - p)
+    match f with
+    | Internal {s; _} ->
+      let k = bitWidthOf f in
+      let p = precisionOf f in
+      (match s with
+      | Signed -> if k = p then -1 else Util.ipow2 (k - p - 1)
+      | Unsigned -> Util.ipow2 (k - p))
+    | External IEEE754 f -> IEEE754.Format.bias f
+    | External BFloat16 -> 127
 
   let maxFiniteOf (f : Format.t) : t =
     let open Util in
     let open Signedness in
     let open Domain in
-    let k = bitWidthOf f in
-    match signednessOf f, domainOf f with
-    | Signed, Extended ->   ipow2 (k - 1) - 2
-    | Signed, Finite ->     ipow2 (k - 1) - 1
-    | Unsigned, Extended -> ipow2 k - 3
-    | Unsigned, Finite ->   ipow2 k - 2
+    match f with
+    | Internal {kp; s; d} ->
+      let k = bitWidthOf f in
+      (match s, d with
+       | Signed, Extended ->   ipow2 (k - 1) - 2
+       | Signed, Finite ->     ipow2 (k - 1) - 1
+       | Unsigned, Extended -> ipow2 k - 3
+       | Unsigned, Finite ->   ipow2 k - 2)
+    | External IEEE754 phi -> IEEE754.encode (IEEE754.max_finite_t phi)
+    | External BFloat16 -> BFloat16.encode (BFloat16.max_finite_t)
 
   let minFiniteOf (f : Format.t) : t =
     let open Util in
     let k = bitWidthOf f in
-    if f.s = Signedness.Signed && not (k = 2 && f.d = Domain.Extended) then
+    match f with
+    | Internal {s; d; _} ->
+      if s = Signedness.Signed && not (k = 2 && d = Domain.Extended) then
+        (maxFiniteOf f) + ipow2 (k - 1)
+      else
+        zero
+    | External _ ->
+      (* All supported external formats are symmetric *)
       (maxFiniteOf f) + ipow2 (k - 1)
-    else
-      zero
 
   let internal_minPositiveOf (f : Format.t) : (t, string) Result.t =
     let open Signedness in
@@ -332,51 +365,87 @@ module Float = struct
   let of_int_repr_k (k : int) (s : Signedness.t) (i : int) : t =
     if i < 0 || i >= Util.ipow2 k then (nan_ks k s) else i
 
-  let is_nan f x = to_int_repr f x = nan f
-  let is_ninf f x = Ok (to_int_repr f x) = ninf f
-  let is_pinf f x = Ok (to_int_repr f x) = pinf f
+  let is_nan (f : Format.t) (x : t) : bool =
+    match f with
+    | Internal _ -> to_int_repr f x = nan f
+    | External IEEE754 phi -> IEEE754.is_nan phi (IEEE754.decode phi x)
+    | External BFloat16 -> BFloat16.is_nan (BFloat16.decode x)
+
+  let is_ninf (f : Format.t) (x : t) : bool =
+    match f with
+    | Internal _ -> Ok (to_int_repr f x) = ninf f
+    | External IEEE754 phi -> IEEE754.is_ninf phi (IEEE754.decode phi x)
+    | External BFloat16 -> BFloat16.is_ninf (BFloat16.decode x)
+
+  let is_pinf (f : Format.t) (x : t) : bool =
+    match f with
+    | Internal _ -> Ok (to_int_repr f x) = pinf f
+    | External IEEE754 phi -> IEEE754.is_pinf phi (IEEE754.decode phi x)
+    | External BFloat16 -> BFloat16.is_pinf (BFloat16.decode x)
+
   let is_inf f x = is_ninf f x || is_pinf f x
 
 
   (** 4.9.1 Decode *)
 
+  let wDecodeAuxExternal (f : Format.External.t) (x : int) =
+    match f with
+    | IEEE754 phi -> IEEE754.as_cer phi (IEEE754.decode phi x)
+    | BFloat16 -> BFloat16.as_cer (BFloat16.decode x)
+
+  theorem wDecodeAux_termination_helper k (sigma: Signedness.t) (x : t) =
+    let open Util in
+    let open Theorems_pow2 in
+    ipow2 (k - 1) < x && x < ipow2 k ==>
+    (of_int_repr_k k sigma (x - ipow2 (k - 1))) < x
+  [@@timeout 60]
+  [@@no_extract]
+  [@@by expand "Float.of_int_repr_k" @> simplify () @>| [auto; auto]]
+
   let rec wDecodeAux (f : Format.t) (sigma: Signedness.t) (delta : Domain.t) (x : t) : (CER.t, string) Result.t =
     let open Util in
     let open Signedness in
     let open Domain in
-    let k = bitWidthOf f in
-    let p = precisionOf f in
-    let b = exponentBiasOf f in
-    match sigma, delta, to_int_repr_k k x sigma with
-    | Signed, _, x when x = ipow2 (k - 1) -> Ok NaN
-    | Unsigned, _, x when x = ipow2 k - 1 -> Ok NaN
+    let open Format in
+    match f with
+    | Internal _ ->
+      let k = bitWidthOf f in
+      let p = precisionOf f in
+      let b = exponentBiasOf f in
+      (match sigma, delta, to_int_repr_k k x sigma with
+      | Signed, _, x when x = ipow2 (k - 1) -> Ok NaN
+      | Unsigned, _, x when x = ipow2 k - 1 -> Ok NaN
 
-    | Signed, Extended, x when x = ipow2 (k - 1) - 1 -> Ok PInf
-    | Signed, Extended, x when x = ipow2 k - 1 -> Ok NInf
-    | Unsigned, Extended, x when x = ipow2 k - 2 -> Ok PInf
+      | Signed, Extended, x when x = ipow2 (k - 1) - 1 -> Ok PInf
+      | Signed, Extended, x when x = ipow2 k - 1 -> Ok NInf
+      | Unsigned, Extended, x when x = ipow2 k - 2 -> Ok PInf
 
-    | Signed, delta, x when ipow2 (k - 1) < x && x < ipow2 k ->
-      let* r = wDecodeAux f sigma delta (of_int_repr_k k sigma (x - ipow2 (k - 1))) in
-      Ok CER.(~- r)
+      | Signed, delta, x when ipow2 (k - 1) < x && x < ipow2 k ->
+        let* r = wDecodeAux f sigma delta (of_int_repr_k k sigma (x - ipow2 (k - 1))) in
+        Ok CER.(~- r)
 
-    | _, _, x ->
-      let t = Real.of_int (x mod (ipow2 (p - 1))) in
-      let e = Int.(Util.machine_idiv x (ipow2 (p - 1))) in
+      | _, _, x ->
+        let t = Real.of_int (x mod (ipow2 (p - 1))) in
+        let e = Int.(Util.machine_idiv x (ipow2 (p - 1))) in
 
-      let r = (
-        if e = 0 then
-          (0. +. t *. (pow2 (1 - p))) *. (pow2 (1 - b))
-        else
-          (1. +. t *. (pow2 (1 - p))) *. (pow2 (e - b))) in
-      Ok CER.(R r)
-    [@@timeout 3600]
+        let r = (
+          if e = 0 then
+            (0. +. t *. (pow2 (1 - p))) *. (pow2 (1 - b))
+          else
+            (1. +. t *. (pow2 (1 - p))) *. (pow2 (e - b))) in
+        Ok CER.(R r))
+    | External f -> wDecodeAuxExternal f x
+    [@@timeout 60]
     [@@measure Ordinal.of_int x]
-    [@@by auto]
+    [@@by
+      [%use wDecodeAux_termination_helper (bitWidthOf f) sigma x] @>
+      unroll 20
+    ]
 
   let wDecode (f : Format.t) (x : t) : CER.t =
     match wDecodeAux f (signednessOf f) (domainOf f) x with
     | Ok r -> r
-    | Error _ -> NaN (* unreachable by theorem_decode_ok *)
+    | Error _ -> NaN (* unreachable by theorem wDecodeAux_ok *)
 
   (* 4.9.3 RoundToPrecision *)
 
@@ -497,58 +566,71 @@ module Float = struct
   let is_within_range (f : Format.t) (x : CER.t) : bool =
     let open Signedness in
     let open Domain in
-    match x with
+    (match x with
     | NaN -> true
-    | NInf -> f.s = Signed && f.d = Extended
-    | PInf -> f.d = Extended
+    | NInf -> signednessOf f = Signed && domainOf f = Extended
+    | PInf -> domainOf f = Extended
     | R r ->
       (match wDecode f (maxFiniteOf f) with
       | CER.R m_hi ->
-        let m_lo = match f.s with Signed -> -. m_hi | Unsigned -> 0.0 in
+        let m_lo = match signednessOf f with Signed -> -. m_hi | Unsigned -> 0.0 in
         m_lo <=. r && r <=. m_hi
-      | _ -> false)
+      | _ -> false))
+
+  let wEncodeExternal (f : Format.External.t) (x : CER.t) : (t, string) Result.t =
+    (match f with
+    | IEEE754 phi ->
+      (match x with
+      | NaN -> Ok (IEEE754.encode (IEEE754.canonical_nan phi))
+      | R 0.0 -> Ok (IEEE754.encode (IEEE754.pzero phi))
+      | x -> Ok (IEEE754.encode (IEEE754.round phi IEEE754.RoundingMode.TiesToEven x)))
+    | BFloat16 ->
+      Ok (BFloat16.encode (BFloat16.round BFloat16.RoundingMode.TiesToEven x)))
 
   let rec wEncode (f : Format.t) (x : CER.t) : (t, string) Result.t =
     let open Util in
     let open Signedness in
-    let k = bitWidthOf f in
-    let p = precisionOf f in
-    let b = exponentBiasOf f in
-    let sigma = signednessOf f in
     if not (is_within_range f x)  then
-        Error "precondition violation"
+      Error "precondition violation"
     else
-      match x with
-      | NaN -> Ok (of_int_repr f (
-        if sigma = Signed then ipow2 (k - 1)
-        else ipow2 k - 1
-        ))
-      | PInf -> Ok (of_int_repr f (
-        if sigma = Signed then ipow2 (k - 1) - 1
-        else ipow2 k - 2)
-        )
-      | NInf -> Ok (of_int_repr f (ipow2 k - 1))
+      match f with
+      | External f -> wEncodeExternal f x
+      | Internal _ -> (
+        let k = bitWidthOf f in
+        let p = precisionOf f in
+        let b = exponentBiasOf f in
+        let sigma = signednessOf f in
+          match x with
+          | NaN -> Ok (of_int_repr f (
+            if sigma = Signed then ipow2 (k - 1)
+            else ipow2 k - 1
+            ))
+          | PInf -> Ok (of_int_repr f (
+            if sigma = Signed then ipow2 (k - 1) - 1
+            else ipow2 k - 2)
+            )
+          | NInf -> Ok (of_int_repr f (ipow2 k - 1))
 
-      | R x when x <. 0.0 ->
-        let* v = wEncode f CER.(R (-. x)) in
-        Ok (of_int_repr f ((to_int_repr f v) + (ipow2 (k - 1))))
+          | R x when x <. 0.0 ->
+            let* v = wEncode f CER.(R (-. x)) in
+            Ok (of_int_repr f ((to_int_repr f v) + (ipow2 (k - 1))))
 
-      | R x when x = 0.0 -> Ok zero
+          | R x when x = 0.0 -> Ok zero
 
-      | R x ->
-        let e : int = Int.max (floor_log2_abs x 32768) (1 - b) in
-        let s = x *. (2 ^. (- e)) *. (2 ^. (p - 1)) in
-        (* [s] is an integer *)
-        let s = Real.to_int s in
-        let t = s mod (ipow2 (p - 1)) in
-        let z =
-          if s < ipow2 (p - 1) then
-            t
-          else
-            t + (e + b) * ipow2 (p - 1) in
-        Ok (of_int_repr f z)
+          | R x ->
+            let e : int = Int.max (floor_log2_abs x 32768) (1 - b) in
+            let s = x *. (2 ^. (- e)) *. (2 ^. (p - 1)) in
+            (* [s] is an integer *)
+            let s = Real.to_int s in
+            let t = s mod (ipow2 (p - 1)) in
+            let z =
+              if s < ipow2 (p - 1) then
+                t
+              else
+                t + (e + b) * ipow2 (p - 1) in
+            Ok (of_int_repr f z)
 
-      | _ -> Error "unreachable"
+          | _ -> Error "unreachable")
 
 
   (* 4.9.2 Project *)
@@ -567,56 +649,19 @@ module Float = struct
     wEncode f s
 
 
-  (** 6 Interconverting formats *)
+  (** 5.11 Converting between formats *)
 
-  let encode754 (phi : IEEE754.Format.t) (x : CER.t) : IEEE754.t =
-    (* See also IEEE754.ml *)
-    IEEE754.round x phi IEEE754.RoundingMode.TowardZero
-
-  (** 6.1 Conversion from IEEE Std 754 formats to P3109 *)
-
-  let internal_convertFromIEEE754 (phi: IEEE754.Format.t) (f : Format.t) (rho : Projection.t) (x : IEEE754.t) : (t, string) Result.t =
-    let open CER in
-    match IEEE754.as_cer phi x with
-    | Ok NaN -> Ok (nan f)
-    | Ok r -> wProject f rho r
-    | Error e -> Error e
-
-  let convertFromIEEE754 (phi: IEEE754.Format.t) (f : Format.t) (rho : Projection.t) (x : IEEE754.t) : t =
-    match internal_convertFromIEEE754 phi f rho x with
-    | Ok r -> r
-    | _ -> nan f (* unreachable by theorem internal_convertFromIEEE754_ok *)
-
-
-  (** 6.2 Conversion from P3109 to IEEE Std 754 *)
-
-  (* Convert [x] (in [f_x]) to IEEE−754 binary interchange format Binary{[k]} under IEEE−754 rounding mode [rnd754] *)
-  let convertToIEEE754 (f : Format.t) (rho : Projection.t) (phi : IEEE754.Format.t) (x : t) : IEEE754.t =
-    let open CER in
-    if is_nan f x then (* canonical if defined else quiet *)
-      IEEE754.canonical_nan phi
-    else (
-      match wDecode f x with
-      | NaN -> IEEE754.quiet_nan phi
-      | PInf -> IEEE754.pinf phi
-      | NInf -> IEEE754.ninf phi
-      | R y ->
-        let _, _, _, _, _, p, b, m = IEEE754.Format.parameters phi in
-        let r = wRoundToPrecision p b (snd rho) (r2a y) in
-        let x = wSaturate m (fst rho) (snd rho) r f.s f.d in
-        encode754 phi x)
-
-
-  (** 4.10 Interconverting formats *)
+  let wConvert (x : CER.t) : (CER.t, string) Result.t = Ok x
 
   (** Convert [x] (in [f_x]) to [f_r] with projection specification [rho] *)
   let convert (f_x : Format.t) (f_r : Format.t) (rho : Projection.t) (x : t) : (t, string) Result.t =
-    wProject f_r rho (wDecode f_x x)
+    let* r = wConvert (wDecode f_x x) in
+    wProject f_r rho r
 
 
-  (** 4.11 Arithmetic operations *)
+  (** 5.12 Arithmetic operations *)
 
-  (** 4.11.1 Absolute Value, Negation *)
+  (** 5.12.1 Absolute Value, Negation *)
 
   let wAbs (x : CER.t) : (CER.t, string) Result.t =
     let open CER in
@@ -1154,12 +1199,12 @@ module Float = struct
     | R x, R y -> Ok (if x <. y then (R x) else (R y))
     | _ -> Error "undefined"
 
-  let internal_minimum (f : Format.t) (x : t) (y : t) : (t, string) Result.t =
+  let internal_minimum (f : Format.t)  (rho : Projection.t) (x : t) (y : t) : (t, string) Result.t =
     let* r = wMinimum (wDecode f x) (wDecode f y) in
-    wEncode f r
+    wProject f rho r
 
-  let minimum (f : Format.t) (x : t) (y : t)  : t =
-    match internal_minimum f x y  with
+  let minimum (f : Format.t) (rho : Projection.t) (x : t) (y : t)  : t =
+    match internal_minimum f rho x y  with
     | Ok r -> r
     | Error _ -> nan f (* unreachable by theorem internal_minimum_ok *)
 
@@ -1179,12 +1224,12 @@ module Float = struct
     | R x, R y -> Ok (if x <. y then (R y) else (R x))
     | _ -> Error "undefined"
 
-  let internal_maximum (f : Format.t) (x : t) (y : t) : (t, string) Result.t =
+  let internal_maximum (f : Format.t) (rho : Projection.t) (x : t) (y : t) : (t, string) Result.t =
     let* r = wMaximum (wDecode f x) (wDecode f y) in
-    wEncode f r
+    wProject f rho r
 
-  let maximum (f : Format.t) (x : t) (y : t) : t =
-    match internal_maximum f x y  with
+  let maximum (f : Format.t) (rho : Projection.t) (x : t) (y : t) : t =
+    match internal_maximum f rho x y  with
     | Ok r -> r
     | Error _ -> nan f (* unreachable by theorem internal_maximum_ok *)
 
@@ -1200,12 +1245,12 @@ module Float = struct
     | x, y -> wMinimum x y
     | _ -> Error "undefined"
 
-  let internal_minimumNumber (f : Format.t) (x : t) (y : t) : (t, string) Result.t =
+  let internal_minimumNumber (f : Format.t) (rho : Projection.t) (x : t) (y : t) : (t, string) Result.t =
     let* r = wMinimumNumber (wDecode f x) (wDecode f y) in
-    wEncode f r
+    wProject f rho r
 
-  let minimumNumber (f : Format.t) (x : t) (y : t) : t =
-    match internal_minimumNumber f x y with
+  let minimumNumber (f : Format.t) (rho : Projection.t) (x : t) (y : t) : t =
+    match internal_minimumNumber f rho x y with
     | Ok r -> r
     | Error _ -> nan f (* unreachable by theorem internal_minimum_number_ok *)
 
@@ -1218,12 +1263,12 @@ module Float = struct
     | x, y -> wMaximum x y
     | _ -> Error "undefined"
 
-  let internal_maximumNumber (f : Format.t) (x : t) (y : t) : (t, string) Result.t =
+  let internal_maximumNumber (f : Format.t) (rho : Projection.t) (x : t) (y : t) : (t, string) Result.t =
     let* r = wMaximumNumber (wDecode f x) (wDecode f y) in
-    wEncode f r
+    wProject f rho r
 
-  let maximumNumber (f : Format.t) (x : t) (y : t) : t =
-    match internal_maximumNumber f x y with
+  let maximumNumber (f : Format.t) (rho : Projection.t) (x : t) (y : t) : t =
+    match internal_maximumNumber f rho x y with
     | Ok r -> r
     | Error _ -> nan f (* unreachable by theorem internal_maximum_number_ok *)
 
@@ -1245,12 +1290,12 @@ module Float = struct
     | R x, R y when Real.abs x = Real.abs y -> Ok (if x <. y then (R x) else (R y)) [@ocaml.text "breakindent"]
     | _ -> Error "undefined"
 
-  let internal_minimumMagnitude (f : Format.t) (x : t) (y : t) : (t, string) Result.t =
+  let internal_minimumMagnitude (f : Format.t) (rho : Projection.t) (x : t) (y : t) : (t, string) Result.t =
     let* r = wMinimumMagnitude (wDecode f x) (wDecode f y) in
-    wEncode f r
+    wProject f rho r
 
-  let minimumMagnitude (f : Format.t) (x : t) (y : t)  : t =
-    match internal_minimumMagnitude f x y  with
+  let minimumMagnitude (f : Format.t) (rho : Projection.t) (x : t) (y : t)  : t =
+    match internal_minimumMagnitude f rho x y  with
     | Ok r -> r
     | Error _ -> nan f (* unreachable by theorem internal_minimum_magnitude_ok *)
 
@@ -1268,12 +1313,12 @@ module Float = struct
     | R x, R y when Real.abs x = Real.abs y -> Ok (if x <. y then (R y) else (R x)) [@ocaml.text "breakindent"]
     | _ -> Error "undefined"
 
-  let internal_maximumMagnitude (f : Format.t) (x : t) (y : t) : (t, string) Result.t =
+  let internal_maximumMagnitude (f : Format.t) (rho : Projection.t) (x : t) (y : t) : (t, string) Result.t =
     let* r = wMaximumMagnitude (wDecode f x) (wDecode f y) in
-    wEncode f r
+    wProject f rho r
 
-  let maximumMagnitude (f : Format.t) (x : t) (y : t) : t =
-    match internal_maximumMagnitude f x y  with
+  let maximumMagnitude (f : Format.t) (rho : Projection.t)(x : t) (y : t) : t =
+    match internal_maximumMagnitude f rho x y  with
     | Ok r -> r
     | Error _ -> nan f (* unreachable by theorem internal_maximum_magnitude_ok *)
 
@@ -1284,12 +1329,12 @@ module Float = struct
     | _, NaN -> Ok y
     | _, _ -> wMinimumMagnitude x y
 
-  let internal_minimumMagnitudeNumber (f : Format.t) (x : t) (y : t) : (t, string) Result.t =
+  let internal_minimumMagnitudeNumber (f : Format.t) (rho : Projection.t) (x : t) (y : t) : (t, string) Result.t =
     let* r = wMinimumMagnitudeNumber (wDecode f x) (wDecode f y) in
-    wEncode f r
+    wProject f rho r
 
-  let minimumMagnitudeNumber (f : Format.t) (x : t) (y : t) : t =
-    match internal_minimumMagnitudeNumber f x y  with
+  let minimumMagnitudeNumber (f : Format.t) (rho : Projection.t) (x : t) (y : t) : t =
+    match internal_minimumMagnitudeNumber f rho x y  with
     | Ok r -> r
     | Error _ -> nan f (* unreachable by theorem internal_minimum_magnitude_number_ok *)
 
@@ -1300,12 +1345,12 @@ module Float = struct
     | _, NaN -> Ok y
     | _, _ -> wMaximumMagnitude x y
 
-  let internal_maximumMagnitudeNumber (f : Format.t) (x : t) (y : t) : (t, string) Result.t =
+  let internal_maximumMagnitudeNumber (f : Format.t) (rho : Projection.t) (x : t) (y : t) : (t, string) Result.t =
     let* r = wMaximumMagnitudeNumber (wDecode f x) (wDecode f y) in
-    wEncode f r
+    wProject f rho r
 
-  let maximumMagnitudeNumber (f : Format.t) (x : t) (y : t) : t =
-    match internal_maximumMagnitudeNumber f x y  with
+  let maximumMagnitudeNumber (f : Format.t) (rho : Projection.t) (x : t) (y : t) : t =
+    match internal_maximumMagnitudeNumber f rho x y  with
     | Ok r -> r
     | Error _ -> nan f (* unreachable by theorem internal_maximum_magnitude_number_ok *)
 
@@ -1329,12 +1374,12 @@ module Float = struct
     | R x, R y -> Ok (if x <. y then (R x) else (R y)) [@ocaml.text "breakindent"]
     | _ -> Error "undefined"
 
-  let internal_minimumFinite (f : Format.t) (x : t) (y : t) : (t, string) Result.t =
+  let internal_minimumFinite (f : Format.t) (rho : Projection.t) (x : t) (y : t) : (t, string) Result.t =
     let* r = wMinimumFinite (wDecode f x) (wDecode f y) in
-    wEncode f r
+    wProject f rho r
 
-  let minimumFinite (f : Format.t) (x : t) (y : t) : t =
-    match internal_minimumFinite f x y  with
+  let minimumFinite (f : Format.t) (rho : Projection.t) (x : t) (y : t) : t =
+    match internal_minimumFinite f rho x y  with
     | Ok r -> r
     | Error _ -> nan f (* unreachable by theorem internal_minimum_finite_ok *)
 
@@ -1355,12 +1400,12 @@ module Float = struct
     | R x, R y -> Ok (if x <. y then (R y) else (R x)) [@ocaml.text "breakindent"]
     | _ -> Error "undefined"
 
-  let internal_maximumFinite (f : Format.t) (x : t) (y : t) : (t, string) Result.t =
+  let internal_maximumFinite (f : Format.t) (rho : Projection.t) (x : t) (y : t) : (t, string) Result.t =
     let* r = wMaximumFinite (wDecode f x) (wDecode f y) in
-    wEncode f r
+    wProject f rho r
 
-  let maximumFinite (f : Format.t) (x : t) (y : t) : t =
-    match internal_maximumFinite f x y  with
+  let maximumFinite (f : Format.t) (rho : Projection.t) (x : t) (y : t) : t =
+    match internal_maximumFinite f rho x y  with
     | Ok r -> r
     | Error _ -> nan f (* unreachable by theorem internal_maximum_finite_ok *)
 
@@ -1398,12 +1443,12 @@ module Float = struct
         else x))
     | _ -> Error "undefined"
 
-  let internal_clamp (f : Format.t) (x : t) (lo : t) (hi : t) : (t, string) Result.t =
+  let internal_clamp (f : Format.t) (rho : Projection.t) (x : t) (lo : t) (hi : t) : (t, string) Result.t =
     let* r = wClamp (wDecode f x) (wDecode f lo) (wDecode f hi) in
-    wEncode f r
+    wProject f rho r
 
-  let clamp (f : Format.t) (x : t) (lo : t) (hi : t) : t =
-    match internal_clamp f x lo hi with
+  let clamp (f : Format.t) (rho : Projection.t) (x : t) (lo : t) (hi : t) : t =
+    match internal_clamp f rho x lo hi with
     | Ok r -> r
     | Error _ -> nan f (* unreachable by theorem internal_clamp_ok *)
 
@@ -1583,7 +1628,7 @@ module Float = struct
     | _ when isZero f x || is_ninf f x || is_pinf f x || is_nan f x -> false
     | _ ->
       let x = to_int_repr f x in
-      (match f.s with
+      (match (signednessOf f) with
       | Signed -> Util.machine_idiv (x mod (Util.ipow2 (k - 1))) (Util.ipow2 (p - 1)) > 0
       | Unsigned -> Util.machine_idiv x (Util.ipow2 (p - 1)) > 0)
 
@@ -1962,7 +2007,13 @@ module Float = struct
       let* z = wBlockProject b f_s f_r rho_z (s_z, cz) in
       Ok (s_z, z)
     )
-    (* [@@macro] *)
+
+  let blockConvert b f_sx f_x f_s f_r rho_s rho_z (s_x, x) s_z =
+    block_op_unary b
+      [{f_s = f_sx; f_x}]
+      f_s f_r s_z rho_z
+      [{s = s_x; x}]
+      wConvert
 
   let blockAbs b f_sx f_x f_s f_r rho_s rho_z (s_x, x) s_z =
     block_op_unary b

@@ -269,12 +269,13 @@ let rec find_closest_floats_aux_ml (f : Format.t) (x : CER.t) (l : Float.t)
     | Error e -> Error e)
 
 let find_closest_floats_ml (f : Format.t) (x : CER.t) =
-  let k = Float.bitWidthOf f in
+  let open Float in
+  let k = bitWidthOf f in
   find_closest_floats_aux_ml f x Z.zero
-    (if f.s = Signedness.Signed then
-       if f.d = Domain.Extended then Z.sub (Util.ipow2 (Z.sub k Z.one)) Z.one
+    (if signednessOf f = Signedness.Signed then
+       if domainOf f = Domain.Extended then Z.sub (Util.ipow2 (Z.sub k Z.one)) Z.one
        else Util.ipow2 (Z.sub k Z.one)
-     else if f.d = Domain.Extended then Z.sub (Util.ipow2 k) Z.one
+     else if domainOf f = Domain.Extended then Z.sub (Util.ipow2 k) Z.one
      else Util.ipow2 k)
 
 (* let () =

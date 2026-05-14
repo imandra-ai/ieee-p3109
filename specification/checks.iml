@@ -9,11 +9,11 @@ open Float
 
 let unroll_nonlin qt nqt steps = Tactic.unroll ~smt:"z3-full-nonlinear" ~query_timeout:qt ~no_asm_query_timeout:nqt steps
 
-let f41 = {Format.kp = Format.B4P1; s = Signedness.Signed; d = Domain.Extended}
-let f42 = {Format.kp = Format.B4P2; s = Signedness.Signed; d = Domain.Extended}
-let f81 = {Format.kp = Format.B8P1; s = Signedness.Signed; d = Domain.Extended}
-let f82 = {Format.kp = Format.B8P2; s = Signedness.Signed; d = Domain.Extended}
-let f83 = {Format.kp = Format.B8P3; s = Signedness.Signed; d = Domain.Extended}
+let f41 = Format.Internal {kp = B4P1; s = Signedness.Signed; d = Domain.Extended}
+let f42 = Format.Internal {kp = B4P2; s = Signedness.Signed; d = Domain.Extended}
+let f81 = Format.Internal {kp = B8P1; s = Signedness.Signed; d = Domain.Extended}
+let f82 = Format.Internal {kp = B8P2; s = Signedness.Signed; d = Domain.Extended}
+let f83 = Format.Internal {kp = B8P3; s = Signedness.Signed; d = Domain.Extended}
 
 let dflt_negate = negate f83 f83 (SaturationMode.OvfInf, RoundingMode.NearestTiesToEven)
 

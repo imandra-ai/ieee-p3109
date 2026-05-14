@@ -184,7 +184,7 @@ let mk_f_tbl (k : int) (p : int) (s : bool) (e : bool) =
   let f : Format.t =
     match Format.of_kp (Z.of_int k) (Z.of_int p) with
     | Ok kp ->
-      {
+      Internal {
         kp;
         s = (if s then Signed else Unsigned);
         d = (if e then Extended else Finite);
@@ -218,7 +218,7 @@ let mk_f_csv_tbl (dir : string) (k : int) (p : int) (s : bool) (e : bool) =
   let f : Format.t =
     match Format.of_kp (Z.of_int k) (Z.of_int p) with
     | Ok kp ->
-      {
+      Internal {
         kp;
         s = (if s then Signed else Unsigned);
         d = (if e then Extended else Finite);
@@ -257,7 +257,7 @@ let run (cli : params) : unit =
   | Ok ln2 -> Printf.printf "ln(2) = %s%!" (Q.to_string ln2)
   | Error _ -> ()); *)
     let f : Format.t =
-      { kp = Format.B8P4; s = Signedness.Signed; d = Domain.Extended }
+      Internal { kp = Format.B8P4; s = Signedness.Signed; d = Domain.Extended }
     in
     match cli with
     | Sqrt ps -> mk_fn_tbl sqrt inv_sqrt f ps.precision

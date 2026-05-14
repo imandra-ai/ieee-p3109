@@ -1,0 +1,138 @@
+[@@@import CER, "dune:math"]
+[@@@import Util, "dune:math"]
+
+(** BFloat16 definitions for conversion functions *)
+
+module RoundingMode = struct
+  (* Does BFloat16 support/require all these? *)
+  type t = TowardZero | TowardPositive | TowardNegative | TiesToAway | TiesToEven
+end
+
+module Format = struct
+  let parameters : int * int * int * int * int * int * int * real =
+    (* https://en.wikipedia.org/wiki/Bfloat16_floating-point_format *)
+    (* k, p, emax, bias, sign bit, w, t, max_finite *)
+    let max_finite w emax = (2.0 -. Util.pow2 (- w)) *. Util.pow2 emax in
+    16, 8, 127, 127, 1, 8, 7, max_finite 10 127
+
+  let k = let k, _, _, _, _, _, _, _ = parameters in k [@@macro]
+  let p = let _, p, _, _, _, _, _, _ = parameters in p [@@macro]
+  let bias = let _, _, _, bias, _, _, _, _ = parameters in bias [@@macro]
+  let max_finite = let _, _, _, _, _, _, _, m = parameters in m [@@macro]
+
+  let to_string : string = "bfloat16" [@@program]
+end
+
+type t = { v : int }
+
+let canonical_nan : t = { v = 0xFFC1 }
+
+let pinf : t = { v = 0x7F80 }
+
+let ninf : t = { v = 0xFF80 }
+
+let max_finite_t : t = { v = 0x7F7F }
+
+let inf (neg : bool) = if neg then ninf else pinf
+
+let is_nan (x : t) : bool =
+  if x.v < 0 || x.v > 0xFFFF then true else
+  let s = x.v / 128 in
+  ((s = 0x1FF || s = 0x0FF) && x.v mod 128 <> 0)
+
+let is_pinf (x : t) : bool = x.v = pinf.v
+
+let is_ninf (x : t) : bool = x.v = ninf.v
+
+let sign (x : t) : bool = (x.v / 32768) = 1
+
+let decode (x : int) : t = if x < 0 || x > 0xFFFF then canonical_nan else { v = x }
+
+let encode (x : t) : int = x.v
+
+let as_cer (x : t) : (CER.t, string) Result.t =
+  if is_nan x then
+    Ok NaN
+  else if is_pinf x then
+    Ok PInf
+  else if is_ninf x then
+    Ok NInf
+  else
+    let _, _, _, bias, _, w, t, _ = Format.parameters in
+    let sgn = if not (sign x) then 1.0 else -1.0 in
+    let exp_sig = x.v mod 32768 in
+    let biased_exp = exp_sig / 128 in
+    let biased_exp_is_all_zeroes = biased_exp = 0 in
+    let biased_exp_is_all_ones = biased_exp = 255 in
+    let sig_bits = exp_sig mod 128 in
+    let sig_all_zero = sig_bits = 0 in
+
+    let sigd, exp =
+      if biased_exp_is_all_zeroes then
+        sig_bits,
+        - bias + 1
+      else
+        sig_bits + 128,
+        biased_exp - bias
+    in
+
+    let open CER in
+    if biased_exp_is_all_ones then
+      if not sig_all_zero then
+        Error "unexpected zero significand"
+      else
+        (if sgn = 1.0 then Ok PInf else Ok NInf)
+    else
+      let open CER.ResultInfix in
+      ((r2a sgn) * (2 ^ exp)) ** ((i2a sigd) / (2 ^ t))
+
+let round_internal (rnd : RoundingMode.t) (x : CER.t) : (t,  string) Result.t =
+  let open RoundingMode in
+  let open CER in
+  let open CER.ResultInfix in
+  let _, _, emax, bias, _, w, t, _ = Format.parameters in
+  match x with
+  | NaN -> Ok canonical_nan
+  | PInf -> Ok pinf
+  | NInf -> Ok ninf
+  | R r ->
+    let is_neg : bool = Real.(r < 0.0) || (r = 0.0 && rnd = RoundingMode.TowardNegative) in
+    let r = Real.abs r in
+    let is_subnormal : bool = Real.(r < Util.pow2 Int.(1 - emax)) in
+    let exp =
+      if is_subnormal then
+        Int.(1 - emax)
+      else
+        Util.floor_log2_abs r Int.(emax + 1) in
+    let biased_exp : int =
+      if is_subnormal then
+        0
+      else
+        Int.(exp + bias - 1) in
+    let sigd = (r2a Real.(r / Util.pow2 exp)) * (2 ^ t) in
+    (match sigd with
+    | Ok (R sigd) ->
+      if Int.(exp > emax) then
+        Ok (inf is_neg)
+      else
+        let sigd_trunc = Real.to_int sigd in
+        let delta = Real.(sigd - Real.of_int sigd_trunc) in
+        let rsig : int = (match rnd with
+          | TowardZero -> sigd_trunc
+          | TowardPositive when delta <> 0.0 && not is_neg -> Int.(sigd_trunc + 1)
+          | TowardNegative when delta <> 0.0 && is_neg -> Int.(sigd_trunc + 1)
+          | TiesToAway when delta = 0.5 -> sigd_trunc
+          | TiesToEven when delta = 0.5 -> sigd_trunc
+          | _ -> sigd_trunc) in
+        let r_sgn = if is_neg then 0x8000 else 0x0000 in
+        let r = Int.(r_sgn + (biased_exp * 128) + rsig) in
+        Ok { v = r }
+    | _ -> Error "invalid")
+
+theorem round_internal_ok (rnd : RoundingMode.t) (x : CER.t) =
+  Result.is_ok (round_internal rnd x)
+
+let round (rnd : RoundingMode.t) (x : CER.t) : t =
+  match round_internal rnd x with
+  | Ok r -> r
+  | Error _ -> canonical_nan (* unreachable by theorem round_internal_ok *)
