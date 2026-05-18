@@ -695,7 +695,7 @@ function print_pattern_desc(node: AST, options: Options): Doc {
         if (args[0].txt instanceof Array && args[0].txt.length == 2) {
           if (args[0].txt[1] == "SatFinite" ||
             args[0].txt[1] == "SatPropagate" ||
-            args[0].txt[1] == "OvfInf")
+            args[0].txt[1] == "SatNone")
             return "\\" + args[0].txt[1];
         }
         return print_longident_loc(args[0], options);

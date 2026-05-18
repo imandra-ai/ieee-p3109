@@ -15,7 +15,7 @@ let f81 = Format.Internal {kp = B8P1; s = Signedness.Signed; d = Domain.Extended
 let f82 = Format.Internal {kp = B8P2; s = Signedness.Signed; d = Domain.Extended}
 let f83 = Format.Internal {kp = B8P3; s = Signedness.Signed; d = Domain.Extended}
 
-let dflt_negate = negate f83 f83 (SaturationMode.OvfInf, RoundingMode.NearestTiesToEven)
+let dflt_negate = negate f83 f83 (SaturationMode.SatNone, RoundingMode.NearestTiesToEven)
 
 (** Check that the precision of B8P3 is as expected *)
 lemma fmt_prec_p3 (f : Format.t) = (f = f83) ==> (Format.precision f) = 3

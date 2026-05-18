@@ -126,7 +126,7 @@ let () =
   let f =
     { Format.kp = Format.B8P7; s = Signedness.Signed; d = Domain.Extended }
   in
-  let pi = SaturationMode.OvfInf, RoundingMode.TowardPositive in
+  let pi = SaturationMode.SatNone, RoundingMode.TowardPositive in
   let i = 81 in
   for p = 0 to 32 do
     let x = Float.of_int_repr f (Z.of_int i) in
@@ -316,7 +316,7 @@ let saturation_mode_of_i i =
   match i with
   | 0 -> SatFinite
   | 1 -> SatPropagate
-  | _ -> OvfInf
+  | _ -> SatNone
 
 let rounding_mode_of_i i =
   let open RoundingMode in

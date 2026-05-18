@@ -20,21 +20,21 @@
 X \leq \mathit{{M^{lo}}}\gives  \mathit{{M^{lo}}}}\\
 \Case{\wSaturate(\SatPropagate, \any, X, \any, \any) ~\If
 X \geq \mathit{{M^{hi}}}\gives  \mathit{{M^{hi}}} \\}\\
-\Case{\wSaturate(\OvfInf, \any, +\infty, \any, \Extended) \gives  +\infty}\\
-\Case{\wSaturate(\OvfInf, \any, +\infty, \any, \any) \gives  \mathit{{M^{hi}}}}\\
-\Case{\wSaturate(\OvfInf, \any, -\infty, \Signed, \Extended) \gives  -\infty}\\
-\Case{\wSaturate(\OvfInf, \any, -\infty, \any, \any) \gives  \mathit{{M^{lo}}}}\\
-\Case{\wSaturate(\OvfInf, \ToOdd, X, \Unsigned, \any) ~\If
+\Case{\wSaturate(\SatNone, \any, +\infty, \any, \Extended) \gives  +\infty}\\
+\Case{\wSaturate(\SatNone, \any, +\infty, \any, \any) \gives  \mathit{{M^{hi}}}}\\
+\Case{\wSaturate(\SatNone, \any, -\infty, \Signed, \Extended) \gives  -\infty}\\
+\Case{\wSaturate(\SatNone, \any, -\infty, \any, \any) \gives  \mathit{{M^{lo}}}}\\
+\Case{\wSaturate(\SatNone, \ToOdd, X, \Unsigned, \any) ~\If
 X \geq \mathit{{M^{hi}}}\gives  \mathit{{M^{hi}}}}\\
-\Case{\wSaturate(\OvfInf, \TowardZero \vee \TowardPositive, X, \any, \any) ~\If
+\Case{\wSaturate(\SatNone, \TowardZero \vee \TowardPositive, X, \any, \any) ~\If
 X \leq \mathit{{M^{lo}}}\gives  \mathit{{M^{lo}}}}\\
-\Case{\wSaturate(\OvfInf, \TowardZero \vee \TowardNegative, X, \any, \any) ~\If
+\Case{\wSaturate(\SatNone, \TowardZero \vee \TowardNegative, X, \any, \any) ~\If
 X \geq \mathit{{M^{hi}}}\gives  \mathit{{M^{hi}}}}\\
-\Case{\wSaturate(\OvfInf, \any, X, \Signed, \Extended) ~\If
+\Case{\wSaturate(\SatNone, \any, X, \Signed, \Extended) ~\If
 X \leq \mathit{{M^{lo}}}\gives  -\infty}\\
-\Case{\wSaturate(\OvfInf, \any, X, \any, \any) ~\If X \leq \mathit{{M^{lo}}}\gives
+\Case{\wSaturate(\SatNone, \any, X, \any, \any) ~\If X \leq \mathit{{M^{lo}}}\gives
  \mathit{{M^{lo}}}}\\
-\Case{\wSaturate(\OvfInf, \any, X, \any, \Extended) ~\If
+\Case{\wSaturate(\SatNone, \any, X, \any, \Extended) ~\If
 X \geq \mathit{{M^{hi}}}\gives  +\infty}\\
-\Case{\wSaturate(\OvfInf, \any, X, \any, \any) ~\If X \geq \mathit{{M^{hi}}}\gives
+\Case{\wSaturate(\SatNone, \any, X, \any, \any) ~\If X \geq \mathit{{M^{hi}}}\gives
  \mathit{{M^{hi}}}}\\

@@ -296,12 +296,12 @@ let old_internal_saturate (m_lo : ExReal.t) (m_hi : ExReal.t) (s : Signedness.t)
   | (SatPropagate, _), x when x <=. m_lo -> Ok m_lo
   | (SatPropagate, _), x when x >=. m_hi -> Ok m_hi
 
-  | (OvfInf, _), (PInf | NInf) -> Ok (x)
-  | (OvfInf, _), x when (rnd = TowardZero || rnd = TowardPositive) && x <=. m_lo -> Ok m_lo
-  | (OvfInf, _), x when (rnd = TowardZero || rnd = TowardNegative) && x >=. m_hi -> Ok m_hi
+  | (SatNone, _), (PInf | NInf) -> Ok (x)
+  | (SatNone, _), x when (rnd = TowardZero || rnd = TowardPositive) && x <=. m_lo -> Ok m_lo
+  | (SatNone, _), x when (rnd = TowardZero || rnd = TowardNegative) && x >=. m_hi -> Ok m_hi
 
-  | (OvfInf, _), x when x <=. m_lo -> if s = Signed then Ok ExReal.NInf else Ok m_lo
-  | (OvfInf, _), x when x >=. m_hi -> Ok ExReal.PInf
+  | (SatNone, _), x when x <=. m_lo -> if s = Signed then Ok ExReal.NInf else Ok m_lo
+  | (SatNone, _), x when x >=. m_hi -> Ok ExReal.PInf
 
   | _ -> Error "unreachable"
 
