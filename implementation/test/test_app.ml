@@ -11,7 +11,7 @@ let fse (kp : Specification.Format.kpt) : Specification.Format.t =
 
 let f = fse Specification.Format.B8P3
 
-let x = Float.negate f (Float.pinf f);;
+let x = Float.negate f f (Specification.SaturationMode.SatNone, Specification.RoundingMode.NearestTiesToEven) (Float.pinf f);;
 
 Printf.printf "+oo = %s\n" (Float.to_string f (Float.pinf f));;
 
