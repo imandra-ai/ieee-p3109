@@ -110,9 +110,3 @@ let e (p : int) : real =
 
 let ln (x : real) (p : int) : (real, string) Result.t =
   log (e p) x p [@@macro]
-
-(***)
-let test (p : int) =
-  match int_frac_parts 2.0 with
-  | Ok (_, f) -> log2_refine 1 p 0.0 f
-  | _ -> false, -1.0

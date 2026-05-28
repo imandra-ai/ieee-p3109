@@ -189,9 +189,9 @@ module RoundingMode = struct
     | NearestTiesToEven
     | NearestTiesToAway
     | ToOdd
-    | Stochastic of int
-    | StochasticBiased1 of int
-    | StochasticBiased2 of int
+    | StochasticA of int
+    | StochasticB of int
+    | StochasticC of int
 
   (** String representation *)
   let to_string (x : t) : string =
@@ -202,9 +202,9 @@ module RoundingMode = struct
     | NearestTiesToEven -> "NearestTiesToEven"
     | NearestTiesToAway -> "NearestTiesToAway"
     | ToOdd -> "ToOdd"
-    | Stochastic r -> "Stochastic (" ^ Int.to_string r ^ ")"
-    | StochasticBiased1 r -> "StochasticBiased1 (" ^ Int.to_string r ^ ")"
-    | StochasticBiased2 r -> "StochasticBiased2 (" ^ Int.to_string r ^ ")"
+    | StochasticA r -> "StochasticA (" ^ Int.to_string r ^ ")"
+    | StochasticB r -> "StochasticB (" ^ Int.to_string r ^ ")"
+    | StochasticC r -> "StochasticC (" ^ Int.to_string r ^ ")"
     [@@program]
 end
 
@@ -462,33 +462,35 @@ module Float = struct
     | R x ->
       let e : int = (max (floor_log2_abs x 32768) (1 - b)) - p + 1 in (* TODO: is 32768 always enough? *)
       let s : real = Real.abs x *. pow2 (- e) in
-      let delta : real = Real.(s - floor s) in
-      let code_is_even : bool =
+      let nu : real = Real.(s - floor s) in
+      let codeIsEven : bool =
         if p > 1 then
           is_even (ifloor s)
         else
           floor s = 0.0 || is_even (e + b) in
-      let rnite x =
+      let rnite (x : real) : real =
           if (x <. (floor x) +. 0.5) || (x = (floor x) +. 0.5 && is_even (ifloor x)) then
-            floor x
+            x
           else
-            (floor x) +. 1.0
+            ((floor x) +. 1.0)
       in
-      let rnte n x = rnite (x *. pow2 n) *. pow2 (- n) in
       let round_away (rnd : RoundingMode.t) : bool =
         match rnd with
-        | NearestTiesToEven -> delta >. 0.5 || (delta = 0.5 && not code_is_even)
-        | NearestTiesToAway -> delta >=. 0.5
-        | TowardPositive -> delta >. 0.0 && x >. 0.0
-        | TowardNegative -> delta >. 0.0 && x <. 0.0
         | TowardZero -> false
-        | ToOdd -> delta >. 0.0 && code_is_even
-        | Stochastic r -> (
-          let delta' = rnte (num_bits r) s -. floor s in
-          delta' >=. i2r r *. (2 ^. (- (num_bits r)))
-          )
-        | StochasticBiased1 r -> delta >. i2r r *. (2 ^. (- (num_bits r)))
-        | StochasticBiased2 r -> delta >. (i2r r +. 0.5) *. (2 ^. (- (num_bits r)))
+        | TowardPositive -> nu >. 0.0 && x >. 0.0
+        | TowardNegative -> nu >. 0.0 && x <. 0.0
+        | NearestTiesToAway -> nu >=. 0.5
+        | NearestTiesToEven -> nu >. 0.5 || (nu = 0.5 && not codeIsEven)
+        | ToOdd -> nu >. 0.0 && codeIsEven
+        | StochasticA r ->
+          let n = num_bits r in
+          floor (nu *. pow2 n) +. i2r r >=. pow2 n
+        | StochasticB r ->
+          let n = num_bits r in
+          floor (nu *. pow2 (n + 1)) +. i2r (2 * r + 1) >=. pow2 (n + 1)
+        | StochasticC r ->
+          let n = num_bits r in
+          rnite (nu *. pow2 n) +. i2r r >=. pow2 n
       in
       let i = if round_away rnd then (floor s) +. 1.0
               else floor s in
