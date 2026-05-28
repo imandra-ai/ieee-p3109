@@ -67,7 +67,7 @@ let mk_fn_tbl (fn : Q.t -> int -> (bool * Q.t, string) Result.t)
     (inv_fn : Q.t -> int -> (Q.t, string) Result.t) (f : Format.t) (p : int) :
     unit =
   let pi = SaturationMode.SatPropagate, RoundingMode.NearestTiesToEven in
-  let k = Float.bitWidthOf f in
+  let k = Float.bitwidthOf f in
   Printf.printf
     "\"in int\",\"in dec\",\"out \
      real*\",\"precise?\",\"rev*\",\"diff*\",\"ulp\",\"within?\",\"out \
@@ -191,7 +191,7 @@ let mk_f_tbl (k : int) (p : int) (s : bool) (e : bool) =
       }
     | Error e -> raise (InvalidFormat e)
   in
-  let kf = Float.bitWidthOf f in
+  let kf = Float.bitwidthOf f in
   let pf = Float.precisionOf f in
   let bias = Float.exponentBiasOf f in
   let m_hi =
@@ -225,7 +225,7 @@ let mk_f_csv_tbl (dir : string) (k : int) (p : int) (s : bool) (e : bool) =
       }
     | Error e -> raise (InvalidFormat e)
   in
-  let kf = Float.bitWidthOf f in
+  let kf = Float.bitwidthOf f in
   let pf = Float.precisionOf f in
   let m_hi =
       match Float.wDecode f (Float.maxFiniteOf f) with

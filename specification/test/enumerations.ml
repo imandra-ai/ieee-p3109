@@ -68,7 +68,7 @@ let _ =
   in
   List.iter
     (fun f ->
-      let k = Float.bitWidthOf f in
+      let k = Float.bitwidthOf f in
       let p = Float.precisionOf f in
       Printf.printf "B%sP%s\n%!" (Z.to_string k) (Z.to_string p);
       for i = 0 to 2 lsl Z.to_int k do
@@ -270,7 +270,7 @@ let rec find_closest_floats_aux_ml (f : Format.t) (x : CER.t) (l : Float.t)
 
 let find_closest_floats_ml (f : Format.t) (x : CER.t) =
   let open Float in
-  let k = bitWidthOf f in
+  let k = bitwidthOf f in
   find_closest_floats_aux_ml f x Z.zero
     (if signednessOf f = Signedness.Signed then
        if domainOf f = Domain.Extended then Z.sub (Util.ipow2 (Z.sub k Z.one)) Z.one
@@ -286,7 +286,7 @@ let find_closest_floats_ml (f : Format.t) (x : CER.t) =
       d = Specification.Domain.Extended;
     }
   in
-  let k = Float.bitWidthOf f in
+  let k = Float.bitwidthOf f in
   let p = Float.precisionOf f in
   let bias = Float.exponentBiasOf f in
   for i = 0 to (2 lsl (Z.to_int k - 2)) - 2 do
@@ -376,7 +376,7 @@ let run_sqrt () =
               Printf.printf "%s\n" star_line;
               Printf.printf "%s -> %s, %s\n%!" (Format.to_string f_x)
                 (Format.to_string f_z) (Projection.to_string pi);
-              let k = Float.bitWidthOf f_x in
+              let k = Float.bitwidthOf f_x in
               let s = Float.signednessOf f_x in
               let d = Float.domainOf f_x in
               let max =

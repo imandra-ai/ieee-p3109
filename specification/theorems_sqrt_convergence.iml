@@ -23,7 +23,7 @@ let i2s (x : int) = match x with 0 -> Signedness.Signed | _ -> Signedness.Unsign
 let i2d (x : int) = match x with 0 -> Domain.Extended | _ -> Domain.Finite
 
 let forall_floats f_x f_r rho i =
-  forall_in_range fsqrt_converges (f_x, f_r, rho) 0 (Util.ipow2 (Float.bitWidthOf f_x))
+  forall_in_range fsqrt_converges (f_x, f_r, rho) 0 (Util.ipow2 (Float.bitwidthOf f_x))
 
 let forall_pairs_of_formats p rho =
   forall_in_range (fun _ kx ->
@@ -38,7 +38,7 @@ let forall_pairs_of_formats p rho =
                     Format.of_parts kx px (i2s sx) (i2d dx),
                     Format.of_parts kr pr (i2s sy) (i2d dy) with
                   | Ok f_x, Ok f_r ->
-                    forall_in_range p (f_x, f_r, rho) 0 (Util.ipow2 (Float.bitWidthOf f_x))
+                    forall_in_range p (f_x, f_r, rho) 0 (Util.ipow2 (Float.bitwidthOf f_x))
                   | _ -> false
                 ) () 0 1
               ) () 0 1

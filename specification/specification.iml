@@ -182,6 +182,11 @@ end
 (** Rounding mode definitions *)
 
 module RoundingMode = struct
+
+  module StochasticArguments = struct
+    type t = { n: int; r: int; }
+  end
+
   type t =
     | TowardZero
     | TowardNegative
@@ -189,9 +194,9 @@ module RoundingMode = struct
     | NearestTiesToEven
     | NearestTiesToAway
     | ToOdd
-    | StochasticA of int
-    | StochasticB of int
-    | StochasticC of int
+    | StochasticA of StochasticArguments.t
+    | StochasticB of StochasticArguments.t
+    | StochasticC of StochasticArguments.t
 
   (** String representation *)
   let to_string (x : t) : string =
@@ -202,9 +207,9 @@ module RoundingMode = struct
     | NearestTiesToEven -> "NearestTiesToEven"
     | NearestTiesToAway -> "NearestTiesToAway"
     | ToOdd -> "ToOdd"
-    | StochasticA r -> "StochasticA (" ^ Int.to_string r ^ ")"
-    | StochasticB r -> "StochasticB (" ^ Int.to_string r ^ ")"
-    | StochasticC r -> "StochasticC (" ^ Int.to_string r ^ ")"
+    | StochasticA r -> "StochasticA (n=" ^ Int.to_string r.n ^ "; r=" ^ Int.to_string r.r ^ ")"
+    | StochasticB r -> "StochasticB (n=" ^ Int.to_string r.n ^ "; r=" ^ Int.to_string r.r ^ ")"
+    | StochasticC r -> "StochasticC (n=" ^ Int.to_string r.n ^ "; r=" ^ Int.to_string r.r ^ ")"
     [@@program]
 end
 
@@ -229,7 +234,7 @@ module Float = struct
 
   (** 4.5 Format-level operations *)
 
-  let bitWidthOf (f : Format.t) : int = Format.width f
+  let bitwidthOf (f : Format.t) : int = Format.width f
   let precisionOf (f : Format.t) : int = Format.precision f
 
   let signednessOf (f : Format.t) : Signedness.t =
@@ -254,30 +259,38 @@ module Float = struct
 
   let nan (f : Format.t): t =
     match f with
-    | Internal _ -> nan_ks (bitWidthOf f) (signednessOf f)
-    | External IEEE754 phi -> IEEE754.encode (IEEE754.canonical_nan phi)
-    | External BFloat16 -> BFloat16.encode (BFloat16.canonical_nan)
+    | Internal _ -> nan_ks (bitwidthOf f) (signednessOf f)
+    | External IEEE754 phi -> IEEE754.to_int_repr (IEEE754.canonical_nan phi)
+    | External BFloat16 -> BFloat16.to_int_repr (BFloat16.canonical_nan)
 
   let ninf (f : Format.t) : (t, string) Result.t =
     let open Signedness in
     let open Domain in
-    let k = bitWidthOf f in
-    match signednessOf f, domainOf f with
-    | Unsigned, _
-    | _, Finite -> Error "invalid"
-    | _ -> Ok (Util.ipow2 k - 1)
+    match f with
+    | Internal _ ->
+      let k = bitwidthOf f in
+      (match signednessOf f, domainOf f with
+      | Unsigned, _
+      | _, Finite -> Error "invalid"
+      | _ -> Ok (Util.ipow2 k - 1))
+    | External IEEE754 phi -> Ok (IEEE754.to_int_repr (IEEE754.ninf phi))
+    | External BFloat16 -> Ok (BFloat16.to_int_repr (BFloat16.ninf))
 
   let pinf (f : Format.t) : (t, string) Result.t =
     let open Signedness in
     let open Domain in
-    let k = bitWidthOf f in
-    match signednessOf f, domainOf f with
-    | Signed, Extended -> Ok (Util.ipow2 (k - 1) - 1)
-    | Unsigned, Extended -> Ok (Util.ipow2 k - 2)
-    | _, Finite -> Error "invalid"
+    match f with
+    | Internal _ ->
+      let k = bitwidthOf f in
+      (match signednessOf f, domainOf f with
+       | Signed, Extended -> Ok (Util.ipow2 (k - 1) - 1)
+       | Unsigned, Extended -> Ok (Util.ipow2 k - 2)
+       | _, Finite -> Error "invalid")
+    | External IEEE754 phi -> Ok (IEEE754.to_int_repr (IEEE754.pinf phi))
+    | External BFloat16 -> Ok (BFloat16.to_int_repr (BFloat16.pinf))
 
   let exponentBitsOf (f : Format.t) : int =
-    let k = bitWidthOf f in
+    let k = bitwidthOf f in
     let p = precisionOf f in
     (match signednessOf f with
     | Signed -> k - p - 1
@@ -289,10 +302,10 @@ module Float = struct
   let exponentBiasOf (f : Format.t) : int =
     match f with
     | Internal {s; _} ->
-      let k = bitWidthOf f in
+      let k = bitwidthOf f in
       let p = precisionOf f in
       (match s with
-      | Signed -> if k = p then -1 else Util.ipow2 (k - p - 1)
+      | Signed -> if k = p then 0 (* Speciality: k=p is not supported. *) else Util.ipow2 (k - p - 1)
       | Unsigned -> Util.ipow2 (k - p))
     | External IEEE754 f -> IEEE754.Format.bias f
     | External BFloat16 -> 127
@@ -303,18 +316,18 @@ module Float = struct
     let open Domain in
     match f with
     | Internal {kp; s; d} ->
-      let k = bitWidthOf f in
+      let k = bitwidthOf f in
       (match s, d with
        | Signed, Extended ->   ipow2 (k - 1) - 2
        | Signed, Finite ->     ipow2 (k - 1) - 1
        | Unsigned, Extended -> ipow2 k - 3
        | Unsigned, Finite ->   ipow2 k - 2)
-    | External IEEE754 phi -> IEEE754.encode (IEEE754.max_finite_t phi)
-    | External BFloat16 -> BFloat16.encode (BFloat16.max_finite_t)
+    | External IEEE754 phi -> IEEE754.to_int_repr (IEEE754.max_finite_t phi)
+    | External BFloat16 -> BFloat16.to_int_repr (BFloat16.max_finite_t)
 
   let minFiniteOf (f : Format.t) : t =
     let open Util in
-    let k = bitWidthOf f in
+    let k = bitwidthOf f in
     match f with
     | Internal {s; d; _} ->
       if s = Signedness.Signed && not (k = 2 && d = Domain.Extended) then
@@ -328,7 +341,7 @@ module Float = struct
   let internal_minPositiveOf (f : Format.t) : (t, string) Result.t =
     let open Signedness in
     let open Domain in
-    match bitWidthOf f, precisionOf f, signednessOf f, domainOf f with
+    match bitwidthOf f, precisionOf f, signednessOf f, domainOf f with
     | 2, _, Signed, Extended -> pinf f
     | _ -> Ok 1
 
@@ -340,7 +353,7 @@ module Float = struct
   let minNormalOf (f : Format.t) : t =
     let open Signedness in
     let open Domain in
-    match bitWidthOf f, precisionOf f, signednessOf f, domainOf f with
+    match bitwidthOf f, precisionOf f, signednessOf f, domainOf f with
     | 2, 1, Signed, Extended -> nan f
     | 2, 2, Unsigned, Extended -> nan f
     | _ -> Util.ipow2 (precisionOf f - 1)
@@ -352,14 +365,14 @@ module Float = struct
   (** Internal helpers *)
 
   let to_int_repr (f : Format.t) (i : t) : int =
-    let k = bitWidthOf f in
+    let k = bitwidthOf f in
     if i < 0 || i >= Util.ipow2 k then nan f else i
 
   let to_int_repr_k (k : int) (i : t) (s : Signedness.t): int =
     if i < 0 || i >= Util.ipow2 k then (nan_ks k s) else i
 
   let of_int_repr (f : Format.t) (i : int) : t =
-    let k = bitWidthOf f in
+    let k = bitwidthOf f in
     if i < 0 || i >= Util.ipow2 k then nan f else i
 
   let of_int_repr_k (k : int) (s : Signedness.t) (i : int) : t =
@@ -368,20 +381,20 @@ module Float = struct
   let is_nan (f : Format.t) (x : t) : bool =
     match f with
     | Internal _ -> to_int_repr f x = nan f
-    | External IEEE754 phi -> IEEE754.is_nan phi (IEEE754.decode phi x)
-    | External BFloat16 -> BFloat16.is_nan (BFloat16.decode x)
+    | External IEEE754 phi -> IEEE754.is_nan phi (IEEE754.of_int_repr phi x)
+    | External BFloat16 -> BFloat16.is_nan (BFloat16.of_int_repr x)
 
   let is_ninf (f : Format.t) (x : t) : bool =
     match f with
     | Internal _ -> Ok (to_int_repr f x) = ninf f
-    | External IEEE754 phi -> IEEE754.is_ninf phi (IEEE754.decode phi x)
-    | External BFloat16 -> BFloat16.is_ninf (BFloat16.decode x)
+    | External IEEE754 phi -> IEEE754.is_ninf phi (IEEE754.of_int_repr phi x)
+    | External BFloat16 -> BFloat16.is_ninf (BFloat16.of_int_repr x)
 
   let is_pinf (f : Format.t) (x : t) : bool =
     match f with
     | Internal _ -> Ok (to_int_repr f x) = pinf f
-    | External IEEE754 phi -> IEEE754.is_pinf phi (IEEE754.decode phi x)
-    | External BFloat16 -> BFloat16.is_pinf (BFloat16.decode x)
+    | External IEEE754 phi -> IEEE754.is_pinf phi (IEEE754.of_int_repr phi x)
+    | External BFloat16 -> BFloat16.is_pinf (BFloat16.of_int_repr x)
 
   let is_inf f x = is_ninf f x || is_pinf f x
 
@@ -390,8 +403,8 @@ module Float = struct
 
   let wDecodeAuxExternal (f : Format.External.t) (x : int) =
     match f with
-    | IEEE754 phi -> IEEE754.as_cer phi (IEEE754.decode phi x)
-    | BFloat16 -> BFloat16.as_cer (BFloat16.decode x)
+    | IEEE754 phi -> IEEE754.as_cer phi (IEEE754.of_int_repr phi x)
+    | BFloat16 -> BFloat16.as_cer (BFloat16.of_int_repr x)
 
   theorem wDecodeAux_termination_helper k (sigma: Signedness.t) (x : t) =
     let open Util in
@@ -409,7 +422,7 @@ module Float = struct
     let open Format in
     match f with
     | Internal _ ->
-      let k = bitWidthOf f in
+      let k = bitwidthOf f in
       let p = precisionOf f in
       let b = exponentBiasOf f in
       (match sigma, delta, to_int_repr_k k x sigma with
@@ -438,7 +451,7 @@ module Float = struct
     [@@timeout 60]
     [@@measure Ordinal.of_int x]
     [@@by
-      [%use wDecodeAux_termination_helper (bitWidthOf f) sigma x] @>
+      [%use wDecodeAux_termination_helper (bitwidthOf f) sigma x] @>
       unroll 20
     ]
 
@@ -460,7 +473,7 @@ module Float = struct
     | PInf -> Ok x
     | R 0.0 -> Ok x
     | R x ->
-      let e : int = (max (floor_log2_abs x 32768) (1 - b)) - p + 1 in (* TODO: is 32768 always enough? *)
+      let e : int = (max (floor_log2_abs x) (1 - b)) - p + 1 in
       let s : real = Real.abs x *. pow2 (- e) in
       let nu : real = Real.(s - floor s) in
       let codeIsEven : bool =
@@ -482,15 +495,12 @@ module Float = struct
         | NearestTiesToAway -> nu >=. 0.5
         | NearestTiesToEven -> nu >. 0.5 || (nu = 0.5 && not codeIsEven)
         | ToOdd -> nu >. 0.0 && codeIsEven
-        | StochasticA r ->
-          let n = num_bits r in
-          floor (nu *. pow2 n) +. i2r r >=. pow2 n
-        | StochasticB r ->
-          let n = num_bits r in
-          floor (nu *. pow2 (n + 1)) +. i2r (2 * r + 1) >=. pow2 (n + 1)
-        | StochasticC r ->
-          let n = num_bits r in
-          rnite (nu *. pow2 n) +. i2r r >=. pow2 n
+        | StochasticA { n; r; } ->
+          n > 0 && Util.pow2 n >. i2r r && floor (nu *. pow2 n) +. i2r r >=. pow2 n
+        | StochasticB { n; r; } ->
+          n > 0 && Util.pow2 n >. i2r r && floor (nu *. pow2 (n + 1)) +. i2r (2 * r + 1) >=. pow2 (n + 1)
+        | StochasticC { n; r; } ->
+          n > 0 && Util.pow2 n >. i2r r && rnite (nu *. pow2 n) +. i2r r >=. pow2 n
       in
       let i = if round_away rnd then (floor s) +. 1.0
               else floor s in
@@ -579,26 +589,44 @@ module Float = struct
         m_lo <=. r && r <=. m_hi
       | _ -> false))
 
+  let is_in_datum_set (f : Format.t) (x : CER.t) =
+    let open Signedness in
+    let open Domain in
+    match x with
+    | NaN -> true
+    | PInf -> domainOf f = Extended
+    | NInf -> domainOf f = Extended && signednessOf f = Signed
+    | R x when x <. 0.0 && signednessOf f = Unsigned -> false
+    | R x ->
+      let p = precisionOf f in
+      let b = exponentBiasOf f in
+      let e : int = (max (Util.floor_log2_abs x) (1 - b)) - p + 1 in
+      let s : real = Real.abs x *. Util.pow2 (- e) in
+      let i : int = Util.ifloor s in
+      e >= 2 - p - b && (* exponent lower bound *)
+      is_within_range f (CER.R x) &&  (* includes exponent upper bound *)
+      0 <= i && i < Util.ifloor (Util.pow2 p) (* significand bound *)
+
   let wEncodeExternal (f : Format.External.t) (x : CER.t) : (t, string) Result.t =
     (match f with
     | IEEE754 phi ->
       (match x with
-      | NaN -> Ok (IEEE754.encode (IEEE754.canonical_nan phi))
-      | R 0.0 -> Ok (IEEE754.encode (IEEE754.pzero phi))
-      | x -> Ok (IEEE754.encode (IEEE754.round phi IEEE754.RoundingMode.TiesToEven x)))
+      | NaN -> Ok (IEEE754.to_int_repr (IEEE754.canonical_nan phi))
+      | R 0.0 -> Ok (IEEE754.to_int_repr (IEEE754.pzero phi))
+      | x -> Ok (IEEE754.to_int_repr (IEEE754.round phi IEEE754.RoundingMode.TiesToEven x)))
     | BFloat16 ->
-      Ok (BFloat16.encode (BFloat16.round BFloat16.RoundingMode.TiesToEven x)))
+      Ok (BFloat16.to_int_repr (BFloat16.round BFloat16.RoundingMode.TiesToEven x)))
 
   let rec wEncode (f : Format.t) (x : CER.t) : (t, string) Result.t =
     let open Util in
     let open Signedness in
-    if not (is_within_range f x)  then
+    if not (is_in_datum_set f x)  then
       Error "precondition violation"
     else
       match f with
       | External f -> wEncodeExternal f x
       | Internal _ -> (
-        let k = bitWidthOf f in
+        let k = bitwidthOf f in
         let p = precisionOf f in
         let b = exponentBiasOf f in
         let sigma = signednessOf f in
@@ -620,7 +648,7 @@ module Float = struct
           | R x when x = 0.0 -> Ok zero
 
           | R x ->
-            let e : int = Int.max (floor_log2_abs x 32768) (1 - b) in
+            let e : int = Int.max (floor_log2_abs x) (1 - b) in
             let s = x *. (2 ^. (- e)) *. (2 ^. (p - 1)) in
             (* [s] is an integer *)
             let s = Real.to_int s in
@@ -1624,7 +1652,7 @@ module Float = struct
 
   let isNormal (f : Format.t) (x : t) : bool =
     let open Signedness in
-    let k = bitWidthOf f in
+    let k = bitwidthOf f in
     let p = precisionOf f in
     match x with
     | _ when isZero f x || is_ninf f x || is_pinf f x || is_nan f x -> false

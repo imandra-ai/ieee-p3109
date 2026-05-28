@@ -91,7 +91,7 @@ theorem find_closest_sqrt_floats_aux_ok (f : Format.t) (x : CER.t) (l : Float.t)
 theorem find_closest_sqrt_floats_ok (f : Format.t) (x : CER.t) =
   Result.is_ok ((Fsqrt.find_closest_sqrt_floats f x) [@trigger])
   [@@timeout 120]
-  [@@disable Float.bitWidthOf, Float.wDecode]
+  [@@disable Float.bitwidthOf, Float.wDecode]
   [@@by auto]
   [@@fc]
 
@@ -106,14 +106,14 @@ theorem fsqrt_start_satisfies_inv (f : Format.t) (x : real) (p : int) =
 theorem fsqrt_i_ok (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : Float.t) =
   Result.is_ok (fst ((Fsqrt.fsqrt_i f_x f_z pi x) [@trigger]))
   [@@timeout 3600]
-  [@@disable Float.bitWidthOf, Float.precisionOf, Float.exponentBiasOf, Float.wDecode, Float.wProject, Fsqrt.fsqrt_start, Fsqrt.cer_fsqrt]
+  [@@disable Float.bitwidthOf, Float.precisionOf, Float.exponentBiasOf, Float.wDecode, Float.wProject, Fsqrt.fsqrt_start, Fsqrt.cer_fsqrt]
   [@@by auto]
   [@@fc]
 
 theorem fsqrt_ok (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : Float.t) =
   Result.is_ok (Fsqrt.fsqrt f_x f_z pi x)
   [@@timeout 3600]
-  [@@disable Float.bitWidthOf, Float.precisionOf, Float.exponentBiasOf,Float.wDecode, Float.wProject, Fsqrt.fsqrt_start, Fsqrt.cer_fsqrt]
+  [@@disable Float.bitwidthOf, Float.precisionOf, Float.exponentBiasOf,Float.wDecode, Float.wProject, Fsqrt.fsqrt_start, Fsqrt.cer_fsqrt]
   [@@by auto]
 
 theorem fsqrt_ok_below (f_x : Format.t) (f_z : Format.t) (pi : Projection.t) (x : Float.t) =

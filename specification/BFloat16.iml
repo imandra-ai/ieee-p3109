@@ -46,9 +46,9 @@ let is_ninf (x : t) : bool = x.v = ninf.v
 
 let sign (x : t) : bool = (x.v / 32768) = 1
 
-let decode (x : int) : t = if x < 0 || x > 0xFFFF then canonical_nan else { v = x }
+let of_int_repr (x : int) : t = if x < 0 || x > 0xFFFF then canonical_nan else { v = x }
 
-let encode (x : t) : int = x.v
+let to_int_repr (x : t) : int = x.v
 
 let as_cer (x : t) : (CER.t, string) Result.t =
   if is_nan x then
@@ -103,7 +103,7 @@ let round_internal (rnd : RoundingMode.t) (x : CER.t) : (t,  string) Result.t =
       if is_subnormal then
         Int.(1 - emax)
       else
-        Util.floor_log2_abs r Int.(emax + 1) in
+        Util.floor_log2_abs r in
     let biased_exp : int =
       if is_subnormal then
         0

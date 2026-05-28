@@ -18,7 +18,7 @@ let format_supported (f : Specification.Format.t) : bool =
   | Internal {s; d; _} ->
     s = Signedness.Signed &&
     d = Domain.Extended &&
-    Float.bitWidthOf f = 8
+    Float.bitwidthOf f = 8
   | _ -> false
 
 (** Proof that our implementation of [abs] conforms to the specification *)

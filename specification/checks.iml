@@ -23,19 +23,19 @@ lemma fmt_prec_p3 (f : Format.t) = (f = f83) ==> (Format.precision f) = 3
 (** Check that the format parameters for B8P3 are as expected *)
 lemma fmt_params_p3 (f : Format.t) =
   (f = f83) ==>
-  bitWidthOf f = 8 && precisionOf f = 3 && exponentBiasOf f = 16 && wDecode f (maxFiniteOf f) = CER.R 49152.0
+  bitwidthOf f = 8 && precisionOf f = 3 && exponentBiasOf f = 16 && wDecode f (maxFiniteOf f) = CER.R 49152.0
   [@@by auto]
 
 (** Check that the format parameters for B8P2 are as expected *)
 lemma fmt_params_p2 (f : Format.t) =
   (f = f82) ==>
-  bitWidthOf f = 8 && precisionOf f = 2 && exponentBiasOf f = 32 && wDecode f (maxFiniteOf f) = CER.R 2147483648.0
+  bitwidthOf f = 8 && precisionOf f = 2 && exponentBiasOf f = 32 && wDecode f (maxFiniteOf f) = CER.R 2147483648.0
   [@@by auto]
 
 (** Check that the format parameters for B8P1 are as expected *)
 lemma fmt_params_p1 (f : Format.t) =
   (f = f81) ==>
-  bitWidthOf f = 8 && precisionOf f = 1 && exponentBiasOf f = 64 && wDecode f (maxFiniteOf f) = CER.R 4611686018427387904.0
+  bitwidthOf f = 8 && precisionOf f = 1 && exponentBiasOf f = 64 && wDecode f (maxFiniteOf f) = CER.R 4611686018427387904.0
   [@@by auto]
 
 (** Sanity check of bitwise int conversion *)
@@ -44,17 +44,17 @@ lemma bitwise_int_21 = of_int_repr f83 21 = 0x15 [@@by unroll 50]
 let is_r (x : CER.t) (r : CER.t) = x = r [@@macro]
 
 (** Some extended reals sanity checks *)
-lemma real_0 = is_r (wDecode f83 Float.zero) (CER.R 0.0) [@@by auto]
+lemma real_0 = is_r (wDecode f83 Float.zero) (CER.R 0.0) [@@by ground_eval ()]
 let ninf_f83 = match (Float.ninf f83) with | Ok (x) -> x | _ -> 0
 let pinf_f83 = match (Float.pinf f83) with | Ok (x) -> x | _ -> 0
-lemma real_ninf = is_r (wDecode f83 ninf_f83) CER.NInf [@@by auto]
-lemma real_pinf = is_r (wDecode f83 pinf_f83) CER.PInf [@@by auto]
+lemma real_ninf = is_r (wDecode f83 ninf_f83) CER.NInf [@@by ground_eval ()]
+lemma real_pinf = is_r (wDecode f83 pinf_f83) CER.PInf [@@by ground_eval ()]
 
 let p3_pos_one : t = 0x40 [@@macro]
 let p3_neg_one : t = 0xC0[@@macro]
 
-lemma real_pos_one = is_r (wDecode f83 (p3_pos_one)) (CER.R 1.0) [@@by auto]
-lemma real_neg_one = is_r (wDecode f83 (p3_neg_one)) (CER.R (- 1.0)) [@@by auto]
+lemma real_pos_one = is_r (wDecode f83 (p3_pos_one)) (CER.R 1.0) [@@by ground_eval ()]
+lemma real_neg_one = is_r (wDecode f83 (p3_neg_one)) (CER.R (- 1.0)) [@@by ground_eval ()]
 
 let tiny : Float.t = 0x01 [@@macro]
 let small : Float.t = 0x04 [@@macro]
@@ -67,67 +67,68 @@ let none : Float.t = 0xC0 [@@macro]
 let ntwo : Float.t = 0xC4 [@@macro]
 let nhuge : Float.t = 0xFE [@@macro]
 
-lemma tiny_value = is_r (wDecode f83 tiny) (CER.R (0.5 *. Util.pow2 (- 16))) [@@by auto]
-lemma tiny_value = is_r (wDecode f83 tiny) (CER.R (0.00000762939453125)) [@@by auto]
-lemma small_value = is_r (wDecode f83 small) (CER.R (1.0 *. Util.pow2 (- 15))) [@@by auto]
-lemma one_value = is_r (wDecode f83 one) (CER.R 1.0) [@@by auto]
-lemma two_value = is_r (wDecode f83 two) (CER.R 2.0) [@@by auto]
-lemma huge_value = is_r (wDecode f83 huge) (CER.R 49152.0) [@@by auto]
-lemma ntiny_value = is_r (wDecode f83 ntiny) (CER.R (-. (0.5 *. Util.pow2 (- 16)))) [@@by auto]
-lemma nsmall_value = is_r (wDecode f83 nsmall) (CER.R (-. (1.0 *. Util.pow2 (- 15)))) [@@by auto]
-lemma none_value = is_r (wDecode f83 none) (CER.R (- 1.0)) [@@by auto]
-lemma ntwo_value = is_r (wDecode f83 ntwo) (CER.R (- 2.0)) [@@by auto]
-lemma nhuge_value = is_r (wDecode f83 nhuge) (CER.R (- 49152.0)) [@@by auto]
+lemma tiny_value = is_r (wDecode f83 tiny) (CER.R (0.5 *. Util.pow2 (- 16))) [@@by ground_eval ()]
+lemma tiny_value = is_r (wDecode f83 tiny) (CER.R (0.00000762939453125)) [@@by ground_eval ()]
+lemma small_value = is_r (wDecode f83 small) (CER.R (1.0 *. Util.pow2 (- 15))) [@@by ground_eval ()]
+lemma one_value = is_r (wDecode f83 one) (CER.R 1.0) [@@by ground_eval ()]
+lemma two_value = is_r (wDecode f83 two) (CER.R 2.0) [@@by ground_eval ()]
+lemma huge_value = is_r (wDecode f83 huge) (CER.R 49152.0) [@@by ground_eval ()]
+lemma ntiny_value = is_r (wDecode f83 ntiny) (CER.R (-. (0.5 *. Util.pow2 (- 16)))) [@@by ground_eval ()]
+lemma nsmall_value = is_r (wDecode f83 nsmall) (CER.R (-. (1.0 *. Util.pow2 (- 15)))) [@@by ground_eval ()]
+lemma none_value = is_r (wDecode f83 none) (CER.R (- 1.0)) [@@by ground_eval ()]
+lemma ntwo_value = is_r (wDecode f83 ntwo) (CER.R (- 2.0)) [@@by ground_eval ()]
+lemma nhuge_value = is_r (wDecode f83 nhuge) (CER.R (- 49152.0)) [@@by ground_eval ()]
 
 theorem thm_tiny_val = (to_int_repr f83 tiny) = 1 [@@by unroll 50]
 
 lemma neg_tiny_not_nan = dflt_negate tiny <> nan f83
-  [@@by auto]
+  [@@by ground_eval ()]
 
 theorem tiny_encode = Float.wEncode f83 (CER.R (1.0 /. 131072.0)) = Ok (tiny)
-  [@@by auto]
+  [@@by ground_eval ()]
 
 theorem neg_tiny_encode = Float.wEncode f83  (CER.R (-1.0 /. 131072.0)) = Ok (tiny + 128)
-  [@@by auto]
+  [@@by ground_eval ()]
 
 theorem x = Float.wEncode f83 (CER.R (1.0 /. 131072.0)) = Ok ( tiny )
-  [@@by auto]
+  [@@by ground_eval ()]
 
-lemma none_is_neg_one = none = dflt_negate one [@@by auto]
-lemma zero_is_zero = zero = dflt_negate zero [@@by auto]
+lemma none_is_neg_one = none = dflt_negate one [@@by ground_eval ()]
+lemma zero_is_zero = zero = dflt_negate zero [@@by ground_eval ()]
 
-lemma huge_neg_real = is_r (wDecode f83 (dflt_negate huge)) (CER.R (- 49152.0)) [@@by auto]
+lemma huge_neg_real = is_r (wDecode f83 (dflt_negate huge)) (CER.R (- 49152.0)) [@@by ground_eval ()]
 
-lemma log1 = Util.floor_log2_abs 49152.0 16 = 15 [@@by auto]
-lemma log2 = Util.floor_log2_abs 24576.0 16 = 14 [@@by auto]
+lemma log1 = Util.floor_log2_abs 49152.0 = 15 [@@by ground_eval ()]
+lemma log2 = Util.floor_log2_abs 24576.0 = 14 [@@by ground_eval ()]
+lemma log3 = Util.floor_log2_abs 0.0 = 0 [@@by ground_eval ()]
 
-lemma tst1 = is_r (wDecode f83 (of_int_repr f83 0xFA)) (CER.R (- 24576.0)) [@@by auto]
+lemma tst1 = is_r (wDecode f83 (of_int_repr f83 0xFA)) (CER.R (- 24576.0)) [@@by ground_eval ()]
 
-lemma tst2 = is_r (wDecode f83 (of_int_repr f83 0xF8)) (CER.R (- 16384.0)) [@@by auto]
+lemma tst2 = is_r (wDecode f83 (of_int_repr f83 0xF8)) (CER.R (- 16384.0)) [@@by ground_eval ()]
 
 lemma tst2_real = is_r (wDecode f83 (dflt_negate (of_int_repr f83 0xF8))) (CER.R 16384.0)
-  [@@by auto]
+  [@@by ground_eval ()]
 
-lemma rBB1 = is_r (Float.wDecode f81 (of_int_repr f83 0x3B)) (CER.R 0.03125) [@@by auto]
+lemma rBB1 = is_r (Float.wDecode f81 (of_int_repr f83 0x3B)) (CER.R 0.03125) [@@by ground_eval ()]
 
-lemma rBB2 = is_r (Float.wDecode f82 (of_int_repr f83 0x3B)) (CER.R 0.1875) [@@by auto]
+lemma rBB2 = is_r (Float.wDecode f82 (of_int_repr f83 0x3B)) (CER.R 0.1875) [@@by ground_eval ()]
 
-lemma rBB3 = is_r (Float.wDecode f83 (of_int_repr f83 0x3B)) (CER.R 0.4375) [@@by auto]
+lemma rBB3 = is_r (Float.wDecode f83 (of_int_repr f83 0x3B)) (CER.R 0.4375) [@@by ground_eval ()]
 
 lemma fma_one =
   (Float.internal_fma f83 f83 f83 f83 (SaturationMode.SatPropagate, RoundingMode.NearestTiesToEven) one one zero)
   =
-  Ok one [@@by auto]
+  Ok one [@@by ground_eval ()]
 
 lemma fma_two =
   (Float.internal_fma f83 f83 f83 f83 (SaturationMode.SatPropagate, RoundingMode.NearestTiesToEven) one one one)
   =
-  Ok two [@@by auto]
+  Ok two [@@by ground_eval ()]
 
 lemma faa_two =
   (Float.internal_faa f83 f83 f83 f83 (SaturationMode.SatPropagate, RoundingMode.NearestTiesToEven) one zero one)
   =
-  Ok two [@@by auto]
+  Ok two [@@by ground_eval ()]
 
 let four : Float.t = 0x48 [@@macro]
 

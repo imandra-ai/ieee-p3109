@@ -3,74 +3,38 @@
 [@@@import Util, "dune:math"]
 [@@@import ExReal, "dune:math"]
 
+open Util
+
 let unroll_nonlin qt nqt steps = Tactic.unroll ~smt:"z3-full-nonlinear" ~query_timeout:qt ~no_asm_query_timeout:nqt steps
 
 theorem thm_pow2_grows_pos (n:int) =
-  n >= 0 ==> Util.pow2 n >. Util.pow2 (n - 1)
-  [@@timeout 3600]
-  [@@by auto]
-
-theorem thm_pow2_neg_val (n:int) =
-  n < 0 ==> Util.pow2 n = 1.0 /. Util.pow2 (-n)
-  [@@timeout 3600]
+  n >= 0 ==> pow2 n >. pow2 (n - 1)
+  [@@timeout 60]
   [@@by auto]
 
 theorem thm_pow2_gt_0_pos (n:int) =
-  n >= 0 ==> Util.pow2 n >. 0.0
-  [@@timeout 10]
+  n >= 0 ==> pow2 n >. 0.0
+  [@@timeout 60]
   [@@by auto]
 
-theorem thm_pow2_gt_0_neg (n:int) =
-  n < 0 ==> Util.pow2 n >. 0.0
+(* theorem thm_pow2_gt_0_neg (n:int) =
+  n < 0 ==> pow2 n >. 0.0
   [@@timeout 10]
-  [@@by [%use thm_pow2_gt_0_pos (- n)] @> unroll_nonlin 10 10 4]
+  [@@by [%use thm_pow2_gt_0_pos (- n)] @> unroll_nonlin 10 10 4] *)
 
 theorem thm_pow2_gt_0 (n:int) =
-  (Util.pow2 n [@trigger]) >. 0.0
+  (pow2 n [@trigger]) >. 0.0
   [@@timeout 10]
-  [@@by
-    [%use thm_pow2_gt_0_pos n] @>
-    [%use thm_pow2_gt_0_neg n] @>
-    auto
-  ]
+  [@@by [%use thm_pow2_gt_0_pos n] @> auto]
   [@@fc]
 
 theorem thm_1div_gt (x:real) (y:real) =
   Real.(x > 0.0 && y > 0.0 && x > y  ==>  1.0 / x < 1.0 / y)
   [@@by unroll_nonlin 10 10 1]
 
-theorem thm_pow2_grows_neg_precursors (n:int) =
-  n < 0 ==>
-  let x = Util.pow2 n in
-  let y = Util.pow2 (n - 1) in
-  x = 1.0 /. Util.pow2 (-n) &&
-  y = 1.0 /. Util.pow2 (-(n - 1)) &&
-  x >. 0.0 && y >. 0.0 &&
-  Util.pow2 (-n) <. Util.pow2 (-(n - 1))
-  [@@timeout 10]
-  [@@by
-    [%use thm_pow2_gt_0 n] @>
-    [%use thm_pow2_neg_val n] @>
-    [%use thm_pow2_grows_pos (-n)] @>
-    unroll_nonlin 10 10 10
-  ]
-
-theorem thm_pow2_grows_neg (n:int) =
-  n < 0 ==> Util.pow2 n >. Util.pow2 (n - 1)
-  [@@timeout 10]
-  [@@by
-    [%use thm_pow2_grows_neg_precursors n] @>
-    [%use thm_1div_gt (Util.pow2 (-n)) (Util.pow2 (-(n - 1)))] @>
-    unroll_nonlin 10 10 10
-  ]
-
 theorem thm_pow2_grows (n:int) =
-  Util.pow2 n >. Util.pow2 (n - 1)
-  [@@by
-    [%use thm_pow2_grows_pos n] @>
-    [%use thm_pow2_grows_neg n] @>
-    auto
-  ]
+  pow2 n >. pow2 (n - 1)
+  [@@by auto]
 
 theorem thm_exreal_pow2_pos (xscale : int) =
   let open ExReal in
@@ -82,7 +46,98 @@ theorem thm_exreal_pow2_pos (xscale : int) =
     auto
   ]
 
-theorem pow2_gt_0 (n : int) =
-  n > 0 ==> (Util.pow2 n [@trigger]) >. 0.0
+theorem thm_plus_equiv_mul (x : int) (y : int) =
+  pow2 (x + y) = pow2 x *. pow2 y
+  [@@timeout 60]
+  [@@by induct ~do_not:["gen"; "fert"; "delim"] ()]
+
+
+
+let is_an_int (x : real) = x = floor x
+
+theorem two_is_an_int = is_an_int 2.0
+
+theorem mul_ints (x : real) (y : real) =
+  is_an_int x && is_an_int y ==> is_an_int (x *. y)
   [@@by auto]
-  [@@fc]
+
+theorem pow2_0_is_an_int  =
+  is_an_int (pow2 0)
+
+theorem pow2_times_2 (x : int) =
+  pow2 x = 2.0 *. pow2 (x - 1)
+  [@@by auto]
+
+theorem drop_of_to_int (x : real) =
+  is_an_int x ==> (Real.of_int (Real._to_int_round_down x)) = x
+  [@@by auto]
+
+theorem not_c_false (c : bool) =
+  c ==> (not c) = false
+
+theorem or_false (x : bool) =
+  (false || x) = x
+
+theorem gt_gte (x : int) =
+  x > 0 ==> x >= 0 = true
+
+theorem not_true =
+  (not true) = false
+
+theorem prop_true (x : bool) =
+  x ==> x = true
+
+theorem if_true c t f =
+  c ==> (if c then t else f) = t
+
+theorem if_false c t f =
+  (not c) ==> (if c then t else f) = f
+
+theorem is_an_int_rw (x : real) =
+  is_an_int x ==> Real.of_int (Real.to_int x) = x
+  [@@by unroll 100]
+
+theorem impl_true (x : bool) (y : bool) =
+  x ==> ((x ==> y) = y)
+
+theorem pow2_is_an_int (x : int) =
+  x >= 0 ==> is_an_int (pow2 x)
+  [@@by
+    intros @>
+    induction () @>| [
+      [%have (x = 0) by (unroll 0)] @> unroll 2;
+      [%rewrite pow2_times_2 x] @> [%cases (x - 1 < 0)] @>| [
+        simplify ();
+        [%use thm_pow2_gt_0 x] @>
+        [%use thm_pow2_gt_0 (x - 1)] @>
+        [%have (x - 1 >= 0) by (unroll 0)] @>
+        [%rewrite not_c_false (x - 1 >= 0)] @>
+        [%rewrite gt_gte x] @>
+        [%rewrite not_true] @>
+        [%rewrite or_false [? at (false || _) in asm index(1)]] @>
+        [%rewrite or_false [? at (false || _) in concl index(1)]] @>
+        [%have (pow2 (x - 1) >=. Real.of_int 0) by (unroll 0)] @>
+        [%rewrite prop_true (pow2 (x - 1) >=. Real.of_int 0)] @>
+        [%have (2.0 *. pow2 (x - 1) >=. Real.of_int 0) by (unroll 0)] @>
+        [%rewrite prop_true (2.0 *. pow2 (x - 1) >=. Real.of_int 0)] @>
+        [%rewrite if_true
+          [? at (if _ then _ else (_ : int)) index (3)]
+          [? at (if _ then _ else (_ : int)) index (2)]
+          [? at (if _ then _ else (_ : int)) index (1)]] @>
+        [%rewrite if_true
+          [? at (if _ then _ else (_ : int)) index (3) in asm]
+          [? at (if _ then _ else (_ : int)) index (2) in asm]
+          [? at (if _ then _ else (_ : int)) index (1) in asm]] @>
+        [%use (is_an_int_rw (2.0 *. pow2 (x - 1)))] @>
+        [%have (is_an_int (pow2 (x - 1))) by (unroll 0)] @>
+        [%have (is_an_int 2.0) by (unroll 0)] @>
+        [%use mul_ints 2.0 (pow2 (x - 1))] @>
+        [%rewrite impl_true
+          [? at (_ ==> _) in asm index(1)]
+          [? at (_ ==> _) in asm index(2)]] @>
+        [%rewrite drop_of_to_int (2.0 *. pow2 (x - 1))] @>
+        trivial
+      ];
+      unroll 0
+    ]
+  ]

@@ -1,0 +1,314 @@
+[@@@import Util, "dune:math"]
+[@@@import CER, "dune:math"]
+[@@@import Specification, "specification.iml"]
+
+open Specification
+open Format
+open Util
+open Float
+
+open Signedness
+open Domain
+
+let unroll_nonlin qt nqt steps = Tactic.unroll ~smt:"z3-full-nonlinear" ~query_timeout:qt ~no_asm_query_timeout:nqt steps
+
+theorem maxFinite_is_finite (f : Format.t) =
+  match wDecode f (maxFiniteOf f) with
+  | CER.R _ -> true
+  | _ -> false
+  [@@timeout 60]
+  [@@by enumerate ["f"] @> ground_eval ()]
+
+let max_finite_cer (f : Format.t) : CER.t =
+  wDecode f (maxFiniteOf f)
+
+let max_finite_real (f : Format.t) : real =
+  match max_finite_cer f with
+  | CER.R r -> r
+  | _ -> 0.0 (* unreachable because of theorem maxFinite_is_finite *)
+
+theorem saturate_is_one_of_few r (m : real) (sat : SaturationMode.t) (rnd : RoundingMode.t) (x : CER.t) (s : Signedness.t) (d : Domain.t) =
+  r = wSaturate m sat rnd x s d ==>
+  r = CER.PInf || r = CER.R m || r = x ||
+  (* Signed *)   (r = CER.R (-. m) || r = CER.NInf) ||
+  (* Unsigned *) (r = CER.zero)
+
+let rnd_sat (f : Format.t) (rho : Projection.t) (x : CER.t) =
+  let sigma = signednessOf f in
+  let delta = domainOf f in
+  let maxFinite = max_finite_real f in
+  let r = wRoundToPrecision (precisionOf f) (exponentBiasOf f) (roundOf rho) x in
+  let s = wSaturate maxFinite (satOf rho) (roundOf rho) r sigma delta in
+  s
+
+theorem rnd_sat_is_one_of_few r (f : Format.t) (rho : Projection.t) (x : CER.t) =
+  r = rnd_sat f rho x ==>
+  let m = max_finite_real f in
+  r = CER.PInf || r = CER.R m || r = (wRoundToPrecision (precisionOf f) (exponentBiasOf f) (roundOf rho) x) ||
+  ((signednessOf f = Signed) && (r = CER.R (-. m) || r = CER.NInf)) ||
+  ((signednessOf f = Unsigned) && (r = CER.zero))
+  [@@by
+    [%expand "rnd_sat"] @>
+    [%use
+      saturate_is_one_of_few r
+        (max_finite_real f)
+        (satOf rho)
+        (roundOf rho)
+        (wRoundToPrecision (precisionOf f) (exponentBiasOf f) (roundOf rho) x)
+        (signednessOf f)
+        (domainOf f)] @>
+    unroll 0]
+
+theorem maxFinite_geq_0 (f : Format.t) =
+  let open CER.Infix in
+  wDecode f (maxFiniteOf f) >= CER.R 0.0
+  [@@timeout 60]
+  [@@by enumerate ["f"] @> ground_eval ()]
+
+theorem wSaturate_is_within_range (f : Format.t) (x : CER.t) (sat : SaturationMode.t) (rnd : RoundingMode.t) =
+  match wDecode f (maxFiniteOf f) with
+  | CER.R m ->
+    let s = ((wSaturate m sat rnd x (signednessOf f) (domainOf f)) [@trigger]) in
+    is_within_range f s
+  | _ -> false
+  [@@timeout 60]
+  [@@disable wDecode, maxFiniteOf, Util.ipow2, Util.pow2]
+  [@@by
+    [%use maxFinite_is_finite f] @>
+    [%use maxFinite_geq_0 f] @>
+    induct ~do_not:["gen"; "fert"; "delim"] ()
+    ]
+  [@@fc]
+
+theorem rnd_sat_within_range (f : Format.t) (rho : Projection.t) (x : CER.t) =
+  is_within_range f (rnd_sat f rho x)
+  [@@timeout 600]
+  [@@disable rnd_sat, is_within_range, wDecode, maxFiniteOf, domainOf, signednessOf, ipow2, pow2]
+  [@@by
+    [%use maxFinite_is_finite f] @>
+    [%use maxFinite_geq_0 f] @>
+    [%use wSaturate_is_within_range f x (fst rho) (snd rho)] @>
+    induct ~do_not:["gen"; "fert"; "delim"] ()]
+
+theorem exponent_lower_bound (f : Format.t) (x : real) =
+  let p = precisionOf f in
+  let b = exponentBiasOf f in
+  let e : int = (max (floor_log2_abs x) (1 - b)) - p + 1 in
+  e >= 2 - p - b
+
+theorem abs_pos (x : real) =
+  Real.abs x >=. 0.0
+
+theorem mul_pos (x : real) (y : real) =
+  x >=. 0.0 && y >=. 0.0 ==> x *. y >=. 0.0
+
+theorem floor_pos (x : real) =
+  x >=. 0.0 ==> ifloor x >= 0
+
+let num_digits (x : real) : int = floor_log2_abs x + 1
+
+theorem significand_lower_bound (f : Format.t) (x : real) =
+    let p = precisionOf f in
+    let b = exponentBiasOf f in
+    let e : int = (max (num_digits x) (2 - b)) - p in
+    let s : real = Real.abs x *. pow2 (- e) in
+    let i = ifloor s in
+    0 <= i
+  [@@disable precisionOf, exponentBiasOf, floor_log2_abs, pow2]
+  [@@by
+    [%use abs_pos [? at (Real.abs (_)) index(1)]] @>
+    [%use Theorems_pow2.thm_pow2_gt_0 [? at (pow2 (_)) index(1)]] @>
+    [%use mul_pos [? at (Real.abs (_))] [? at (pow2 (_))]] @>
+    [%use floor_pos [? at (Real.abs (_ : real) *. _)]] @>
+    auto
+    ]
+
+theorem precision_gt_0 (f : Format.t) =
+  precisionOf f > 0
+  [@@fc]
+
+theorem bias_gt_0 (f : Format.t) =
+  exponentBiasOf f >= 0
+  [@@fc]
+
+
+theorem exp_bound_neg f x =
+  let p = precisionOf f in
+  let b = exponentBiasOf f in
+  let e : int = (max (floor_log2_abs x) (1 - b)) - p + 1 in
+  e >= (2 - p - b) ==> - e <= (p + b - 2)
+[@@by [%use exponent_lower_bound f x] @> unroll 0]
+
+theorem exp_one_of_two (b : int) (p : int) (x : real) =
+  b > 0 && p > 0 ==>
+  let e : int = (max (floor_log2_abs x) (1 - b)) - p + 1 in
+  e = 2 - b - p ||
+  e = (floor_log2_abs x) - p + 1
+  [@@by unroll 0]
+
+theorem significand_one_of_two (f : Format.t) (x : real) =
+  let p = precisionOf f in
+  let b = exponentBiasOf f in
+  let e : int = (max (num_digits x) (2 - b)) - p in
+  let s : real = Real.abs x *. pow2 (- e) in
+  (max (num_digits x) (2 - b)) = (num_digits x) ==> s = Real.abs x *. pow2 (- 2 + b + p) ||
+  (max (num_digits x) (2 - b)) = (2 - b) ==> s = Real.abs x *. pow2 (- (num_digits x) + p)
+  [@@by
+    [%use exp_one_of_two (exponentBiasOf f) (precisionOf f) x] @>
+    unroll 0]
+
+theorem tiny_mul_pow2 (q : real) (r : real) =
+  r >. 0.0 && q <. 1.0 ==> q *. r <. r
+  [@@by auto]
+
+theorem sig_upper_pre (x : real) (p : int) =
+  p > 0 &&
+  Real.abs x *. pow2 (- num_digits x) <. 1.0 ==>
+  Real.abs x *. pow2 (- num_digits x + p) <. pow2 p
+  [@@by
+    [%use Theorems_pow2.thm_pow2_gt_0 p] @>
+    [%rewrite Theorems_pow2.thm_plus_equiv_mul (- num_digits x) p] @>
+    [%use tiny_mul_pow2 (Real.abs x *. pow2 (- num_digits x)) (pow2 p)] @>
+    unroll 0]
+
+theorem sig_upper_pre2 (x : real) (b : int) (p : int) =
+  p > 0 && Real.abs x *. pow2 (- 2 + b) <. 1.0 ==>
+  (max (num_digits x) (2 - b)) = (2 - b) ==>
+  Real.abs x *. pow2 (- 2 + b + p) <. pow2 p
+  [@@by
+    [%use Theorems_pow2.thm_pow2_gt_0 p] @>
+    [%rewrite Theorems_pow2.thm_plus_equiv_mul (- 2 + b) p] @>
+    [%use tiny_mul_pow2 (Real.abs x *. pow2 (- 2 + b)) (pow2 p)] @>
+    unroll 0]
+
+axiom ax_div_by_pow2_num_digits_lt_1 (x : real) (n : int) =
+  (* TODO: turn this into a theorem *)
+  x <> 0.0 && n >= num_digits x ==>
+  Real.abs x *. pow2 (- n) <. 1.0
+
+theorem significand_upper_bound_real (f : Format.t) (x : real) =
+  let p = precisionOf f in
+  let b = exponentBiasOf f in
+  let e : int = (max (num_digits x) (2 - b)) - p  in
+  let s : real = Real.abs x *. pow2 (- e) in
+  s <. pow2 p
+  [@@by
+    [%use significand_one_of_two f x] @>
+    [%use ax_div_by_pow2_num_digits_lt_1 x (num_digits x)] @>
+    [%use sig_upper_pre x (precisionOf f)] @>
+    [%use ax_div_by_pow2_num_digits_lt_1 x (2 - (exponentBiasOf f))] @>
+    [%use sig_upper_pre2 x (exponentBiasOf f) (precisionOf f)] @>
+    unroll_nonlin 1 1 0]
+
+
+theorem irpow2 (x : real) (y : int) =
+  x >=. 0.0 && y >= 0 && x <. pow2 y ==> ifloor x < ifloor (pow2 y)
+  [@@by
+    [%use Theorems_pow2.pow2_is_an_int y] @>
+    unroll 0
+    ]
+
+theorem significand_geq_0 x e =
+  Real.abs x *. pow2 (- e) >=. 0.0
+  [@@by auto]
+
+theorem significand_upper_bound (f : Format.t) (x : real) =
+  let p = precisionOf f in
+  let b = exponentBiasOf f in
+  let e : int = (max (num_digits x) (2 - b)) - p in
+  let s : real = Real.abs x *. pow2 (- e) in
+  let i : int = ifloor s in
+  i < ifloor (pow2 p)
+  [@@by
+    [%use significand_geq_0 x ((max (num_digits x) (2 - (exponentBiasOf f))) - (precisionOf f))] @>
+    [%use significand_upper_bound_real f x] @>
+    [%use irpow2 [? at (_ *. _)] (precisionOf f)] @>
+    unroll 0
+    ]
+
+theorem significand_bounds (f : Format.t) (x : real) =
+  let p = precisionOf f in
+  let b = exponentBiasOf f in
+  let e : int = (max (num_digits x) (2 - b)) - p in
+  let s : real = Real.abs x *. pow2 (- e) in
+  let i : int = ifloor s in
+  0 <= i && i < ifloor (pow2 p)
+[@@by
+  [%use significand_lower_bound f x] @>
+  [%use significand_upper_bound f x] @>
+  unroll 0]
+
+theorem rnd_sat_is_in_datum_set_real (r : CER.t) (f : Format.t) (rho : Projection.t) (x : real) =
+  r = rnd_sat f rho (CER.R x) ==>
+  Float.is_in_datum_set f r
+  [@@by
+    intros @>
+    [%expand "Specification.Float.is_in_datum_set"] @>
+    [%use rnd_sat_within_range f rho (CER.R x)] @>
+    [%use exponent_lower_bound f [? at (Util.floor_log2_abs (_)) index(1)]] @>
+    [%use significand_bounds f [? at (Util.floor_log2_abs (_)) index(1)]] @>
+    unroll_nonlin 10 10 10
+    ]
+
+theorem zero_is_in_datum_set (f : Format.t) =
+  Float.is_in_datum_set f (CER.R 0.0)
+  [@@by enumerate ["f"] @> ground_eval ()]
+
+theorem rnd_sat_max_finite_is_in_datum_set (f : Format.t) (rho : Projection.t) (x : CER.t) =
+  Float.is_in_datum_set f (rnd_sat f rho (max_finite_cer f))
+  [@@disable precisionOf, exponentBiasOf, floor_log2_abs, pow2, ipow2, ifloor, wDecode, maxFiniteOf]
+  [@@by
+    [%use maxFinite_geq_0 f] @>
+    [%use maxFinite_is_finite f] @>
+    [%use rnd_sat_is_in_datum_set_real (rnd_sat f rho (max_finite_cer f)) f rho (max_finite_real f)] @>
+    unroll 0]
+
+theorem max_finite_is_in_datum_set (f : Format.t) =
+  Float.is_in_datum_set f (wDecode f (maxFiniteOf f))
+  [@@timeout 60]
+  [@@by enumerate ["f"] @> ground_eval ()]
+
+theorem neg_max_finite_is_in_datum_set f =
+  signednessOf f = Signed ==> Float.is_in_datum_set f (CER.R (-. (max_finite_real f)))
+  [@@timeout 60]
+  [@@by enumerate ["f"] @> ground_eval ()]
+
+theorem rnd_sat_is_in_datum_set_ninf_cases (f : Format.t) (rho : Projection.t) (x : CER.t) =
+  signednessOf f = Signed && domainOf f = Extended ==> Float.is_in_datum_set f (CER.NInf) &&
+  Float.is_in_datum_set f (CER.R 0.0) &&
+  signednessOf f = Signed ==> Float.is_in_datum_set f (CER.R (-. (max_finite_real f)))
+  [@@by
+    [%use max_finite_is_in_datum_set f] @>
+    [%use zero_is_in_datum_set f] @>
+    [%use neg_max_finite_is_in_datum_set f] @>
+    unroll 0]
+
+theorem rnd_sat_is_in_datum_set_all_with_xr (f : Format.t) (rho : Projection.t) (x : CER.t) xr =
+  (x = CER.NaN || x = CER.PInf || x = CER.NInf || x = CER.R xr) ==>
+  let r = rnd_sat f rho x in
+  Float.is_in_datum_set f r
+  [@@by
+    intros @>
+    [%use max_finite_is_in_datum_set f] @>
+    [%use neg_max_finite_is_in_datum_set f] @>
+    [%use zero_is_in_datum_set f] @>
+    [%use rnd_sat_is_in_datum_set_ninf_cases f rho x] @>
+    [%use rnd_sat_is_in_datum_set_real (rnd_sat f rho x) f rho xr] @>
+    unroll 0
+  ]
+
+let real_of_cer (x : CER.t) : real =
+  match x with
+  | CER.R r -> r
+  | _ -> 0.0
+
+theorem rnd_sat_is_in_datum_set (f : Format.t) (rho : Projection.t) (x : CER.t) =
+  Float.is_in_datum_set f (rnd_sat f rho x)
+  [@@by
+    [%use rnd_sat_is_in_datum_set_all_with_xr
+      f
+      rho
+      x
+      (real_of_cer x)] @>
+    unroll 0
+  ]

@@ -102,20 +102,23 @@ let rec to_binary_bits (x : int) : bool list =
     to_binary_bits (x/2) @ [x mod 2 = 1]
   [@@measure (Ordinal.of_int (Int.abs x))]
 
-let decode (phi: Format.t) (x : int) : t =
-  let b = to_binary_bits x in
-  if List.length b < Format.k phi then
-    nlist (Format.k phi - List.length b) false @ b
-  else if List.length b > Format.k phi then
+let of_int_repr (phi: Format.t) (x : int) : t =
+  if x < 0 || x >= Util.ipow2 (Format.k phi) then
     canonical_nan phi
   else
-    b
+    let b = to_binary_bits x in
+    if List.length b < Format.k phi then
+      nlist (Format.k phi - List.length b) false @ b
+    else if List.length b > Format.k phi then
+      canonical_nan phi
+    else
+      b
 
-let rec encode (x : t) : int =
+let rec to_int_repr (x : t) : int =
   match x with
   | [] -> 0
-  | true :: xs -> Util.ipow2 (List.length xs) + encode xs
-  | false :: xs -> encode xs
+  | true :: xs -> Util.ipow2 (List.length xs) + to_int_repr xs
+  | false :: xs -> to_int_repr xs
 
 let to_binary (x : int) (digits : int) : bool list =
   let r = to_binary_bits x in
@@ -143,7 +146,7 @@ let round_internal (fmt : Format.t) (rnd : RoundingMode.t) (x : CER.t) : (t,  st
       if is_subnormal then
         Int.(1 - emax)
       else
-        Util.floor_log2_abs r Int.(emax + 1) in (* emax ok? *)
+        Util.floor_log2_abs r in
     let biased_exp =
       if is_subnormal then
         0
