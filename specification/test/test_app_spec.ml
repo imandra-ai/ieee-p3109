@@ -112,7 +112,7 @@ let _ =
   Printf.printf "p = %d\n" p;
   let b = 16 in
   Printf.printf "b = %d\n" b;
-  let e = max (Util.floor_log2_abs x (Z.of_int 64)) (Z.of_int (1 - b)) in
+  let e = max (Util.floor_log2_abs x) (Z.of_int (1 - b)) in
   Printf.printf "E = %s\n" (Z.to_string e);
   let open ExReal.ResultInfix in
   let two = Z.of_int 2 in
