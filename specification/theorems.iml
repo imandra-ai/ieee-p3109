@@ -977,3 +977,10 @@ theorem idem_saturate (m : real) (sat : SaturationMode.t) (rnd : RoundingMode.t)
   Float.wSaturate m sat rnd x s d = Float.wSaturate m sat rnd (Float.wSaturate m sat rnd x s d) s d
   [@@disable Util.pow2, Util.ipow2, Util.floor_log2_abs, Util.floor, Util.ifloor, Log.ln, Exp.exp]
   [@@by auto]
+
+theorem every_format_has_a_one (f : Format.t) =
+  Float.bitwidthOf f >= 3 (* k=2 is technically not in spec, but does have cases without 1.0 *) ==>
+  match Float.wProject f (SaturationMode.SatNone, RoundingMode.NearestTiesToEven) (CER.R 1.0) with
+  | Ok x -> Float.wDecode f x = (CER.R 1.0)
+  | _ -> false
+  [@@by enumerate ["f"] @> ground_eval ()]
