@@ -1051,7 +1051,7 @@ module Float = struct
     | NInf -> Ok NaN
     | PInf -> Ok PInf
     | R x when x <. 0.0 -> Ok NaN
-    | R x when x = 0.0 -> Ok NInf
+    | R 0.0 -> Ok NInf
     | R x -> (
       match Log.ln x 9 with (* TODO: Proof that 9 is enough *)
       | Ok r -> Ok (R r)
@@ -1093,7 +1093,7 @@ module Float = struct
     | NInf -> Ok NaN
     | PInf -> Ok PInf
     | R x when x <. 0.0 -> Ok NaN
-    | R x when x = 0.0 -> Ok NInf
+    | R 0.0 -> Ok NInf
     | R x -> (
       match Log.log2 x 9 with (* TODO: Proof that 9 is enough *)
       | Ok r -> Ok (R r)

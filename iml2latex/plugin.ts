@@ -613,11 +613,15 @@ function print_pattern_desc(node: AST, options: Options): Doc {
     case "Ppat_var": {
       // | Ppat_var of string loc  (** A variable pattern such as [x] *)
       let r;
-      if (((args[0].txt[0] != 's' &&
-        options.hasOwnProperty("pattern_reals") &&
-        options.pattern_reals instanceof Array &&
-        options.pattern_reals.includes(args[0].txt)))
-        || options.move_everything_up)
+      if (
+        // (
+        // (args[0].txt[0] != 's' &&
+        // options.hasOwnProperty("pattern_reals") &&
+        // options.pattern_reals instanceof Array &&
+        // options.pattern_reals.includes(args[0].txt))
+        // )
+        // || options.move_everything_up
+        true)
         r = capitalize_first(print_string_loc(args[0], options));
       else
         r = print_string_loc(args[0], options);
@@ -1095,10 +1099,13 @@ function print_expression_desc(node: AST, options: Options): Doc {
         (options.hasOwnProperty("pattern_reals") &&
           options.pattern_reals instanceof Array &&
           options.pattern_reals.includes(args[0].txt[1])) ||
-        options.move_everything_up) {
+        options.move_everything_up ||
+        true) {
         let n = print_longident_loc(args[0], options)[0];
-        r = [(n.startsWith('s') || n.startsWith('{s')) ? // 's.*' are scaling factors
-          n : capitalize_first(n)];
+        r = [
+          (n.startsWith('s') || n.startsWith('{s')) ? // 's.*' are scaling factors
+            n :
+            capitalize_first(n)];
       }
       else
         r = print_longident_loc(args[0], options);
