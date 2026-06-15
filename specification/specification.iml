@@ -540,29 +540,31 @@ module Float = struct
 
     | SatFinite, _, PInf, _, _ -> Ok (R m_hi)
     | SatFinite, _, NInf, _, _ -> Ok (R m_lo)
-    | SatFinite, _, R x, _, _ when x <=. m_lo -> Ok (R m_lo)
-    | SatFinite, _, R x, _, _ when x >=. m_hi -> Ok (R m_hi)
+    | SatFinite, _, R x, _, _ when x <. m_lo -> Ok (R m_lo)
+    | SatFinite, _, R x, _, _ when x >. m_hi -> Ok (R m_hi)
     [@ocaml.doc "latex: \\\\"]
 
     | SatPropagate, _, PInf, _, Extended -> Ok PInf
     | SatPropagate, _, PInf, _, _ -> Ok (R m_hi)
     | SatPropagate, _, NInf, Signed, Extended -> Ok NInf
     | SatPropagate, _, NInf, _, _ -> Ok (R m_lo)
-    | SatPropagate, _, R x, _, _ when x <=. m_lo -> Ok (R m_lo)
-    | SatPropagate, _, R x, _, _ when x >=. m_hi -> Ok (R m_hi)
+    | SatPropagate, _, R x, _, _ when x <. m_lo -> Ok (R m_lo)
+    | SatPropagate, _, R x, _, _ when x >. m_hi -> Ok (R m_hi)
     [@ocaml.doc "latex: \\\\"]
 
     | SatNone, _, PInf, _, Extended -> Ok PInf
     | SatNone, _, PInf, _, _ -> Ok (R m_hi)
     | SatNone, _, NInf, Signed, Extended -> Ok NInf
+    | SatNone, _, NInf, Unsigned, _ -> Ok NaN
     | SatNone, _, NInf, _, _ -> Ok (R m_lo)
-    | SatNone, ToOdd, R x, Unsigned, _ when x >=. m_hi -> Ok (R m_hi)
-    | SatNone, (TowardZero | TowardPositive), R x, _, _ when x <=. m_lo -> Ok (R m_lo)
-    | SatNone, (TowardZero | TowardNegative), R x, _, _ when x >=. m_hi -> Ok (R m_hi)
-    | SatNone, _, R x, Signed, Extended when x <=. m_lo -> Ok NInf
-    | SatNone, _, R x, _, _ when x <=. m_lo -> Ok (R m_lo)
-    | SatNone, _, R x, _, Extended when x >=. m_hi -> Ok PInf
-    | SatNone, _, R x, _, _ when x >=. m_hi -> Ok (R m_hi)
+    | SatNone, ToOdd, R x, Unsigned, _ when x >. m_hi -> Ok (R m_hi)
+    | SatNone, (TowardZero | TowardNegative), R x, _, _ when x >. m_hi -> Ok (R m_hi)
+    | SatNone, (TowardZero | TowardPositive), R x, _, _ when x <. m_lo -> Ok (R m_lo)
+    | SatNone, _, R x, Signed, Extended when x <. m_lo -> Ok NInf
+    | SatNone, _, R x, Unsigned, _ when x <. m_lo -> Ok NaN
+    | SatNone, _, R x, _, _ when x <. m_lo -> Ok (R m_lo)
+    | SatNone, _, R x, _, Extended when x >. m_hi -> Ok PInf
+    | SatNone, _, R x, _, _ when x >. m_hi -> Ok (R m_hi)
 
     | _ -> Error "unreachable"
 
