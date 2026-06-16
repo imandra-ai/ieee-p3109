@@ -439,13 +439,13 @@ module Float = struct
 
       | _, _, x ->
         let t = Real.of_int (x mod (ipow2 (p - 1))) in
-        let e = Int.(Util.machine_idiv x (ipow2 (p - 1))) in
+        let e_biased = Int.(Util.machine_idiv x (ipow2 (p - 1))) in
 
         let r = (
-          if e = 0 then
+          if e_biased = 0 then
             (0. +. t *. (pow2 (1 - p))) *. (pow2 (1 - b))
           else
-            (1. +. t *. (pow2 (1 - p))) *. (pow2 (e - b))) in
+            (1. +. t *. (pow2 (1 - p))) *. (pow2 (e_biased - b))) in
         Ok CER.(R r))
     | External f -> wDecodeAuxExternal f x
     [@@timeout 60]
@@ -473,14 +473,14 @@ module Float = struct
     | PInf -> Ok x
     | R 0.0 -> Ok x
     | R x ->
-      let e : int = (max (floor_log2_abs x) (1 - b)) - p + 1 in
-      let s : real = Real.abs x *. pow2 (- e) in
+      let q : int = (max (floor_log2_abs x) (1 - b)) - p + 1 in
+      let s : real = Real.abs x *. pow2 (- q) in
       let nu : real = Real.(s - floor s) in
       let codeIsEven : bool =
         if p > 1 then
           is_even (ifloor s)
         else
-          floor s = 0.0 || is_even (e + b) in
+          floor s = 0.0 || is_even (q + b) in
       let rnite (x : real) : real =
           if (x <. (floor x) +. 0.5) || (x = (floor x) +. 0.5 && is_even (ifloor x)) then
             x
@@ -504,7 +504,7 @@ module Float = struct
       in
       let i = if round_away rnd then (floor s) +. 1.0
               else floor s in
-      let z = CER.R (rsign x *. i *. (2 ^ e)) in
+      let z = CER.R (rsign x *. i *. (2 ^ q)) in
       Ok z
 
   (** Convert extended real value [x] to a new extended real that is representable
