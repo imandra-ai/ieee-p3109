@@ -1658,7 +1658,11 @@ module Float = struct
     let p = precisionOf f in
     match x with
     | _ when isZero f x || is_ninf f x || is_pinf f x || is_nan f x -> false
-    | x -> CER.Infix.(CER.Infix.abs (wDecode f x) >= wDecode f (minNormalOf f))
+    | _ ->
+      let x = to_int_repr f x in
+      (match (signednessOf f) with
+      | Signed -> Util.machine_idiv (x mod (Util.ipow2 (k - 1))) (Util.ipow2 (p - 1)) > 0
+      | Unsigned -> Util.machine_idiv x (Util.ipow2 (p - 1)) > 0)
 
   let isSubnormal (f : Format.t) (x : t) : bool =
     match x with
@@ -1827,7 +1831,7 @@ module Float = struct
   let map_wabs (x : CER.t list) : (CER.t, string) Result.t list = List.map wAbs x
 
   let reduce_wMaximumFinite (x : CER.t list) : (CER.t, string) Result.t =
-    reduce wMaximumFinite (CER.NaN :: x)
+    reduce wMaximumFinite (CER.zero :: x)
 
   let map_convert_maf s' cx =
     List.map (fun cx_i -> if s' = CER.zero then Ok CER.zero else wDivide cx_i s') cx

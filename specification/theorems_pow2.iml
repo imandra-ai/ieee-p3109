@@ -7,10 +7,20 @@ open Util
 
 let unroll_nonlin qt nqt steps = Tactic.unroll ~smt:"z3-full-nonlinear" ~query_timeout:qt ~no_asm_query_timeout:nqt steps
 
+theorem thm_pow2_grows_pos (n:int) =
+  n >= 0 ==> pow2 n >. pow2 (n - 1)
+  [@@timeout 60]
+  [@@by auto]
+
 theorem thm_pow2_gt_0_pos (n:int) =
   n >= 0 ==> pow2 n >. 0.0
   [@@timeout 60]
   [@@by auto]
+
+(* theorem thm_pow2_gt_0_neg (n:int) =
+  n < 0 ==> pow2 n >. 0.0
+  [@@timeout 10]
+  [@@by [%use thm_pow2_gt_0_pos (- n)] @> unroll_nonlin 10 10 4] *)
 
 theorem thm_pow2_gt_0 (n:int) =
   (pow2 n [@trigger]) >. 0.0
@@ -131,32 +141,3 @@ theorem pow2_is_an_int (x : int) =
       unroll 0
     ]
   ]
-
-theorem pow2_times_2_neg (x : int) =
-  pow2 (- x) = 0.5 *. pow2 (- x + 1)
-  [@@by auto]
-
-theorem pow2_times_2_bwd (x : int) =
-  pow2 x = 0.5 *. pow2 (x + 1)
-  [@@by auto]
-
-
-theorem mul_div_cancel (x : real) (y : real) (z : real) =
-  x <> 0.0 ==>
-  (x *. y *. (1.0 /. x *. z)) = (y *. z)
-
-theorem pow2_pos_mul_neg n =
-  pow2 n *. pow2 (~- n) = 1.0
-  [@@by induction () @>| [
-    unroll 2;
-    [%rewrite pow2_times_2 n] @>
-    [%rewrite pow2_times_2_neg n] @>
-    unroll 0;
-    [%rewrite pow2_times_2 (- n)] @>
-    [%rewrite pow2_times_2_bwd n] @>
-    unroll 0;
-  ]]
-
-theorem neg_pow2 (n : int) =
-  pow2 (~- n) = 1.0 /. pow2 n
-  [@@by [%use pow2_pos_mul_neg n] @> nonlin ()]

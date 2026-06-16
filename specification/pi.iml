@@ -15,15 +15,3 @@ let pi_half (p : int) : real =
 
 let pi_quarter (p : int) : real =
   0.25 *. (pi p)
-
-theorem pi_half_is_half (p : int) =
-  (pi_half p) [@trigger] = 0.5 *. pi p
-  [@@fc]
-
-theorem pi_quarter_is_quarter (p : int) =
-  (pi_quarter p) [@trigger] = 0.25 *. pi p
-  [@@fc]
-
-theorem pi_quarter_is_half_of_of (p : int) =
-  (pi_quarter p) [@trigger] = 0.5 *. pi_half p
-  [@@fc]

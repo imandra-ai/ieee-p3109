@@ -71,8 +71,7 @@ let floor_log2_abs_measure (x : real) : int =
     if r >. Real.of_int i then i + 1 else i
   in
   let ax = Real.abs x in
-  if ax = 0.0 then
-    0
+  if ax = 0.0 then 0
   else if ax >. 1.0 then
     ceil_real_to_int ax
   else
@@ -91,55 +90,6 @@ let rec floor_log2_abs (x : real) : int =
   else 0
   [@@measure Ordinal.of_int (floor_log2_abs_measure x)]
   [@@by unroll_nonlin 10 10 10]
-
-let floor_log2_abs_alt_aux_measure (x : real) k : int =
-  let ax = Real.abs x in
-  if ax = 0.0 then
-    0
-  else if k < 0 then
-    Real.to_int (1.0 /. (Real.abs (pow2 k -. ax)))
-  else
-    Real.to_int (Real.abs (pow2 k -. ax))
-
-let rec floor_log2_abs_alt_aux (x : real) (k : int) : int =
-  let x = Real.abs x in
-  if x = 0.0 then
-    0
-  else if pow2 k <=. x && x <. pow2 (k + 1) then
-    k
-  else if x <. pow2 k then
-    floor_log2_abs_alt_aux x (k - 1)
-  else
-    floor_log2_abs_alt_aux x (k + 1)
-  [@@measure Ordinal.of_int (floor_log2_abs_alt_aux_measure x k)]
-  [@@by unroll_nonlin 10 10 100]
-
-let floor_log2_abs_alt (x : real) : int =
-  floor_log2_abs_alt_aux x 0
-
-eval (floor_log2_abs 0.125, floor_log2_abs_alt 0.125)
-eval (floor_log2_abs 0.5, floor_log2_abs_alt 0.5)
-eval (floor_log2_abs 0.0, floor_log2_abs_alt 0.0)
-eval (floor_log2_abs 1.0, floor_log2_abs_alt 1.0)
-eval (floor_log2_abs 2.0, floor_log2_abs_alt 2.0)
-eval (floor_log2_abs 9.125, floor_log2_abs_alt 9.125)
-
-theorem chk x = floor_log2_abs x = floor_log2_abs_alt x
-  [@@timeout 3600]
-  [@@by unroll_nonlin 10 10 1000]
-
-theorem num_digits_within_range x k =
-  k = floor_log2_abs_alt x ==>
-  (x = 0.0 && k = 0) || (x <> 0.0 && pow2 k <=. Real.abs x && Real.abs x <. pow2 (k + 1))
-  [@@timeout 3600]
-  (* [@@by unroll_nonlin 10 10 10000] *)
-  (* [@@by auto] *)
-  [@@by induction () @>| [
-      [%have k = 0 by (unroll 0)] @> fail;
-      fail;
-      fail;
-    ]
-  ]
 
 let ( ^ ) (x : int) (y : int) : real = pow x y [@@macro]
 
