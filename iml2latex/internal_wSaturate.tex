@@ -27,9 +27,9 @@
 \Case{\wSaturate(\SatNone, \any, -\infty, \any, \any) \gives  \mathit{{M^{lo}}}}\\
 \Case{\wSaturate(\SatNone, \ToOdd, X, \Unsigned, \any) ~\If
 X > \mathit{{M^{hi}}}\gives  \mathit{{M^{hi}}}}\\
-\Case{\wSaturate(\SatNone, \TowardZero \vee \TowardNegative, X, \any, \any) ~\If
+\Case{\wSaturate(\SatNone, \TowardZero \Or \TowardNegative, X, \any, \any) ~\If
 X > \mathit{{M^{hi}}}\gives  \mathit{{M^{hi}}}}\\
-\Case{\wSaturate(\SatNone, \TowardZero \vee \TowardPositive, X, \any, \any) ~\If
+\Case{\wSaturate(\SatNone, \TowardZero \Or \TowardPositive, X, \any, \any) ~\If
 X < \mathit{{M^{lo}}}\gives  \mathit{{M^{lo}}}}\\
 \Case{\wSaturate(\SatNone, \any, X, \Signed, \Extended) ~\If
 X < \mathit{{M^{lo}}}\gives  -\infty}\\

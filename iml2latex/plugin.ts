@@ -736,7 +736,7 @@ function print_pattern_desc(node: AST, options: Options): Doc {
       else if (is_mp_inf(args[0], args[1]))
         return "\\mp\\infty";
       else
-        return f([print_pattern(args[0], options), line, "\\vee", line, print_pattern(args[1], options)]);
+        return f([print_pattern(args[0], options), line, "\\Or", line, print_pattern(args[1], options)]);
     case "Ppat_constraint":
       // | Ppat_constraint of pattern * core_type  (** Pattern [(P : T)] *)
       // return f(["(", print_pattern(args[0], options), line, ":", line, print_core_type(args[1], options), ")"]);
