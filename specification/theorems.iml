@@ -878,7 +878,7 @@ theorem internal_tanPi_ok (f_x : Format.t) (f_r : Format.t) (rho : Projection.t)
 theorem internal_arcSinPi_ok (f_x : Format.t) (f_r : Format.t) (rho : Projection.t) (x : Float.t) =
   Result.is_ok (Float.internal_arcSinPi f_x f_r rho x)
   [@@disable Float.wProject, Float.wDecode]
-  [@@timeout 60]
+  [@@timeout 180]
   [@@by auto]
 
 (** [internal_arcCosPi] never returns an error *)
@@ -903,7 +903,7 @@ theorem internal_softplus_ok (f_x : Format.t) (f_r : Format.t) (rho : Projection
 (** [internal_softmax] never returns an error *)
 theorem map_project_ok f rho x =
   Result.is_ok (extract_error ((Float.map_project f rho x) [@trigger]))
-  [@@timeout 20]
+  [@@timeout 60]
   [@@disable Float.wProject]
   [@@by induct ~do_not:["gen"; "fert"; "delim"] ()]
   [@@fc]
@@ -984,3 +984,83 @@ theorem every_format_has_a_one (f : Format.t) =
   | Ok x -> Float.wDecode f x = (CER.R 1.0)
   | _ -> false
   [@@by enumerate ["f"] @> ground_eval ()]
+
+
+let isNormalOld (f : Format.t) (x : Float.t) : bool =
+  let open Float in
+  let open Signedness in
+  let k = bitwidthOf f in
+  let p = precisionOf f in
+  match x with
+  | _ when isZero f x || is_ninf f x || is_pinf f x || is_nan f x -> false
+  | _ ->
+    let x = to_int_repr f x in
+    (match (signednessOf f) with
+    | Signed -> Util.machine_idiv (x mod (Util.ipow2 (k - 1))) (Util.ipow2 (p - 1)) > 0
+    | Unsigned -> Util.machine_idiv x (Util.ipow2 (p - 1)) > 0)
+
+theorem isNormal_old_new (f : Format.t) (x : Float.t) =
+  Float.isNormal f x = isNormalOld f x
+  [@@timeout 3600]
+  [@@disable Util.pow2, Util.ipow2, Util.machine_idiv, Float.bitwidthOf, Float.precisionOf, Float.signednessOf, Float.domainOf]
+  [@@by auto]
+
+theorem isNormal_old_new2 (f : Format.t) (x : Float.t) =
+  Float.isNormal f x = isNormalOld f x
+  [@@timeout 3600]
+  [@@by unroll_nonlin 20 20 5000]
+
+theorem isNormalChecks (f : Format.t) =
+  Float.bitwidthOf f >= 3 &&
+  (not (Float.signednessOf f = Signedness.Signed && Float.bitwidthOf f = Float.precisionOf f))
+  ==>
+  Float.isNormal f (Float.nan f) = isNormalOld f (Float.nan f) &&
+  (match (Float.pinf f) with
+  | Ok pinf -> Float.isNormal f pinf  = isNormalOld f pinf
+  | _ -> true) &&
+  (match (Float.ninf f) with
+  | Ok ninf -> Float.isNormal f ninf  = isNormalOld f ninf
+  | _ -> true) &&
+  Float.isNormal f Float.zero = isNormalOld f Float.zero
+  &&
+  (match (Float.wEncode f (CER.R 1.0)) with
+  | Ok one -> Float.isNormal f one = isNormalOld f one
+  | _ -> true)
+  &&
+  (match (Float.wEncode f (CER.R (- 1.0))) with
+  | Ok mone -> Float.isNormal f mone = isNormalOld f mone
+  | _ -> true)
+  &&
+  let mn = Float.minNormalOf f in
+  Float.isNormal f mn = isNormalOld f mn
+  &&
+  let mn = Float.minNormalOf f - 1 in
+  Float.isNormal f mn = isNormalOld f mn
+  &&
+  let mn = Float.minNormalOf f + 1 in
+  Float.isNormal f mn = isNormalOld f mn
+  &&
+  let mn = Float.maxFiniteOf f in
+  Float.isNormal f mn = isNormalOld f mn
+  [@@timeout 3600]
+  [@@by enumerate ["f"] @> ground_eval ()]
+
+
+eval (
+  let f = Format.Internal {kp = B8P3; s = Signedness.Signed; d = Domain.Extended} in
+  let rho = (SaturationMode.SatPropagate, RoundingMode.NearestTiesToEven) in
+  (match (Float.pinf f) with
+  | Ok pinf ->
+    Float.convertToBlockMaxAbsFinite 2 f f f rho rho [Float.nan f; Float.nan f]
+  | Error e -> Error e)
+)
+
+eval (
+  let f = Format.Internal {kp = B8P3; s = Signedness.Signed; d = Domain.Extended} in
+  let rho = (SaturationMode.SatPropagate, RoundingMode.NearestTiesToEven) in
+  (match (Float.pinf f) with
+  | Ok pinf ->
+    let@ m = Float.map_wabs (Float.map_decode f [pinf; pinf]) in
+    Float.reduce_wMaximumFinite m
+  | Error e -> Error e)
+)

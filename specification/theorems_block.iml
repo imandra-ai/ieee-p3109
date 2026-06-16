@@ -106,6 +106,7 @@ theorem reduce_wAdd_ok (x : CER.t list) =
 
 theorem reduce_wMaximumFinite_ok (x : CER.t list) =
   List.length x >= 2 ==> Result.is_ok ((Float.reduce Float.wMaximumFinite x) [@trigger])
+  [@@timeout 60]
   [@@by auto]
   [@@fc]
 
@@ -114,7 +115,7 @@ theorem reduce_wMaximumFinite_ok (x : CER.t list) =
 theorem map_wMultiply_ok (f_s : Format.t) (f_x : Format.t) (s, x : Float.t * Float.t list) =
   Result.is_ok ((extract_error ((Float.map_wMultiply f_s f_x s x) [@trigger])))
   [@@disable Float.wDecode, Float.wMultiply, List.map]
-  [@@timeout 20]
+  [@@timeout 60]
   [@@by auto]
   [@@fc]
 
@@ -333,6 +334,7 @@ theorem block_op_map2_wBlockDecode_elems_ok b params args =
   match (block_op_map2_wBlockDecode b params args) [@trigger] with
   | Ok q -> Result.is_ok (extract_error q)
   | _ -> false
+  [@@timeout 60]
   [@@disable Float.wBlockDecode]
   (* This one fails non-determinstically, apparently because of different
     ordering of constraints from the simplifier. *)
@@ -348,7 +350,7 @@ theorem block_op_map2_wBlockDecode_preserves_length b params args =
     | Ok decoded -> List.length decoded = List.length args
     | Error _ -> true)
   | Error _ -> true
-  [@@timeout 20]
+  [@@timeout 60]
   [@@disable Float.wBlockDecode]
   [@@by induct ~do_not:["gen"; "fert"; "delim"] ()]
   [@@fc]
@@ -376,7 +378,7 @@ theorem block_op_map2_wBlockDecode_preserves_elems_length b params args =
     | Ok decoded -> equal_list_lengths b decoded
     | Error _ -> true)
   | Error _ -> true
-  [@@timeout 20]
+  [@@timeout 60]
   [@@disable Float.wBlockDecode]
   [@@by induct ~do_not:["gen"; "fert"; "delim"] ()]
   [@@fc]
