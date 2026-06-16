@@ -1831,7 +1831,7 @@ module Float = struct
   let map_wabs (x : CER.t list) : (CER.t, string) Result.t list = List.map wAbs x
 
   let reduce_wMaximumFinite (x : CER.t list) : (CER.t, string) Result.t =
-    reduce wMaximumFinite (CER.zero :: x)
+    reduce wMaximumFinite (CER.NaN :: x)
 
   let map_convert_maf s' cx =
     List.map (fun cx_i -> if s' = CER.zero then Ok CER.zero else wDivide cx_i s') cx
