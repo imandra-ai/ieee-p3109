@@ -1044,23 +1044,3 @@ theorem isNormalChecks (f : Format.t) =
   Float.isNormal f mn = isNormalOld f mn
   [@@timeout 3600]
   [@@by enumerate ["f"] @> ground_eval ()]
-
-
-eval (
-  let f = Format.Internal {kp = B8P3; s = Signedness.Signed; d = Domain.Extended} in
-  let rho = (SaturationMode.SatPropagate, RoundingMode.NearestTiesToEven) in
-  (match (Float.pinf f) with
-  | Ok pinf ->
-    Float.convertToBlockMaxAbsFinite 2 f f f rho rho [Float.nan f; Float.nan f]
-  | Error e -> Error e)
-)
-
-eval (
-  let f = Format.Internal {kp = B8P3; s = Signedness.Signed; d = Domain.Extended} in
-  let rho = (SaturationMode.SatPropagate, RoundingMode.NearestTiesToEven) in
-  (match (Float.pinf f) with
-  | Ok pinf ->
-    let@ m = Float.map_wabs (Float.map_decode f [pinf; pinf]) in
-    Float.reduce_wMaximumFinite m
-  | Error e -> Error e)
-)

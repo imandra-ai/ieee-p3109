@@ -138,3 +138,12 @@ lemma block_add_12 =
   =
   Ok (one, [two; four])
   [@@by ground_eval ()]
+
+verify (
+  let f = Format.Internal {kp = B8P3; s = Signedness.Signed; d = Domain.Extended} in
+  let rho = (SaturationMode.SatPropagate, RoundingMode.NearestTiesToEven) in
+  (match (Float.pinf f) with
+  | Ok pinf ->
+    Float.convertToBlockMaxAbsFinite 2 f f f rho rho [Float.nan f; Float.nan f] = Ok (Float.nan f, [Float.nan f; Float.nan f])
+  | Error e -> false)
+) [@@by ground_eval ()]
