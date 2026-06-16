@@ -1658,11 +1658,7 @@ module Float = struct
     let p = precisionOf f in
     match x with
     | _ when isZero f x || is_ninf f x || is_pinf f x || is_nan f x -> false
-    | _ ->
-      let x = to_int_repr f x in
-      (match (signednessOf f) with
-      | Signed -> Util.machine_idiv (x mod (Util.ipow2 (k - 1))) (Util.ipow2 (p - 1)) > 0
-      | Unsigned -> Util.machine_idiv x (Util.ipow2 (p - 1)) > 0)
+    | _ -> CER.Infix.(CER.Infix.abs (wDecode f x) >= wDecode f (minNormalOf f))
 
   let isSubnormal (f : Format.t) (x : t) : bool =
     match x with
