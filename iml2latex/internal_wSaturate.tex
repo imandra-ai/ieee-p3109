@@ -25,7 +25,7 @@
 \Case{\wSaturate(\SatNone, \any, -\infty, \Signed, \Extended) \gives  -\infty}\\
 \Case{\wSaturate(\SatNone, \any, -\infty, \Unsigned, \any) \gives  \NaN}\\
 \Case{\wSaturate(\SatNone, \any, -\infty, \any, \any) \gives  \mathit{{M^{lo}}}}\\
-\Case{\wSaturate(\SatNone, \ToOdd, X, \Unsigned, \any) ~\If
+\Case{\wSaturate(\SatNone, \ToOdd, X, \Unsigned, \Extended) ~\If
 X > \mathit{{M^{hi}}}\gives  \mathit{{M^{hi}}}}\\
 \Case{\wSaturate(\SatNone, \TowardZero \Or \TowardNegative, X, \any, \any) ~\If
 X > \mathit{{M^{hi}}}\gives  \mathit{{M^{hi}}}}\\

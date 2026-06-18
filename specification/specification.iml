@@ -557,7 +557,7 @@ module Float = struct
     | SatNone, _, NInf, Signed, Extended -> Ok NInf
     | SatNone, _, NInf, Unsigned, _ -> Ok NaN
     | SatNone, _, NInf, _, _ -> Ok (R m_lo)
-    | SatNone, ToOdd, R x, Unsigned, _ when x >. m_hi -> Ok (R m_hi)
+    | SatNone, ToOdd, R x, Unsigned, Extended when x >. m_hi -> Ok (R m_hi)
     | SatNone, (TowardZero | TowardNegative), R x, _, _ when x >. m_hi -> Ok (R m_hi)
     | SatNone, (TowardZero | TowardPositive), R x, _, _ when x <. m_lo -> Ok (R m_lo)
     | SatNone, _, R x, Signed, Extended when x <. m_lo -> Ok NInf
