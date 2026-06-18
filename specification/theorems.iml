@@ -971,6 +971,37 @@ theorem fma_is_add_neg (x : CER.t) (y : CER.t) (z : CER.t) =
     Float.wFMA x y z = Float.wAdd xy z
   | _ -> false
 
+theorem faa_is_add_add (x : CER.t) (y : CER.t) (z : CER.t) =
+  match (Float.wAdd x y) with
+  | Ok xpy ->
+    Float.wFAA x y z = Float.wAdd xpy z
+  | _ -> false
+
+theorem faa_is_add_add' (x : CER.t) (y : CER.t) (z : CER.t) =
+  match (Float.wAdd y z) with
+  | Ok ypz ->
+    Float.wFAA x y z = Float.wAdd x ypz
+  | _ -> false
+
+theorem add_commutes (x : CER.t) (y : CER.t) =
+  Float.wAdd x y = Float.wAdd y x
+
+theorem mul_commutes (x : CER.t) (y : CER.t) =
+  Float.wMultiply x y = Float.wMultiply y x
+
+theorem add_associates (x : CER.t) (y : CER.t) (z : CER.t)=
+  match Float.wAdd x y, Float.wAdd y z with
+  | Ok xpy, Ok ypz ->
+    Float.wAdd (xpy) z = Float.wAdd x (ypz)
+  | _ -> false
+
+theorem mul_associates (x : CER.t) (y : CER.t) (z : CER.t)=
+  match Float.wMultiply x y, Float.wMultiply y z with
+  | Ok xy, Ok yz ->
+    Float.wMultiply (xy) z = Float.wMultiply x (yz)
+  | _ -> false
+  [@@by auto]
+
 (* Saturation is idempotent *)
 theorem idem_saturate (m : real) (sat : SaturationMode.t) (rnd : RoundingMode.t) (x : CER.t) (s : Signedness.t) (d : Domain.t) =
   m >. 0.0 ==>

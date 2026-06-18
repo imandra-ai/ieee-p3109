@@ -916,18 +916,18 @@ module Float = struct
     | NInf, PInf, _ -> Ok NInf
 
     | _, _, NInf -> Ok NInf
-    | R x, NInf, R z when x >=. 0.0 -> Ok NInf
-    | R x, NInf, R z when x <. 0.0 -> Ok PInf
+    | R x, NInf, R _ when x >=. 0.0 -> Ok NInf
+    | R x, NInf, R _ when x <. 0.0 -> Ok PInf
 
     | _, _, PInf -> Ok PInf
-    | R x, PInf, R z when x >=. 0.0 -> Ok PInf
-    | R x, PInf, R z when x <. 0.0 -> Ok NInf
+    | R x, PInf, R _ when x >=. 0.0 -> Ok PInf
+    | R x, PInf, R _ when x <. 0.0 -> Ok NInf
 
-    | PInf, R y, R z when y >=. 0.0 -> Ok PInf
-    | PInf, R y, R z when y <. 0.0 -> Ok NInf
+    | PInf, R y, R _ when y >=. 0.0 -> Ok PInf
+    | PInf, R y, R _ when y <. 0.0 -> Ok NInf
 
-    | NInf, R y, R z when y >=. 0.0 -> Ok NInf
-    | NInf, R y, R z when y <. 0.0 -> Ok PInf
+    | NInf, R y, R _ when y >=. 0.0 -> Ok NInf
+    | NInf, R y, R _ when y <. 0.0 -> Ok PInf
 
     | R x, R y, R z -> Ok (R (x *. y +. z))
 
