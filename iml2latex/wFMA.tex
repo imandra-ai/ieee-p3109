@@ -19,14 +19,14 @@
 \Case{\wFMA(-\infty, -\infty, \any) \gives  +\infty}\\
 \Case{\wFMA(+\infty, -\infty, \any) \gives  -\infty}\\
 \Case{\wFMA(-\infty, +\infty, \any) \gives  -\infty}\\
-\Case{\wFMA(\any, \any, -\infty) \gives  -\infty}\\
-\Case{\wFMA(X, -\infty, \any) ~\If X \geq \zero\gives  -\infty}\\
-\Case{\wFMA(X, -\infty, \any) ~\If X < \zero\gives  +\infty}\\
 \Case{\wFMA(\any, \any, +\infty) \gives  +\infty}\\
-\Case{\wFMA(X, +\infty, \any) ~\If X \geq \zero\gives  +\infty}\\
+\Case{\wFMA(\any, \any, -\infty) \gives  -\infty}\\
+\Case{\wFMA(X, -\infty, \any) ~\If X > \zero\gives  -\infty}\\
+\Case{\wFMA(X, -\infty, \any) ~\If X < \zero\gives  +\infty}\\
+\Case{\wFMA(X, +\infty, \any) ~\If X > \zero\gives  +\infty}\\
 \Case{\wFMA(X, +\infty, \any) ~\If X < \zero\gives  -\infty}\\
-\Case{\wFMA(+\infty, Y, \any) ~\If Y \geq \zero\gives  +\infty}\\
+\Case{\wFMA(+\infty, Y, \any) ~\If Y > \zero\gives  +\infty}\\
 \Case{\wFMA(+\infty, Y, \any) ~\If Y < \zero\gives  -\infty}\\
-\Case{\wFMA(-\infty, Y, \any) ~\If Y \geq \zero\gives  -\infty}\\
+\Case{\wFMA(-\infty, Y, \any) ~\If Y > \zero\gives  -\infty}\\
 \Case{\wFMA(-\infty, Y, \any) ~\If Y < \zero\gives  +\infty}\\
 \Case{\wFMA(X, Y, Z) \gives  X \times Y + Z}\\
