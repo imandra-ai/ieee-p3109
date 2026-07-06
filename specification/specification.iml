@@ -552,16 +552,16 @@ module Float = struct
     | SatPropagate, _, R x, _, _ when x >. m_hi -> Ok (R m_hi)
     [@ocaml.doc "latex: \\\\"]
 
-    | SatNone, (TowardZero | TowardNegative), R x, _, _ when x >. m_hi -> Ok (R m_hi)
-    | SatNone, (TowardZero | TowardPositive), R x, _, _ when x <. m_lo -> Ok (R m_lo)
+    | SatNone, (TowardZero | TowardNegative), x, _, _ when CER.Infix.(x > CER.R m_hi) && x <> CER.PInf -> Ok (R m_hi)
+    | SatNone, (TowardZero | TowardPositive), x, _, _ when CER.Infix.(x < CER.R m_lo) && x <> CER.NInf -> Ok (R m_lo)
 
     | SatNone, _, PInf, _, Extended -> Ok PInf
     | SatNone, _, NInf, Signed, Extended -> Ok NInf
     | SatNone, _, NInf, Unsigned, Extended -> Ok NaN
-    | SatNone, ToOdd, R x, Unsigned, Extended when x >. m_hi -> Ok (R m_hi)
-    | SatNone, _, R x, Signed, Extended when x <. m_lo -> Ok NInf
-    | SatNone, _, R x, Unsigned, Extended when x <. m_lo -> Ok NaN
-    | SatNone, _, R x, _, Extended when x >. m_hi -> Ok PInf
+    | SatNone, ToOdd, x, Unsigned, Extended when CER.Infix.(x > CER.R m_hi) -> Ok (R m_hi)
+    | SatNone, _, x, Signed, Extended when CER.Infix.(x < CER.R m_lo) -> Ok NInf
+    | SatNone, _, x, Unsigned, Extended when CER.Infix.(x < CER.R m_lo) -> Ok NaN
+    | SatNone, _, x, _, Extended when CER.Infix.(x > CER.R m_hi) -> Ok PInf
 
     | SatNone, _, _, _, Finite -> Ok NaN
 

@@ -6,6 +6,7 @@ const { group, indent, dedent, join, ifBreak, breakParent, line, hardline, softl
 const iml2json = require('./iml2json.bc').iml2json;
 import { assert } from 'node:console';
 import console from "node:console";
+import { textChangeRangeIsUnchanged } from "typescript";
 
 var PREFIX = "w";
 var function_names: string[] | undefined = undefined;
@@ -335,6 +336,9 @@ function print_longident(node: AST, options: Options): Doc {
       return [id2latex(args[0])];
     case "Ldot":
       // | Ldot of t * string
+      if (args.length == 2 && args[0] instanceof Array && args[0][0] == "Lident" && args[0][1] == "CER")
+        return [id2latex(args[1])];
+      else
       return [print_longident(args[0], options), ".", softline, args[1]];
     case "Lapply":
       // | Lapply of t * t
@@ -1382,6 +1386,9 @@ function print_expression_desc(node: AST, options: Options): Doc {
       else if (id == "::" && args[1] && args[1].pexp_desc[0] == "Pexp_tuple") {
         return print_list(args[1], options);
       }
+      else if (id instanceof Array && id.length == 4 && id[0] instanceof Array && id[0].length == 1 && id[0][0] == "CER" && id[1] == "." && id[3] == "R") {
+        return print_expression(args[1], options);
+      }
       else {
         let r = [id];
         if (args[1]) {
@@ -1524,10 +1531,11 @@ function print_expression_desc(node: AST, options: Options): Doc {
         return print_expression(args[1], options);
       }
       else
-        return f([
-          ...par_if(true, [
-            ...print_open_declaration(args[0], options, false), ".(", softline,
-            ...print_expression(args[1], options)]), softline, ")"]);
+        return print_expression(args[1], options); // TODO: This only for CER.Infix
+    // return f([
+    //   ...par_if(true, [
+    //     ...print_open_declaration(args[0], options, false), ".(", softline,
+    //     ...print_expression(args[1], options)]), softline, ")"]);
     case "Pexp_letop":
       // | Pexp_letop of letop
       //     (** - [let* P = E0 in E1]
