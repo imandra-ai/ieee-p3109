@@ -637,25 +637,9 @@ function print_pattern_desc(node: AST, options: Options): Doc {
       // | Ppat_any  (** The pattern [_]. *)
       return "\\any";
     case "Ppat_var": {
-      let r;
-      if (
-        // (
-        // (args[0].txt[0] != 's' &&
-        // options.hasOwnProperty("pattern_reals") &&
-        // options.pattern_reals instanceof Array &&
-        // options.pattern_reals.includes(args[0].txt))
-        // )
-        // || options.move_everything_up
-        true)
-        r = capitalize_first(print_string_loc(args[0], options));
-      else
-        r = print_string_loc(args[0], options);
-      if (r.includes("_")) {
-        if (options.move_everything_up)
-          r = r.replace("_", "^");
-        else
-          r = r.replace("_", "_{") + "}";
-      }
+      let r = capitalize_first(print_string_loc(args[0], options));
+      if (r.includes("_"))
+        r = r.replace("_", "_{") + "}";
       if (r.length > 1) r = "\\mathit{" + r + "}";
       return r;
     }
@@ -1129,24 +1113,22 @@ function print_expression_desc(node: AST, options: Options): Doc {
       if (q.name != lid)
         return q.name
       else {
-        if (
-          (options.hasOwnProperty("is_real") && options.is_real) ||
-          (options.hasOwnProperty("pattern_reals") &&
-            options.pattern_reals instanceof Array &&
-            options.pattern_reals.includes(args[0].txt[1])) ||
-          options.move_everything_up ||
-          true) {
-          let n = print_longident_loc(args[0], options)[0];
-          r = [
-            (n.startsWith('s') || n.startsWith('{s')) ? // 's.*' are scaling factors
-              n :
-              capitalize_first(n)];
-        }
-        else
-          r = print_longident_loc(args[0], options);
+        let n = print_longident_loc(args[0], options)[0];
+        r = [
+          (n.startsWith('s') || n.startsWith('{s')) ? // 's.*' are scaling factors
+            n :
+            capitalize_first(n)];
         if (r[0].length > 1) r = ["\\mathit{" + r[0] + "}"];
-        if (options.move_everything_up && r[0].includes("_"))
-          return r[0].replace("_", "^");
+        if (options.move_everything_up && r[0].includes("_")) {
+          if (r[0] == '\\mathit{{M_{lo}}}')
+            return "\\Mlo"
+          else if (r[0] == '\\mathit{{M_{hi}}}')
+            return "\\Mhi"
+          else {
+            let q = r[0].split("_")
+            return q[0] + "^\\text" + q[1];
+          }
+        }
         else
           return r;
       }
@@ -1861,9 +1843,6 @@ function print_structure_item_desc(node: AST, options: Options): Doc {
             fname = "\\" + PREFIX + "Saturate"
             options.move_everything_up = true;
           }
-
-          if (fname == "\\" + PREFIX + "MaximumNumber" || fname == "\\" + PREFIX + "MinimumNumber")
-            options.move_everything_up = true;
 
 
           while (fundef.pexp_desc[0] == "Pexp_let") {

@@ -1,38 +1,27 @@
 \noindent\Case{\wSaturate(\any, \any, \NaN, \any, \any) \gives  \NaN}\\
-\Case{\wSaturate(\any, \any, X, \any, \any) ~\If
-\mathit{{M^{lo}}} \leq X \And X \leq \mathit{{M^{hi}}}\gives  X \\}\\
-\Case{\wSaturate(\SatFinite, \any, +\infty, \any, \any) \gives
- \mathit{{M^{hi}}}}\\
-\Case{\wSaturate(\SatFinite, \any, -\infty, \any, \any) \gives
- \mathit{{M^{lo}}}}\\
-\Case{\wSaturate(\SatFinite, \any, X, \any, \any) ~\If X < \mathit{{M^{lo}}}\gives
- \mathit{{M^{lo}}}}\\
-\Case{\wSaturate(\SatFinite, \any, X, \any, \any) ~\If X > \mathit{{M^{hi}}}\gives
- \mathit{{M^{hi}}} \\}\\
+\Case{\wSaturate(\any, \any, X, \any, \any) ~\If \Mlo \leq X \And X \leq \Mhi\gives
+ X \\}\\
+\Case{\wSaturate(\SatFinite, \any, +\infty, \any, \any) \gives  \Mhi}\\
+\Case{\wSaturate(\SatFinite, \any, -\infty, \any, \any) \gives  \Mlo}\\
+\Case{\wSaturate(\SatFinite, \any, X, \any, \any) ~\If X < \Mlo\gives  \Mlo}\\
+\Case{\wSaturate(\SatFinite, \any, X, \any, \any) ~\If X > \Mhi\gives  \Mhi \\}\\
 \Case{\wSaturate(\SatPropagate, \any, +\infty, \any, \Extended) \gives  +\infty}\\
-\Case{\wSaturate(\SatPropagate, \any, +\infty, \any, \any) \gives
- \mathit{{M^{hi}}}}\\
+\Case{\wSaturate(\SatPropagate, \any, +\infty, \any, \any) \gives  \Mhi}\\
 \Case{\wSaturate(\SatPropagate, \any, -\infty, \Signed, \Extended) \gives
  -\infty}\\
-\Case{\wSaturate(\SatPropagate, \any, -\infty, \any, \any) \gives
- \mathit{{M^{lo}}}}\\
-\Case{\wSaturate(\SatPropagate, \any, X, \any, \any) ~\If X < \mathit{{M^{lo}}}\gives
- \mathit{{M^{lo}}}}\\
-\Case{\wSaturate(\SatPropagate, \any, X, \any, \any) ~\If X > \mathit{{M^{hi}}}\gives
- \mathit{{M^{hi}}} \\}\\
+\Case{\wSaturate(\SatPropagate, \any, -\infty, \any, \any) \gives  \Mlo}\\
+\Case{\wSaturate(\SatPropagate, \any, X, \any, \any) ~\If X < \Mlo\gives  \Mlo}\\
+\Case{\wSaturate(\SatPropagate, \any, X, \any, \any) ~\If X > \Mhi\gives  \Mhi \\}\\
 \Case{\wSaturate(\SatNone, \TowardZero \Or \TowardNegative, X, \any, \any) ~\If
-X > \mathit{{M^{hi}}} \And X \neq +\infty\gives  \mathit{{M^{hi}}}}\\
+X > \Mhi \And X \neq +\infty\gives  \Mhi}\\
 \Case{\wSaturate(\SatNone, \TowardZero \Or \TowardPositive, X, \any, \any) ~\If
-X < \mathit{{M^{lo}}} \And X \neq -\infty\gives  \mathit{{M^{lo}}}}\\
+X < \Mlo \And X \neq -\infty\gives  \Mlo}\\
 \Case{\wSaturate(\SatNone, \any, +\infty, \any, \Extended) \gives  +\infty}\\
 \Case{\wSaturate(\SatNone, \any, -\infty, \Signed, \Extended) \gives  -\infty}\\
 \Case{\wSaturate(\SatNone, \any, -\infty, \Unsigned, \Extended) \gives  \NaN}\\
-\Case{\wSaturate(\SatNone, \ToOdd, X, \Unsigned, \Extended) ~\If
-X > \mathit{{M^{hi}}}\gives  \mathit{{M^{hi}}}}\\
-\Case{\wSaturate(\SatNone, \any, X, \Signed, \Extended) ~\If
-X < \mathit{{M^{lo}}}\gives  -\infty}\\
-\Case{\wSaturate(\SatNone, \any, X, \Unsigned, \Extended) ~\If
-X < \mathit{{M^{lo}}}\gives  \NaN}\\
-\Case{\wSaturate(\SatNone, \any, X, \any, \Extended) ~\If X > \mathit{{M^{hi}}}\gives
- +\infty}\\
+\Case{\wSaturate(\SatNone, \ToOdd, X, \Unsigned, \Extended) ~\If X > \Mhi\gives
+\Mhi}\\
+\Case{\wSaturate(\SatNone, \any, X, \Signed, \Extended) ~\If X < \Mlo\gives  -\infty}\\
+\Case{\wSaturate(\SatNone, \any, X, \Unsigned, \Extended) ~\If X < \Mlo\gives  \NaN}\\
+\Case{\wSaturate(\SatNone, \any, X, \any, \Extended) ~\If X > \Mhi\gives  +\infty}\\
 \Case{\wSaturate(\SatNone, \any, \any, \any, \Finite) \gives  \NaN}\\
