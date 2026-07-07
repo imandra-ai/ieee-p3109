@@ -7,6 +7,7 @@ const iml2json = require('./iml2json.bc').iml2json;
 import { assert } from 'node:console';
 import console from "node:console";
 import { textChangeRangeIsUnchanged } from "typescript";
+import { NONAME } from "node:dns";
 
 var PREFIX = "w";
 var function_names: string[] | undefined = undefined;
@@ -164,34 +165,50 @@ function ifnonempty(x, d: Doc): Doc[] {
 
 enum Notation { None, Infix, Prefix, Outfix }
 enum Associativity { None, Left, Right }
-
+enum Parentheses { None, Inside, Outside }
 class PrecedenceInfo {
   name: string;
   notation: Notation;
   associativity: Associativity;
   precedence: number;
+  parentheses: Parentheses;
 
   constructor(name: string,
     notation: Notation,
     associativity: Associativity,
-    precedence: number) {
+    precedence: number,
+    parentheses?: Parentheses) {
     this.name = name;
     this.notation = notation;
     this.associativity = associativity;
     this.precedence = precedence;
+    this.parentheses = parentheses ?? Parentheses.Inside;
   }
 }
 
 function operator_precedence_info(op: string | undefined, more_than_one_arg = false): PrecedenceInfo {
   // https://ocaml.org/manual/5.3/expr.html#ss:precedence-and-associativity
 
+  // Strip module info
+  if (op != undefined) {
+    let i = op?.indexOf(".");
+    while (i >= 0 && i < op.length - 1) {
+      op = op?.substring(i + 1);
+      i = op?.indexOf(".");
+    }
+  }
+
+
   if (op !== undefined) {
 
     // Not sure ~- is handled correctly here.
 
     // prefix-symbol
-    if ((op.startsWith("!") || op.startsWith("?") || op.startsWith("~")) && op.length > 1 && op != "~-" && op != "~-.")
+    if ((op.startsWith("!") || op.startsWith("?") || op.startsWith("~")) && op.length > 1 && op != "~-" && op != "~-.") {
+      if (op[0] == "~") op = op.substring(1);
+      if (op.slice(-1) == ".") op = op.substring(0, op.length - 1);
       return new PrecedenceInfo(op, Notation.Prefix, Associativity.None, 20);
+    }
     // . .( .[ .{ (see section 12.11)
     if (op.startsWith("#"))
       return new PrecedenceInfo(op, Notation.Infix, Associativity.Left, 18);
@@ -199,8 +216,11 @@ function operator_precedence_info(op: string | undefined, more_than_one_arg = fa
     if (op == "assert" || op == "lazy") // rest at the bottom.
       return new PrecedenceInfo(op, Notation.Prefix, Associativity.Left, 17);
     // - -. (prefix)
-    if ((op == "-" || op == "-." || op == "~-" || op == "~-.") && !more_than_one_arg)
+    if ((op == "-" || op == "-." || op == "~-" || op == "~-.") && !more_than_one_arg) {
+      if (op[0] == "~") op = op.substring(1);
+      if (op.slice(-1) == ".") op = op.substring(0, op.length - 1);
       return new PrecedenceInfo(op, Notation.Prefix, Associativity.None, 16);
+    }
     // **… lsl lsr asz
     if (op.startsWith("**") || op == "lsl" || op == "lsr" || op == "asr")
       return new PrecedenceInfo(op, Notation.Infix, Associativity.Right, 15);
@@ -213,6 +233,8 @@ function operator_precedence_info(op: string | undefined, more_than_one_arg = fa
     // ::
     if (op == "::")
       return new PrecedenceInfo(op, Notation.Infix, Associativity.Right, 12);
+    if (op == "^.") // We use this one slightly differently
+      return new PrecedenceInfo("^", Notation.Infix, Associativity.Right, 13);
     // @… ^…
     if (op.startsWith("@") || op.startsWith("^"))
       return new PrecedenceInfo(op, Notation.Infix, Associativity.Right, 11);
@@ -253,42 +275,42 @@ function operator_precedence_info(op: string | undefined, more_than_one_arg = fa
       return new PrecedenceInfo("<==>", Notation.Infix, Associativity.None, 8.1);
   }
 
-  if (op == "Real.abs")
+  if (op == "abs")
     return new PrecedenceInfo("|", Notation.Outfix, Associativity.None, 17);
-  else if (op == "Real.min")
+  else if (op == "min")
     return new PrecedenceInfo("\\Min", Notation.Prefix, Associativity.Left, 17);
-  else if (op == "Real.max")
+  else if (op == "max")
     return new PrecedenceInfo("\\Max", Notation.Prefix, Associativity.Left, 17);
-  else if (op == "Util.pow2")
-    return new PrecedenceInfo("2^", Notation.Prefix, Associativity.None, 15);
-  else if (op == "Util.reciprocal")
-    return new PrecedenceInfo("1/", Notation.Prefix, Associativity.None, 12);
-  else if (op == "Exp.exp")
+  else if (op == "pow2")
+    return new PrecedenceInfo("2^", Notation.Prefix, Associativity.None, 17);
+  else if (op == "reciprocal")
+    return new PrecedenceInfo("1/", Notation.Prefix, Associativity.None, 14);
+  else if (op == "exp")
     return new PrecedenceInfo("e^", Notation.Prefix, Associativity.None, 14);
-  else if (op == "Log.log")
-    return new PrecedenceInfo("log_e", Notation.Prefix, Associativity.Left, 17);
-  else if (op == "Log.log2")
-    return new PrecedenceInfo("log_2", Notation.Prefix, Associativity.Left, 17);
-  else if (op == "Pi.pi")
-    return new PrecedenceInfo("pi", Notation.Prefix, Associativity.Left, 17);
-  else if (op == "Pi.pi_half")
-    return new PrecedenceInfo("pi_half", Notation.Prefix, Associativity.Left, 17);
-  else if (op == "Pi.pi_quarter")
-    return new PrecedenceInfo("pi_quarter", Notation.Prefix, Associativity.Left, 17);
+  else if (op == "exp2")
+    return new PrecedenceInfo("2^", Notation.Prefix, Associativity.None, 14);
+  else if (op == "log" || op == "ln")
+    return new PrecedenceInfo("\\log_e", Notation.Prefix, Associativity.Left, 17, Parentheses.Outside);
+  else if (op == "log2")
+    return new PrecedenceInfo("\\log_2", Notation.Prefix, Associativity.Left, 17, Parentheses.Outside);
+  else if (op == "pi")
+    return new PrecedenceInfo("\\pi", Notation.Prefix, Associativity.Left, 17, Parentheses.None);
+  else if (op == "pi_half")
+    return new PrecedenceInfo("\\frac{\\pi}{2}", Notation.Prefix, Associativity.Left, 17, Parentheses.None);
   else if (
     op == "sin" || op == "cos" || op == "tan" || op == "sinh" || op == "cosh" || op == "tanh" ||
     op == "arcsin" || op == "arccos" || op == "arctan" || op == "arcsinh" || op == "arccosh" || op == "arctanh"
   )
-    return new PrecedenceInfo(op, Notation.Prefix, Associativity.Left, 17);
-  else if (op == "sin_pi" || op == "cos_pi" || op == "tan_pi" || op == "arcsin_pi" || op == "arccos_pi" || op == "arctan_pi")
-    return new PrecedenceInfo(op, Notation.Prefix, Associativity.Left, 17);
-  else if (op == "Util.ripow")
-    return new PrecedenceInfo("^", Notation.Infix, Associativity.None, 13);
-  else if (op == "Sqrt.sqrt")
-    return new PrecedenceInfo("\\sqrt", Notation.Prefix, Associativity.Left, 12);
+    return new PrecedenceInfo("\\" + op, Notation.Prefix, Associativity.Left, 18, Parentheses.Outside);
+  else if (op == "sqrt")
+    return new PrecedenceInfo("\\sqrt", Notation.Prefix, Associativity.Left, 12, Parentheses.None);
+  else if (op == "id")
+    return new PrecedenceInfo("", Notation.Prefix, Associativity.Left, 17, Parentheses.None);
+  else if (op?.startsWith("w"))
+    return new PrecedenceInfo("\\" + op, Notation.Prefix, Associativity.Left, 14);
 
   // function application, constructor application, tag application
-  return new PrecedenceInfo(op, Notation.Prefix, Associativity.Left, 17);
+  return new PrecedenceInfo(op ?? "", Notation.Prefix, Associativity.Left, 17);
 }
 
 function operator_precedence(op: string): number {
@@ -336,10 +358,10 @@ function print_longident(node: AST, options: Options): Doc {
       return [id2latex(args[0])];
     case "Ldot":
       // | Ldot of t * string
-      if (args.length == 2 && args[0] instanceof Array && args[0][0] == "Lident" && args[0][1] == "CER")
+      if (args.length == 2 && args[0] instanceof Array && args[0][0] == "Lident" && (args[0][1] == "CER" || args[0][1] == "CERR"))
         return [id2latex(args[1])];
       else
-      return [print_longident(args[0], options), ".", softline, args[1]];
+        return [print_longident(args[0], options), ".", softline, args[1]];
     case "Lapply":
       // | Lapply of t * t
       niy();
@@ -615,7 +637,6 @@ function print_pattern_desc(node: AST, options: Options): Doc {
       // | Ppat_any  (** The pattern [_]. *)
       return "\\any";
     case "Ppat_var": {
-      // | Ppat_var of string loc  (** A variable pattern such as [x] *)
       let r;
       if (
         // (
@@ -792,13 +813,13 @@ function print_value_constraint(node: AST, options: Options): Doc {
 function has_nolatex(attrs): boolean {
   return attrs.find((x) => {
     return (x.attr_name.txt == "ocaml.doc" || x.attr_name.txt == "ocaml.text") && get_attr_payload_string(x) == "nolatex";
-  });
+  }) ?? false;
 };
 
 function has_latexpar(attrs): boolean {
   return attrs.find((x) => {
     return (x.attr_name.txt == "ocaml.doc" || x.attr_name.txt == "ocaml.text") && get_attr_payload_string(x) == "latexpar";
-  });
+  }) ?? false;
 };
 
 function get_latex(attrs): string | undefined {
@@ -1062,6 +1083,10 @@ function is_neg_const(x: AST): boolean {
       Number(x.pexp_desc[1].pconst_desc[1]) < 0);
 }
 
+function is_ident(x: AST): boolean {
+  return x.pexp_desc[0] == "Pexp_ident";
+}
+
 function is_infix_op(x: AST): boolean {
   const is_id = x.pexp_desc[0] == "Pexp_ident";
   if (is_id) {
@@ -1095,29 +1120,36 @@ function print_expression_desc(node: AST, options: Options): Doc {
       if (args[0].txt instanceof Array && args[0].txt.length == 2) {
         if (args[0].txt[1] == "sigma")
           return "\\sigma";
-        if (args[0].txt[1] == "delta")
+        else if (args[0].txt[1] == "delta")
           return "\\Delta";
       }
-      if (
-        (options.hasOwnProperty("is_real") && options.is_real) ||
-        (options.hasOwnProperty("pattern_reals") &&
-          options.pattern_reals instanceof Array &&
-          options.pattern_reals.includes(args[0].txt[1])) ||
-        options.move_everything_up ||
-        true) {
-        let n = print_longident_loc(args[0], options)[0];
-        r = [
-          (n.startsWith('s') || n.startsWith('{s')) ? // 's.*' are scaling factors
-            n :
-            capitalize_first(n)];
+      // Check if this is an operator without arguments (which would have been turned into a Pexp_ident).
+      let lid = longident2string(args[0].txt);
+      let q = operator_precedence_info(lid, false);
+      if (q.name != lid)
+        return q.name
+      else {
+        if (
+          (options.hasOwnProperty("is_real") && options.is_real) ||
+          (options.hasOwnProperty("pattern_reals") &&
+            options.pattern_reals instanceof Array &&
+            options.pattern_reals.includes(args[0].txt[1])) ||
+          options.move_everything_up ||
+          true) {
+          let n = print_longident_loc(args[0], options)[0];
+          r = [
+            (n.startsWith('s') || n.startsWith('{s')) ? // 's.*' are scaling factors
+              n :
+              capitalize_first(n)];
+        }
+        else
+          r = print_longident_loc(args[0], options);
+        if (r[0].length > 1) r = ["\\mathit{" + r[0] + "}"];
+        if (options.move_everything_up && r[0].includes("_"))
+          return r[0].replace("_", "^");
+        else
+          return r;
       }
-      else
-        r = print_longident_loc(args[0], options);
-      if (r[0].length > 1) r = ["\\mathit{" + r[0] + "}"];
-      if (options.move_everything_up && r[0].includes("_"))
-        return r[0].replace("_", "^");
-      else
-        return r;
     }
     case "Pexp_constant":
       // | Pexp_constant of constant
@@ -1211,8 +1243,13 @@ function print_expression_desc(node: AST, options: Options): Doc {
             r = [
               ...print_arg_label(op_args[0][0], options),
               ...par_if(
-                op_info_left.precedence < op_info.precedence ||
-                (op_info_left.precedence == op_info.precedence && op_info.associativity == Associativity.Right),
+                !is_ident(op_args[0][1]) &&
+                ((op_info_left.precedence < op_info.precedence &&
+                  op_info_left.notation == Notation.Prefix && op_info_left.parentheses == Parentheses.Outside) ||
+                  (op_info_left.precedence < op_info.precedence ||
+                    (op_info_left.precedence == op_info.precedence && op_info.associativity == Associativity.Right))) ||
+                (// Hack - the outside par condition isn't quite right yet.
+                  op_info.name == "/." && op_info_left.notation == Notation.Prefix && op_info_left.parentheses == Parentheses.Outside),
                 print_expression(op_args[0][1], options))];
           }
           let opname = op_info.name;
@@ -1227,9 +1264,13 @@ function print_expression_desc(node: AST, options: Options): Doc {
             r = r.concat([
               ...print_arg_label(op_args[1][0], options),
               ...par_if(
-                // op_info_right.precedence < op_info.precedence ||
-                // (op_info_right.precedence == op_info.precedence && op_info.associativity == Associativity.Left),
-                false,
+                !is_ident(op_args[1][1]) && (
+                  (op_info_right.precedence < op_info.precedence &&
+                    op_info_right.notation == Notation.Prefix && op_info_right.parentheses == Parentheses.Outside) ||
+                  // op_info_right.precedence < op_info.precedence ||
+                  // (op_info_right.precedence == op_info.precedence && op_info.associativity == Associativity.Left)
+                  false
+                ),
                 print_expression(op_args[1][1], options))]);
           }
           return f(r);
@@ -1241,66 +1282,33 @@ function print_expression_desc(node: AST, options: Options): Doc {
             return [
               ...print_arg_label(arg[0], options),
               ...par_if(
-                op_info_arg.precedence < op_info.precedence ||
-                (op_info_arg.precedence == op_info.precedence &&
-                  (/* is_apply_with_args(arg[1]) || */ is_construct_with_args_except_R(arg[1]) || is_neg_const(arg[1]) || is_infix_op(arg[1]))),
+                !is_ident(arg[1]) && (
+                  (op_info_arg.precedence < op_info.precedence &&
+                    op_info_arg.notation == Notation.Prefix && op_info_arg.parentheses == Parentheses.Outside) ||
+                  op_info_arg.precedence < op_info.precedence ||
+                  (op_info_arg.precedence == op_info.precedence &&
+                    (is_construct_with_args_except_R(arg[1]) || is_neg_const(arg[1]) || is_infix_op(arg[1])))),
                 print_expression(arg[1], options))];
           }));
           let opname = op_info.name;
-          if (opname == "-.") opname = "-";
-          else if (opname == "~-.") opname = "-";
-          // Drop the approximation precision from some operators
-          if ([
-            "e^", "\\sqrt",
-            "log_e", "log_2", "Exp.exp2", "Log.ln",
-            "sin", "cos", "tan",
-            "sinh", "cosh", "tanh",
-            "arcsin", "arccos", "arctan",
-            "arcsinh", "arccosh", "arctanh",
-            "pi", "pi_half", "pi_quarter", "arctan2",
-            "sin_pi", "cos_pi", "tan_pi",
-            "arcsin_pi", "arccos_pi", "arctan_pi"
-          ].indexOf(opname) >= 0
-          ) { r.pop(); r.pop(); }
-          let want_par = false;
-          if (opname == "Exp.exp2")
-            opname = "2^";
-          else if (opname == "Log.ln")
-            opname = "log_e"
-          else if (opname == "pi")
-            opname = "\\pi";
-          else if (opname == "pi_half")
-            opname = "\\frac{\\pi}{2}";
-          else if (opname == "pi_quarter")
-            opname = "\\frac{\\pi}{4}";
-          if ([
-            "log_e", "log_2",
-            "sin", "cos", "tan",
-            "sinh", "cosh", "tanh",
-            "arcsin", "arccos", "arctan",
-            "arcsinh", "arccosh", "arctanh"
-          ].indexOf(opname) >= 0) {
-            opname = "\\" + opname;
-            want_par = false;
-          }
-          if (opname.startsWith("\\" + PREFIX)) {
-            want_par = true;
-          }
-          else if (opname.startsWith("w")) {
-            opname = "\\" + opname;
-            want_par = true;
-          }
-          if (opname == "arcsin_pi" || opname == "arccos_pi" || opname == "arctan_pi")
-            return f(["\\" + opname.substring(0, opname.length - 3), "{", [indent([line, "(", ...r, ")", "/", "\\pi"])], "}"]);
+          if (r.length == 0)
+            return opname;
+          else if (!opname)
+            return f([par_if(
+              op_info.associativity != Associativity.None &&
+              op_info.parentheses == Parentheses.Inside,
+              r)]);
           else
-            return f([opname, "{", par_if(r.length > 1 || want_par, [indent([line, ...r])]), "}"]);
+            return f([opname, "{", par_if(
+              op_info.associativity != Associativity.None &&
+              op_info.parentheses == Parentheses.Inside,
+              [indent([line, ...r])]), "}"]);
         }
         case Notation.Outfix: {
           const r: Doc[] = join(line, op_args.map(arg => {
-            // const op_info_arg = op_info_of_expr(arg[1]);
             return [print_expression(arg[1], options)];
           }));
-          return f([op_info.name, indent([line, ...r]), op_info.name]);
+          return f([op_info.name, indent([...r]), op_info.name]);
         }
         case Notation.None: {
           return f([

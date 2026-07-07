@@ -83,8 +83,6 @@ let pi = Ok (R (Pi.pi approx))
 
 let pi_half = Ok (R (0.5 *. Pi.pi approx))
 
-let pi_quarter = Ok (R (0.25 *. Pi.pi approx))
-
 let sin x =
   match x with
   | R x -> Ok (R (sin x approx))

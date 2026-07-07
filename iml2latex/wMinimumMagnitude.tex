@@ -4,9 +4,9 @@
 \Case{\wMinimumMagnitude(-\infty, -\infty) \gives  -\infty}\\
 \Case{\wMinimumMagnitude(+\infty, -\infty) \gives  -\infty}\\
 \Case{\wMinimumMagnitude(-\infty, +\infty) \gives  -\infty}\\
-\Case{\wMinimumMagnitude(\pm\infty, Y) \gives  Y}\\
-\Case{\wMinimumMagnitude(X, \pm\infty) \gives  X}\\
-\Case{\wMinimumMagnitude(X, Y) ~\If | X| < | Y|\gives  X}\\
-\Case{\wMinimumMagnitude(X, Y) ~\If | X| > | Y|\gives  Y}\\
-\Case{\wMinimumMagnitude(X, Y) ~\If | X| = | Y|\gives \\\phantom{\qquad\wMinimumMagnitude(X,
-Y) } \If X < Y \Then X \Else Y}\\
+\Case{\wMinimumMagnitude(\pm\infty, Y) \gives Y}\\
+\Case{\wMinimumMagnitude(X, \pm\infty) \gives X}\\
+\Case{\wMinimumMagnitude(X, Y) ~\If |X| < |Y|\gives X}\\
+\Case{\wMinimumMagnitude(X, Y) ~\If |X| > |Y|\gives Y}\\
+\Case{\wMinimumMagnitude(X, Y) ~\If |X| = |Y|\gives \\\phantom{\qquad\wMinimumMagnitude(X,
+Y) }\If  X <  Y \Then X \Else Y}\\

@@ -11,9 +11,9 @@
 \Case{\csname wArcTan2Pi\endcsname(\zero, X) ~\If X < \zero\gives  \one}\\
 \Case{\csname wArcTan2Pi\endcsname(-\infty, \any) \gives  -\one / 2}\\
 \Case{\csname wArcTan2Pi\endcsname(Y, \zero) ~\If Y < \zero\gives  -\one / 2}\\
-\Case{\csname wArcTan2Pi\endcsname(Y, X) ~\If X > \zero\gives  \arctan{ (Y / X)}
-/ \pi{ }}\\
-\Case{\csname wArcTan2Pi\endcsname(Y, X) ~\If Y > \zero \And X < \zero\gives  (
-\arctan{ (Y / X)} + \pi{ }) / \pi{ }}\\
-\Case{\csname wArcTan2Pi\endcsname(Y, X) ~\If Y < \zero \And X < \zero\gives  (
-\arctan{ (Y / X)} - \pi{ }) / \pi{ }}\\
+\Case{\csname wArcTan2Pi\endcsname(Y, X) ~\If X > \zero\gives (\arctan{ (Y / X)}
+) / \pi}\\
+\Case{\csname wArcTan2Pi\endcsname(Y, X) ~\If Y > \zero \And X < \zero\gives (
+\arctan{ (Y / X)} + \pi) / \pi}\\
+\Case{\csname wArcTan2Pi\endcsname(Y, X) ~\If Y < \zero \And X < \zero\gives (
+\arctan{ (Y / X)} - \pi) / \pi}\\

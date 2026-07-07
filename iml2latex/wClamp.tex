@@ -8,13 +8,14 @@
 \Case{\wClamp(\any, \any, -\infty) \gives  \NaN}\\
 \Case{\wClamp(\any, +\infty, \any) \gives  \NaN}\\
 \Case{\wClamp(+\infty, \any, +\infty) \gives  +\infty}\\
-\Case{\wClamp(+\infty, \any, \mathit{Hi}) \gives  \mathit{Hi}}\\
+\Case{\wClamp(+\infty, \any, \mathit{Hi}) \gives \mathit{Hi}}\\
 \Case{\wClamp(-\infty, -\infty, \any) \gives  -\infty}\\
-\Case{\wClamp(-\infty, \mathit{Lo}, \any) \gives  \mathit{Lo}}\\
-\Case{\wClamp(X, -\infty, +\infty) \gives  X}\\
-\Case{\wClamp(X, -\infty, \mathit{Hi}) ~\If X \leq \mathit{Hi}\gives  X}\\
-\Case{\wClamp(X, -\infty, \mathit{Hi}) ~\If X > \mathit{Hi}\gives  \mathit{Hi}}\\
-\Case{\wClamp(X, \mathit{Lo}, +\infty) ~\If X \leq \mathit{Lo}\gives  \mathit{Lo}}\\
-\Case{\wClamp(X, \mathit{Lo}, +\infty) ~\If X > \mathit{Lo}\gives  X}\\
+\Case{\wClamp(-\infty, \mathit{Lo}, \any) \gives \mathit{Lo}}\\
+\Case{\wClamp(X, -\infty, +\infty) \gives X}\\
+\Case{\wClamp(X, -\infty, \mathit{Hi}) ~\If X \leq \mathit{Hi}\gives X}\\
+\Case{\wClamp(X, -\infty, \mathit{Hi}) ~\If X > \mathit{Hi}\gives \mathit{Hi}}\\
+\Case{\wClamp(X, \mathit{Lo}, +\infty) ~\If X \leq \mathit{Lo}\gives \mathit{Lo}}\\
+\Case{\wClamp(X, \mathit{Lo}, +\infty) ~\If X > \mathit{Lo}\gives X}\\
 \Case{\wClamp(X, \mathit{Lo}, \mathit{Hi}) \gives
- \If X \leq \mathit{Lo} \Then \mathit{Lo} \Else \If X \geq \mathit{Hi} \Then \mathit{Hi} \Else X}\\
+\If X \leq \mathit{Lo} \Then \mathit{Lo} \Else
+  \If X \geq \mathit{Hi} \Then \mathit{Hi} \Else X}\\
