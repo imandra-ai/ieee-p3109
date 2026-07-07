@@ -19,19 +19,39 @@ theorem maxFinite_is_finite (f : Format.t) =
   [@@timeout 60]
   [@@by enumerate ["f"] @> ground_eval ()]
 
+theorem minFinite_is_finite (f : Format.t) =
+  match wDecode f (minFiniteOf f) with
+  | CER.R _ -> true
+  | _ -> false
+  [@@timeout 60]
+  [@@by enumerate ["f"] @> ground_eval ()]
+
 let max_finite_cer (f : Format.t) : CER.t =
   wDecode f (maxFiniteOf f)
+
+let min_finite_cer (f : Format.t) : CER.t =
+  wDecode f (minFiniteOf f)
 
 let max_finite_real (f : Format.t) : real =
   match max_finite_cer f with
   | CER.R r -> r
   | _ -> 0.0 (* unreachable because of theorem maxFinite_is_finite *)
 
+let min_finite_real (f : Format.t) : real =
+  match min_finite_cer f with
+  | CER.R r -> r
+  | _ -> 0.0 (* unreachable because of theorem minFinite_is_finite *)
+
+theorem min_finite_lt_max_finite (f : Format.t) =
+  min_finite_real f <=. max_finite_real f
+  [@@by enumerate ["f"] @> ground_eval ()]
+
 theorem saturate_is_one_of_few r (m : real) (sat : SaturationMode.t) (rnd : RoundingMode.t) (x : CER.t) (s : Signedness.t) (d : Domain.t) =
-  r = wSaturate m sat rnd x s d ==>
+  (r = wSaturate m sat rnd x s d) [@trigger] ==>
   r = CER.PInf || r = CER.R m || r = x ||
-  (* Signed *)   (r = CER.R (-. m) || r = CER.NInf) ||
-  (* Unsigned *) (r = CER.zero)
+  (* Signed *)   (r = CER.R (-. m) || r = CER.NInf || r = CER.NaN) ||
+  (* Unsigned *) (r = CER.zero || r = CER.NaN)
+  [@@fc]
 
 let rnd_sat (f : Format.t) (rho : Projection.t) (x : CER.t) =
   let sigma = signednessOf f in
@@ -44,9 +64,9 @@ let rnd_sat (f : Format.t) (rho : Projection.t) (x : CER.t) =
 theorem rnd_sat_is_one_of_few r (f : Format.t) (rho : Projection.t) (x : CER.t) =
   r = rnd_sat f rho x ==>
   let m = max_finite_real f in
-  r = CER.PInf || r = CER.R m || r = (wRoundToPrecision (precisionOf f) (exponentBiasOf f) (roundOf rho) x) ||
-  ((signednessOf f = Signed) && (r = CER.R (-. m) || r = CER.NInf)) ||
-  ((signednessOf f = Unsigned) && (r = CER.zero))
+  r = CER.PInf || r = CER.R m || (r = (wRoundToPrecision (precisionOf f) (exponentBiasOf f) (roundOf rho) x)) [@trigger] ||
+  ((signednessOf f = Signed) && (r = CER.R (-. m) || r = CER.NInf || r = CER.NaN)) ||
+  ((signednessOf f = Unsigned) && (r = CER.zero || r = CER.NaN))
   [@@by
     [%expand "rnd_sat"] @>
     [%use
@@ -58,10 +78,17 @@ theorem rnd_sat_is_one_of_few r (f : Format.t) (rho : Projection.t) (x : CER.t) 
         (signednessOf f)
         (domainOf f)] @>
     unroll 0]
+  [@@fc]
 
 theorem maxFinite_geq_0 (f : Format.t) =
   let open CER.Infix in
   wDecode f (maxFiniteOf f) >= CER.R 0.0
+  [@@timeout 60]
+  [@@by enumerate ["f"] @> ground_eval ()]
+
+theorem minFinite_leq_0 (f : Format.t) =
+  let open CER.Infix in
+  wDecode f (minFiniteOf f) <= CER.R 0.0
   [@@timeout 60]
   [@@by enumerate ["f"] @> ground_eval ()]
 

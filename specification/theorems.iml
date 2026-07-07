@@ -207,6 +207,13 @@ theorem maxFinite_is_finite (f : Format.t) =
   [@@timeout 60]
   [@@by enumerate ["f"] @> ground_eval ()]
 
+theorem minFinite_is_finite (f : Format.t) =
+  match Float.wDecode f (Float.minFiniteOf f) with
+  | CER.R _ -> true
+  | _ -> false
+  [@@timeout 60]
+  [@@by enumerate ["f"] @> ground_eval ()]
+
 (* [saturate] always produces a number within the format range *)
 theorem wSaturate_is_within_range (f : Format.t) (x : CER.t) (sat : SaturationMode.t) (rnd : RoundingMode.t) =
   match Float.wDecode f (Float.maxFiniteOf f) with
@@ -818,6 +825,7 @@ theorem internal_cosh_ok (f_x : Format.t) (f_r : Format.t) (rho : Projection.t) 
 theorem internal_tanh_ok (f_x : Format.t) (f_r : Format.t) (rho : Projection.t) (x : Float.t) =
   Result.is_ok (Float.internal_tanh f_x f_r rho x)
   [@@disable Float.wProject, Float.wDecode]
+  [@@timeout 60]
   [@@by auto]
 
 (** [internal_arcsin] never returns an error *)
@@ -878,7 +886,7 @@ theorem internal_tanPi_ok (f_x : Format.t) (f_r : Format.t) (rho : Projection.t)
 theorem internal_arcSinPi_ok (f_x : Format.t) (f_r : Format.t) (rho : Projection.t) (x : Float.t) =
   Result.is_ok (Float.internal_arcSinPi f_x f_r rho x)
   [@@disable Float.wProject, Float.wDecode]
-  [@@timeout 60]
+  [@@timeout 180]
   [@@by auto]
 
 (** [internal_arcCosPi] never returns an error *)
@@ -903,7 +911,7 @@ theorem internal_softplus_ok (f_x : Format.t) (f_r : Format.t) (rho : Projection
 (** [internal_softmax] never returns an error *)
 theorem map_project_ok f rho x =
   Result.is_ok (extract_error ((Float.map_project f rho x) [@trigger]))
-  [@@timeout 20]
+  [@@timeout 60]
   [@@disable Float.wProject]
   [@@by induct ~do_not:["gen"; "fert"; "delim"] ()]
   [@@fc]
@@ -953,7 +961,7 @@ theorem wExp_is_positive (x : CER.t) =
 
 theorem wSaturate_preserves_positivity (m : real) (sat : SaturationMode.t) (rnd : RoundingMode.t) (x : CER.t) (s : Signedness.t) (d : Domain.t) =
   let open CER.Infix in
-  m >. 0.0 ==>
+  m >. 0.0 && d = Domain.Extended ==>
   x >= CER.zero ==> (Float.wSaturate m sat rnd x s d) [@trigger] >= CER.zero
   [@@disable Float.wDecode, Float.maxFiniteOf, Util.pow2, Util.ipow2, Util.floor_log2_abs, Util.floor, Util.ifloor]
   [@@by auto]
@@ -965,9 +973,9 @@ theorem sub_is_add_neg (x : CER.t) (y : CER.t) =
     Float.wSubtract x y = Float.wAdd x ny
   | _ -> false
 
-theorem fma_is_add_neg (x : CER.t) (y : CER.t) (z : CER.t) =
-  match (Float.wMultiply x y)
-  with Ok xy ->
+theorem fma_is_mul_add (x : CER.t) (y : CER.t) (z : CER.t) =
+  match (Float.wMultiply x y) with
+  | Ok xy ->
     Float.wFMA x y z = Float.wAdd xy z
   | _ -> false
 

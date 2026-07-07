@@ -71,7 +71,8 @@ let floor_log2_abs_measure (x : real) : int =
     if r >. Real.of_int i then i + 1 else i
   in
   let ax = Real.abs x in
-  if ax = 0.0 then 0
+  if ax = 0.0 then
+    0
   else if ax >. 1.0 then
     ceil_real_to_int ax
   else

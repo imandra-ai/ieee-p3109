@@ -1,0 +1,1213 @@
+[@@@import Util, "dune:math"]
+[@@@import CER, "dune:math"]
+[@@@import Sqrt, "dune:math"]
+[@@@import Exp, "dune:math"]
+[@@@import Log, "dune:math"]
+[@@@import Pi, "dune:math"]
+[@@@import Trigonometric, "dune:math"]
+[@@@import ErrorPropagation, "dune:basic"]
+[@@@import IEEE754, "IEEE754.iml"]
+[@@@import Theorems_pow2, "theorems_pow2.iml"]
+[@@@import Specification, "specification.iml"]
+
+(*
+  References for all omega functions. The *_ref functions have the semantics we
+  want and we can use the theorems in this file after making changes to the
+  actual spec, to make sure we only change the things we want to change.
+*)
+
+open ErrorPropagation
+open Specification
+open Float
+
+  let wRoundToPrecision_ref (p : int) (b : int) (rnd : RoundingMode.t) (x : CER.t) : CER.t =
+    match internal_wRoundToPrecision p b rnd x with
+    | Ok r -> r
+    | Error _ -> R 0.0 (* unreachable by internal_round_to_precision_ok *)
+
+theorem wRoundToPrecision_old_ref_eq (p : int) (b : int) (rnd : RoundingMode.t) (x : CER.t) =
+  Float.wRoundToPrecision p b rnd x = wRoundToPrecision_ref p b rnd x
+
+  let internal_wSaturate_ref
+    (m : real) (sat : SaturationMode.t) (rnd : RoundingMode.t)
+    (x : CER.t) (sigma : Signedness.t) (delta : Domain.t)
+    : (CER.t, string) Result.t =
+    let open RoundingMode in
+    let open SaturationMode in
+    let open Signedness in
+    let open Domain in
+    let m_lo =
+      match sigma with
+      | Signed -> -. m
+      | Unsigned -> 0.0
+      [@@ocaml.doc "nolatex"]
+    in
+    let m_hi = m [@@ocaml.doc "nolatex"] in
+    match sat, rnd, x, sigma, delta with
+    | _, _, NaN, _, _ -> Ok NaN
+
+    | _, _, R x, _, _ when m_lo <=. x && x <=. m_hi -> Ok (R x)
+    [@ocaml.doc "latex: \\\\"]
+
+    | SatFinite, _, PInf, _, _ -> Ok (R m_hi)
+    | SatFinite, _, NInf, _, _ -> Ok (R m_lo)
+    | SatFinite, _, R x, _, _ when x <. m_lo -> Ok (R m_lo)
+    | SatFinite, _, R x, _, _ when x >. m_hi -> Ok (R m_hi)
+    [@ocaml.doc "latex: \\\\"]
+
+    | SatPropagate, _, PInf, _, Extended -> Ok PInf
+    | SatPropagate, _, PInf, _, _ -> Ok (R m_hi)
+    | SatPropagate, _, NInf, Signed, Extended -> Ok NInf
+    | SatPropagate, _, NInf, _, _ -> Ok (R m_lo)
+    | SatPropagate, _, R x, _, _ when x <. m_lo -> Ok (R m_lo)
+    | SatPropagate, _, R x, _, _ when x >. m_hi -> Ok (R m_hi)
+    [@ocaml.doc "latex: \\\\"]
+
+    (* Version before the finite-domain-nans change with the four new NaNs *)
+    | SatNone, _, PInf, _, Extended -> Ok PInf
+    | SatNone, _, PInf, _, _ -> Ok NaN (* NEW *)
+    | SatNone, _, NInf, Signed, Extended -> Ok NInf
+    | SatNone, _, NInf, Unsigned, _ -> Ok NaN
+    | SatNone, _, NInf, _, _ -> Ok NaN (* NEW *)
+    | SatNone, ToOdd, R x, Unsigned, Extended when x >. m_hi -> Ok (R m_hi)
+    | SatNone, (TowardZero | TowardNegative), R x, _, _ when x >. m_hi -> Ok (R m_hi)
+    | SatNone, (TowardZero | TowardPositive), R x, _, _ when x <. m_lo -> Ok (R m_lo)
+    | SatNone, _, R x, Signed, Extended when x <. m_lo -> Ok NInf
+    | SatNone, _, R x, Unsigned, _ when x <. m_lo -> Ok NaN
+    | SatNone, _, R x, _, _ when x <. m_lo -> Ok NaN (* NEW *)
+    | SatNone, _, R x, _, Extended when x >. m_hi -> Ok PInf
+    | SatNone, _, R x, _, _ when x >. m_hi -> Ok NaN (* NEW *)
+
+    | _ -> Error "unreachable"
+
+theorem internal_wSaturate_old_ref_eq (m : real) (sat : SaturationMode.t) (rnd : RoundingMode.t) (x : CER.t) (s : Signedness.t) (d : Domain.t) =
+  Float.internal_wSaturate m sat rnd x s d = internal_wSaturate_ref m sat rnd x s d
+
+  let wSaturate_ref (m : real) (sat : SaturationMode.t) (rnd : RoundingMode.t) (x : CER.t) (s : Signedness.t) (d : Domain.t) : CER.t =
+    match internal_wSaturate m sat rnd x s d with
+    | Ok x -> x
+    | Error _ -> R 0.0 (* unreachable by theorem internal_wSaturate_ok *)
+
+theorem wSaturate_old_ref_eq (m : real) (sat : SaturationMode.t) (rnd : RoundingMode.t) (x : CER.t) (s : Signedness.t) (d : Domain.t) =
+  Float.wSaturate m sat rnd x s d = wSaturate_ref m sat rnd x s d
+
+
+  let wProject_ref (f : Format.t) (rho : Projection.t) (x : CER.t) : (t, string) Result.t =
+    let sigma = signednessOf f in
+    let delta = domainOf f in
+    let* maxFinite =
+      match wDecode f (maxFiniteOf f) with
+      | CER.R v -> Ok v
+      | _ -> Error "maxFinite not finite" (* unreachable by theorem maxFinite_is_finite *)
+    in
+    let r : CER.t = wRoundToPrecision_ref (precisionOf f) (exponentBiasOf f) (roundOf rho) x in
+    let s : CER.t = wSaturate_ref maxFinite (satOf rho) (roundOf rho) r sigma delta in
+    wEncode f s
+
+theorem wProject_old_ref_eq (f : Format.t) (rho : Projection.t) (x : CER.t) =
+  Float.wProject f rho x = wProject_ref f rho x
+
+  let wConvert_ref (x : CER.t) : (CER.t, string) Result.t = Ok x
+
+theorem wConvert_old_ref_eq (x : CER.t) =
+  Float.wConvert x = wConvert_ref x
+
+  let wAbs_ref (x : CER.t) : (CER.t, string) Result.t =
+    let open CER in
+    match x with
+    | NaN -> Ok NaN
+    | NInf -> Ok PInf
+    | PInf -> Ok PInf
+    | R x -> Ok (R (Real.abs x))
+    | _ -> Error "undefined"
+
+theorem wAbs_old_ref_eq (x : CER.t) =
+  Float.wAbs x = wAbs_ref x
+
+  let wNegate_ref (x : CER.t) : (CER.t, string) Result.t =
+    let open CER in
+    match x with
+    | NaN -> Ok NaN
+    | NInf -> Ok PInf
+    | PInf -> Ok NInf
+    | R x -> Ok (R (-. x))
+    | _ -> Error "undefined"
+
+theorem wNegate_old_ref_eq (x : CER.t) =
+  Float.wNegate x = wNegate_ref x
+
+  let wCopySign_ref (x : CER.t) (y : CER.t) : (CER.t, string) Result.t =
+    match x, y with
+    | NaN, _ -> Ok NaN
+    | _, NaN -> Ok NaN
+    | (PInf | NInf), PInf -> Ok PInf
+    | (PInf | NInf), NInf -> Ok NInf
+    | (PInf | NInf), R y when y >=. 0.0 -> Ok PInf
+    | (PInf | NInf), R y when y <. 0.0 -> Ok NInf
+    | R x,  PInf  -> Ok (R (Real.abs x))
+    | R x,  NInf -> Ok (R (-. (Real.abs x)))
+    | R x,  R y when y >=. 0.0 -> Ok (R (Real.abs x))
+    | R x,  R y when y <. 0.0 -> Ok (R (-. (Real.abs x)))
+    | _ -> Error "undefined"
+
+theorem wCopySign_old_ref_eq (x : CER.t) (y : CER.t) =
+  Float.wCopySign x y = wCopySign_ref x y
+
+  let wAdd_ref (x : CER.t) (y : CER.t) : (CER.t, string) Result.t =
+    let open CER in
+    match x, y with
+    | NaN, _ -> Ok NaN
+    | _, NaN -> Ok NaN
+    | PInf, NInf -> Ok NaN
+    | NInf, PInf -> Ok NaN
+    | PInf, _ -> Ok PInf
+    | _, PInf -> Ok PInf
+    | NInf, _ -> Ok NInf
+    |  _, NInf -> Ok NInf
+    | R x, R y -> Ok (R (x +. y))
+    | _ -> Error "undefined"
+
+theorem wAdd_old_ref_eq (x : CER.t) (y : CER.t) =
+  Float.wAdd x y = wAdd_ref x y
+
+  let wSubtract_ref (x : CER.t) (y : CER.t) : (CER.t, string) Result.t =
+    let open CER in
+    match x, y with
+    | NaN, _ -> Ok NaN
+    | _, NaN -> Ok NaN
+    | PInf, PInf -> Ok NaN
+    | NInf, NInf -> Ok NaN
+    | _, PInf -> Ok NInf
+    | PInf, _ -> Ok PInf
+    | _, NInf -> Ok PInf
+    | NInf, _ -> Ok NInf
+    | R x, R y -> Ok (R (x -. y))
+    | _ -> Error "undefined"
+
+theorem wSubtract_old_ref_eq (x : CER.t) (y : CER.t) =
+  Float.wSubtract x y = wSubtract_ref x y
+
+  let wMultiply_ref (x : CER.t) (y : CER.t) : (CER.t, string) Result.t =
+    let open CER in
+    match x, y with
+    | NaN, _ -> Ok NaN
+    | _, NaN -> Ok NaN
+    | PInf, PInf -> Ok PInf
+    | NInf, NInf -> Ok PInf
+    | NInf, PInf -> Ok NInf
+    | PInf, NInf -> Ok NInf
+    | PInf, R y when y >. 0.0 -> Ok PInf
+    | PInf, R y when y = 0.0 -> Ok NaN
+    | PInf, R y when y <. 0.0 -> Ok NInf
+    | R x, PInf when x >. 0.0 -> Ok PInf
+    | R x, PInf when x = 0.0 -> Ok NaN
+    | R x, PInf when x <. 0.0 -> Ok NInf
+    | NInf, R y when y >. 0.0 -> Ok NInf
+    | NInf, R y when y = 0.0 -> Ok NaN
+    | NInf, R y when y <. 0.0 -> Ok PInf
+    | R x, NInf when x >. 0.0 -> Ok NInf
+    | R x, NInf when x = 0.0 -> Ok NaN
+    | R x, NInf when x <. 0.0 -> Ok PInf
+    | R x, R y -> Ok (R (x *. y))
+    | _ -> Error "undefined"
+
+theorem wMultiply_old_ref_eq (x : CER.t) (y : CER.t) =
+  Float.wMultiply x y = wMultiply_ref x y
+
+  let wDivide_ref (x : CER.t) (y : CER.t) : (CER.t, string) Result.t =
+    let open CER in
+    match x, y with
+    | NaN, _ -> Ok NaN
+    | _, NaN -> Ok NaN
+    | PInf, (PInf | NInf) -> Ok NaN
+    | NInf, (PInf | NInf) -> Ok NaN
+    | _, R 0.0 -> Ok NaN
+    | PInf, R y when y >. 0.0 -> Ok PInf
+    | PInf, R y when y <. 0.0 -> Ok NInf
+    | NInf, R y when y >. 0.0 -> Ok NInf
+    | NInf, R y when y <. 0.0 -> Ok PInf
+    | _, (PInf | NInf) -> Ok (R 0.0)
+    | R x, R y -> Ok (R (x /. y))
+    | _ -> Error "undefined"
+
+theorem wDivide_old_ref_eq (x : CER.t) (y : CER.t) =
+  Float.wDivide x y = wDivide_ref x y
+
+  let wFMA_ref (x : CER.t) (y : CER.t) (z : CER.t) : (CER.t, string) Result.t =
+    let open CER in
+    match x, y, z with
+    | NaN, _ , _ -> Ok NaN
+    | _ , NaN, _ -> Ok NaN
+    | _ , _, NaN -> Ok NaN
+
+    | R 0.0, (PInf | NInf), _ -> Ok NaN
+    | (PInf | NInf), R 0.0, _ -> Ok NaN
+
+    | R x, PInf, PInf when x <. 0.0 -> Ok NaN
+    | R x, NInf, PInf when x >. 0.0 -> Ok NaN
+    | PInf, R y, PInf when y <. 0.0 -> Ok NaN
+    | NInf, R y, PInf when y >. 0.0 -> Ok NaN
+
+    | R x, NInf, NInf when x <. 0.0 -> Ok NaN
+    | R x, PInf, NInf when x >. 0.0 -> Ok NaN
+    | NInf, R y, NInf when y <. 0.0 -> Ok NaN
+    | PInf, R y, NInf when y >. 0.0 -> Ok NaN
+
+    | NInf, PInf, PInf -> Ok NaN
+    | PInf, NInf, PInf -> Ok NaN
+    | PInf, PInf, NInf -> Ok NaN
+    | NInf, NInf, NInf -> Ok NaN
+
+    | PInf, PInf, _ -> Ok PInf
+    | NInf, NInf, _ -> Ok PInf
+    | PInf, NInf, _ -> Ok NInf
+    | NInf, PInf, _ -> Ok NInf
+
+    | _, _, PInf -> Ok PInf
+    | _, _, NInf -> Ok NInf
+
+    | R x, NInf, _ when x >. 0.0 -> Ok NInf
+    | R x, NInf, _ when x <. 0.0 -> Ok PInf
+
+    | R x, PInf, _ when x >. 0.0 -> Ok PInf
+    | R x, PInf, _ when x <. 0.0 -> Ok NInf
+
+    | PInf, R y, _ when y >. 0.0 -> Ok PInf
+    | PInf, R y, _ when y <. 0.0 -> Ok NInf
+
+    | NInf, R y, _ when y >. 0.0 -> Ok NInf
+    | NInf, R y, _ when y <. 0.0 -> Ok PInf
+
+    | R x, R y, R z -> Ok (R (x *. y +. z))
+
+    | _ -> Error "undefined"
+
+theorem wFMA_old_ref_eq (x : CER.t) (y : CER.t) (z : CER.t) =
+  Float.wFMA x y z = wFMA_ref x y z
+
+  let wFAA_ref (x : CER.t) (y : CER.t) (z : CER.t) : (CER.t, string) Result.t =
+    let open CER in
+    match x, y, z with
+    | NaN, _ , _ -> Ok NaN
+    | _ , NaN, _ -> Ok NaN
+    | _ , _, NaN -> Ok NaN
+    | PInf, NInf, _ -> Ok NaN
+    | NInf, PInf, _ -> Ok NaN
+    | PInf, _, NInf -> Ok NaN
+    | NInf, _, PInf -> Ok NaN
+    | _, PInf, NInf -> Ok NaN
+    | _, NInf, PInf -> Ok NaN
+    | PInf, PInf, PInf -> Ok PInf
+    | NInf, NInf, NInf -> Ok NInf
+    | _, PInf, PInf -> Ok PInf
+    | PInf, _, PInf -> Ok PInf
+    | PInf, PInf, _ -> Ok PInf
+    | _, NInf, NInf -> Ok NInf
+    | NInf, _, NInf -> Ok NInf
+    | NInf, NInf, _ -> Ok NInf
+    | PInf, _, _ -> Ok PInf
+    | _, PInf, _ -> Ok PInf
+    | _, _, PInf -> Ok PInf
+    | NInf, _, _ -> Ok NInf
+    | _, NInf, _ -> Ok NInf
+    | _, _, NInf -> Ok NInf
+    | R x, R y, R z -> Ok (R (x +. y +. z))
+    | _ -> Error "undefined"
+
+theorem wFAA_old_ref_eq (x : CER.t) (y : CER.t) (z : CER.t) =
+  Float.wFAA x y z = wFAA_ref x y z
+
+  let wSqrt_ref (x : CER.t) : (CER.t, string) Result.t =
+    let open CER in
+    match x with
+    | NaN -> Ok NaN
+    | NInf -> Ok NaN
+    | R x when x <. 0.0 -> Ok NaN
+    | PInf -> Ok PInf
+    | R x ->
+      (match Sqrt.sqrt x CERR.approx with
+      | Ok r -> Ok (R r)
+      | Error e -> Error e)
+    | _ -> Error "undefined"
+
+theorem wSqrt_old_ref_eq (x : CER.t) =
+  Float.wSqrt x = wSqrt_ref x
+
+  let wRSqrt_ref (x : CER.t) : (CER.t, string) Result.t =
+    let open CER in
+    match x with
+    | NaN -> Ok NaN
+    | NInf -> Ok NaN
+    | R x when x <=. 0.0 -> Ok NaN
+    | PInf -> Ok (R 0.0)
+    | R x ->
+      (match Util.reciprocal (Sqrt.sqrt x CERR.approx) with
+      | Ok r -> Ok (R r)
+      | Error e -> Error e)
+    | _ -> Error "undefined"
+
+theorem wRSqrt_old_ref_eq (x : CER.t) =
+  Float.wRSqrt x = wRSqrt_ref x
+  [@@disable Sqrt.sqrt]
+  [@@by auto]
+
+  let wExp_ref (x : CER.t) : (CER.t, string) Result.t =
+    match x with
+    | NaN -> Ok NaN
+    | PInf -> Ok PInf
+    | NInf -> Ok (R 0.0)
+    | R x -> Ok (R (Exp.exp x CERR.approx))
+    | _ -> Error "undefined"
+
+theorem wExp_old_ref_eq (x : CER.t) =
+  Float.wExp x = wExp_ref x
+
+  let wLog_ref (x : CER.t) : (CER.t, string) Result.t =
+    match x with
+    | NaN -> Ok NaN
+    | NInf -> Ok NaN
+    | PInf -> Ok PInf
+    | R x when x <. 0.0 -> Ok NaN
+    | R 0.0 -> Ok NInf
+    | R x -> (
+      match Log.ln x CERR.approx with
+      | Ok r -> Ok (R r)
+      | Error e -> Error e)
+    | _ -> Error "undefined"
+
+theorem wLog_old_ref_eq (x : CER.t) =
+  Float.wLog x = wLog_ref x
+
+  let wExp2_ref (x : CER.t) : (CER.t, string) Result.t =
+    match x with
+    | NaN -> Ok NaN
+    | PInf -> Ok PInf
+    | NInf -> Ok (R 0.0)
+    | R x -> (
+      match Exp.exp2 x CERR.approx with
+      | Ok r -> Ok (R r)
+      | Error e -> Error e)
+    | _ -> Error "undefined"
+
+theorem wExp2_old_ref_eq (x : CER.t) =
+  Float.wExp2 x = wExp2_ref x
+
+  let wLog2_ref (x : CER.t) : (CER.t, string) Result.t =
+    match x with
+    | NaN -> Ok NaN
+    | NInf -> Ok NaN
+    | PInf -> Ok PInf
+    | R x when x <. 0.0 -> Ok NaN
+    | R 0.0 -> Ok NInf
+    | R x -> (
+      match Log.log2 x CERR.approx with
+      | Ok r -> Ok (R r)
+      | Error e -> Error e)
+    | _ -> Error "undefined"
+
+theorem wLog2_old_ref_eq (x : CER.t) =
+  Float.wLog2 x = wLog2_ref x
+
+  let wRecip_ref (x : CER.t) : (CER.t, string) Result.t =
+    let open CER in
+    match x with
+    | NaN -> Ok NaN
+    | R 0.0 -> Ok NaN
+    | (PInf | NInf) -> Ok (R 0.0)
+    | R x -> Ok (R (1.0 /. x))
+    | _ -> Error "undefined"
+
+theorem wRecip_old_ref_eq (x : CER.t) =
+  Float.wRecip x = wRecip_ref x
+
+  let wHypot_ref (x : CER.t) (y : CER.t) : (CER.t, string) Result.t =
+    let open CER in
+    match x, y with
+    | NaN, _ -> Ok NaN
+    | _, NaN -> Ok NaN
+    | _, (PInf | NInf) -> Ok PInf
+    | (PInf | NInf), _ -> Ok PInf
+    | R x, R y ->
+      (match Sqrt.sqrt ((Util.ripow (Real.abs x) 2) +. (Util.ripow (Real.abs y) 2)) CERR.approx with
+      | Ok r -> Ok (R r)
+      | Error e -> Error e)
+    | _ -> Error "undefined"
+
+theorem wHypot_old_ref_eq (x : CER.t) (y : CER.t) =
+  Float.wHypot x y = wHypot_ref x y
+
+  let wArcTan2_ref (y : CER.t) (x : CER.t) : (CER.t, string) Result.t =
+    let open CER in
+    let open Trigonometric in
+    match y, x with
+    | NaN, _ -> Ok NaN
+    | _, NaN -> Ok NaN
+    | R 0.0, R 0.0 -> Ok NaN
+    | NInf, (PInf | NInf) -> Ok NaN
+    | PInf, (PInf | NInf) -> Ok NaN
+    | _, PInf -> Ok (R 0.0)
+    | R 0.0, R x when x >. 0.0 -> Ok (R 0.0)
+    | PInf, _ -> Ok (R (Pi.pi_half CERR.approx))
+    | R y, R 0.0 when y >. 0.0 -> Ok (R (Pi.pi_half CERR.approx))
+    | _, NInf -> Ok (R (Pi.pi CERR.approx))
+    | R 0.0, R x when x <. 0.0 -> Ok (R (Pi.pi CERR.approx))
+    | NInf, _ -> Ok (R (-. (Pi.pi_half CERR.approx)))
+    | R y, R 0.0 when y <. 0.0 -> Ok (R (-. (Pi.pi_half CERR.approx)))
+    | R y, R x when x >. 0.0 -> Ok (R (Trigonometric.arctan (y /. x) CERR.approx))
+    | R y, R x when y >. 0.0 && x <. 0.0 -> Ok (R ((Trigonometric.arctan (y /. x) CERR.approx) +. (Pi.pi CERR.approx)))
+    | R y, R x when y <. 0.0 && x <. 0.0 -> Ok (R ((Trigonometric.arctan (y /. x) CERR.approx) -. (Pi.pi CERR.approx)))
+    | _ -> Error "undefined"
+
+theorem wArcTan2_old_ref_eq (y : CER.t) (x : CER.t) =
+  Float.wArcTan2 y x = wArcTan2_ref y x
+
+  let wArcTan2Pi_ref (y : CER.t) (x : CER.t) : (CER.t, string) Result.t =
+    let open CER in
+    let open Trigonometric in
+    match y, x with
+    | NaN, _ -> Ok NaN
+    | _, NaN -> Ok NaN
+    | R 0.0, R 0.0 -> Ok NaN
+    | NInf, (PInf | NInf) -> Ok NaN
+    | PInf, (PInf | NInf) -> Ok NaN
+    | _, PInf -> Ok (R 0.0)
+    | R 0.0, R x when x >. 0.0 -> Ok (R 0.0)
+    | PInf, _ -> Ok (R (1.0 /. 2.0))
+    | R y, R 0.0 when y >. 0.0 -> Ok (R (1.0 /. 2.0))
+    | _, NInf -> Ok (R 1.0)
+    | R 0.0, R x when x <. 0.0 -> Ok (R 1.0)
+    | NInf, _ -> Ok (R (-. 1.0 /. 2.0))
+    | R y, R 0.0 when y <. 0.0 -> Ok (R (-. 1.0 /. 2.0))
+    | R y, R x when x >. 0.0 -> Ok (R ((Trigonometric.arctan (y /. x) CERR.approx) /. Pi.pi CERR.approx))
+    | R y, R x when y >. 0.0 && x <. 0.0 -> Ok (R (((Trigonometric.arctan (y /. x) CERR.approx) +. (Pi.pi CERR.approx)) /. Pi.pi CERR.approx))
+    | R y, R x when y <. 0.0 && x <. 0.0 -> Ok (R (((Trigonometric.arctan (y /. x) CERR.approx) -. (Pi.pi CERR.approx)) /. Pi.pi CERR.approx))
+    | _ -> Error "undefined"
+
+theorem wArcTan2Pi_old_ref_eq (y : CER.t) (x : CER.t) =
+  Float.wArcTan2Pi y x = wArcTan2Pi_ref y x
+
+  let wMinimum_ref (x : CER.t) (y : CER.t) : (CER.t, string) Result.t =
+    let open CER in
+    match x, y with
+    | NaN, _ -> Ok NaN
+    | _, NaN -> Ok NaN
+    | PInf, PInf -> Ok PInf
+    | NInf, NInf -> Ok NInf
+    | PInf, NInf -> Ok NInf
+    | NInf, PInf -> Ok NInf
+    | PInf, R y -> Ok (R y)
+    | R x, PInf -> Ok (R x)
+    | NInf, _ -> Ok NInf
+    | _, NInf -> Ok NInf
+    | R x, R y -> Ok (if x <. y then (R x) else (R y))
+    | _ -> Error "undefined"
+
+theorem wMinimum_old_ref_eq (x : CER.t) (y : CER.t) =
+  Float.wMinimum x y = wMinimum_ref x y
+
+  let wMaximum_ref (x : CER.t) (y : CER.t) : (CER.t, string) Result.t =
+    let open CER in
+    match x, y with
+    | NaN, _ -> Ok NaN
+    | _, NaN -> Ok NaN
+    | PInf, PInf -> Ok PInf
+    | NInf, NInf -> Ok NInf
+    | PInf, NInf -> Ok PInf
+    | NInf, PInf -> Ok PInf
+    | PInf, _ -> Ok PInf
+    | _, PInf -> Ok PInf
+    | NInf, R y -> Ok (R y)
+    | R x, NInf -> Ok (R x)
+    | R x, R y -> Ok (if x <. y then (R y) else (R x))
+    | _ -> Error "undefined"
+
+theorem wMaximum_old_ref_eq (x : CER.t) (y : CER.t) =
+  Float.wMaximum x y = wMaximum_ref x y
+
+  let wMinimumNumber_ref (x : CER.t) (y : CER.t) : (CER.t, string) Result.t =
+    let open CER in
+    match x, y with
+    | NaN, NaN -> Ok NaN
+    | x, NaN -> Ok x
+    | NaN, y -> Ok y
+    | x, y -> wMinimum_ref x y
+    | _ -> Error "undefined"
+
+theorem wMinimumNumber_old_ref_eq (x : CER.t) (y : CER.t) =
+  Float.wMinimumNumber x y = wMinimumNumber_ref x y
+
+  let wMaximumNumber_ref (x : CER.t) (y : CER.t) : (CER.t, string) Result.t =
+    let open CER in
+    match x, y with
+    | NaN, NaN -> Ok NaN
+    | x, NaN -> Ok x
+    | NaN, y -> Ok y
+    | x, y -> wMaximum_ref x y
+    | _ -> Error "undefined"
+
+theorem wMaximumNumber_old_ref_eq (x : CER.t) (y : CER.t) =
+  Float.wMaximumNumber x y = wMaximumNumber_ref x y
+
+  let wMinimumMagnitude_ref (x : CER.t) (y : CER.t) : (CER.t, string) Result.t =
+    let open CER in
+    match x, y with
+    | NaN, _ -> Ok NaN
+    | _, NaN -> Ok NaN
+    | PInf, PInf -> Ok PInf
+    | NInf, NInf -> Ok NInf
+    | PInf, NInf -> Ok NInf
+    | NInf, PInf -> Ok NInf
+    | (PInf | NInf), R y  -> Ok (R y)
+    | R x, (PInf | NInf)  -> Ok (R x)
+    | R x, R y when Real.abs x <. Real.abs y -> Ok (R x)
+    | R x, R y when Real.abs x >. Real.abs y -> Ok (R y)
+    | R x, R y when Real.abs x = Real.abs y -> Ok (if x <. y then (R x) else (R y)) [@ocaml.text "breakindent"]
+    | _ -> Error "undefined"
+
+theorem wMinimumMagnitude_old_ref_eq (x : CER.t) (y : CER.t) =
+  Float.wMinimumMagnitude x y = wMinimumMagnitude_ref x y
+
+  let wMaximumMagnitude_ref (x : CER.t) (y : CER.t) : (CER.t, string) Result.t =
+    let open CER in
+    match x, y with
+    | NaN, _ -> Ok NaN
+    | _, NaN -> Ok NaN
+    | PInf, _ -> Ok PInf
+    | _, PInf -> Ok PInf
+    | NInf, _ -> Ok NInf
+    | _, NInf  -> Ok NInf
+    | R x, R y when Real.abs x >. Real.abs y -> Ok (R x)
+    | R x, R y when Real.abs x <. Real.abs y -> Ok (R y)
+    | R x, R y when Real.abs x = Real.abs y -> Ok (if x <. y then (R y) else (R x)) [@ocaml.text "breakindent"]
+    | _ -> Error "undefined"
+
+theorem wMaximumMagnitude_old_ref_eq (x : CER.t) (y : CER.t) =
+  Float.wMaximumMagnitude x y = wMaximumMagnitude_ref x y
+
+  let wMinimumMagnitudeNumber_ref (x : CER.t) (y : CER.t) : (CER.t, string) Result.t =
+    let open CER in
+    match x, y with
+    | NaN, _ -> Ok x
+    | _, NaN -> Ok y
+    | _, _ -> wMinimumMagnitude_ref x y
+
+theorem wMinimumMagnitudeNumber_old_ref_eq (x : CER.t) (y : CER.t) =
+  Float.wMinimumMagnitudeNumber x y = wMinimumMagnitudeNumber_ref x y
+
+  let wMaximumMagnitudeNumber_ref (x : CER.t) (y : CER.t) : (CER.t, string) Result.t =
+    let open CER in
+    match x, y with
+    | NaN, _ -> Ok x
+    | _, NaN -> Ok y
+    | _, _ -> wMaximumMagnitude_ref x y
+
+theorem wMaximumMagnitudeNumber_old_ref_eq (x : CER.t) (y : CER.t) =
+  Float.wMaximumMagnitudeNumber x y = wMaximumMagnitudeNumber_ref x y
+
+  let wMinimumFinite_ref (x : CER.t) (y : CER.t) : (CER.t, string) Result.t =
+    let open CER in
+    match x, y with
+    | NaN, NaN -> Ok NaN
+    | NaN, y -> Ok y
+    | x, NaN -> Ok x
+    | PInf, PInf -> Ok PInf
+    | NInf, NInf -> Ok NInf
+    | PInf, NInf -> Ok NInf
+    | NInf, PInf -> Ok NInf
+    | PInf, R y -> Ok (R y)
+    | R x, PInf -> Ok (R x)
+    | NInf, R y -> Ok (R y)
+    | R x, NInf -> Ok (R x)
+    | R x, R y -> Ok (if x <. y then (R x) else (R y)) [@ocaml.text "breakindent"]
+    | _ -> Error "undefined"
+
+theorem wMinimumFinite_old_ref_eq (x : CER.t) (y : CER.t) =
+  Float.wMinimumFinite x y = wMinimumFinite_ref x y
+
+  let wMaximumFinite_ref (x : CER.t) (y : CER.t) : (CER.t, string) Result.t =
+    let open CER in
+    match x, y with
+    | NaN, NaN -> Ok NaN
+    | NaN, y -> Ok y
+    | x, NaN -> Ok x
+    | PInf, PInf -> Ok PInf
+    | NInf, NInf -> Ok NInf
+    | PInf, NInf -> Ok PInf
+    | NInf, PInf -> Ok PInf
+    | PInf, R y -> Ok (R y)
+    | R x, PInf -> Ok (R x)
+    | NInf, R y -> Ok (R y)
+    | R x, NInf -> Ok (R x)
+    | R x, R y -> Ok (if x <. y then (R y) else (R x)) [@ocaml.text "breakindent"]
+    | _ -> Error "undefined"
+
+theorem wMaximumFinite_old_ref_eq (x : CER.t) (y : CER.t) =
+  Float.wMaximumFinite x y = wMaximumFinite_ref x y
+
+  let wClamp_ref (x : CER.t) (lo : CER.t) (hi : CER.t) : (CER.t, string) Result.t =
+    let open CER in
+    match x, lo, hi with
+    | NaN, _, _ -> Ok NaN
+    | _, NaN, _ -> Ok NaN
+    | _, _, NaN -> Ok NaN
+
+    | _, R lo, R hi when lo >. hi -> Ok NaN
+
+    | _, PInf, PInf -> Ok PInf
+    | _, NInf, NInf -> Ok NInf
+    | _, _, NInf -> Ok NaN
+    | _, PInf, _ -> Ok NaN
+
+    | PInf, _, PInf -> Ok PInf
+    | PInf, _, R hi -> Ok (R hi)
+    | NInf, NInf, _ -> Ok NInf
+    | NInf, R lo, _ -> Ok (R lo)
+    | R x, NInf, PInf -> Ok (R x)
+
+    | R x, NInf, R hi when x <=. hi -> Ok (R x)
+    | R x, NInf, R hi when x >. hi -> Ok (R hi)
+    | R x, R lo, PInf when x <=. lo -> Ok (R lo)
+    | R x, R lo, PInf when x >. lo -> Ok (R x)
+
+    | R x, R lo, R hi -> Ok (R (
+        if x <=. lo then lo
+        else if x >=. hi then hi
+        else x))
+    | _ -> Error "undefined"
+
+theorem wClamp_old_ref_eq (x : CER.t) (lo : CER.t) (hi : CER.t) =
+  Float.wClamp x lo hi = wClamp_ref x lo hi
+
+  let wCompareLess_ref (x : CER.t) (y : CER.t) : (bool, string) Result.t =
+    let open CER in
+    match x, y with
+    | NaN, _ -> Ok false
+    | _, NaN -> Ok false
+    | PInf, _ -> Ok false
+    | _, PInf -> Ok true
+    | NInf, NInf -> Ok false
+    | NInf, _ -> Ok true
+    | _, NInf -> Ok false
+    | R x, R y -> Ok (x <. y)
+    | _ -> Error "undefined"
+
+theorem wCompareLess_old_ref_eq (x : CER.t) (y : CER.t) =
+  Float.wCompareLess x y = wCompareLess_ref x y
+
+  let wCompareLessEqual_ref (x : CER.t) (y : CER.t) : (bool, string) Result.t =
+    let open CER in
+    match x, y with
+    | NaN, _ -> Ok false
+    | _, NaN -> Ok false
+    | _, PInf -> Ok true
+    | NInf, _ -> Ok true
+    | PInf, _ -> Ok false
+    | _, NInf -> Ok false
+    | R x, R y -> Ok (x <=. y)
+    | _ -> Error "undefined"
+
+theorem wCompareLessEqual_old_ref_eq (x : CER.t) (y : CER.t) =
+  Float.wCompareLessEqual x y = wCompareLessEqual_ref x y
+
+  let wCompareEqual_ref (x : CER.t) (y : CER.t) : (bool, string) Result.t =
+    let open CER in
+    match x, y with
+    | NaN, _ -> Ok false
+    | _, NaN -> Ok false
+    | PInf, PInf -> Ok true
+    | NInf, NInf -> Ok true
+    | PInf, _ -> Ok false
+    | NInf, _ -> Ok false
+    | _, NInf -> Ok false
+    | _, PInf -> Ok false
+    | R x, R y -> Ok (x = y)
+    | _ -> Error "undefined"
+
+theorem wCompareEqual_old_ref_eq (x : CER.t) (y : CER.t) =
+  Float.wCompareEqual x y = wCompareEqual_ref x y
+
+  let wCompareGreater_ref (x : CER.t) (y : CER.t) : (bool, string) Result.t =
+    let open CER in
+    match x, y with
+    | NaN, _ -> Ok false
+    | _, NaN -> Ok false
+    | _, PInf -> Ok false
+    | NInf, NInf -> Ok false
+    | _, NInf -> Ok true
+    | PInf, _ -> Ok true
+    | NInf, _ -> Ok false
+    | R x, R y -> Ok (x >. y)
+    | _ -> Error "undefined"
+
+theorem wCompareGreater_old_ref_eq (x : CER.t) (y : CER.t) =
+  Float.wCompareGreater x y = wCompareGreater_ref x y
+
+  let wCompareGreaterEqual_ref (x : CER.t) (y : CER.t) : (bool, string) Result.t =
+    let open CER in
+    match x, y with
+    | NaN, _ -> Ok false
+    | _, NaN -> Ok false
+    | PInf, _ -> Ok true
+    | NInf, NInf -> Ok true
+    | NInf, _ -> Ok false
+    | _, PInf -> Ok false
+    | _, NInf -> Ok true
+    | R x, R y -> Ok (x >=. y)
+    | _ -> Error "undefined"
+
+theorem wCompareGreaterEqual_old_ref_eq (x : CER.t) (y : CER.t) =
+  Float.wCompareGreaterEqual x y = wCompareGreaterEqual_ref x y
+
+  let wIsZero_ref (x : CER.t) : (bool, string) Result.t =
+    match x with
+    | NaN -> Ok false
+    | (PInf | NInf) -> Ok false
+    | R x -> Ok (x = 0.0)
+    | _ -> Error "undefined"
+
+theorem wIsZero_old_ref_eq (x : CER.t) =
+  Float.wIsZero x = wIsZero_ref x
+
+  let wIsOne_ref (x : CER.t) : (bool, string) Result.t =
+    match x with
+    | NaN -> Ok false
+    | (PInf | NInf) -> Ok false
+    | R x -> Ok (x = 1.0)
+    | _ -> Error "undefined"
+
+theorem wIsOne_old_ref_eq (x : CER.t) =
+  Float.wIsOne x = wIsOne_ref x
+
+  let wIsSignMinus_ref (x : CER.t) : (bool, string) Result.t =
+    match x with
+    | NaN -> Ok false
+    | PInf -> Ok false
+    | NInf -> Ok true
+    | R x -> Ok (x <. 0.0)
+    | _ -> Error "undefined"
+
+theorem wIsSignMinus_old_ref_eq (x : CER.t) =
+  Float.wIsSignMinus x = wIsSignMinus_ref x
+
+  let wBlockDecode_ref (b : int) (f_s : Format.t) (f_x : Format.t) (s, x : t * t list) : (CER.t list, string) Result.t =
+    if b < 1 || b <> List.length x then
+      Error "invalid block size"
+    else
+      let@ cz = map_wMultiply f_s f_x s x in
+      Ok cz
+
+theorem wBlockDecode_old_ref_eq (b : int) (f_s : Format.t) (f_x : Format.t) (s, x : t * t list) =
+  Float.wBlockDecode b f_s f_x (s, x) = wBlockDecode_ref b f_s f_x (s, x)
+
+  let wBlockProject_ref
+    (b : int)
+    (f_s : Format.t) (f_r : Format.t) (rho_z : Projection.t)
+    (s, x : t * CER.t list) :
+    (t list, string) Result.t =
+    if b < 0 || b <> List.length x then
+      Error "invalid block size"
+    else
+      let open CER in
+      let cs = wDecode f_s s in
+      let@ cz = wBlockProject_map_cz cs x in
+      let@ z = map_project f_r rho_z cz in
+      Ok z
+
+theorem wBlockProject_old_ref_eq (b : int) (f_s : Format.t) (f_r : Format.t) (rho_z : Projection.t) (s, x : t * CER.t list) =
+  Float.wBlockProject b f_s f_r rho_z (s, x) = wBlockProject_ref b f_s f_r rho_z (s, x)
+[@@by unroll 20]
+
+  let wExpMinusOne_ref (x : CER.t) : (CER.t, string) Result.t =
+    let open CER in
+
+    let wExp_ref xr =
+      (* A helper to squelch the error handling *)
+      match wExp_ref xr with
+      | Ok r -> r
+      | Error _ -> CER.zero (* unreachable by theorem wExp_ok *)
+      [@@ocaml.doc "nolatex"]
+    in
+
+    match x with
+    | x -> wSubtract_ref (wExp_ref x) (R 1.0)
+    | _ -> Error "undefined"
+
+theorem wExpMinusOne_old_ref_eq (x : CER.t) =
+  Float.wExpMinusOne x = wExpMinusOne_ref x
+
+  let wLogOnePlus_ref (x : CER.t) : (CER.t, string) Result.t =
+    let open CER in
+    let wLog_ref xr =
+      (* A helper to squelch the error handling *)
+      match xr with
+      | Ok r -> wLog_ref r
+      | Error _ -> Ok CER.zero (* unreachable by theorem wLog_ok *)
+      [@@ocaml.doc "nolatex"]
+    in
+    match x with
+    | x -> wLog_ref (wAdd_ref (R 1.0) x)
+    | _ -> Error "undefined"
+
+theorem wLogOnePlus_old_ref_eq (x : CER.t) =
+  Float.wLogOnePlus x = wLogOnePlus_ref x
+
+  let wSin_ref (x : CER.t) : (CER.t, string) Result.t =
+    let open CER in
+    let open Trigonometric in
+    match x with
+    | NaN -> Ok NaN
+    | PInf -> Ok NaN
+    | NInf -> Ok NaN
+    | R x -> Ok (R (sin x CERR.approx))
+    | _ -> Error "undefined"
+
+theorem wSin_old_ref_eq (x : CER.t) =
+  Float.wSin x = wSin_ref x
+
+  let wCos_ref (x : CER.t) : (CER.t, string) Result.t =
+    let open CER in
+    let open Trigonometric in
+    match x with
+    | NaN -> Ok NaN
+    | PInf -> Ok NaN
+    | NInf -> Ok NaN
+    | R x -> Ok (R (cos x CERR.approx))
+    | _ -> Error "undefined"
+
+theorem wCos_old_ref_eq (x : CER.t) =
+  Float.wCos x = wCos_ref x
+
+  let wTan_ref (x : CER.t) : (CER.t, string) Result.t =
+    let open CER in
+    let open Trigonometric in
+    match x with
+    | NaN -> Ok NaN
+    | PInf -> Ok NaN
+    | NInf -> Ok NaN
+    | R x when Trigonometric.cos x CERR.approx = 0.0 -> Ok NaN
+    | R x ->
+      (match tan x CERR.approx with
+      | Ok r -> Ok (R (r))
+      | Error e -> Error e)
+    | _ -> Error "undefined"
+
+theorem wTan_old_ref_eq (x : CER.t) =
+  Float.wTan x = wTan_ref x
+
+  let wSinh_ref (x : CER.t) : (CER.t, string) Result.t =
+    let open CER in
+    let open Trigonometric in
+    match x with
+    | NaN -> Ok NaN
+    | PInf -> Ok PInf
+    | NInf -> Ok NInf
+    | R x -> Ok (R (sinh x CERR.approx))
+    | _ -> Error "undefined"
+
+theorem wSinh_old_ref_eq (x : CER.t) =
+  Float.wSinh x = wSinh_ref x
+
+  let wCosh_ref (x : CER.t) : (CER.t, string) Result.t =
+    let open CER in
+    let open Trigonometric in
+    match x with
+    | NaN -> Ok NaN
+    | PInf -> Ok PInf
+    | NInf -> Ok PInf
+    | R x -> Ok (R (cosh x CERR.approx))
+    | _ -> Error "undefined"
+
+theorem wCosh_old_ref_eq (x : CER.t) =
+  Float.wCosh x = wCosh_ref x
+
+  let wTanh_ref (x : CER.t) : (CER.t, string) Result.t =
+    let open CER in
+    let open Trigonometric in
+    match x with
+    | NaN -> Ok NaN
+    | PInf -> Ok (R 1.0)
+    | NInf -> Ok (R (- 1.0))
+    | R x -> Ok (R (tanh x CERR.approx))
+    | _ -> Error "undefined"
+
+theorem wTanh_old_ref_eq (x : CER.t) =
+  Float.wTanh x = wTanh_ref x
+
+  let wArcSin_ref (x : CER.t) : (CER.t, string) Result.t =
+    let open CER in
+    let open Trigonometric in
+    match x with
+    | NaN -> Ok NaN
+    | PInf -> Ok NaN
+    | NInf -> Ok NaN
+    | R x when x <. -1.0 || x >. 1.0 -> Ok NaN
+    | R x ->
+      (match arcsin x CERR.approx with
+      | Ok r -> Ok (R r)
+      | Error e -> Error e)
+    | _ -> Error "undefined"
+
+theorem wArcSin_old_ref_eq (x : CER.t) =
+  Float.wArcSin x = wArcSin_ref x
+
+  let wArcCos_ref (x : CER.t) : (CER.t, string) Result.t =
+    let open CER in
+    let open Trigonometric in
+    match x with
+    | NaN -> Ok NaN
+    | PInf -> Ok NaN
+    | NInf -> Ok NaN
+    | R x when x <. -1.0 || x >. 1.0 -> Ok NaN
+    | R x ->
+      (match arccos x CERR.approx with
+       | Ok r -> Ok (R r)
+       | Error e -> Error e)
+    | _ -> Error "undefined"
+
+theorem wArcCos_old_ref_eq (x : CER.t) =
+  Float.wArcCos x = wArcCos_ref x
+
+  let wArcTan_ref (x : CER.t) : (CER.t, string) Result.t =
+    let open CER in
+    let open Trigonometric in
+    match x with
+    | NaN -> Ok NaN
+    | PInf -> Ok (R (Pi.pi_half CERR.approx))
+    | NInf -> Ok (R (-. (Pi.pi_half CERR.approx)))
+    | R x -> Ok (R (arctan x CERR.approx))
+    | _ -> Error "undefined"
+
+theorem wArcTan_old_ref_eq (x : CER.t) =
+  Float.wArcTan x = wArcTan_ref x
+
+  let wArcSinh_ref (x : CER.t) : (CER.t, string) Result.t =
+    let open CER in
+    let open Trigonometric in
+    match x with
+    | NaN -> Ok NaN
+    | PInf -> Ok PInf
+    | NInf -> Ok NInf
+    | R x ->
+      (match arcsinh x CERR.approx with
+       | Ok r -> Ok (R r)
+       | Error e -> Error e)
+    | _ -> Error "undefined"
+
+theorem wArcSinh_old_ref_eq (x : CER.t) =
+  Float.wArcSinh x = wArcSinh_ref x
+
+  let wArcCosh_ref (x : CER.t) : (CER.t, string) Result.t =
+    let open CER in
+    let open Trigonometric in
+    match x with
+    | NaN -> Ok NaN
+    | PInf -> Ok PInf
+    | NInf -> Ok NaN
+    | R x when x <. 1.0 -> Ok NaN
+    | R x ->
+      (match arccosh x CERR.approx with
+      | Ok r -> Ok (R r)
+      | Error e -> Error e)
+    | _ -> Error "undefined"
+
+theorem wArcCosh_old_ref_eq (x : CER.t) =
+  Float.wArcCosh x = wArcCosh_ref x
+
+  let wArcTanh_ref (x : CER.t) : (CER.t, string) Result.t =
+    let open CER in
+    let open Trigonometric in
+    match x with
+    | NaN -> Ok NaN
+    | PInf -> Ok NaN
+    | NInf -> Ok NaN
+    | R (1.0) -> Ok PInf
+    | R (-1.0) -> Ok NInf
+    | R x when x <. -1.0 || x >. 1.0 -> Ok NaN
+    | R x ->
+      (match arctanh x CERR.approx with
+      | Ok r -> Ok (R r)
+      | Error e -> Error e)
+    | _ -> Error "undefined"
+
+theorem wArcTanh_old_ref_eq (x : CER.t) =
+  Float.wArcTanh x = wArcTanh_ref x
+
+  let wSinPi_ref (x : CER.t) : (CER.t, string) Result.t =
+    let open CER in
+    let open Trigonometric in
+    match x with
+    | NaN -> Ok NaN
+    | PInf -> Ok NaN
+    | NInf -> Ok NaN
+    | R x -> Ok (R (Trigonometric.sin (x *. (Pi.pi CERR.approx)) CERR.approx))
+    | _ -> Error "undefined"
+
+theorem wSinPi_old_ref_eq (x : CER.t) =
+  Float.wSinPi x = wSinPi_ref x
+  [@@disable Trigonometric.sin, Pi.pi]
+  [@@by auto]
+
+  let wCosPi_ref (x : CER.t) : (CER.t, string) Result.t =
+    let open CER in
+    let open Trigonometric in
+    match x with
+    | NaN -> Ok NaN
+    | PInf -> Ok NaN
+    | NInf -> Ok NaN
+    | R x -> Ok (R (Trigonometric.cos (x *. (Pi.pi CERR.approx)) CERR.approx))
+    | _ -> Error "undefined"
+
+theorem wCosPi_old_ref_eq (x : CER.t) =
+  Float.wCosPi x = wCosPi_ref x
+  [@@disable Trigonometric.cos, Pi.pi]
+  [@@by auto]
+
+  let wTanPi_ref (x : CER.t) : (CER.t, string) Result.t =
+    let open CER in
+    let open Trigonometric in
+    match x with
+    | NaN -> Ok NaN
+    | PInf -> Ok NaN
+    | NInf -> Ok NaN
+    | R x when Trigonometric.cos (x *. (Pi.pi CERR.approx)) CERR.approx = 0.0 -> Ok NaN
+    | R x ->
+      (match Trigonometric.tan (x *. (Pi.pi CERR.approx)) CERR.approx with
+      | Ok r -> Ok (R r)
+      | Error e -> Error e)
+    | _ -> Error "undefined"
+
+theorem wTanPi_old_ref_eq (x : CER.t) =
+  Float.wTanPi x = wTanPi_ref x
+  [@@disable Trigonometric.tan, Pi.pi]
+  [@@by auto]
+
+  let wArcSinPi_ref (x : CER.t) : (CER.t, string) Result.t =
+    let open CER in
+    match x with
+    | NaN -> Ok NaN
+    | PInf -> Ok NaN
+    | NInf -> Ok NaN
+    | R x when x <. -1.0 || x >. 1.0 -> Ok NaN
+    | R x ->
+      (match Trigonometric.arcsin_pi x CERR.approx with
+      | Ok r -> Ok (R r)
+      | Error e -> Error e)
+    | _ -> Error "undefined"
+
+theorem wArcSinPi_old_ref_eq (x : CER.t) =
+  Float.wArcSinPi x = wArcSinPi_ref x
+  [@@disable Trigonometric.arcsin, Pi.pi]
+  [@@by auto]
+
+  let wArcCosPi_ref (x : CER.t) : (CER.t, string) Result.t =
+    let open CER in
+    match x with
+    | NaN -> Ok NaN
+    | PInf -> Ok NaN
+    | NInf -> Ok NaN
+    | R x when x <. -1.0 || x >. 1.0 -> Ok NaN
+    | R x ->
+      (match Trigonometric.arccos_pi x CERR.approx with
+      | Ok r -> Ok (R r)
+      | Error e -> Error e)
+    | _ -> Error "undefined"
+
+theorem wArcCosPi_old_ref_eq (x : CER.t) =
+  Float.wArcCosPi x = wArcCosPi_ref x
+
+  let wArcTanPi_ref (x : CER.t) : (CER.t, string) Result.t =
+    let open CER in
+    match x with
+    | NaN -> Ok NaN
+    | PInf -> Ok (R (1.0 /. 2.0))
+    | NInf -> Ok (R (-1.0 /. 2.0))
+    | R x -> Ok (R (Trigonometric.arctan_pi x CERR.approx))
+    | _ -> Error "undefined"
+
+theorem wArcTanPi_old_ref_eq (x : CER.t) =
+  Float.wArcTanPi x = wArcTanPi_ref x
+
+  let wSoftplus_ref (x : CER.t) : (CER.t, string) Result.t =
+    let open CER in
+    match x with
+    | NaN -> Ok NaN
+    | PInf -> Ok PInf
+    | NInf -> Ok (R 0.0)
+    | R x ->
+      (match Log.ln (1.0 +. (Exp.exp x CERR.approx)) CERR.approx with
+      | Ok r -> Ok (R (r))
+      | Error e -> Error e)
+    | _ -> Error "undefined"
+
+theorem wSoftplus_old_ref_eq (x : CER.t) =
+  Float.wSoftplus x = wSoftplus_ref x
+
+  let wSoftmax_ref (xs : CER.t list) : (CER.t list, string) Result.t =
+    let open CER in
+    let open CER.Infix in
+    let denom : CER.t = softmax_denom xs in
+    Ok (List.map (fun x -> x / denom) xs)
+
+theorem wSoftmax_old_ref_eq (xs : CER.t list) =
+  Float.wSoftmax xs = wSoftmax_ref xs
+
+  let wLogSoftmax_ref (xs : CER.t list) : (CER.t list, string) Result.t =
+    let open CER in
+    let open CER.Infix in
+    match wSoftmax_ref xs with
+    | Ok s -> map_wLog s
+    | Error e -> Error e
+
+theorem wLogSoftmax_old_ref_eq (xs : CER.t list) =
+  Float.wLogSoftmax xs = wLogSoftmax_ref xs
+
+
+
+
+let isNormalOld (f : Format.t) (x : Float.t) : bool =
+  let open Float in
+  let open Signedness in
+  let k = bitwidthOf f in
+  let p = precisionOf f in
+  match x with
+  | _ when isZero f x || is_ninf f x || is_pinf f x || is_nan f x -> false
+  | _ ->
+    let x = to_int_repr f x in
+    (match (signednessOf f) with
+    | Signed -> Util.machine_idiv (x mod (Util.ipow2 (k - 1))) (Util.ipow2 (p - 1)) > 0
+    | Unsigned -> Util.machine_idiv x (Util.ipow2 (p - 1)) > 0)
+
+theorem isNormalChecks (f : Format.t) =
+  Float.bitwidthOf f >= 3 &&
+  (not (Float.signednessOf f = Signedness.Signed && Float.bitwidthOf f = Float.precisionOf f))
+  ==>
+  Float.isNormal f (Float.nan f) = isNormalOld f (Float.nan f) &&
+  (match (Float.pinf f) with
+  | Ok pinf -> Float.isNormal f pinf  = isNormalOld f pinf
+  | _ -> true) &&
+  (match (Float.ninf f) with
+  | Ok ninf -> Float.isNormal f ninf  = isNormalOld f ninf
+  | _ -> true) &&
+  Float.isNormal f Float.zero = isNormalOld f Float.zero
+  &&
+  (match (Float.wEncode f (CER.R 1.0)) with
+  | Ok one -> Float.isNormal f one = isNormalOld f one
+  | _ -> true)
+  &&
+  (match (Float.wEncode f (CER.R (- 1.0))) with
+  | Ok mone -> Float.isNormal f mone = isNormalOld f mone
+  | _ -> true)
+  &&
+  let mn = Float.minNormalOf f in
+  Float.isNormal f mn = isNormalOld f mn
+  &&
+  let mn = Float.minNormalOf f - 1 in
+  Float.isNormal f mn = isNormalOld f mn
+  &&
+  let mn = Float.minNormalOf f + 1 in
+  Float.isNormal f mn = isNormalOld f mn
+  &&
+  let mn = Float.maxFiniteOf f in
+  Float.isNormal f mn = isNormalOld f mn
+  [@@timeout 3600]
+  [@@by enumerate ["f"] @> ground_eval ()]

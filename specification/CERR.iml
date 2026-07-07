@@ -1,0 +1,313 @@
+[@@@import CER, "dune:math"]
+[@@@import Trigonometric, "dune:math"]
+[@@@import Pi, "dune:math"]
+
+open CER
+open Trigonometric
+
+(*
+  An abstraction layer that allows us to use real operators on CERs, but they
+  will only succeed if all arguments are reals. If all our omega function
+  properties verify with these operations, then there can be no confusion about
+  whether any arguments in the extracted Latex document need checking for
+  real-iness (because they couldn't have been anything else).
+*)
+
+(**
+  Approximation precision of potentially irrational functions. This is not
+  high enough to guarantee precise results in all cases.
+*)
+let approx : int = 16
+
+let id x =
+  match x with
+  | R x -> Ok (R x)
+  | _ -> Error "undefined"
+
+let abs x =
+  match x with
+  | R x -> Ok (R (Real.abs x))
+  | _ -> Error "undefined"
+
+let neg x =
+  match x with
+  | R x -> Ok (R (-. x))
+  | _ -> Error "undefined"
+
+let sqrt x =
+  match x with
+  | R x ->
+    (match Sqrt.sqrt x approx with
+    | Ok r -> Ok (R r)
+    | Error e -> Error e)
+  | _ -> Error "undefined"
+
+let exp x =
+  match x with
+  | R x -> Ok (R (Exp.exp x approx))
+  | _ -> Error "undefined"
+
+let exp2 x =
+  match x with
+  | R x ->
+    (match Exp.exp2 x approx with
+    | Ok r -> Ok (R r)
+    | Error e -> Error e)
+  | _ -> Error "undefined"
+
+let ln x =
+  match x with
+  | R x -> (
+    match Log.ln x approx with
+    | Ok r -> Ok (R r)
+    | Error e -> Error e)
+  | _ -> Error "undefined"
+
+let log2 x =
+  match x with
+  | R x -> (
+      match Log.log2 x approx with
+      | Ok r -> Ok (R r)
+      | Error e -> Error e)
+  | _ -> Error "undefined"
+
+let hypot x y =
+  match x, y with
+  | R x, R y ->
+    (match Sqrt.sqrt ((Util.ripow (Real.abs x) 2) +. (Util.ripow (Real.abs y) 2)) approx with
+    | Ok r -> Ok (R r)
+    | Error e -> Error e)
+  | _ -> Error "undefined"
+
+let pi = Ok (R (Pi.pi approx))
+
+let pi_half = Ok (R (0.5 *. Pi.pi approx))
+
+let pi_quarter = Ok (R (0.25 *. Pi.pi approx))
+
+let sin x =
+  match x with
+  | R x -> Ok (R (sin x approx))
+  | _ -> Error "undefined"
+
+let cos x =
+  match x with
+  | R x -> Ok (R (cos x approx))
+  | _ -> Error "undefined"
+
+let tan x =
+  match x with
+  | R x -> (
+    match tan x approx with
+    | Ok r -> Ok (R (r))
+    | Error e -> Error e)
+  | _ -> Error "undefined"
+
+let sinh x =
+  match x with
+  | R x -> Ok (R (sinh x approx))
+  | _ -> Error "undefined"
+
+let cosh x =
+  match x with
+  | R x -> Ok (R (cosh x approx))
+  | _ -> Error "undefined"
+
+let tanh x =
+  match x with
+  | R x -> Ok (R (tanh x approx))
+  | _ -> Error "undefined"
+
+let arcsin x =
+  match x with
+  | R x -> (
+    match arcsin x approx with
+    | Ok r -> Ok (R r)
+    | Error e -> Error e)
+  | _ -> Error "undefined"
+
+let arccos x =
+  match x with
+  | R x -> (
+    match arccos x approx with
+    | Ok r -> Ok (R r)
+    | Error e -> Error e)
+  | _ -> Error "undefined"
+
+let arctan x =
+  match x with
+  | R x -> Ok (R (arctan x approx))
+  | _ -> Error "undefined"
+
+let arcsinh x =
+  match x with
+  | R x -> (
+    match arcsinh x approx with
+    | Ok r -> Ok (R r)
+    | Error e -> Error e)
+    | _ -> Error "undefined"
+
+let arccosh x =
+  match x with
+  | R x -> (
+    match arccosh x approx with
+    | Ok r -> Ok (R r)
+    | Error e -> Error e)
+    | _ -> Error "undefined"
+
+let arctanh x =
+  match x with
+  | R x -> (
+    match arctanh x approx with
+    | Ok r -> Ok (R r)
+    | Error e -> Error e)
+    | _ -> Error "undefined"
+
+module I = struct
+  let ( ~-. ) x =
+    match x with
+    | R x -> Ok (R (~-. x))
+    | _ -> Error "undefined"
+
+  let ( +. ) x y =
+    match x, y with
+    | R x, R y -> Ok (R Real.(x +. y))
+    | _, _ -> Error "undefined"
+
+  let ( -. ) x y =
+    match x, y with
+    | R x, R y -> Ok (R Real.(x -. y))
+    | _, _ -> Error "undefined"
+
+  let ( *. ) x y =
+    match x, y with
+    | R x, R y -> Ok (R Real.(x *. y))
+    | _, _ -> Error "undefined"
+
+  let ( /. ) x y =
+    match x, y with
+    | R x, R y -> Ok (R Real.(x /. y))
+    | _, _ -> Error "undefined"
+
+  let ( ^. ) x y =
+    match x with
+    | R x -> Ok (R (Real.pow x y))
+    | _ -> Error "undefined"
+
+  let ( < ) x y =
+    match x, y with
+    | R x, R y -> Ok (x <. y)
+    | _ -> Error "undefined"
+
+  let ( <= ) x y =
+    match x, y with
+    | R x, R y -> Ok (x <=. y)
+    | _ -> Error "undefined"
+
+  let ( > ) x y =
+    match x, y with
+    | R x, R y -> Ok (x >. y)
+    | _ -> Error "undefined"
+
+  let ( >= ) x y =
+    match x, y with
+    | R x, R y -> Ok (x >=. y)
+    | _ -> Error "undefined"
+
+  let ( = ) x y =
+    match x, y with
+    | R x, R y -> Ok (x = y)
+    | _ -> Error "undefined"
+end
+
+module R = struct
+  (* Same operators, but they take result types to improve readability. *)
+
+  let sqrt x =
+    match x with
+    | Ok (R x) -> sqrt (R x)
+    | Ok _ -> Error "undefined"
+    | Error e -> Error e
+
+  let sin x =
+    match x with
+    | Ok (R x) -> sin (R x)
+    | Ok _ -> Error "undefined"
+    | Error e -> Error e
+
+  let cos x =
+    match x with
+    | Ok (R x) -> cos (R x)
+    | Ok _ -> Error "undefined"
+    | Error e -> Error e
+
+  let tan x =
+    match x with
+    | Ok (R x) -> tan (R x)
+    | Ok _ -> Error "undefined"
+    | Error e -> Error e
+
+  let arctan x =
+    match x with
+    | Ok (R x) -> arctan (R x)
+    | Ok _ -> Error "undefined"
+    | Error e -> Error e
+
+  let ln x =
+    match x with
+    | Ok (R x) -> ln (R x)
+    | Ok _ -> Error "undefined"
+    | Error e -> Error e
+end
+
+module IR = struct
+  (* Same infix operators, but they take result types to improve readability. *)
+
+  let ( ~-. ) x =
+    match x with
+    | Ok (R x) -> I.(~-. (R x))
+    | Ok _ -> Error "undefined"
+    | Error e -> Error e
+
+  let ( +. ) x y =
+    match x, y with
+    | Ok (R x), Ok (R y) -> I.(R x +. R y)
+    | Ok _, Ok _ -> Error "undefined"
+    | Error e, _ | _, Error e -> Error e
+
+  let ( -. ) x y =
+    match x, y with
+    | Ok (R x), Ok (R y) -> I.(R x -. R y)
+    | Ok _, Ok _ -> Error "undefined"
+    | Error e, _ | _, Error e -> Error e
+
+  let ( *. ) x y =
+    match x, y with
+    | Ok (R x), Ok (R y) -> I.(R x *. R y)
+    | Ok _, Ok _ -> Error "undefined"
+    | Error e, _ | _, Error e -> Error e
+
+  let ( /. ) x y =
+    match x, y with
+    | Ok (R x), Ok (R y) -> I.(R x /. R y)
+    | Ok _, Ok _ -> Error "undefined"
+    | Error e, _ | _, Error e -> Error e
+
+  let ( ^. ) x y =
+    match x with
+    | Ok (R x) -> Ok (R (Util.ripow x y))
+    | Ok _ -> Error "undefined"
+    | Error e -> Error e
+
+  let ( < ) (x : (CER.t, string) result) (y : (CER.t, string) result) =
+    match x, y with
+    | Ok (R x), Ok (R y) -> x <. y
+    | Ok _, Ok _ -> false
+    | Error e, _ | _, Error e -> false
+
+  let ( > ) (x : (CER.t, string) result) (y : (CER.t, string) result) =
+    match x, y with
+    | Ok (R x), Ok (R y) -> x >. y
+    | Ok _, Ok _ -> false
+    | Error e, _ | _, Error e -> false
+end

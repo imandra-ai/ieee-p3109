@@ -9,6 +9,7 @@
 [@@@import IEEE754, "IEEE754.iml"]
 [@@@import BFloat16, "BFloat16.iml"]
 [@@@import Theorems_pow2, "theorems_pow2.iml"]
+[@@@import CERR, "CERR.iml"]
 
 open ErrorPropagation
 
@@ -535,21 +536,21 @@ module Float = struct
     match sat, rnd, x, sigma, delta with
     | _, _, NaN, _, _ -> Ok NaN
 
-    | _, _, R x, _, _ when m_lo <=. x && x <=. m_hi -> Ok (R x)
+    | _, _, x, _, _ when CER.Infix.(CER.R m_lo <= x && x <= CER.R m_hi) -> Ok x
     [@ocaml.doc "latex: \\\\"]
 
     | SatFinite, _, PInf, _, _ -> Ok (R m_hi)
     | SatFinite, _, NInf, _, _ -> Ok (R m_lo)
-    | SatFinite, _, R x, _, _ when x <. m_lo -> Ok (R m_lo)
-    | SatFinite, _, R x, _, _ when x >. m_hi -> Ok (R m_hi)
+    | SatFinite, _, x, _, _ when CER.Infix.(x < CER.R m_lo) -> Ok (R m_lo)
+    | SatFinite, _, x, _, _ when CER.Infix.(x > CER.R m_hi) -> Ok (R m_hi)
     [@ocaml.doc "latex: \\\\"]
 
     | SatPropagate, _, PInf, _, Extended -> Ok PInf
     | SatPropagate, _, PInf, _, _ -> Ok (R m_hi)
     | SatPropagate, _, NInf, Signed, Extended -> Ok NInf
     | SatPropagate, _, NInf, _, _ -> Ok (R m_lo)
-    | SatPropagate, _, R x, _, _ when x <. m_lo -> Ok (R m_lo)
-    | SatPropagate, _, R x, _, _ when x >. m_hi -> Ok (R m_hi)
+    | SatPropagate, _, x, _, _ when CER.Infix.(x < CER.R m_lo) -> Ok (R m_lo)
+    | SatPropagate, _, x, _, _ when CER.Infix.(x > CER.R m_hi) -> Ok (R m_hi)
     [@ocaml.doc "latex: \\\\"]
 
     | SatNone, (TowardZero | TowardNegative), x, _, _ when CER.Infix.(x > CER.R m_hi) && x <> CER.PInf -> Ok (R m_hi)
@@ -696,11 +697,12 @@ module Float = struct
 
   let wAbs (x : CER.t) : (CER.t, string) Result.t =
     let open CER in
+    let open CERR in
     match x with
     | NaN -> Ok NaN
     | NInf -> Ok PInf
     | PInf -> Ok PInf
-    | R x -> Ok (R (Real.abs x))
+    | x -> abs x
     | _ -> Error "undefined"
 
   let internal_abs (f_x : Format.t) (f_r : Format.t) (rho : Projection.t) (x : t) : (t, string) Result.t =
@@ -716,11 +718,12 @@ module Float = struct
 
   let wNegate (x : CER.t) : (CER.t, string) Result.t =
     let open CER in
+    let open CERR.I in
     match x with
     | NaN -> Ok NaN
     | NInf -> Ok PInf
     | PInf -> Ok NInf
-    | R x -> Ok (R (-. x))
+    | x -> ~-. x
     | _ -> Error "undefined"
 
   let internal_negate (f_x : Format.t) (f_r : Format.t) (rho : Projection.t) (x : t) : (t, string) Result.t =
@@ -737,17 +740,20 @@ module Float = struct
   (** 4.11.2 CopySign *)
 
   let wCopySign (x : CER.t) (y : CER.t) : (CER.t, string) Result.t =
+    let open CER in
+    let open CER.Infix in
+    let open CERR in
     match x, y with
     | NaN, _ -> Ok NaN
     | _, NaN -> Ok NaN
     | (PInf | NInf), PInf -> Ok PInf
     | (PInf | NInf), NInf -> Ok NInf
-    | (PInf | NInf), R y when y >=. 0.0 -> Ok PInf
-    | (PInf | NInf), R y when y <. 0.0 -> Ok NInf
-    | R x,  PInf  -> Ok (R (Real.abs x))
-    | R x,  NInf -> Ok (R (-. (Real.abs x)))
-    | R x,  R y when y >=. 0.0 -> Ok (R (Real.abs x))
-    | R x,  R y when y <. 0.0 -> Ok (R (-. (Real.abs x)))
+    | (PInf | NInf), y when y >= CER.R 0.0 -> Ok PInf
+    | (PInf | NInf), y when y < CER.R 0.0 -> Ok NInf
+    | x, PInf -> CERR.abs x
+    | x, NInf -> CERR.IR.(~-. (CERR.abs x))
+    | x, y when y >= R 0.0 -> CERR.abs x
+    | x, y when y < R 0.0 -> CERR.IR.(~-. (CERR.abs x))
     | _ -> Error "undefined"
 
   let internal_copySign (f_x : Format.t) (f_y : Format.t) (f_r : Format.t) (rho : Projection.t) (x : t) (y : t) : (t, string) Result.t =
@@ -773,7 +779,7 @@ module Float = struct
     | _, PInf -> Ok PInf
     | NInf, _ -> Ok NInf
     |  _, NInf -> Ok NInf
-    | R x, R y -> Ok (R (x +. y))
+    | x, y -> CERR.I.(x +. y)
     | _ -> Error "undefined"
 
   let internal_add (f_x : Format.t) (f_y : Format.t) (f_r : Format.t) (rho : Projection.t) (x : t) (y : t)  : (t, string) Result.t =
@@ -797,7 +803,7 @@ module Float = struct
     | PInf, _ -> Ok PInf
     | _, NInf -> Ok PInf
     | NInf, _ -> Ok NInf
-    | R x, R y -> Ok (R (x -. y))
+    | x, y -> CERR.I.(x -. y)
     | _ -> Error "undefined"
 
   let internal_subtract (f_x : Format.t) (f_y : Format.t) (f_r : Format.t) (rho : Projection.t) (x : t) (y : t) : (t, string) Result.t =
@@ -814,10 +820,11 @@ module Float = struct
     | Error _ -> nan f_r (* unreachable by theorem internal_subtract_ok *)
 
 
-    (** 4.11.4 Multiplication *)
+  (** 4.11.4 Multiplication *)
 
   let wMultiply (x : CER.t) (y : CER.t) : (CER.t, string) Result.t =
     let open CER in
+    let open CER.Infix in
     match x, y with
     | NaN, _ -> Ok NaN
     | _, NaN -> Ok NaN
@@ -825,19 +832,19 @@ module Float = struct
     | NInf, NInf -> Ok PInf
     | NInf, PInf -> Ok NInf
     | PInf, NInf -> Ok NInf
-    | PInf, R y when y >. 0.0 -> Ok PInf
-    | PInf, R y when y = 0.0 -> Ok NaN
-    | PInf, R y when y <. 0.0 -> Ok NInf
-    | R x, PInf when x >. 0.0 -> Ok PInf
-    | R x, PInf when x = 0.0 -> Ok NaN
-    | R x, PInf when x <. 0.0 -> Ok NInf
-    | NInf, R y when y >. 0.0 -> Ok NInf
-    | NInf, R y when y = 0.0 -> Ok NaN
-    | NInf, R y when y <. 0.0 -> Ok PInf
-    | R x, NInf when x >. 0.0 -> Ok NInf
-    | R x, NInf when x = 0.0 -> Ok NaN
-    | R x, NInf when x <. 0.0 -> Ok PInf
-    | R x, R y -> Ok (R (x *. y))
+    | PInf, y when y > R 0.0 -> Ok PInf
+    | PInf, y when y = R 0.0 -> Ok NaN
+    | PInf, y when y < R 0.0 -> Ok NInf
+    | x, PInf when x > R 0.0 -> Ok PInf
+    | x, PInf when x = R 0.0 -> Ok NaN
+    | x, PInf when x < R 0.0 -> Ok NInf
+    | NInf, y when y > R 0.0 -> Ok NInf
+    | NInf, y when y = R 0.0 -> Ok NaN
+    | NInf, y when y < R 0.0 -> Ok PInf
+    | x, NInf when x > R 0.0 -> Ok NInf
+    | x, NInf when x = R 0.0 -> Ok NaN
+    | x, NInf when x < R 0.0 -> Ok PInf
+    | x, y -> CERR.I.(x *. y)
     | _ -> Error "undefined"
 
   let internal_multiply (f_x : Format.t) (f_y : Format.t) (f_r : Format.t) (rho : Projection.t) (x : t) (y : t) : (t, string) Result.t =
@@ -856,18 +863,19 @@ module Float = struct
 
   let wDivide (x : CER.t) (y : CER.t) : (CER.t, string) Result.t =
     let open CER in
+    let open CER.Infix in
     match x, y with
     | NaN, _ -> Ok NaN
     | _, NaN -> Ok NaN
     | PInf, (PInf | NInf) -> Ok NaN
     | NInf, (PInf | NInf) -> Ok NaN
     | _, R 0.0 -> Ok NaN
-    | PInf, R y when y >. 0.0 -> Ok PInf
-    | PInf, R y when y <. 0.0 -> Ok NInf
-    | NInf, R y when y >. 0.0 -> Ok NInf
-    | NInf, R y when y <. 0.0 -> Ok PInf
+    | PInf, y when y > R 0.0 -> Ok PInf
+    | PInf, y when y < R 0.0 -> Ok NInf
+    | NInf, y when y > R 0.0 -> Ok NInf
+    | NInf, y when y < R 0.0 -> Ok PInf
     | _, (PInf | NInf) -> Ok (R 0.0)
-    | R x, R y -> Ok (R (x /. y))
+    | x, y -> CERR.I.(x /. y)
     | _ -> Error "undefined"
 
   let internal_divide (f_x : Format.t) (f_y : Format.t) (f_r : Format.t) (rho : Projection.t) (x : t) (y : t) : (t, string) Result.t =
@@ -886,6 +894,7 @@ module Float = struct
 
   let wFMA (x : CER.t) (y : CER.t) (z : CER.t) : (CER.t, string) Result.t =
     let open CER in
+    let open CER.Infix in
     match x, y, z with
     | NaN, _ , _ -> Ok NaN
     | _ , NaN, _ -> Ok NaN
@@ -894,15 +903,15 @@ module Float = struct
     | R 0.0, (PInf | NInf), _ -> Ok NaN
     | (PInf | NInf), R 0.0, _ -> Ok NaN
 
-    | R x, PInf, PInf when x <. 0.0 -> Ok NaN
-    | R x, NInf, PInf when x >. 0.0 -> Ok NaN
-    | PInf, R y, PInf when y <. 0.0 -> Ok NaN
-    | NInf, R y, PInf when y >. 0.0 -> Ok NaN
+    | x, PInf, PInf when x < R 0.0 -> Ok NaN
+    | x, NInf, PInf when x > R 0.0 -> Ok NaN
+    | PInf, y, PInf when y < R 0.0 -> Ok NaN
+    | NInf, y, PInf when y > R 0.0 -> Ok NaN
 
-    | R x, NInf, NInf when x <. 0.0 -> Ok NaN
-    | R x, PInf, NInf when x >. 0.0 -> Ok NaN
-    | NInf, R y, NInf when y <. 0.0 -> Ok NaN
-    | PInf, R y, NInf when y >. 0.0 -> Ok NaN
+    | x, NInf, NInf when x < R 0.0 -> Ok NaN
+    | x, PInf, NInf when x > R 0.0 -> Ok NaN
+    | NInf, y, NInf when y < R 0.0 -> Ok NaN
+    | PInf, y, NInf when y > R 0.0 -> Ok NaN
 
     | NInf, PInf, PInf -> Ok NaN
     | PInf, NInf, PInf -> Ok NaN
@@ -917,19 +926,19 @@ module Float = struct
     | _, _, PInf -> Ok PInf
     | _, _, NInf -> Ok NInf
 
-    | R x, NInf, _ when x >. 0.0 -> Ok NInf
-    | R x, NInf, _ when x <. 0.0 -> Ok PInf
+    | x, NInf, _ when x > R 0.0 -> Ok NInf
+    | x, NInf, _ when x < R 0.0 -> Ok PInf
 
-    | R x, PInf, _ when x >. 0.0 -> Ok PInf
-    | R x, PInf, _ when x <. 0.0 -> Ok NInf
+    | x, PInf, _ when x > R 0.0 -> Ok PInf
+    | x, PInf, _ when x < R 0.0 -> Ok NInf
 
-    | PInf, R y, _ when y >. 0.0 -> Ok PInf
-    | PInf, R y, _ when y <. 0.0 -> Ok NInf
+    | PInf, y, _ when y > R 0.0 -> Ok PInf
+    | PInf, y, _ when y < R 0.0 -> Ok NInf
 
-    | NInf, R y, _ when y >. 0.0 -> Ok NInf
-    | NInf, R y, _ when y <. 0.0 -> Ok PInf
+    | NInf, y, _ when y > R 0.0 -> Ok NInf
+    | NInf, y, _ when y < R 0.0 -> Ok PInf
 
-    | R x, R y, R z -> Ok (R (x *. y +. z))
+    | x, y, z -> CERR.IR.(CERR.I.(x *. y) +. Ok z)
 
     | _ -> Error "undefined"
 
@@ -971,7 +980,7 @@ module Float = struct
     | NInf, _, _ -> Ok NInf
     | _, NInf, _ -> Ok NInf
     | _, _, NInf -> Ok NInf
-    | R x, R y, R z -> Ok (R (x +. y +. z))
+    | x, y, z -> CERR.IR.(CERR.I.(x +. y) +. Ok z)
     | _ -> Error "undefined"
 
   let internal_faa (f_x : Format.t) (f_y : Format.t) (f_z : Format.t) (f_r: Format.t) (rho : Projection.t) (x : t) (y : t) (z : t): (t, string) Result.t =
@@ -988,15 +997,13 @@ module Float = struct
 
   let wSqrt (x : CER.t) : (CER.t, string) Result.t =
     let open CER in
+    let open CER.Infix in
     match x with
     | NaN -> Ok NaN
     | NInf -> Ok NaN
-    | R x when x <. 0.0 -> Ok NaN
+    | x when x < R 0.0 -> Ok NaN
     | PInf -> Ok PInf
-    | R x ->
-      (match Sqrt.sqrt x 8 with (* TODO: Proof that 8 is enough *)
-      | Ok r -> Ok (R r)
-      | Error e -> Error e)
+    | x -> CERR.sqrt x
     | _ -> Error "undefined"
 
   let internal_sqrt (f_x : Format.t) (f_r : Format.t) (rho : Projection.t) (x : t) : (t, string) Result.t =
@@ -1010,15 +1017,13 @@ module Float = struct
 
   let wRSqrt (x : CER.t) : (CER.t, string) Result.t =
     let open CER in
+    let open CER.Infix in
     match x with
     | NaN -> Ok NaN
     | NInf -> Ok NaN
-    | R x when x <=. 0.0 -> Ok NaN
+    | x when x <= R 0.0 -> Ok NaN
     | PInf -> Ok (R 0.0)
-    | R x ->
-      (match Util.reciprocal (Sqrt.sqrt x 8) with (* TODO: Proof that 8 is enough *)
-      | Ok r -> Ok (R r)
-      | Error e -> Error e)
+    | x -> CERR.IR.(Ok (R 1.0) /. (CERR.sqrt x))
     | _ -> Error "undefined"
 
   let internal_rsqrt (f_x : Format.t) (f_r : Format.t) (rho : Projection.t) (x : t) : (t, string) Result.t =
@@ -1035,7 +1040,7 @@ module Float = struct
     | NaN -> Ok NaN
     | PInf -> Ok PInf
     | NInf -> Ok (R 0.0)
-    | R x -> Ok (R (Exp.exp x 9)) (* TODO: Proof that 9 is enough *)
+    | x -> CERR.exp x
     | _ -> Error "undefined"
 
   let internal_exp (f_x : Format.t) (f_r : Format.t) (rho : Projection.t) (x : t) : (t, string) Result.t =
@@ -1048,16 +1053,15 @@ module Float = struct
     | Error _ -> (nan f_r) (* unreachable by theorem internal_exp_ok *)
 
   let wLog (x : CER.t) : (CER.t, string) Result.t =
+    let open CER in
+    let open CER.Infix in
     match x with
     | NaN -> Ok NaN
     | NInf -> Ok NaN
     | PInf -> Ok PInf
-    | R x when x <. 0.0 -> Ok NaN
+    | x when x < R 0.0 -> Ok NaN
     | R 0.0 -> Ok NInf
-    | R x -> (
-      match Log.ln x 9 with (* TODO: Proof that 9 is enough *)
-      | Ok r -> Ok (R r)
-      | Error e -> Error e)
+    | x -> CERR.ln x
     | _ -> Error "undefined"
 
   let internal_log (f_x : Format.t) (f_r : Format.t) (rho : Projection.t) (x : t) : (t, string) Result.t =
@@ -1074,10 +1078,7 @@ module Float = struct
     | NaN -> Ok NaN
     | PInf -> Ok PInf
     | NInf -> Ok (R 0.0)
-    | R x -> (
-      match Exp.exp2 x 9 with (* TODO: Proof that 9 is enough *)
-      | Ok r -> Ok (R r)
-      | Error e -> Error e)
+    | x -> CERR.exp2 x
     | _ -> Error "undefined"
 
   let internal_exp2 (f_x : Format.t) (f_r : Format.t) (rho : Projection.t) (x : t) : (t, string) Result.t =
@@ -1090,16 +1091,16 @@ module Float = struct
     | Error _ -> nan f_r (* unreachable by theorem internal_exp2_ok *)
 
   let wLog2 (x : CER.t) : (CER.t, string) Result.t =
+    let open CER in
+    let open CER.Infix in
+    let open CERR in
     match x with
     | NaN -> Ok NaN
     | NInf -> Ok NaN
     | PInf -> Ok PInf
-    | R x when x <. 0.0 -> Ok NaN
+    | x when x < R 0.0 -> Ok NaN
     | R 0.0 -> Ok NInf
-    | R x -> (
-      match Log.log2 x 9 with (* TODO: Proof that 9 is enough *)
-      | Ok r -> Ok (R r)
-      | Error e -> Error e)
+    | x -> CERR.log2 x
     | _ -> Error "undefined"
 
   let internal_log2 (f_x : Format.t) (f_r : Format.t) (rho : Projection.t) (x : t) : (t, string) Result.t =
@@ -1117,7 +1118,7 @@ module Float = struct
     | NaN -> Ok NaN
     | R 0.0 -> Ok NaN
     | (PInf | NInf) -> Ok (R 0.0)
-    | R x -> Ok (R (1.0 /. x))
+    | x -> CERR.I.(R 1.0 /. x)
     | _ -> Error "undefined"
 
   let internal_recip  (f_x : Format.t) (f_r : Format.t) (rho : Projection.t) (x : t) : (t, string) Result.t =
@@ -1134,15 +1135,13 @@ module Float = struct
 
   let wHypot (x : CER.t) (y : CER.t) : (CER.t, string) Result.t =
     let open CER in
+    let open CERR in
     match x, y with
     | NaN, _ -> Ok NaN
     | _, NaN -> Ok NaN
     | _, (PInf | NInf) -> Ok PInf
     | (PInf | NInf), _ -> Ok PInf
-    | R x, R y ->
-      (match Sqrt.sqrt ((Util.ripow (Real.abs x) 2) +. (Util.ripow (Real.abs y) 2)) 8 with (* TODO: Proof that 8 is enough *)
-      | Ok r -> Ok (R r)
-      | Error e -> Error e)
+    | x, y -> IR.(CERR.R.sqrt ((CERR.abs x ^. 2) +. (CERR.abs y ^. 2)))
     | _ -> Error "undefined"
 
   let internal_hypot (f_x : Format.t) (f_y : Format.t) (f_r : Format.t) (rho : Projection.t) (x : t) (y : t) : (t, string) Result.t =
@@ -1156,7 +1155,8 @@ module Float = struct
 
   let wArcTan2 (y : CER.t) (x : CER.t) : (CER.t, string) Result.t =
     let open CER in
-    let open Trigonometric in
+    let open CER.Infix in
+    let open CERR in
     match y, x with
     | NaN, _ -> Ok NaN
     | _, NaN -> Ok NaN
@@ -1164,16 +1164,16 @@ module Float = struct
     | NInf, (PInf | NInf) -> Ok NaN
     | PInf, (PInf | NInf) -> Ok NaN
     | _, PInf -> Ok (R 0.0)
-    | R 0.0, R x when x >. 0.0 -> Ok (R 0.0)
-    | PInf, _ -> Ok (R (Pi.pi_half 8))
-    | R y, R 0.0 when y >. 0.0 -> Ok (R (Pi.pi_half 8))
-    | _, NInf -> Ok (R (Pi.pi 8))
-    | R 0.0, R x when x <. 0.0 -> Ok (R (Pi.pi 8))
-    | NInf, _ -> Ok (R (-. (Pi.pi_half 8)))
-    | R y, R 0.0 when y <. 0.0 -> Ok (R (-. (Pi.pi_half 8)))
-    | R y, R x when x >. 0.0 -> Ok (R (Trigonometric.arctan (y /. x) 32))
-    | R y, R x when y >. 0.0 && x <. 0.0 -> Ok (R ((Trigonometric.arctan (y /. x) 32) +. (Pi.pi 8)))
-    | R y, R x when y <. 0.0 && x <. 0.0 -> Ok (R ((Trigonometric.arctan (y /. x) 32) -. (Pi.pi 8)))
+    | R 0.0, x when x > R 0.0 -> Ok (R 0.0)
+    | PInf, _ -> IR.(pi_half)
+    | y, R 0.0 when y > R 0.0 -> IR.(pi_half)
+    | _, NInf -> pi
+    | R 0.0, x when x < R 0.0 -> pi
+    | NInf, _ -> IR.(~-. pi_half)
+    | y, R 0.0 when y < R 0.0 -> IR.((~-. pi_half))
+    | y, x when x > R 0.0 -> R.arctan I.(y /. x)
+    | y, x when y > R 0.0 && x < R 0.0 -> IR.(R.arctan I.(y /. x) +. pi)
+    | y, x when y < R 0.0 && x < R 0.0 -> IR.(R.arctan I.(y /. x) -. pi)
     | _ -> Error "undefined"
 
   let internal_arcTan2 (f_x : Format.t) (f_y : Format.t) (f_r : Format.t) (rho : Projection.t) (x : t) (y : t) : (t, string) Result.t =
@@ -1182,7 +1182,8 @@ module Float = struct
 
   let wArcTan2Pi (y : CER.t) (x : CER.t) : (CER.t, string) Result.t =
     let open CER in
-    let open Trigonometric in
+    let open CER.Infix in
+    let open CERR in
     match y, x with
     | NaN, _ -> Ok NaN
     | _, NaN -> Ok NaN
@@ -1190,16 +1191,16 @@ module Float = struct
     | NInf, (PInf | NInf) -> Ok NaN
     | PInf, (PInf | NInf) -> Ok NaN
     | _, PInf -> Ok (R 0.0)
-    | R 0.0, R x when x >. 0.0 -> Ok (R 0.0)
+    | R 0.0, x when x > R 0.0 -> Ok (R 0.0)
     | PInf, _ -> Ok (R (1.0 /. 2.0))
-    | R y, R 0.0 when y >. 0.0 -> Ok (R (1.0 /. 2.0))
+    | y, R 0.0 when y > R 0.0 -> Ok (R (1.0 /. 2.0))
     | _, NInf -> Ok (R 1.0)
-    | R 0.0, R x when x <. 0.0 -> Ok (R 1.0)
+    | R 0.0, x when x < R 0.0 -> Ok (R 1.0)
     | NInf, _ -> Ok (R (-. 1.0 /. 2.0))
-    | R y, R 0.0 when y <. 0.0 -> Ok (R (-. 1.0 /. 2.0))
-    | R y, R x when x >. 0.0 -> Ok (R ((Trigonometric.arctan (y /. x) 32) /. Pi.pi 8))
-    | R y, R x when y >. 0.0 && x <. 0.0 -> Ok (R (((Trigonometric.arctan (y /. x) 32) +. (Pi.pi 8)) /. Pi.pi 8))
-    | R y, R x when y <. 0.0 && x <. 0.0 -> Ok (R (((Trigonometric.arctan (y /. x) 32) -. (Pi.pi 8)) /. Pi.pi 8))
+    | y, R 0.0 when y < R 0.0 -> Ok (R (-. 1.0 /. 2.0))
+    | y, x when x > R 0.0 -> IR.(R.arctan I.(y /. x) /. pi)
+    | y, x when y > R 0.0 && x < R 0.0 -> IR.(((R.arctan I.(y /. x)) +. pi) /. pi)
+    | y, x when y < R 0.0 && x < R 0.0 -> IR.(((R.arctan I.(y /. x)) -. pi) /. pi)
     | _ -> Error "undefined"
 
   let internal_arcTan2Pi (f_x : Format.t) (f_y : Format.t) (f_r : Format.t) (rho : Projection.t) (x : t) (y : t) : (t, string) Result.t =
@@ -1217,6 +1218,8 @@ module Float = struct
 
   let wMinimum (x : CER.t) (y : CER.t) : (CER.t, string) Result.t =
     let open CER in
+    let open CER.Infix in
+    let open CERR in
     match x, y with
     | NaN, _ -> Ok NaN
     | _, NaN -> Ok NaN
@@ -1224,11 +1227,11 @@ module Float = struct
     | NInf, NInf -> Ok NInf
     | PInf, NInf -> Ok NInf
     | NInf, PInf -> Ok NInf
-    | PInf, R y -> Ok (R y)
-    | R x, PInf -> Ok (R x)
+    | PInf, y -> id y
+    | x, PInf -> id x
     | NInf, _ -> Ok NInf
     | _, NInf -> Ok NInf
-    | R x, R y -> Ok (if x <. y then (R x) else (R y))
+    | x, y -> if x < y then (id x) else (id y)
     | _ -> Error "undefined"
 
   let internal_minimum (f : Format.t)  (rho : Projection.t) (x : t) (y : t) : (t, string) Result.t =
@@ -1242,6 +1245,8 @@ module Float = struct
 
   let wMaximum (x : CER.t) (y : CER.t) : (CER.t, string) Result.t =
     let open CER in
+    let open CER.Infix in
+    let open CERR in
     match x, y with
     | NaN, _ -> Ok NaN
     | _, NaN -> Ok NaN
@@ -1251,9 +1256,9 @@ module Float = struct
     | NInf, PInf -> Ok PInf
     | PInf, _ -> Ok PInf
     | _, PInf -> Ok PInf
-    | NInf, R y -> Ok (R y)
-    | R x, NInf -> Ok (R x)
-    | R x, R y -> Ok (if x <. y then (R y) else (R x))
+    | NInf, y -> id y
+    | x, NInf -> id x
+    | x, y -> if x < y then id y else id x
     | _ -> Error "undefined"
 
   let internal_maximum (f : Format.t) (rho : Projection.t) (x : t) (y : t) : (t, string) Result.t =
@@ -1308,6 +1313,8 @@ module Float = struct
 
   let wMinimumMagnitude (x : CER.t) (y : CER.t) : (CER.t, string) Result.t =
     let open CER in
+    let open CERR in
+    let open CERR.IR in
     match x, y with
     | NaN, _ -> Ok NaN
     | _, NaN -> Ok NaN
@@ -1315,11 +1322,11 @@ module Float = struct
     | NInf, NInf -> Ok NInf
     | PInf, NInf -> Ok NInf
     | NInf, PInf -> Ok NInf
-    | (PInf | NInf), R y  -> Ok (R y)
-    | R x, (PInf | NInf)  -> Ok (R x)
-    | R x, R y when Real.abs x <. Real.abs y -> Ok (R x)
-    | R x, R y when Real.abs x >. Real.abs y -> Ok (R y)
-    | R x, R y when Real.abs x = Real.abs y -> Ok (if x <. y then (R x) else (R y)) [@ocaml.text "breakindent"]
+    | (PInf | NInf), y  -> id y
+    | x, (PInf | NInf)  -> id x
+    | x, y when CERR.abs x < CERR.abs y -> id x
+    | x, y when CERR.abs x > CERR.abs y -> id y
+    | x, y when CERR.abs x = CERR.abs y -> (if Ok x < Ok y then id x else id y) [@ocaml.text "breakindent"]
     | _ -> Error "undefined"
 
   let internal_minimumMagnitude (f : Format.t) (rho : Projection.t) (x : t) (y : t) : (t, string) Result.t =
@@ -1333,6 +1340,8 @@ module Float = struct
 
   let wMaximumMagnitude (x : CER.t) (y : CER.t) : (CER.t, string) Result.t =
     let open CER in
+    let open CERR in
+    let open CERR.IR in
     match x, y with
     | NaN, _ -> Ok NaN
     | _, NaN -> Ok NaN
@@ -1340,9 +1349,9 @@ module Float = struct
     | _, PInf -> Ok PInf
     | NInf, _ -> Ok NInf
     | _, NInf  -> Ok NInf
-    | R x, R y when Real.abs x >. Real.abs y -> Ok (R x)
-    | R x, R y when Real.abs x <. Real.abs y -> Ok (R y)
-    | R x, R y when Real.abs x = Real.abs y -> Ok (if x <. y then (R y) else (R x)) [@ocaml.text "breakindent"]
+    | x, y when CERR.abs x > CERR.abs y -> id x
+    | x, y when CERR.abs x < CERR.abs y -> id y
+    | x, y when CERR.abs x = CERR.abs y -> (if Ok x < Ok y then id y else id x) [@ocaml.text "breakindent"]
     | _ -> Error "undefined"
 
   let internal_maximumMagnitude (f : Format.t) (rho : Projection.t) (x : t) (y : t) : (t, string) Result.t =
@@ -1391,6 +1400,8 @@ module Float = struct
 
   let wMinimumFinite (x : CER.t) (y : CER.t) : (CER.t, string) Result.t =
     let open CER in
+    let open CERR in
+    let open CERR.IR in
     match x, y with
     | NaN, NaN -> Ok NaN
     | NaN, y -> Ok y
@@ -1399,11 +1410,11 @@ module Float = struct
     | NInf, NInf -> Ok NInf
     | PInf, NInf -> Ok NInf
     | NInf, PInf -> Ok NInf
-    | PInf, R y -> Ok (R y)
-    | R x, PInf -> Ok (R x)
-    | NInf, R y -> Ok (R y)
-    | R x, NInf -> Ok (R x)
-    | R x, R y -> Ok (if x <. y then (R x) else (R y)) [@ocaml.text "breakindent"]
+    | PInf, y -> id y
+    | x, PInf -> id x
+    | NInf, y -> id y
+    | x, NInf -> id x
+    | x, y -> (if Ok x < Ok y then id x else id y) [@ocaml.text "breakindent"]
     | _ -> Error "undefined"
 
   let internal_minimumFinite (f : Format.t) (rho : Projection.t) (x : t) (y : t) : (t, string) Result.t =
@@ -1417,6 +1428,8 @@ module Float = struct
 
   let wMaximumFinite (x : CER.t) (y : CER.t) : (CER.t, string) Result.t =
     let open CER in
+    let open CERR in
+    let open CERR.IR in
     match x, y with
     | NaN, NaN -> Ok NaN
     | NaN, y -> Ok y
@@ -1425,11 +1438,11 @@ module Float = struct
     | NInf, NInf -> Ok NInf
     | PInf, NInf -> Ok PInf
     | NInf, PInf -> Ok PInf
-    | PInf, R y -> Ok (R y)
-    | R x, PInf -> Ok (R x)
-    | NInf, R y -> Ok (R y)
-    | R x, NInf -> Ok (R x)
-    | R x, R y -> Ok (if x <. y then (R y) else (R x)) [@ocaml.text "breakindent"]
+    | PInf, y -> id y
+    | x, PInf -> id x
+    | NInf, y -> id y
+    | x, NInf -> id x
+    | x, y -> (if Ok x < Ok y then id y else id x) [@ocaml.text "breakindent"]
     | _ -> Error "undefined"
 
   let internal_maximumFinite (f : Format.t) (rho : Projection.t) (x : t) (y : t) : (t, string) Result.t =
@@ -1446,12 +1459,14 @@ module Float = struct
 
   let wClamp (x : CER.t) (lo : CER.t) (hi : CER.t) : (CER.t, string) Result.t =
     let open CER in
+    let open CERR in
+    let open CER.Infix in
     match x, lo, hi with
     | NaN, _, _ -> Ok NaN
     | _, NaN, _ -> Ok NaN
     | _, _, NaN -> Ok NaN
 
-    | _, R lo, R hi when lo >. hi -> Ok NaN
+    | _, lo, hi when CER.Infix.(lo > hi) -> Ok NaN
 
     | _, PInf, PInf -> Ok PInf
     | _, NInf, NInf -> Ok NInf
@@ -1459,20 +1474,20 @@ module Float = struct
     | _, PInf, _ -> Ok NaN
 
     | PInf, _, PInf -> Ok PInf
-    | PInf, _, R hi -> Ok (R hi)
+    | PInf, _, hi -> id hi
     | NInf, NInf, _ -> Ok NInf
-    | NInf, R lo, _ -> Ok (R lo)
-    | R x, NInf, PInf -> Ok (R x)
+    | NInf, lo, _ -> id lo
+    | x, NInf, PInf -> id x
 
-    | R x, NInf, R hi when x <=. hi -> Ok (R x)
-    | R x, NInf, R hi when x >. hi -> Ok (R hi)
-    | R x, R lo, PInf when x <=. lo -> Ok (R lo)
-    | R x, R lo, PInf when x >. lo -> Ok (R x)
+    | x, NInf, hi when x <= hi -> id x
+    | x, NInf, hi when x > hi -> id hi
+    | x, lo, PInf when x <= lo -> id lo
+    | x, lo, PInf when x > lo -> id x
 
-    | R x, R lo, R hi -> Ok (R (
-        if x <=. lo then lo
-        else if x >=. hi then hi
-        else x))
+    | x, lo, hi ->
+        if x <= lo then id lo
+        else if x >= hi then id hi
+        else id x
     | _ -> Error "undefined"
 
   let internal_clamp (f : Format.t) (rho : Projection.t) (x : t) (lo : t) (hi : t) : (t, string) Result.t =
@@ -1489,6 +1504,7 @@ module Float = struct
 
   let wCompareLess (x : CER.t) (y : CER.t) : (bool, string) Result.t =
     let open CER in
+    let open CERR.I in
     match x, y with
     | NaN, _ -> Ok false
     | _, NaN -> Ok false
@@ -1497,7 +1513,7 @@ module Float = struct
     | NInf, NInf -> Ok false
     | NInf, _ -> Ok true
     | _, NInf -> Ok false
-    | R x, R y -> Ok (x <. y)
+    | x, y -> x < y
     | _ -> Error "undefined"
 
   let internal_compareLess (f_x : Format.t) (f_y : Format.t)  (x : t) (y : t) : (bool, string) Result.t =
@@ -1511,6 +1527,7 @@ module Float = struct
 
   let wCompareLessEqual (x : CER.t) (y : CER.t) : (bool, string) Result.t =
     let open CER in
+    let open CERR.I in
     match x, y with
     | NaN, _ -> Ok false
     | _, NaN -> Ok false
@@ -1518,7 +1535,7 @@ module Float = struct
     | NInf, _ -> Ok true
     | PInf, _ -> Ok false
     | _, NInf -> Ok false
-    | R x, R y -> Ok (x <=. y)
+    | x, y -> x <= y
     | _ -> Error "undefined"
 
   let internal_compareLessEqual (f_x : Format.t) (f_y : Format.t)  (x : t) (y : t) : (bool, string) Result.t =
@@ -1532,6 +1549,7 @@ module Float = struct
 
   let wCompareEqual (x : CER.t) (y : CER.t) : (bool, string) Result.t =
     let open CER in
+    let open CERR.I in
     match x, y with
     | NaN, _ -> Ok false
     | _, NaN -> Ok false
@@ -1541,7 +1559,7 @@ module Float = struct
     | NInf, _ -> Ok false
     | _, NInf -> Ok false
     | _, PInf -> Ok false
-    | R x, R y -> Ok (x = y)
+    | x, y -> x = y
     | _ -> Error "undefined"
 
   let internal_compareEqual (f_x : Format.t) (f_y : Format.t)  (x : t) (y : t) : (bool, string) Result.t =
@@ -1555,6 +1573,7 @@ module Float = struct
 
   let wCompareGreater (x : CER.t) (y : CER.t) : (bool, string) Result.t =
     let open CER in
+    let open CERR.I in
     match x, y with
     | NaN, _ -> Ok false
     | _, NaN -> Ok false
@@ -1563,7 +1582,7 @@ module Float = struct
     | _, NInf -> Ok true
     | PInf, _ -> Ok true
     | NInf, _ -> Ok false
-    | R x, R y -> Ok (x >. y)
+    | x, y -> x > y
     | _ -> Error "undefined"
 
   let internal_compareGreater (f_x : Format.t) (f_y : Format.t)  (x : t) (y : t) : (bool, string) Result.t =
@@ -1577,6 +1596,7 @@ module Float = struct
 
   let wCompareGreaterEqual (x : CER.t) (y : CER.t) : (bool, string) Result.t =
     let open CER in
+    let open CERR.I in
     match x, y with
     | NaN, _ -> Ok false
     | _, NaN -> Ok false
@@ -1585,7 +1605,7 @@ module Float = struct
     | NInf, _ -> Ok false
     | _, PInf -> Ok false
     | _, NInf -> Ok true
-    | R x, R y -> Ok (x >=. y)
+    | x, y -> x >= y
     | _ -> Error "undefined"
 
   let internal_compareGreaterEqual (f_x : Format.t) (f_y : Format.t)  (x : t) (y : t) : (bool, string) Result.t =
@@ -1600,10 +1620,12 @@ module Float = struct
   (** 4.10.3 Predicates and classification *)
 
   let wIsZero (x : CER.t) : (bool, string) Result.t =
+    let open CER in
+    let open CERR.I in
     match x with
     | NaN -> Ok false
     | (PInf | NInf) -> Ok false
-    | R x -> Ok (x = 0.0)
+    | x -> x = R 0.0
     | _ -> Error "undefined"
 
   let internal_isZero (f : Format.t) (x : t) : (bool, string) Result.t =
@@ -1616,10 +1638,12 @@ module Float = struct
 
 
   let wIsOne (x : CER.t) : (bool, string) Result.t =
+    let open CER in
+    let open CERR.I in
     match x with
     | NaN -> Ok false
     | (PInf | NInf) -> Ok false
-    | R x -> Ok (x = 1.0)
+    | x -> x = R 1.0
     | _ -> Error "undefined"
 
   let internal_isOne (f : Format.t) (x : t) : (bool, string) Result.t =
@@ -1637,11 +1661,13 @@ module Float = struct
   let isInfinite (f : Format.t) (x : t) : bool = is_ninf f x || is_pinf f x [@@macro]
 
   let wIsSignMinus (x : CER.t) : (bool, string) Result.t =
+    let open CER in
+    let open CERR.I in
     match x with
     | NaN -> Ok false
     | PInf -> Ok false
     | NInf -> Ok true
-    | R x -> Ok (x <. 0.0)
+    | x -> x < R 0.0
     | _ -> Error "undefined"
 
   let internal_isSignMinus (f : Format.t) (x : t) : (bool, string) Result.t =
@@ -2315,12 +2341,12 @@ module Float = struct
 
   let wSin (x : CER.t) : (CER.t, string) Result.t =
     let open CER in
-    let open Trigonometric in
+    let open CERR in
     match x with
     | NaN -> Ok NaN
     | PInf -> Ok NaN
     | NInf -> Ok NaN
-    | R x -> Ok (R (sin x 15)) (* TODO: prove that 15 is enough *)
+    | x -> sin x
     | _ -> Error "undefined"
 
   let internal_sin (f_x : Format.t) (f_r : Format.t) (rho : Projection.t) (x : t) : (t, string) Result.t =
@@ -2334,12 +2360,12 @@ module Float = struct
 
   let wCos (x : CER.t) : (CER.t, string) Result.t =
     let open CER in
-    let open Trigonometric in
+    let open CERR in
     match x with
     | NaN -> Ok NaN
     | PInf -> Ok NaN
     | NInf -> Ok NaN
-    | R x -> Ok (R (cos x 15)) (* TODO: prove that 15 is enough *)
+    | x -> cos x
     | _ -> Error "undefined"
 
   let internal_cos (f_x : Format.t) (f_r : Format.t) (rho : Projection.t) (x : t) : (t, string) Result.t =
@@ -2353,16 +2379,13 @@ module Float = struct
 
   let wTan (x : CER.t) : (CER.t, string) Result.t =
     let open CER in
-    let open Trigonometric in
+    let open CERR in
     match x with
     | NaN -> Ok NaN
     | PInf -> Ok NaN
     | NInf -> Ok NaN
-    | R x when Trigonometric.cos x 15 = 0.0 -> Ok NaN
-    | R x ->
-      (match tan x 15 with (* TODO: prove that 15 is enough *)
-      | Ok r -> Ok (R (r))
-      | Error e -> Error e)
+    | x when CERR.cos x = Ok (R 0.0) -> Ok NaN
+    | x -> tan x
     | _ -> Error "undefined"
 
   let internal_tan (f_x : Format.t) (f_r : Format.t) (rho : Projection.t) (x : t) : (t, string) Result.t =
@@ -2376,12 +2399,12 @@ module Float = struct
 
   let wSinh (x : CER.t) : (CER.t, string) Result.t =
     let open CER in
-    let open Trigonometric in
+    let open CERR in
     match x with
     | NaN -> Ok NaN
     | PInf -> Ok PInf
     | NInf -> Ok NInf
-    | R x -> Ok (R (sinh x 15)) (* TODO: prove that 15 is enough *)
+    | x -> sinh x
     | _ -> Error "undefined"
 
   let internal_sinh (f_x : Format.t) (f_r : Format.t) (rho : Projection.t) (x : t) : (t, string) Result.t =
@@ -2395,12 +2418,12 @@ module Float = struct
 
   let wCosh (x : CER.t) : (CER.t, string) Result.t =
     let open CER in
-    let open Trigonometric in
+    let open CERR in
     match x with
     | NaN -> Ok NaN
     | PInf -> Ok PInf
     | NInf -> Ok PInf
-    | R x -> Ok (R (cosh x 15)) (* TODO: prove that 15 is enough *)
+    | x -> cosh x
     | _ -> Error "undefined"
 
   let internal_cosh (f_x : Format.t) (f_r : Format.t) (rho : Projection.t) (x : t) : (t, string) Result.t =
@@ -2414,12 +2437,12 @@ module Float = struct
 
   let wTanh (x : CER.t) : (CER.t, string) Result.t =
     let open CER in
-    let open Trigonometric in
+    let open CERR in
     match x with
     | NaN -> Ok NaN
     | PInf -> Ok (R 1.0)
     | NInf -> Ok (R (- 1.0))
-    | R x -> Ok (R (tanh x 15))  (* TODO: prove that 15 is enough *)
+    | x -> tanh x
     | _ -> Error "undefined"
 
   let internal_tanh (f_x : Format.t) (f_r : Format.t) (rho : Projection.t) (x : t) : (t, string) Result.t =
@@ -2433,16 +2456,14 @@ module Float = struct
 
   let wArcSin (x : CER.t) : (CER.t, string) Result.t =
     let open CER in
-    let open Trigonometric in
+    let open CER.Infix in
+    let open CERR in
     match x with
     | NaN -> Ok NaN
     | PInf -> Ok NaN
     | NInf -> Ok NaN
-    | R x when x <. -1.0 || x >. 1.0 -> Ok NaN
-    | R x ->
-      (match arcsin x 15 with (* TODO: prove that 15 is enough *)
-      | Ok r -> Ok (R r)
-      | Error e -> Error e)
+    | x when x < R (-1.0) || x > R 1.0 -> Ok NaN
+    | x -> arcsin x
     | _ -> Error "undefined"
 
   let internal_arcsin (f_x : Format.t) (f_r : Format.t) (rho : Projection.t) (x : t) : (t, string) Result.t =
@@ -2456,16 +2477,14 @@ module Float = struct
 
   let wArcCos (x : CER.t) : (CER.t, string) Result.t =
     let open CER in
-    let open Trigonometric in
+    let open CER.Infix in
+    let open CERR in
     match x with
     | NaN -> Ok NaN
     | PInf -> Ok NaN
     | NInf -> Ok NaN
-    | R x when x <. -1.0 || x >. 1.0 -> Ok NaN
-    | R x ->
-      (match arccos x 15 with (* TODO: prove that 15 is enough *)
-       | Ok r -> Ok (R r)
-       | Error e -> Error e)
+    | x when x < R (-1.0) || x > R 1.0 -> Ok NaN
+    | x -> arccos x
     | _ -> Error "undefined"
 
   let internal_arccos (f_x : Format.t) (f_r : Format.t) (rho : Projection.t) (x : t) : (t, string) Result.t =
@@ -2479,12 +2498,12 @@ module Float = struct
 
   let wArcTan (x : CER.t) : (CER.t, string) Result.t =
     let open CER in
-    let open Trigonometric in
+    let open CERR in
     match x with
     | NaN -> Ok NaN
-    | PInf -> Ok (R (Pi.pi_half 15)) (* TODO: prove that 15 is enough *)
-    | NInf -> Ok (R (-. (Pi.pi_half 15)))
-    | R x -> Ok (R (arctan x 15)) (* TODO: prove that 15 is enough *)
+    | PInf -> (CERR.pi_half)
+    | NInf -> IR.((~-. pi_half))
+    | x -> arctan x
     | _ -> Error "undefined"
 
   let internal_arctan (f_x : Format.t) (f_r : Format.t) (rho : Projection.t) (x : t) : (t, string) Result.t =
@@ -2498,15 +2517,12 @@ module Float = struct
 
   let wArcSinh (x : CER.t) : (CER.t, string) Result.t =
     let open CER in
-    let open Trigonometric in
+    let open CERR in
     match x with
     | NaN -> Ok NaN
     | PInf -> Ok PInf
     | NInf -> Ok NInf
-    | R x ->
-      (match arcsinh x 15 with (* TODO: prove that 15 is enough *)
-       | Ok r -> Ok (R r)
-       | Error e -> Error e)
+    | x -> CERR.arcsinh x
     | _ -> Error "undefined"
 
   let internal_arcsinh (f_x : Format.t) (f_r : Format.t) (rho : Projection.t) (x : t) : (t, string) Result.t =
@@ -2520,16 +2536,14 @@ module Float = struct
 
   let wArcCosh (x : CER.t) : (CER.t, string) Result.t =
     let open CER in
-    let open Trigonometric in
+    let open CER.Infix in
+    let open CERR in
     match x with
     | NaN -> Ok NaN
     | PInf -> Ok PInf
     | NInf -> Ok NaN
-    | R x when x <. 1.0 -> Ok NaN
-    | R x ->
-      (match arccosh x 15 with (* TODO: prove that 15 is enough *)
-      | Ok r -> Ok (R r)
-      | Error e -> Error e)
+    | x when x < R 1.0 -> Ok NaN
+    | x -> CERR.arccosh x
     | _ -> Error "undefined"
 
   let internal_arccosh (f_x : Format.t) (f_r : Format.t) (rho : Projection.t) (x : t) : (t, string) Result.t =
@@ -2543,18 +2557,16 @@ module Float = struct
 
   let wArcTanh (x : CER.t) : (CER.t, string) Result.t =
     let open CER in
-    let open Trigonometric in
+    let open CER.Infix in
+    let open CERR in
     match x with
     | NaN -> Ok NaN
     | PInf -> Ok NaN
     | NInf -> Ok NaN
     | R (1.0) -> Ok PInf
     | R (-1.0) -> Ok NInf
-    | R x when x <. -1.0 || x >. 1.0 -> Ok NaN
-    | R x ->
-      (match arctanh x 15 with  (* TODO: prove that 15 is enough *)
-      | Ok r -> Ok (R r)
-      | Error e -> Error e)
+    | x when x < R (-1.0) || x > R 1.0 -> Ok NaN
+    | x -> CERR.arctanh x
     | _ -> Error "undefined"
 
   let internal_arctanh (f_x : Format.t) (f_r : Format.t) (rho : Projection.t) (x : t) : (t, string) Result.t =
@@ -2568,12 +2580,13 @@ module Float = struct
 
   let wSinPi (x : CER.t) : (CER.t, string) Result.t =
     let open CER in
-    let open Trigonometric in
+    let open CERR in
+    let open CERR.IR in
     match x with
     | NaN -> Ok NaN
     | PInf -> Ok NaN
     | NInf -> Ok NaN
-    | R x -> Ok (R (Trigonometric.sin (x *. (Pi.pi 32)) 32)) (* TODO: prove that 32 is enough *)
+    | x -> R.sin (id x *. pi)
     | _ -> Error "undefined"
 
   let internal_sinPi (f_x : Format.t) (f_r : Format.t) (rho : Projection.t) (x : t) : (t, string) Result.t =
@@ -2587,12 +2600,13 @@ module Float = struct
 
   let wCosPi (x : CER.t) : (CER.t, string) Result.t =
     let open CER in
-    let open Trigonometric in
+    let open CERR in
+    let open CERR.IR in
     match x with
     | NaN -> Ok NaN
     | PInf -> Ok NaN
     | NInf -> Ok NaN
-    | R x -> Ok (R (Trigonometric.cos (x *. (Pi.pi 32)) 32)) (* TODO: prove that 32 is enough *)
+    | x -> R.cos (id x *. pi)
     | _ -> Error "undefined"
 
   let internal_cosPi (f_x : Format.t) (f_r : Format.t) (rho : Projection.t) (x : t) : (t, string) Result.t =
@@ -2606,16 +2620,15 @@ module Float = struct
 
   let wTanPi (x : CER.t) : (CER.t, string) Result.t =
     let open CER in
-    let open Trigonometric in
+    let open CER.Infix in
+    let open CERR in
+    let open CERR.IR in
     match x with
     | NaN -> Ok NaN
     | PInf -> Ok NaN
     | NInf -> Ok NaN
-    | R x when Trigonometric.cos (x *. (Pi.pi 32)) 32 = 0.0 -> Ok NaN
-    | R x ->
-      (match Trigonometric.tan (x *. (Pi.pi 32)) 32 with (* TODO: prove that 32 is enough *)
-      | Ok r -> Ok (R r)
-      | Error e -> Error e)
+    | x when R.cos (id x *. pi) = Ok (R 0.0) -> Ok NaN
+    | x -> R.tan (id x *. pi)
     | _ -> Error "undefined"
 
   let internal_tanPi (f_x : Format.t) (f_r : Format.t) (rho : Projection.t) (x : t) : (t, string) Result.t =
@@ -2629,15 +2642,14 @@ module Float = struct
 
   let wArcSinPi (x : CER.t) : (CER.t, string) Result.t =
     let open CER in
+    let open CER.Infix in
+    let open CERR in
     match x with
     | NaN -> Ok NaN
     | PInf -> Ok NaN
     | NInf -> Ok NaN
-    | R x when x <. -1.0 || x >. 1.0 -> Ok NaN
-    | R x ->
-      (match Trigonometric.arcsin_pi x 32 with (* TODO: prove that 32 is enough *)
-      | Ok r -> Ok (R r)
-      | Error e -> Error e)
+    | x when x < R (-1.0) || x > R 1.0 -> Ok NaN
+    | x -> CERR.IR.((CERR.arcsin x) /. pi)
     | _ -> Error "undefined"
 
   let internal_arcSinPi (f_x : Format.t) (f_r : Format.t) (rho : Projection.t) (x : t) : (t, string) Result.t =
@@ -2651,15 +2663,14 @@ module Float = struct
 
   let wArcCosPi (x : CER.t) : (CER.t, string) Result.t =
     let open CER in
+    let open CER.Infix in
+    let open CERR in
     match x with
     | NaN -> Ok NaN
     | PInf -> Ok NaN
     | NInf -> Ok NaN
-    | R x when x <. -1.0 || x >. 1.0 -> Ok NaN
-    | R x ->
-      (match Trigonometric.arccos_pi x 32 with (* TODO: prove that 32 is enough *)
-      | Ok r -> Ok (R r)
-      | Error e -> Error e)
+    | x when x < R (-1.0) || x > R 1.0 -> Ok NaN
+    | x -> CERR.IR.((CERR.arccos x) /. pi)
     | _ -> Error "undefined"
 
   let internal_arcCosPi (f_x : Format.t) (f_r : Format.t) (rho : Projection.t) (x : t) : (t, string) Result.t =
@@ -2673,11 +2684,15 @@ module Float = struct
 
   let wArcTanPi (x : CER.t) : (CER.t, string) Result.t =
     let open CER in
+    let open CER.Infix in
+    let open CERR in
     match x with
     | NaN -> Ok NaN
     | PInf -> Ok (R (1.0 /. 2.0))
     | NInf -> Ok (R (-1.0 /. 2.0))
-    | R x -> Ok (R (Trigonometric.arctan_pi x 32)) (* TODO: prove that 32 is enough *)
+    | x ->
+      let open CERR.IR in
+      (CERR.arctan x) /. pi
     | _ -> Error "undefined"
 
   let internal_arcTanPi (f_x : Format.t) (f_r : Format.t) (rho : Projection.t) (x : t) : (t, string) Result.t =
@@ -2691,14 +2706,13 @@ module Float = struct
 
   let wSoftplus (x : CER.t) : (CER.t, string) Result.t =
     let open CER in
+    let open CERR.R in
+    let open CERR.IR in
     match x with
     | NaN -> Ok NaN
     | PInf -> Ok PInf
     | NInf -> Ok (R 0.0)
-    | R x ->
-      (match Log.ln (1.0 +. (Exp.exp x 9)) 9 with (* TODO: Proof that 9 is enough *)
-      | Ok r -> Ok (R (r))
-      | Error e -> Error e)
+    | x -> ln (Ok (R 1.0) +. (CERR.exp x))
     | _ -> Error "undefined"
 
   let internal_softplus (f_x : Format.t) (f_r : Format.t) (rho : Projection.t) (x : t) : (t, string) Result.t =

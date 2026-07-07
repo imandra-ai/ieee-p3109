@@ -45,6 +45,11 @@ let is_inf (x : t) : bool =
   | PInf | NInf -> true
   | NaN | R _ -> false
 
+let is_real (x : t) : bool =
+  match x with
+  | NaN | PInf | NInf -> false
+  | R _ -> true
+
 module Infix = struct
   let ( + ) (x : t) (y : t) : t =
     match x, y with
@@ -60,7 +65,7 @@ module Infix = struct
 
   let ( - ) (x : t) (y : t) : t =
     match x, y with
-     | NaN, _ -> NaN
+    | NaN, _ -> NaN
     | _, NaN -> NaN
     | PInf, PInf -> NaN
     | NInf, NInf -> NaN
@@ -69,6 +74,13 @@ module Infix = struct
     | _, NInf -> PInf
     | NInf, _ -> NInf
     | R x, R y -> R (x -. y)
+
+  let ( ~- ) (x : t) : t =
+    match x with
+    | NaN -> NaN
+    | PInf -> NInf
+    | NInf -> PInf
+    | R x -> R (~-. x)
 
   let ( * ) (x : t) (y : t) : t =
     match x, y with
@@ -116,8 +128,16 @@ module Infix = struct
     | PInf, R _ | R _, NInf -> false
     | R rx, R ry -> rx <. ry
 
+  let ( > ) (x : t) (y : t) : bool =
+    match x, y with
+    | NaN, _ | _, NaN -> false
+    | NInf, NInf | PInf, PInf | NInf, PInf -> false
+    | PInf, NInf -> true
+    | NInf, R _ | R _, PInf -> false
+    | PInf, R _ | R _, NInf -> true
+    | R rx, R ry -> rx >. ry
+
   let ( <= ) (x : t) (y : t) : bool = x < y || x = y [@@macro]
-  let ( > ) (x : t) (y : t) : bool = not (x <= y) [@@macro]
   let ( >= ) (x : t) (y : t) : bool = x > y || x = y [@@macro]
 
   let ( ^ ) (x : int) (y : int) : t = R (Util.pow x y) [@@macro]
@@ -257,6 +277,11 @@ module ResultInfix = struct
     | Ok x -> Ok (abs x)
     | Error e -> Error e
 end
+
+let to_real (x : t) : (real, string) Result.t =
+  match x with
+  | R x -> Ok x
+  | _ -> Error "undefined"
 
 let to_string : t -> string =
   fun x ->
