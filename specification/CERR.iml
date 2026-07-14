@@ -79,7 +79,9 @@ let hypot x y =
     | Error e -> Error e)
   | _ -> Error "undefined"
 
-let pi = Ok (R (Pi.pi approx))
+let pi_cer : CER.t = R (Pi.pi approx)
+
+let pi : (CER.t, string) Result.t = Ok (pi_cer)
 
 let pi_half = Ok (R (0.5 *. Pi.pi approx))
 

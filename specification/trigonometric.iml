@@ -13,25 +13,25 @@ open ErrorPropagation
 
 let ( ^. ) (x : real) (y : int) = Util.ripow x y
 
-let sin (x : real) (p : int) : real =
-  let term (x : real) (n : int) : real =
+let sin_term (x : real) (n : int) : real =
     let fac = Util.rfactorial (2 * n + 1) in (* Note: n >= 0 here*)
     ((- 1.0) ^. n) *. ((x ^. (2 * n + 1)) /. fac)
-  in
+
+let sin (x : real) (p : int) : real =
    if x = 0.0 then
     0.0
   else
-    Util.sum (fun i _ -> term x i) 0 p
+    Util.sum (fun i _ -> sin_term x i) 0 p
 
-let cos (x : real) (p : int) : real =
-  let term (x : real) (n : int) : real =
+let cos_term (x : real) (n : int) : real =
     let fac = Util.rfactorial (2 * n) in (* Note: n >= 0 here*)
     ((- 1.0) ^. n) *. ((x ^. (2 * n)) /. fac)
-  in
+
+let cos (x : real) (p : int) : real =
    if x = 0.0 then
     1.0
   else
-    Util.sum (fun i _ -> term x i) 0 p
+    Util.sum (fun i _ -> cos_term x i) 0 p
 
 let tan (x : real) (p : int) : (real, string) Result.t =
   let cos_x = cos x p in
@@ -256,3 +256,15 @@ verify (
   | Ok q -> 0.96 <=. q && q <=. 1.0
   | Error _ -> false)
   [@@by auto]
+
+let unroll_nonlin qt nqt steps = Tactic.unroll ~smt:"z3-full-nonlinear" ~query_timeout:qt ~no_asm_query_timeout:nqt steps
+
+axiom sin_cos_never_zero x p =
+  p > 0 ==> not (sin x p = 0.0 && cos x p = 0.0)
+  (* TODO: turn this into a theorem. *)
+  (* [@@timeout 3600]
+  [@@by
+    [%use ... sin_term x p] @>
+    [%use ... cos_term x p] @>
+    auto
+  ] *)

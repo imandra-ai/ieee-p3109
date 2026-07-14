@@ -7,7 +7,8 @@
 \Case{\csname wArcTan2Pi\endcsname(\zero, X) ~\If X > \zero\gives  \zero}\\
 \Case{\csname wArcTan2Pi\endcsname(+\infty, \any) \gives  \one / 2}\\
 \Case{\csname wArcTan2Pi\endcsname(Y, \zero) ~\If Y > \zero\gives  \one / 2}\\
-\Case{\csname wArcTan2Pi\endcsname(\any, -\infty) \gives  \one}\\
+\Case{\csname wArcTan2Pi\endcsname(Y, -\infty) ~\If Y \geq \zero\gives  \one}\\
+\Case{\csname wArcTan2Pi\endcsname(Y, -\infty) ~\If Y < \zero\gives  -\one}\\
 \Case{\csname wArcTan2Pi\endcsname(\zero, X) ~\If X < \zero\gives  \one}\\
 \Case{\csname wArcTan2Pi\endcsname(-\infty, \any) \gives  -\one / 2}\\
 \Case{\csname wArcTan2Pi\endcsname(Y, \zero) ~\If Y < \zero\gives  -\one / 2}\\

@@ -19,8 +19,6 @@ X < \Mlo \And X \neq -\infty\gives  \Mlo}\\
 \Case{\wSaturate(\SatNone, \any, +\infty, \any, \Extended) \gives  +\infty}\\
 \Case{\wSaturate(\SatNone, \any, -\infty, \Signed, \Extended) \gives  -\infty}\\
 \Case{\wSaturate(\SatNone, \any, -\infty, \Unsigned, \Extended) \gives  \NaN}\\
-\Case{\wSaturate(\SatNone, \ToOdd, X, \Unsigned, \Extended) ~\If X > \Mhi\gives
-\Mhi}\\
 \Case{\wSaturate(\SatNone, \any, X, \Signed, \Extended) ~\If X < \Mlo\gives  -\infty}\\
 \Case{\wSaturate(\SatNone, \any, X, \Unsigned, \Extended) ~\If X < \Mlo\gives  \NaN}\\
 \Case{\wSaturate(\SatNone, \any, X, \any, \Extended) ~\If X > \Mhi\gives  +\infty}\\

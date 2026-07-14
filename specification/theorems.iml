@@ -804,10 +804,22 @@ theorem internal_cos_ok (f_x : Format.t) (f_r : Format.t) (rho : Projection.t) (
   [@@by auto]
 
 (** [internal_tan] never returns an error *)
+theorem sin_cos_never_zero (x : CER.t) (p : int) =
+  let open Trigonometric in
+  match x with
+  | R x -> p > 0 ==> not (sin x p = 0.0 && cos x p = 0.0)
+  | _ -> true
+  [@@by [%use Trigonometric.sin_cos_never_zero (match CER.to_real x with Ok r -> r | Error _ -> 0.0) p] @> auto]
+
+theorem wTan_ok (x : CER.t) =
+  Result.is_ok (Float.wTan x)
+  [@@disable Trigonometric.sin, Trigonometric.cos]
+  [@@by [%use sin_cos_never_zero x (CERR.approx)] @> auto]
+
 theorem internal_tan_ok (f_x : Format.t) (f_r : Format.t) (rho : Projection.t) (x : Float.t) =
   Result.is_ok (Float.internal_tan f_x f_r rho x)
   [@@disable Float.wProject, Float.wDecode, Trigonometric.sin, Trigonometric.cos]
-  [@@by auto]
+  [@@by [%use sin_cos_never_zero (Float.wDecode f_x x) (CERR.approx)] @> auto]
 
 (** [internal_sinh] never returns an error *)
 theorem internal_sinh_ok (f_x : Format.t) (f_r : Format.t) (rho : Projection.t) (x : Float.t) =
@@ -880,7 +892,9 @@ theorem internal_cosPi_ok (f_x : Format.t) (f_r : Format.t) (rho : Projection.t)
 theorem internal_tanPi_ok (f_x : Format.t) (f_r : Format.t) (rho : Projection.t) (x : Float.t) =
   Result.is_ok (Float.internal_tanPi f_x f_r rho x)
   [@@disable Float.wProject, Float.wDecode, Trigonometric.sin, Trigonometric.cos, Trigonometric.tan]
-  [@@by auto]
+  [@@by [%use sin_cos_never_zero
+    (match CERR.I.((Float.wDecode f_x x) *. (CERR.pi_cer)) with Ok c -> c | Error _ -> CER.zero) (CERR.approx) ] @>
+    auto]
 
 (** [internal_arcSinPi] never returns an error *)
 theorem internal_arcSinPi_ok (f_x : Format.t) (f_r : Format.t) (rho : Projection.t) (x : Float.t) =

@@ -1,5 +1,6 @@
 \noindent\Case{\wTan(\NaN) \gives  \NaN}\\
 \Case{\wTan(+\infty) \gives  \NaN}\\
 \Case{\wTan(-\infty) \gives  \NaN}\\
-\Case{\wTan(X) ~\If \cos{ X} =  \zero\gives  \NaN}\\
+\Case{\wTan(X) ~\If \cos{ X} =  \zero \And \sin{ X} >  \zero\gives  +\infty}\\
+\Case{\wTan(X) ~\If \cos{ X} =  \zero \And \sin{ X} <  \zero\gives  -\infty}\\
 \Case{\wTan(X) \gives \tan{ X}}\\

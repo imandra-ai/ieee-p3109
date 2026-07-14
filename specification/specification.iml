@@ -559,7 +559,6 @@ module Float = struct
     | SatNone, _, PInf, _, Extended -> Ok PInf
     | SatNone, _, NInf, Signed, Extended -> Ok NInf
     | SatNone, _, NInf, Unsigned, Extended -> Ok NaN
-    | SatNone, ToOdd, x, Unsigned, Extended when CER.Infix.(x > CER.R m_hi) -> Ok (R m_hi)
     | SatNone, _, x, Signed, Extended when CER.Infix.(x < CER.R m_lo) -> Ok NInf
     | SatNone, _, x, Unsigned, Extended when CER.Infix.(x < CER.R m_lo) -> Ok NaN
     | SatNone, _, x, _, Extended when CER.Infix.(x > CER.R m_hi) -> Ok PInf
@@ -1167,10 +1166,11 @@ module Float = struct
     | R 0.0, x when x > R 0.0 -> Ok (R 0.0)
     | PInf, _ -> IR.(pi_half)
     | y, R 0.0 when y > R 0.0 -> IR.(pi_half)
-    | _, NInf -> pi
+    | y, NInf when y >= R 0.0 -> pi
+    | y, NInf when y < R 0.0 -> IR.(~-. pi)
     | R 0.0, x when x < R 0.0 -> pi
     | NInf, _ -> IR.(~-. pi_half)
-    | y, R 0.0 when y < R 0.0 -> IR.((~-. pi_half))
+    | y, R 0.0 when y < R 0.0 -> IR.(~-. pi_half)
     | y, x when x > R 0.0 -> R.arctan I.(y /. x)
     | y, x when y > R 0.0 && x < R 0.0 -> IR.(R.arctan I.(y /. x) +. pi)
     | y, x when y < R 0.0 && x < R 0.0 -> IR.(R.arctan I.(y /. x) -. pi)
@@ -1194,7 +1194,8 @@ module Float = struct
     | R 0.0, x when x > R 0.0 -> Ok (R 0.0)
     | PInf, _ -> Ok (R (1.0 /. 2.0))
     | y, R 0.0 when y > R 0.0 -> Ok (R (1.0 /. 2.0))
-    | _, NInf -> Ok (R 1.0)
+    | y, NInf when y >= R 0.0 -> Ok (R 1.0)
+    | y, NInf when y < R 0.0 -> Ok (R (-1.0))
     | R 0.0, x when x < R 0.0 -> Ok (R 1.0)
     | NInf, _ -> Ok (R (-. 1.0 /. 2.0))
     | y, R 0.0 when y < R 0.0 -> Ok (R (-. 1.0 /. 2.0))
@@ -2380,11 +2381,13 @@ module Float = struct
   let wTan (x : CER.t) : (CER.t, string) Result.t =
     let open CER in
     let open CERR in
+    let open CERR.IR in
     match x with
     | NaN -> Ok NaN
     | PInf -> Ok NaN
     | NInf -> Ok NaN
-    | x when CERR.cos x = Ok (R 0.0) -> Ok NaN
+    | x when CERR.cos x = Ok (R 0.0) && CERR.sin x > Ok (R 0.0) -> Ok PInf
+    | x when CERR.cos x = Ok (R 0.0) && CERR.sin x < Ok (R 0.0) -> Ok NInf
     | x -> tan x
     | _ -> Error "undefined"
 
@@ -2627,7 +2630,8 @@ module Float = struct
     | NaN -> Ok NaN
     | PInf -> Ok NaN
     | NInf -> Ok NaN
-    | x when R.cos (id x *. pi) = Ok (R 0.0) -> Ok NaN
+    | x when R.cos (id x *. pi) = Ok (R 0.0) && (R.sin (id x *. pi)) [@ocaml.doc "latex-before: \\\\\\hspace*{8em}"] > Ok (R 0.0) -> Ok PInf
+    | x when R.cos (id x *. pi) = Ok (R 0.0) && (R.sin (id x *. pi)) [@ocaml.doc "latex-before: \\\\\\hspace*{8em}"] < Ok (R 0.0) -> Ok NInf
     | x -> R.tan (id x *. pi)
     | _ -> Error "undefined"
 

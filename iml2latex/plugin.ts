@@ -516,6 +516,11 @@ function print_attributes(attrs: AST[], level: number, options: Options): Doc[] 
   return join(line, filtered.map(x => print_attribute(x, level, options)));
 }
 
+function print_pre_attributes(attrs: AST[], level: number, options: Options): Doc[] {
+  const filtered = filter_attributes(attrs);
+  return join(line, filtered.map(x => print_pre_attribute(x, level, options)));
+}
+
 function has_attribute(attrs, x): boolean {
   return attrs.find(a => a.attr_name.txt == x);
 }
@@ -806,17 +811,6 @@ function has_latexpar(attrs): boolean {
   }) ?? false;
 };
 
-function get_latex(attrs): string | undefined {
-  attrs.forEach((x) => {
-    if (x.attr_name.txt == "ocaml.doc" || x.attr_name.txt == "ocaml.text") {
-      const pl = get_attr_payload_string(x);
-      if (pl && pl.startsWith("latex:"))
-        return pl.substring(6);
-    }
-  });
-  return undefined;
-};
-
 function print_value_binding(node: AST, options: Options): Doc {
   // {
   //   pvb_pat: pattern;
@@ -847,7 +841,8 @@ function print_expression(node: AST, options: Options): Doc[] {
   //  }
   let r = [
     par_if(has_latexpar(node.pexp_attributes),
-      [print_expression_desc(node.pexp_desc, options),
+      [...print_pre_attributes(node.pexp_attributes, 1, options),
+        print_expression_desc(node.pexp_desc, options),
       ...ifnonempty(line, print_attributes(node.pexp_attributes, 1, options))])];
   return r;
 }
@@ -1719,6 +1714,8 @@ function print_attribute(node: AST, level: number, options: Options): Doc[] {
           const str = get_attr_payload_string(node);
           if (str && str.startsWith("latex: "))
             return [str.substring(7)];
+          else if (str && str.startsWith("latex-before: "))
+            return [];
           else {
             return ["(", "*".repeat(level), indent(str), "*)"];
           }
@@ -1735,6 +1732,29 @@ function print_attribute(node: AST, level: number, options: Options): Doc[] {
   return [f(["[", "@".repeat(level),
     print_string_loc(node.attr_name, options),
     indent([...ifnonempty(line, payload), "]"])])];
+}
+
+function print_pre_attribute(node: AST, level: number, options: Options): Doc[] {
+  // {
+  //   attr_name : string loc;
+  //   attr_payload : payload;
+  //   attr_loc : Location.t;
+  // }
+  switch (level) {
+    case 3: {
+      return [];
+    }
+    default: {
+      switch (node.attr_name.txt) {
+        case "ocaml.doc": {
+          const str = get_attr_payload_string(node);
+          if (str && str.startsWith("latex-before: "))
+            return [str.substring(14)];
+        }
+      }
+    }
+      return [];
+  }
 }
 
 function strip_error_handling(node: AST) {

@@ -1,5 +1,10 @@
 \noindent\Case{\wTanPi(\NaN) \gives  \NaN}\\
 \Case{\wTanPi(+\infty) \gives  \NaN}\\
 \Case{\wTanPi(-\infty) \gives  \NaN}\\
-\Case{\wTanPi(X) ~\If \cos{ (X \times \pi)} =  \zero\gives  \NaN}\\
+\Case{\wTanPi(X) ~\If
+\cos{ (X \times \pi)} =  \zero \And
+\\\hspace*{8em}\sin{ (X \times \pi)}  >  \zero\gives  +\infty}\\
+\Case{\wTanPi(X) ~\If
+\cos{ (X \times \pi)} =  \zero \And
+\\\hspace*{8em}\sin{ (X \times \pi)}  <  \zero\gives  -\infty}\\
 \Case{\wTanPi(X) \gives \tan{ (X \times \pi)}}\\
