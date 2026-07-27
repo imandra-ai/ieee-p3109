@@ -1176,8 +1176,8 @@ module Float = struct
     | y, x when y < R 0.0 && x < R 0.0 -> IR.(R.arctan I.(y /. x) -. pi)
     | _ -> Error "undefined"
 
-  let internal_arcTan2 (f_x : Format.t) (f_y : Format.t) (f_r : Format.t) (rho : Projection.t) (x : t) (y : t) : (t, string) Result.t =
-    let* z = wArcTan2 (wDecode f_x x) (wDecode f_y y) in
+  let internal_arcTan2 (f_y : Format.t) (f_x : Format.t) (f_r : Format.t) (rho : Projection.t) (y : t) (x : t) : (t, string) Result.t =
+    let* z = wArcTan2 (wDecode f_y y) (wDecode f_x x) in
     wProject f_r rho z
 
   let wArcTan2Pi (y : CER.t) (x : CER.t) : (CER.t, string) Result.t =
@@ -1204,8 +1204,8 @@ module Float = struct
     | y, x when y < R 0.0 && x < R 0.0 -> IR.(((R.arctan I.(y /. x)) -. pi) /. pi)
     | _ -> Error "undefined"
 
-  let internal_arcTan2Pi (f_x : Format.t) (f_y : Format.t) (f_r : Format.t) (rho : Projection.t) (x : t) (y : t) : (t, string) Result.t =
-    let* z = wArcTan2Pi (wDecode f_x x) (wDecode f_y y) in
+  let internal_arcTan2Pi (f_y : Format.t) (f_x : Format.t) (f_r : Format.t) (rho : Projection.t) (y : t) (x : t) : (t, string) Result.t =
+    let* z = wArcTan2Pi (wDecode f_y y) (wDecode f_x x) in
     wProject f_r rho z
 
   let arcTan2Pi (f_x : Format.t) (f_y : Format.t) (f_r : Format.t) (rho : Projection.t) (y : t) (x : t) : t =
