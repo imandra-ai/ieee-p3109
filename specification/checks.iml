@@ -133,8 +133,8 @@ lemma faa_two =
 let four : Float.t = 0x48 [@@macro]
 
 lemma block_add_12 =
-  let pi = SaturationMode.SatPropagate, RoundingMode.NearestTiesToEven in
-  (Float.blockAdd 2 f83 f83 f83 f83 f83 f83 pi pi (one, [one; two]) (one, [one; two]) one)
+  let rho = SaturationMode.SatPropagate, RoundingMode.NearestTiesToEven in
+  (Float.blockAdd 2 f83 f83 f83 f83 f83 f83 rho (Float.BlockProjection.wrap rho) (one, [one; two]) (one, [one; two]) one)
   =
   Ok (one, [two; four])
   [@@by ground_eval ()]
@@ -144,6 +144,6 @@ verify (
   let rho = (SaturationMode.SatPropagate, RoundingMode.NearestTiesToEven) in
   (match (Float.pinf f) with
   | Ok pinf ->
-    Float.convertToBlockMaxAbsFinite 2 f f f rho rho [Float.nan f; Float.nan f] = Ok (Float.nan f, [Float.nan f; Float.nan f])
+    Float.convertToBlockMaxAbsFinite 2 f f f rho (Float.BlockProjection.wrap rho) [Float.nan f; Float.nan f] = Ok (Float.nan f, [Float.nan f; Float.nan f])
   | Error e -> false)
 ) [@@by ground_eval ()]

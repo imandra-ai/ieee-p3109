@@ -28,6 +28,15 @@ theorem list_map2_preserves_length (f : 'a -> 'b -> 'c) (xs : 'a list) (ys : 'b 
   [@@by auto]
   [@@fc]
 
+theorem list_mapi_loop_preserves_length (f : int -> 'a -> 'b) (i : int) (l : 'a list) =
+  List.length (Util.list_mapi_loop f i l) = List.length l
+  [@@by induct ~on_vars:["l"] ()]
+
+theorem list_mapi_preserves_length (f : int -> 'a -> 'b) (xs : 'a list) =
+  List.length ((Util.list_mapi f xs) [@trigger]) = List.length xs
+  [@@by [%expand Util.list_mapi] @> [%use list_mapi_loop_preserves_length f 0 xs] @> auto]
+  [@@fc]
+
 theorem list_tl_shorter (xs : 'a list) =
   xs <> [] ==> List.length xs > List.length (List.tl xs) [@trigger]
   [@@by auto]
@@ -161,13 +170,32 @@ theorem wBlockProject_map_ok (cs : CER.t) (x : CER.t list) =
           | (PInf | NInf) -> Ok (R 1.0)
           | _ -> wDivide x_i cs)
         x))
-  [@@disable Float.wDecode, Float.wDivide, List.map]
+  [@@disable Float.wDivide, List.map]
   [@@by auto]
+
+theorem project_ith_ok f i rho e =
+  Result.is_ok ((Float.project_ith i e (f, rho)) [@trigger])
+  [@@disable Float.wProject]
+  [@@by auto]
+  [@@fc]
+
+theorem mapi_loop_ith_ok f rho x s =
+  Result.is_ok (extract_error (
+    Util.list_mapi_loop' Float.project_ith s x (f, rho)))
+  [@@disable Float.project_ith]
+  [@@timeout 3600]
+  [@@by auto]
+
+theorem mapi_ith_ok f rho x =
+  Result.is_ok (extract_error (
+    Util.list_mapi' Float.project_ith x (f, rho)))
+  [@@disable Util.list_mapi_loop', BlockProjection.ith, Float.project_ith]
+  [@@by [%expand Util.list_mapi'] @> [%use mapi_loop_ith_ok f rho x 0] @> auto]
 
 theorem map_project_ok f rho x =
   Result.is_ok (extract_error ((Float.map_project f rho x) [@trigger]))
-  [@@disable Float.wProject]
-  [@@by induct ~do_not:["gen"; "fert"; "delim"] ()]
+  [@@disable Util.list_mapi', BlockProjection.ith, Float.project_ith]
+  [@@by [%expand Float.map_project] @> [%use mapi_ith_ok f rho x] @> auto]
   [@@fc]
 
 theorem wBlockProject_map_cz_ok cs x =
@@ -175,7 +203,7 @@ theorem wBlockProject_map_cz_ok cs x =
   [@@by auto]
   [@@fc]
 
-theorem wBlockProject_ok (b : int) (f_s : Format.t) (f_z : Format.t) (rho_z : Projection.t) (s : t) (x : CER.t list) =
+theorem wBlockProject_ok (b : int) (f_s : Format.t) (f_z : Format.t) (rho_z : BlockProjection.t) (s : t) (x : CER.t list) =
   b = List.length x ==>
   Result.is_ok ((Float.wBlockProject b f_s f_z rho_z (s, x)) [@trigger])
   [@@timeout 60]
@@ -188,7 +216,7 @@ theorem wBlockProject_ok (b : int) (f_s : Format.t) (f_z : Format.t) (rho_z : Pr
 theorem convertFromBlock_ok
   (b : int)
   (f_s : Format.t) (f_x : Format.t) (f_z : Format.t)
-  (rho_s : Projection.t) (rho_z : Projection.t)
+  (rho_s : BlockProjection.t) (rho_z : BlockProjection.t)
   (s, x : t * t list) =
   b = List.length x && b >= 1 ==>
   Result.is_ok (Float.convertFromBlock b f_s f_x f_z rho_s rho_z (s, x))
@@ -200,7 +228,7 @@ theorem convertFromBlock_ok
 
 theorem convertToBlock_ok
   (b : int)
-  (f_s : Format.t) (f_x : Format.t) (f_z : Format.t) (rho_z : Projection.t)
+  (f_s : Format.t) (f_x : Format.t) (f_z : Format.t) (rho_z : BlockProjection.t)
   (x, s : t list * t) =
   b = List.length x ==>
   Result.is_ok (Float.convertToBlock b f_s f_x f_z rho_z (x, s))
@@ -230,7 +258,7 @@ theorem map_convert_maf_ok s' (x : CER.t list) =
 theorem convert_to_block_max_abs_finite_ok
   (b : int)
   (f_s : Format.t) (f_x : Format.t) (f_z : Format.t)
-  (rho_s : Projection.t) (rho_z : Projection.t)
+  (rho_s : Projection.t) (rho_z : BlockProjection.t)
   (x : t list) =
   b >= 1 && b = List.length x ==>
   Result.is_ok (convertToBlockMaxAbsFinite b f_s f_x f_z rho_s rho_z x)
@@ -670,7 +698,7 @@ theorem block_convert_ok
   (f_s : Format.t)
   (f_z : Format.t)
   (rho_s : Projection.t)
-  (rho_z : Projection.t)
+  (rho_z : BlockProjection.t)
   (s_x, x : Float.t * Float.t list)
   (s_z : Float.t) =
   block_preconditions_unary b f_sx f_x f_s f_z rho_s rho_z (s_x, x) s_z ==>
@@ -688,7 +716,7 @@ theorem block_abs_ok
   (f_s : Format.t)
   (f_z : Format.t)
   (rho_s : Projection.t)
-  (rho_z : Projection.t)
+  (rho_z : BlockProjection.t)
   (s_x, x : Float.t * Float.t list)
   (s_z : Float.t) =
   block_preconditions_unary b f_sx f_x f_s f_z rho_s rho_z (s_x, x) s_z ==>
@@ -706,7 +734,7 @@ theorem block_negate_ok
   (f_s : Format.t)
   (f_z : Format.t)
   (rho_s : Projection.t)
-  (rho_z : Projection.t)
+  (rho_z : BlockProjection.t)
   (s_x, x : Float.t * Float.t list)
   (s_z : Float.t) =
   block_preconditions_unary b f_sx f_x f_s f_z rho_s rho_z (s_x, x) s_z ==>
@@ -724,7 +752,7 @@ theorem block_exp_ok
   (f_s : Format.t)
   (f_z : Format.t)
   (rho_s : Projection.t)
-  (rho_z : Projection.t)
+  (rho_z : BlockProjection.t)
   (s_x, x : Float.t * Float.t list)
   (s_z : Float.t) =
   block_preconditions_unary b f_sx f_x f_s f_z rho_s rho_z (s_x, x) s_z ==>
@@ -742,7 +770,7 @@ theorem block_sqrt_ok
   (f_s : Format.t)
   (f_z : Format.t)
   (rho_s : Projection.t)
-  (rho_z : Projection.t)
+  (rho_z : BlockProjection.t)
   (s_x, x : Float.t * Float.t list)
   (s_z : Float.t) =
   block_preconditions_unary b f_sx f_x f_s f_z rho_s rho_z (s_x, x) s_z ==>
@@ -760,7 +788,7 @@ theorem block_rsqrt_ok
   (f_s : Format.t)
   (f_z : Format.t)
   (rho_s : Projection.t)
-  (rho_z : Projection.t)
+  (rho_z : BlockProjection.t)
   (s_x, x : Float.t * Float.t list)
   (s_z : Float.t) =
   block_preconditions_unary b f_sx f_x f_s f_z rho_s rho_z (s_x, x) s_z ==>
@@ -778,7 +806,7 @@ theorem block_exp2_ok
   (f_s : Format.t)
   (f_z : Format.t)
   (rho_s : Projection.t)
-  (rho_z : Projection.t)
+  (rho_z : BlockProjection.t)
   (s_x, x : Float.t * Float.t list)
   (s_z : Float.t) =
   block_preconditions_unary b f_sx f_x f_s f_z rho_s rho_z (s_x, x) s_z ==>
@@ -796,7 +824,7 @@ theorem block_log2_ok
   (f_s : Format.t)
   (f_z : Format.t)
   (rho_s : Projection.t)
-  (rho_z : Projection.t)
+  (rho_z : BlockProjection.t)
   (s_x, x : Float.t * Float.t list)
   (s_z : Float.t) =
   block_preconditions_unary b f_sx f_x f_s f_z rho_s rho_z (s_x, x) s_z ==>
@@ -814,7 +842,7 @@ theorem block_log_ok
   (f_s : Format.t)
   (f_z : Format.t)
   (rho_s : Projection.t)
-  (rho_z : Projection.t)
+  (rho_z : BlockProjection.t)
   (s_x, x : Float.t * Float.t list)
   (s_z : Float.t) =
   block_preconditions_unary b f_sx f_x f_s f_z rho_s rho_z (s_x, x) s_z ==>
@@ -832,7 +860,7 @@ theorem block_recip_ok
   (f_s : Format.t)
   (f_z : Format.t)
   (rho_s : Projection.t)
-  (rho_z : Projection.t)
+  (rho_z : BlockProjection.t)
   (s_x, x : Float.t * Float.t list)
   (s_z : Float.t) =
   block_preconditions_unary b f_sx f_x f_s f_z rho_s rho_z (s_x, x) s_z ==>
@@ -871,7 +899,7 @@ theorem block_CopySign_ok
   (f_s : Format.t)
   (f_z : Format.t)
   (rho_s : Projection.t)
-  (rho_z : Projection.t)
+  (rho_z : BlockProjection.t)
   (s_x1, x1 : Float.t * Float.t list)
   (s_x2, x2 : Float.t * Float.t list)
   (s_z : Float.t) =
@@ -891,7 +919,7 @@ theorem block_add_ok
   (f_s : Format.t)
   (f_z : Format.t)
   (rho_s : Projection.t)
-  (rho_z : Projection.t)
+  (rho_z : BlockProjection.t)
   (s_x1, x1 : Float.t * Float.t list)
   (s_x2, x2 : Float.t * Float.t list)
   (s_z : Float.t) =
@@ -911,7 +939,7 @@ theorem block_subtract_ok
   (f_s : Format.t)
   (f_z : Format.t)
   (rho_s : Projection.t)
-  (rho_z : Projection.t)
+  (rho_z : BlockProjection.t)
   (s_x1, x1 : Float.t * Float.t list)
   (s_x2, x2 : Float.t * Float.t list)
   (s_z : Float.t) =
@@ -931,7 +959,7 @@ theorem block_multiply_ok
   (f_s : Format.t)
   (f_z : Format.t)
   (rho_s : Projection.t)
-  (rho_z : Projection.t)
+  (rho_z : BlockProjection.t)
   (s_x1, x1 : Float.t * Float.t list)
   (s_x2, x2 : Float.t * Float.t list)
   (s_z : Float.t) =
@@ -951,7 +979,7 @@ theorem block_divide_ok
   (f_s : Format.t)
   (f_z : Format.t)
   (rho_s : Projection.t)
-  (rho_z : Projection.t)
+  (rho_z : BlockProjection.t)
   (s_x1, x1 : Float.t * Float.t list)
   (s_x2, x2 : Float.t * Float.t list)
   (s_z : Float.t) =
@@ -972,7 +1000,7 @@ theorem block_hypot_ok
   (f_s : Format.t)
   (f_z : Format.t)
   (rho_s : Projection.t)
-  (rho_z : Projection.t)
+  (rho_z : BlockProjection.t)
   (s_x1, x1 : Float.t * Float.t list)
   (s_x2, x2 : Float.t * Float.t list)
   (s_z : Float.t) =
@@ -992,7 +1020,7 @@ theorem block_minimum_ok
   (f_s : Format.t)
   (f_z : Format.t)
   (rho_s : Projection.t)
-  (rho_z : Projection.t)
+  (rho_z : BlockProjection.t)
   (s_x1, x1 : Float.t * Float.t list)
   (s_x2, x2 : Float.t * Float.t list)
   (s_z : Float.t) =
@@ -1012,7 +1040,7 @@ theorem block_minimum_number_ok
   (f_s : Format.t)
   (f_z : Format.t)
   (rho_s : Projection.t)
-  (rho_z : Projection.t)
+  (rho_z : BlockProjection.t)
   (s_x1, x1 : Float.t * Float.t list)
   (s_x2, x2 : Float.t * Float.t list)
   (s_z : Float.t) =
@@ -1032,7 +1060,7 @@ theorem block_minimum_magnitude_ok
   (f_s : Format.t)
   (f_z : Format.t)
   (rho_s : Projection.t)
-  (rho_z : Projection.t)
+  (rho_z : BlockProjection.t)
   (s_x1, x1 : Float.t * Float.t list)
   (s_x2, x2 : Float.t * Float.t list)
   (s_z : Float.t) =
@@ -1052,7 +1080,7 @@ theorem block_minimum_magnitude_number_ok
   (f_s : Format.t)
   (f_z : Format.t)
   (rho_s : Projection.t)
-  (rho_z : Projection.t)
+  (rho_z : BlockProjection.t)
   (s_x1, x1 : Float.t * Float.t list)
   (s_x2, x2 : Float.t * Float.t list)
   (s_z : Float.t) =
@@ -1072,7 +1100,7 @@ theorem block_maximum_ok
   (f_s : Format.t)
   (f_z : Format.t)
   (rho_s : Projection.t)
-  (rho_z : Projection.t)
+  (rho_z : BlockProjection.t)
   (s_x1, x1 : Float.t * Float.t list)
   (s_x2, x2 : Float.t * Float.t list)
   (s_z : Float.t) =
@@ -1092,7 +1120,7 @@ theorem block_maximum_number_ok
   (f_s : Format.t)
   (f_z : Format.t)
   (rho_s : Projection.t)
-  (rho_z : Projection.t)
+  (rho_z : BlockProjection.t)
   (s_x1, x1 : Float.t * Float.t list)
   (s_x2, x2 : Float.t * Float.t list)
   (s_z : Float.t) =
@@ -1112,7 +1140,7 @@ theorem block_maximum_magnitude_ok
   (f_s : Format.t)
   (f_z : Format.t)
   (rho_s : Projection.t)
-  (rho_z : Projection.t)
+  (rho_z : BlockProjection.t)
   (s_x1, x1 : Float.t * Float.t list)
   (s_x2, x2 : Float.t * Float.t list)
   (s_z : Float.t) =
@@ -1132,7 +1160,7 @@ theorem block_maximum_magnitude_number_ok
   (f_s : Format.t)
   (f_z : Format.t)
   (rho_s : Projection.t)
-  (rho_z : Projection.t)
+  (rho_z : BlockProjection.t)
   (s_x1, x1 : Float.t * Float.t list)
   (s_x2, x2 : Float.t * Float.t list)
   (s_z : Float.t) =
@@ -1231,7 +1259,7 @@ theorem op_block_ternary_fma_encode_ok
   (params : Specification.Float.block_op_parameter list)
   (args : Specification.Float.block_op_argument list)
   (f_s : Format.t) (f_z : Format.t)
-  (rho_z : Projection.t)
+  (rho_z : BlockProjection.t)
   (s_z : Float.t) =
   b >= 1 &&
   List.length params = List.length args &&
@@ -1270,7 +1298,7 @@ theorem block_fma_ok
   (f_s : Format.t)
   (f_r : Format.t)
   (rho_s : Projection.t)
-  (rho_z : Projection.t)
+  (rho_z : BlockProjection.t)
   (s_x1, x1 : Float.t * Float.t list)
   (s_x2, x2 : Float.t * Float.t list)
   (s_x3, x3 : Float.t * Float.t list)
@@ -1293,7 +1321,7 @@ theorem op_block_ternary_faa_encode_ok
   (params : Specification.Float.block_op_parameter list)
   (args : Specification.Float.block_op_argument list)
   (f_s : Format.t) (f_z : Format.t)
-  (rho_z : Projection.t)
+  (rho_z : BlockProjection.t)
   (s_z : Float.t) =
   b >= 1 &&
   List.length params = List.length args &&
@@ -1331,7 +1359,7 @@ theorem block_faa_ok
   (f_s : Format.t)
   (f_z : Format.t)
   (rho_s : Projection.t)
-  (rho_z : Projection.t)
+  (rho_z : BlockProjection.t)
   (s_x1, x1 : Float.t * Float.t list)
   (s_x2, x2 : Float.t * Float.t list)
   (s_x3, x3 : Float.t * Float.t list)
@@ -1409,7 +1437,7 @@ theorem internal_scaled_add_ok f_x f_y f_r rho x s_x y s_y =
     block_op_map2_wBlockDecode,
     wEncode, wDecode, Util.pow2, Util.ipow2, blockAdd]
   [@@by
-    [%use block_add_ok 1 f_x f_x f_y f_y f_r f_r rho rho (s_x, [x]) (s_y, [y]) (one f_r)] @>
+    [%use block_add_ok 1 f_x f_x f_y f_y f_r f_r rho (BlockProjection.wrap rho) (s_x, [x]) (s_y, [y]) (one f_r)] @>
     induct ~do_not:["gen"; "fert"; "delim"] ()
   ]
 
@@ -1424,14 +1452,14 @@ theorem internal_scaled_multiply_ok f_x f_y f_r rho x s_x y s_y =
     block_op_map2_wBlockDecode,
     wEncode, wDecode, Util.pow2, Util.ipow2, blockMultiply]
   [@@by
-    [%use block_multiply_ok 1 f_x f_x f_y f_y f_r f_r rho rho (s_x, [x]) (s_y, [y]) (one f_r)] @>
+    [%use block_multiply_ok 1 f_x f_x f_y f_y f_r f_r rho (BlockProjection.wrap rho) (s_x, [x]) (s_y, [y]) (one f_r)] @>
     induct ~do_not:["gen"; "fert"; "delim"] ()
   ]
 
 (* Scaled FMA via a block of size 1 is okay as long as the output format has 1.0 in it's value set. *)
 theorem internal_scaled_fma_ok f_x f_y f_sxy f_z f_sz f_r rho x y s_xy z s_z =
   is_in_value_set f_r CER.one ==>
-  Result.is_ok (Float.internal_scaledFMA f_x f_y f_sxy f_z f_sz f_r rho x y s_xy z s_z)
+  Result.is_ok (Float.internal_scaledFMA f_x f_y f_sxy f_z f_sz f_r (BlockProjection.wrap rho) x y s_xy z s_z)
   [@@timeout 3600]
   [@@disable
     wProject, List.map, List.map2,
@@ -1440,6 +1468,26 @@ theorem internal_scaled_fma_ok f_x f_y f_sxy f_z f_sz f_r rho x y s_xy z s_z =
     wEncode, wDecode, Util.pow2, Util.ipow2, blockFMA]
   (* nondet? *)
   [@@by
-    [%use block_fma_ok 1 f_sxy f_x f_sxy f_y f_z f_sz f_r f_r rho rho (s_xy, [x]) (s_xy, [y]) (s_z, [z]) (one f_r)] @>
+    [%use block_fma_ok 1 f_sxy f_x f_sxy f_y f_z f_sz f_r f_r rho (BlockProjection.wrap rho) (s_xy, [x]) (s_xy, [y]) (s_z, [z]) (one f_r)] @>
     induct ~do_not:["gen"; "fert"; "delim"] ()
   ]
+
+(** [internal_softmax] never returns an error *)
+theorem internal_softmax_ok (f_x : Format.t) (f_r : Format.t) (rho : Float.BlockProjection.t) (xs : Float.t list) =
+  Result.is_ok (Float.internal_softmax f_x f_r rho xs)
+  [@@disable Float.wProject, Float.wDecode, Float.map_decode, Float.map_project]
+  [@@timeout 20]
+  [@@by induct ~do_not:["gen"; "fert"; "delim"] ()]
+
+(** [internal_logSoftmax] never returns an error *)
+theorem map_wLog_ok x =
+  Result.is_ok (Float.map_wLog x) [@trigger]
+  [@@disable Float.wLog]
+  [@@by induct ~do_not:["gen"; "fert"; "delim"] ()]
+  [@@fc]
+
+theorem internal_logsoftmax_ok (f_x : Format.t) (f_r : Format.t) (rho : Float.BlockProjection.t) (xs : Float.t list) =
+  Result.is_ok (Float.internal_logSoftmax f_x f_r rho xs)
+  [@@disable Float.wProject, Float.wDecode, Float.map_decode, Float.map_project, Float.map_wLog]
+  [@@timeout 3600]
+  [@@by induct ~do_not:["gen"; "fert"; "delim"] ()]

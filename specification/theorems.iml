@@ -922,33 +922,6 @@ theorem internal_softplus_ok (f_x : Format.t) (f_r : Format.t) (rho : Projection
   [@@timeout 60]
   [@@by auto]
 
-(** [internal_softmax] never returns an error *)
-theorem map_project_ok f rho x =
-  Result.is_ok (extract_error ((Float.map_project f rho x) [@trigger]))
-  [@@timeout 60]
-  [@@disable Float.wProject]
-  [@@by induct ~do_not:["gen"; "fert"; "delim"] ()]
-  [@@fc]
-
-theorem internal_softmax_ok (f_x : Format.t) (f_r : Format.t) (rho : Projection.t) (xs : Float.t list) =
-  Result.is_ok (Float.internal_softmax f_x f_r rho xs)
-  [@@disable Float.wProject, Float.wDecode, Float.map_decode, Float.map_project]
-  [@@timeout 20]
-  [@@by induct ~do_not:["gen"; "fert"; "delim"] ()]
-
-(** [internal_logSoftmax] never returns an error *)
-theorem map_wLog_ok x =
-  Result.is_ok (Float.map_wLog x) [@trigger]
-  [@@disable Float.wLog]
-  [@@by induct ~do_not:["gen"; "fert"; "delim"] ()]
-  [@@fc]
-
-theorem internal_logsoftmax_ok (f_x : Format.t) (f_r : Format.t) (rho : Projection.t) (xs : Float.t list) =
-  Result.is_ok (Float.internal_logSoftmax f_x f_r rho xs)
-  [@@disable Float.wProject, Float.wDecode, Float.map_decode, Float.map_project, Float.map_wLog]
-  [@@timeout 3600]
-  [@@by induct ~do_not:["gen"; "fert"; "delim"] ()]
-
 (** [internal_nextGreaterThan] never returns an error *)
 theorem internal_nextGreaterThan_ok (f : Format.t) (x : Float.t) =
   Result.is_ok (Float.internal_nextGreaterThan f x)

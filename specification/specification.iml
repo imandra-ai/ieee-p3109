@@ -1566,7 +1566,7 @@ module Float = struct
   let internal_compareEqual (f_x : Format.t) (f_y : Format.t)  (x : t) (y : t) : (bool, string) Result.t =
     wCompareEqual (wDecode f_x x) (wDecode f_y y)
 
-  let compare_equal (f_x : Format.t) (f_y : Format.t) (x : t) (y : t) : bool =
+  let compareEqual (f_x : Format.t) (f_y : Format.t) (x : t) (y : t) : bool =
     match internal_compareEqual f_x f_y x y  with
     | Ok r -> r
     | Error _ -> false (* unreachable by theorem internal_compare_equal_ok *)
@@ -1733,7 +1733,7 @@ module Float = struct
 
   (** 4.14.3 Comparison predicates *)
 
-  let equal f_x f_y x y = compare_equal f_x f_y x y
+  let equal f_x f_y x y = compareEqual f_x f_y x y
 
   let greater f_x f_y x y = compareGreater f_x f_y x y
 
@@ -1745,7 +1745,7 @@ module Float = struct
 
   let ordered f_x f_y x y = totalOrder f_x f_y x y
 
-  let notEqual f_x f_y x y = not (compare_equal f_x f_y x y)
+  let notEqual f_x f_y x y = not (compareEqual f_x f_y x y)
 
   let notGreater f_x f_y x y = not (compareGreater f_x f_y x y)
 
@@ -1765,6 +1765,65 @@ module Float = struct
 
 
   (** 5 Block operations *)
+
+  module BlockProjection = struct
+    module BlockRoundingMode = struct
+      module StochasticArguments = struct
+        (* Stochastic rounding modes need different random bits at
+           each projection, so here `r` becomes a list. *)
+        type t = { n: int; r: int list; }
+      end
+
+      type t =
+        | TowardZero
+        | TowardNegative
+        | TowardPositive
+        | NearestTiesToEven
+        | NearestTiesToAway
+        | ToOdd
+        | StochasticA of StochasticArguments.t
+        | StochasticB of StochasticArguments.t
+        | StochasticC of StochasticArguments.t
+    end
+
+    type t = SaturationMode.t * BlockRoundingMode.t
+
+    let ith_or_zero (i : int) (r : int list) : int =
+      match List.nth i r with
+      | Some r -> r
+      | None ->
+        (* If an insufficient number of integers is provided, we use 0. This
+           avoids the need for a precondition on every block-related theorem,
+           but it may not be an advisable implementation strategy. *)
+        0
+
+    let ith (i : int) (rho : t) : Projection.t =
+      let sat, rnd = rho in
+      match rnd with
+      | StochasticA arg -> sat, RoundingMode.StochasticA { n = arg.n; r = ith_or_zero i arg.r; }
+      | StochasticB arg -> sat, RoundingMode.StochasticB { n = arg.n; r = ith_or_zero i arg.r; }
+      | StochasticC arg -> sat, RoundingMode.StochasticC { n = arg.n; r = ith_or_zero i arg.r; }
+      | TowardZero -> sat, RoundingMode.TowardZero
+      | TowardNegative -> sat, RoundingMode.TowardNegative
+      | TowardPositive -> sat, RoundingMode.TowardPositive
+      | NearestTiesToEven -> sat, RoundingMode.NearestTiesToEven
+      | NearestTiesToAway -> sat, RoundingMode.NearestTiesToAway
+      | ToOdd -> sat, RoundingMode.ToOdd
+
+    let wrap (rho : Projection.t) : t =
+      (* This is rho' in section 5.8. *)
+      let sat, rnd = rho in
+      match rnd with
+      | StochasticA arg -> sat, BlockRoundingMode.StochasticA { n = arg.n; r = [arg.r]; }
+      | StochasticB arg -> sat, BlockRoundingMode.StochasticB { n = arg.n; r = [arg.r]; }
+      | StochasticC arg -> sat, BlockRoundingMode.StochasticC { n = arg.n; r = [arg.r]; }
+      | TowardZero -> sat, BlockRoundingMode.TowardZero
+      | TowardNegative -> sat, BlockRoundingMode.TowardNegative
+      | TowardPositive -> sat, BlockRoundingMode.TowardPositive
+      | NearestTiesToEven -> sat, BlockRoundingMode.NearestTiesToEven
+      | NearestTiesToAway -> sat, BlockRoundingMode.NearestTiesToAway
+      | ToOdd -> sat, BlockRoundingMode.ToOdd
+  end
 
   let rec reduce (f : CER.t -> CER.t -> (CER.t, string) Result.t) (x: CER.t list) : (CER.t, string) Result.t =
     match x with
@@ -1789,8 +1848,10 @@ module Float = struct
 
   (** 5.1.2 EncodeBlock *)
 
-  let map_project (f : Format.t) (rho : Projection.t) (x : CER.t list) : (t, string) Result.t list =
-    List.map (wProject f rho) x
+  let project_ith i e (f, rho) = wProject f (BlockProjection.ith i rho) e
+
+  let map_project (f : Format.t) (rho : BlockProjection.t) (x : CER.t list) : (t, string) Result.t list =
+    Util.list_mapi' project_ith x (f, rho)
 
   let wBlockProject_map_cz cs x =
     List.map
@@ -1804,7 +1865,7 @@ module Float = struct
 
   let wBlockProject
     (b : int)
-    (f_s : Format.t) (f_r : Format.t) (rho_z : Projection.t)
+    (f_s : Format.t) (f_r : Format.t) (rho_z : BlockProjection.t)
     (s, x : t * CER.t list) :
     (t list, string) Result.t =
     if b < 0 || b <> List.length x then
@@ -1824,7 +1885,7 @@ module Float = struct
   let convertFromBlock
     (b : int)
     (f_s : Format.t) (f_x : Format.t) (f_r : Format.t)
-    (rho_s : Projection.t) (rho_z : Projection.t)
+    (rho_s : BlockProjection.t) (rho_z : BlockProjection.t)
     (s, x : t * t list) :
     (t list, string) Result.t =
     if b < 0 || b <> List.length x then
@@ -1841,7 +1902,7 @@ module Float = struct
 
   let convertToBlock
     (b : int)
-    (f_s : Format.t) (f_x : Format.t) (f_r : Format.t) (rho_z : Projection.t)
+    (f_s : Format.t) (f_x : Format.t) (f_r : Format.t) (rho_z : BlockProjection.t)
     (x, s : t list * t) :
     (t * t list, string) Result.t =
     let cx = map_decode f_x x in
@@ -1862,7 +1923,7 @@ module Float = struct
   let convertToBlockMaxAbsFinite
     (b : int)
     (f_s : Format.t) (f_x : Format.t) (f_r : Format.t)
-    (rho_s : Projection.t) (rho_z : Projection.t)
+    (rho_s : Projection.t) (rho_z : BlockProjection.t)
     (x : t list) :
     (t * t list, string) Result.t =
     if (b < 1 || b <> List.length x) then
@@ -1992,7 +2053,7 @@ module Float = struct
     (f_s : Format.t)
     (f_r : Format.t)
     (s_z : t)
-    (rho_z : Projection.t)
+    (rho_z : BlockProjection.t)
     (args: block_op_argument list)
     (wOp : CER.t -> (CER.t, string) Result.t)
     :
@@ -2017,7 +2078,7 @@ module Float = struct
     (f_s : Format.t)
     (f_r : Format.t)
     (s_z : t)
-    (rho_z : Projection.t)
+    (rho_z : BlockProjection.t)
     (args: block_op_argument list)
     (wOp : CER.t -> CER.t -> (CER.t, string) Result.t)
     :
@@ -2043,7 +2104,7 @@ module Float = struct
     (f_s : Format.t)
     (f_r : Format.t)
     (s_z : t)
-    (rho_z : Projection.t)
+    (rho_z : BlockProjection.t)
     (args: block_op_argument list)
     (wOp : CER.t -> CER.t -> CER.t -> (CER.t, string) Result.t)
     :
@@ -2253,8 +2314,8 @@ module Float = struct
       compute [x] * [s_x] + [y] * [s_y] and return in [f_r],
       with projection specification [rho] *)
   let internal_scaledAdd f_x f_y f_r rho x s_x y s_y =
-    let* s_z = wEncode f_r CER.one in (* Note: 1 is not in all formats, e.g. binary2p1se *)
-    let* (_, r) = blockAdd 1 f_x f_x f_y f_y f_r f_r rho rho (s_x, [x]) (s_y, [y]) s_z in
+    let* s_z = wEncode f_r CER.one in (* Note: 1 is not in 2-bit formats *)
+    let* (_, r) = blockAdd 1 f_x f_x f_y f_y f_r f_r rho (BlockProjection.wrap rho) (s_x, [x]) (s_y, [y]) s_z in
     Ok (List.hd r)
 
   let scaledAdd (f_x : Format.t) (f_y : Format.t) (f_r : Format.t) (rho : Projection.t) (x : t) (s_x : t) (y : t) (s_y : t) : t =
@@ -2266,8 +2327,8 @@ module Float = struct
       compute [x] * [y] * [s] and return in [f_r],
       with projection specification [rho] *)
   let internal_scaledMultiply f_x f_y f_r rho x s_x y s_y =
-    let* s_z = wEncode f_r CER.one in (* Note: 1 is not in all formats, e.g. binary2p1se *)
-    let* (_, r) = blockMultiply 1 f_x f_x f_y f_y f_r f_r rho rho (s_x, [x]) (s_y, [y]) s_z in
+    let* s_z = wEncode f_r CER.one in (* Note: 1 is not in 2-bit formats *)
+    let* (_, r) = blockMultiply 1 f_x f_x f_y f_y f_r f_r rho (BlockProjection.wrap rho) (s_x, [x]) (s_y, [y]) s_z in
     Ok (List.hd r)
 
   let scaledMultiply (f_x : Format.t) (f_y : Format.t) (f_r : Format.t) (rho : Projection.t) (x : t) (s_x : t) (y : t) (s_y : t) : t =
@@ -2287,7 +2348,7 @@ module Float = struct
   let scaledFMA
     (f_x : Format.t) (f_y : Format.t) (f_sxy : Format.t) (f_z : Format.t) (f_sz : Format.t) (f_r : Format.t) (rho : Projection.t)
     (x : t) (y : t) (s_xy : t) (z : t) (s_z : t) : t =
-    match internal_scaledFMA f_x f_y f_sxy f_z f_sz f_r rho x y s_xy z s_z with
+    match internal_scaledFMA f_x f_y f_sxy f_z f_sz f_r (BlockProjection.wrap rho) x y s_xy z s_z with
     | Ok r -> r
     | Error _ -> nan f_r (* unreachable by theorem internal_scaled_fma_ok *)
 
@@ -2744,13 +2805,13 @@ module Float = struct
     let denom : CER.t = softmax_denom xs in
     Ok (List.map (fun x -> x / denom) xs)
 
-  let internal_softmax (f_x : Format.t) (f_r : Format.t) (rho : Projection.t) (xs : t list) : (t list, string) Result.t =
+  let internal_softmax (f_x : Format.t) (f_r : Format.t) (rho : BlockProjection.t) (xs : t list) : (t list, string) Result.t =
     let cx = map_decode f_x xs in
     let* zs = wSoftmax cx in
     let@ r = map_project f_r rho zs in
     Ok r
 
-  let softmax (f_x : Format.t) (f_r : Format.t) (rho : Projection.t) (xs : t list) : t list =
+  let softmax (f_x : Format.t) (f_r : Format.t) (rho : BlockProjection.t) (xs : t list) : t list =
     match internal_softmax f_x f_r rho xs with
     | Ok r -> r
     | Error e -> [] (* unreachable by theorem internal_softmax_ok *)
@@ -2766,13 +2827,13 @@ module Float = struct
     | Ok s -> map_wLog s (* TODO: Proof that 9 is enough *)
     | Error e -> Error e
 
-  let internal_logSoftmax (f_x : Format.t) (f_r : Format.t) (rho : Projection.t) (xs : t list) : (t list, string) Result.t =
+  let internal_logSoftmax (f_x : Format.t) (f_r : Format.t) (rho : BlockProjection.t) (xs : t list) : (t list, string) Result.t =
     let cx = map_decode f_x xs in
     let* zs = wLogSoftmax cx in
     let@ r = map_project f_r rho zs in
     Ok r
 
-  let logSoftmax (f_x : Format.t) (f_r : Format.t) (rho : Projection.t) (xs : t list) : t list =
+  let logSoftmax (f_x : Format.t) (f_r : Format.t) (rho : BlockProjection.t) (xs : t list) : t list =
     match internal_logSoftmax f_x f_r rho xs with
     | Ok r -> r
     | Error e -> [] (* unreachable by theorem internal_logSoftmax_ok *)

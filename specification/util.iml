@@ -167,3 +167,22 @@ let rec rproduct (f : int -> int -> (real, string) Result.t) (from : int) (to_ :
     let* rest = rproduct f (from + 1) to_ in
     Ok (cur *. rest)
   [@@measure Ordinal.of_int (to_ - from)]
+
+
+(* Our own version of List.mapi that exposes the internal function so that we
+   can get around some of the higher-order limitations. *)
+let rec list_mapi_loop (f : int -> 'a -> 'b) (i : int) (l : 'a list) : 'b list =
+  match l with
+  | [] -> []
+  | x :: t -> f i x :: list_mapi_loop f (i + 1) t
+
+let list_mapi (f : int -> 'a -> 'b) (l : 'a list) : 'b list =
+  list_mapi_loop f 0 l
+
+let rec list_mapi_loop' (f : int -> 'a -> 'b -> 'c) (i : int) (l : 'a list) (extra : 'b): 'c list =
+  match l with
+  | [] -> []
+  | x :: t -> f i x extra :: list_mapi_loop' f (i + 1) t extra
+
+let list_mapi' (f : int -> 'a -> 'b -> 'c) (l : 'a list) (extra : 'b): 'c list =
+  list_mapi_loop' f 0 l extra
