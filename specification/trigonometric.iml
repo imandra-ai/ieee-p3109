@@ -259,12 +259,47 @@ verify (
 
 let unroll_nonlin qt nqt steps = Tactic.unroll ~smt:"z3-full-nonlinear" ~query_timeout:qt ~no_asm_query_timeout:nqt steps
 
-axiom sin_cos_never_zero x p =
-  p > 0 ==> not (sin x p = 0.0 && cos x p = 0.0)
-  (* TODO: turn this into a theorem. *)
-  (* [@@timeout 3600]
+theorem fac_gt_0 n =
+  n >= 0 ==> Util.rfactorial n >. 0.0
+  [@@by auto]
+
+theorem ripow_growing_neq_0 x n =
+  n >= 0 && x <> 0.0 ==>
+  Util.ripow x n <> 0.0 ==> Util.ripow x (n + 1) <> 0.0
+  [@@by auto]
+
+let rec induct_nat (m : int) : bool =
+  if m <= 0 then true else induct_nat (m - 1)
+
+theorem ripow_growing_fast_neq_0 x n m =
+  n >= 0 && x <> 0.0 && m >= 0 ==>
+  Util.ripow x n <> 0.0 ==> Util.ripow x (n + m) <> 0.0
   [@@by
-    [%use ... sin_term x p] @>
-    [%use ... cos_term x p] @>
-    auto
-  ] *)
+    induction ~id:[%id induct_nat] () @>| [
+      auto;
+      [%use ripow_growing_neq_0 x (n + m - 1)] @> auto;
+    ]
+  ]
+
+theorem ripow_doubling_neq_0 x n =
+  n >= 0 && x <> 0.0 ==>
+  Util.ripow x n <> 0.0 ==> Util.ripow x (2 * n) <> 0.0
+  [@@by [%use ripow_growing_fast_neq_0 x n n] @> auto]
+
+theorem ripow_succ x n =
+  n >= 0 ==> Util.ripow x (n + 1) = x *. Util.ripow x n
+  [@@by auto]
+
+theorem nth_pow_minus_1_neq_0 (m : int) =
+  m >= 0 ==> ((- 1.0) ^. m) <> 0.0
+  [@@by induction ~id:[%id induct_nat] () @>| [
+    auto;
+    [%use ripow_succ (- 1.0) (m - 1)] @> auto;
+  ]]
+
+(* Whether [sin x p] and [cos x p] can vanish simultaneously for arbitrary
+   p > 0 is a hard open problem (it is equivalent to squarefreeness of all
+   Taylor sections of sin). For the specification's working precision
+   p = 16 = CERR.approx it is proved by certificate in trig_zeros.iml
+   (theorem [Trig_zeros.sin_cos_never_zero]). *)
+
