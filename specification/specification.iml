@@ -2844,7 +2844,6 @@ module Float = struct
     let open Domain in
     let open RoundingMode in
     let open SaturationMode in
-    let nan = nan f in
     let* ninf =
       if domainOf f = Extended && signednessOf f = Signed then
         let* q = ninf f in Ok q
@@ -2860,10 +2859,12 @@ module Float = struct
     let maxFinite = maxFiniteOf f in
     let minFinite = minFiniteOf f in
     let smallestNegative = negate f f (SatPropagate, NearestTiesToEven) (minPositiveOf f) in
+    let k = bitwidthOf f in
     match s, d, to_int_repr f x with
-    | _, _, nan -> Ok nan
-    | _, Extended, pinf -> Ok nan
-    | _, Finite, x when x = maxFinite -> Ok nan
+    | _, _, x when isNaN f x -> Ok x
+    | Signed, _, x when x = (Util.ipow2 (k - 1)) -> Ok 1
+    | _, Extended, pinf -> Ok (nan f)
+    | _, Finite, x when x = maxFinite -> Ok (nan f)
     | _, Extended, x when x = maxFinite -> Ok pinf
     | Signed, Extended, ninf -> Ok minFinite
     | Signed, _,  x when x = smallestNegative -> Ok zero
@@ -2885,7 +2886,6 @@ module Float = struct
     let open Domain in
     let open RoundingMode in
     let open SaturationMode in
-    let nan = nan f in
     let* ninf =
       if domainOf f = Extended && signednessOf f = Signed then
         let* q = ninf f in Ok q
@@ -2901,11 +2901,13 @@ module Float = struct
     let maxFinite = maxFiniteOf f in
     let minFinite = minFiniteOf f in
     let smallestNegative = negate f f (SatPropagate, NearestTiesToEven) (minPositiveOf f) in
+    let k = bitwidthOf f in
     match s, d, to_int_repr f x with
-    | _, _, nan -> Ok nan
-    | _, Finite, x when x = minFinite -> Ok nan
-    | Unsigned, _, zero -> Ok nan
-    | Signed, Extended, ninf -> Ok nan
+    | _, _, x when isNaN f x -> Ok x
+    | Signed, _, x when x = Util.ipow2 (k - 1) -> Ok (Util.ipow2 (k - 1) + 1)
+    | _, Finite, x when x = minFinite -> Ok (nan f)
+    | Unsigned, _, zero -> Ok (nan f)
+    | Signed, Extended, ninf -> Ok (nan f)
     | Signed, Extended, x when x = minFinite -> Ok ninf
     | _, Extended, pinf -> Ok maxFinite
     | Signed, _, zero -> Ok smallestNegative
