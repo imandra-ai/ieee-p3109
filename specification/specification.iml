@@ -2844,18 +2844,6 @@ module Float = struct
     let open Domain in
     let open RoundingMode in
     let open SaturationMode in
-    let* ninf =
-      if domainOf f = Extended && signednessOf f = Signed then
-        let* q = ninf f in Ok q
-      else
-        Ok zero (* unused due to the conditions below *)
-      in
-    let* pinf =
-      if d = Extended then
-        let* q = pinf f in Ok q
-      else
-        Ok zero (* unused *)
-      in
     let maxFinite = maxFiniteOf f in
     let minFinite = minFiniteOf f in
     let smallestNegative = negate f f (SatPropagate, NearestTiesToEven) (minPositiveOf f) in
@@ -2863,10 +2851,10 @@ module Float = struct
     match s, d, to_int_repr f x with
     | _, _, x when isNaN f x -> Ok x
     | Signed, _, x when x = (Util.ipow2 (k - 1)) -> Ok 1
-    | _, Extended, pinf -> Ok (nan f)
+    | _, Extended, x when is_pinf f x -> Ok (nan f)
     | _, Finite, x when x = maxFinite -> Ok (nan f)
-    | _, Extended, x when x = maxFinite -> Ok pinf
-    | Signed, Extended, ninf -> Ok minFinite
+    | _, Extended, x when x = maxFinite -> (pinf f)
+    | Signed, Extended, x when is_ninf f x -> Ok minFinite
     | Signed, _,  x when x = smallestNegative -> Ok zero
     | Signed, _,  x when isSignMinus f x -> Ok (x - 1)
     | _, _, x -> Ok (x + 1)
@@ -2886,18 +2874,6 @@ module Float = struct
     let open Domain in
     let open RoundingMode in
     let open SaturationMode in
-    let* ninf =
-      if domainOf f = Extended && signednessOf f = Signed then
-        let* q = ninf f in Ok q
-      else
-        Ok zero (* unused *)
-      in
-    let* pinf =
-      if domainOf f = Extended then
-        let* q = pinf f in Ok q
-      else
-        Ok zero (* unused *)
-      in
     let maxFinite = maxFiniteOf f in
     let minFinite = minFiniteOf f in
     let smallestNegative = negate f f (SatPropagate, NearestTiesToEven) (minPositiveOf f) in
@@ -2906,11 +2882,11 @@ module Float = struct
     | _, _, x when isNaN f x -> Ok x
     | Signed, _, x when x = Util.ipow2 (k - 1) -> Ok (Util.ipow2 (k - 1) + 1)
     | _, Finite, x when x = minFinite -> Ok (nan f)
-    | Unsigned, _, zero -> Ok (nan f)
-    | Signed, Extended, ninf -> Ok (nan f)
-    | Signed, Extended, x when x = minFinite -> Ok ninf
-    | _, Extended, pinf -> Ok maxFinite
-    | Signed, _, zero -> Ok smallestNegative
+    | Unsigned, _, x when x = 0 -> Ok (nan f)
+    | Signed, Extended, x when is_ninf f x -> Ok (nan f)
+    | Signed, Extended, x when x = minFinite -> (ninf f)
+    | _, Extended, x when is_pinf f x -> Ok maxFinite
+    | Signed, _, x when x = 0 -> Ok smallestNegative
     | Signed, _, x when isSignMinus f x -> Ok (x + 1)
     | _, _, x -> Ok (x - 1)
 
